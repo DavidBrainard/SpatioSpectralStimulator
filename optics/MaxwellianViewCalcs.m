@@ -28,13 +28,14 @@ fprintf('Field stop size %0.1f mm\n',stopSizeMm);
 % Numbering of lenses etc. is outward
 % from eye, following Burns & Webb
 % Figure 2.
-lightDiamSourceMm = 3;
+lightDiamSourceMm = 5;
 
 lens1FocalLengthMm = 100;
-lens2FocalLengthMm = 100;
+lens2FocalLengthMm = 165;
 eyeFocalLengthMm = 16.67;
-
 lens1DiamMm = 25.4;
+fprintf('Lens 1 focal length %0.1f mm, lens 2 focal length %0.1f mm\n',lens1FocalLengthMm,lens2FocalLengthMm);
+fprintf('Focal length of eye assumed to be %0.1f mm\n',eyeFocalLengthMm);
 
 %% Compute linear size of field stop on retina in mm
 %
@@ -55,4 +56,4 @@ fprintf('Light source diameter %0.1f mm, light source at pupil %0.1f mm\n',light
 %
 % Assume stop is 1 focal length from lens 1
 lens1DiamDegFromStop = 2*atand(lens1DiamMm/(2*lens1FocalLengthMm));
-fprintf('Lens 1 diameteter %0.1f mm, %0.1f deg seen from stop\n',lens1DiamMm,lens1DiamDegFromStop);
+fprintf('Lens 1 diameter %0.1f mm, %0.1f deg seen from stop\n',lens1DiamMm,lens1DiamDegFromStop);
