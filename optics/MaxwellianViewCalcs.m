@@ -23,6 +23,10 @@ end
 stopSizeMm = max([chipHorizMm, chipVertMm]);
 fprintf('Field stop size %0.1f mm\n',stopSizeMm);
 
+%% Light cone size
+lightConeAngleDegs = 24;
+naProj = sind(lightConeAngleDegs/2);
+
 %% Define optical parameters
 %
 % Numbering of lenses etc. is outward
@@ -33,9 +37,17 @@ lightDiamSourceMm = 5;
 lens1FocalLengthMm = 100;
 lens2FocalLengthMm = 165;
 eyeFocalLengthMm = 16.67;
-lens1DiamMm = 25.4;
+lens1DiamMm = 75;
+pupilDiamMm = 3;
 fprintf('Lens 1 focal length %0.1f mm, lens 2 focal length %0.1f mm\n',lens1FocalLengthMm,lens2FocalLengthMm);
 fprintf('Focal length of eye assumed to be %0.1f mm\n',eyeFocalLengthMm);
+
+
+na1 = sind(atand(lens1DiamMm/(2*lens1FocalLengthMm)));
+naEye = sind(atand(pupilDiamMm/(2*eyeFocalLengthMm)));
+fprintf('Numerical aperture projector: %0.3f, lens1: %0.3f, eye: %0.3f\n', ...
+    naProj, na1, naEye);
+
 
 %% Compute linear size of field stop on retina in mm
 %
@@ -57,3 +69,15 @@ fprintf('Light source diameter %0.1f mm, light source at pupil %0.1f mm\n',light
 % Assume stop is 1 focal length from lens 1
 lens1DiamDegFromStop = 2*atand(lens1DiamMm/(2*lens1FocalLengthMm));
 fprintf('Lens 1 diameter %0.1f mm, %0.1f deg seen from stop\n',lens1DiamMm,lens1DiamDegFromStop);
+
+%% Compute how big lens must be to get all the light 
+lens1RadiusMm = stopSizeMm/2 + lens1FocalLengthMm*tand(lightConeAngleDegs/2);
+lens1DiameterMm = 2*lens1RadiusMm;
+fprintf('For light cone angle of %0.1f degs, lens 1 must have diameter %0.1f mm\n',lightConeAngleDegs,lens1DiameterMm);
+
+%% Compute size of light cone at lens 1
+lightConeLens1Mm = 2*lens1FocalLengthMm*tand(lightConeAngleDegs/2);
+fprintf('Light cone size at lens1: %0.1f mm\n',lightConeLens1Mm);
+
+
+
