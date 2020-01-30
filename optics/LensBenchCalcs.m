@@ -1,4 +1,4 @@
-%% Lens Bench Demo
+%% LensBenchCalcs
 % A simple optical bench explorer
 %
 % Description:
@@ -10,11 +10,15 @@
 %   direction. That is, each subsequent lens must have a larger (more
 %   positive) position.
 %
+%   This version developed from DEMO_lensBench in gkaModelEye.
 
 %% Housekeeping
 clear all
 close all
 clc
+
+%% Plot options
+plotOutputRays = false;
 
 %% Set up the refractive index of the medium and lens
 mediumRefractiveIndex = 1.0;
@@ -35,6 +39,9 @@ lensDiametersMm = [75 75 75];                 % Lens diameters in mm
 lensFocalLengthsMm = [105 105 105];           % Focal lengths of lenses
 lensCenters = [100 300 500];                  % Positions of the lenses, in mm, ordered near to far from eye
 
+%% Stops in system
+irisStopRadiusMm = 2;
+
 % Convert to useful format
 for ll = 1:length(lensCenters)
     lensRadiiMm(ll) = lensDiametersMm(ll)/2;
@@ -49,10 +56,15 @@ end
 
 %% Initialize the optical system with an eye
 % Create an initial optical system in the eyeToCamera (left to right)
-% direction with an emmetropic right eye focused at 1.5 meters.
+% direction with an emmetropic right eye focused at 1.5 meters, with the
+% refractive indices for the visible spectrum.
 fprintf('Setup base optical system\n');
-sceneGeometry = createSceneGeometry();
+sceneGeometry = createSceneGeometry('spectralDomain','vis');
 opticalSystem = sceneGeometry.refraction.retinaToCamera.opticalSystem;
+
+%% Insert an iris stop into the system
+rowInsertAfter = find(strcmp(sceneGeometry.refraction.retinaToCamera.surfaceLabels,'lens.front'));
+opticalSystem = addIrisStop(opticalSystem,sceneGeometry.eye.stop.center,irisStopRadiusMm,rowInsertAfter);
 
 %% Add the lenses to the optical system at desired locations
 fprintf('Add lenses\n');
@@ -66,7 +78,7 @@ end
 % the eye)
 opticalSystem = reverseSystemDirection(opticalSystem);
 
-%% Display the optical system and ray
+%% Display the optical system
 fprintf('Setup plot\n');
 plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'viewAngle',[0 90]);
 
@@ -80,6 +92,7 @@ rayHorizStartPosMm = [-10.5,0,10.5];
 colors = {'red','green','blue'};
 
 % Loop over the desired rays and display
+retinalHorizPositions = zeros(length(rayHorizStartPosMm), length(rayAnglesDeg));
 for hh = 1:length(rayHorizStartPosMm)
     fprintf('Trace ray bundle %d of %d\n',hh,length(rayHorizStartPosMm));
     color = colors{hh};
@@ -88,14 +101,18 @@ for hh = 1:length(rayHorizStartPosMm)
         inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPpostion;rayHorizStartPosMm(hh);0],-180+rayAnglesDeg(aa),0));
         
         % Trace it
+        %
+        % For the location in the retina: The ?outputRay? of the ray trace is of the form [p; d],
+        % where p is the point of intersection on the retina in {x,y,z] coords [axial,horizontal,vertical]
         [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
+        retinalHorizPositions(hh,aa) = outputRay(2,1);
         
         % Add it to the plot
         plotOpticalSystem('newFigure',false,'rayPath',rayPath,'rayColor',color,'viewAngle',[0 90]);
         
         % If the outputRay is nan (that is, the ray missed the eye), then
         % extend the ray as it left the last lens surface
-        if any(any(isnan(outputRay)))
+        if any(any(isnan(outputRay))) && plotOutputRays
             surfaces = find(~any(isnan(rayPath)));            
             outputRay = rayTraceQuadrics(inputRay, opticalSystem(surfaces,:));
             outputRay(:,2) = outputRay(:,2) * 5; % Pump up the volume
@@ -104,15 +121,15 @@ for hh = 1:length(rayHorizStartPosMm)
 
     end
 end
+
+%% Find retinal extent
+retinalLocationsMm = nanmean(retinalHorizPositions,2);
+retinalExtentMm = max(locations)-min(locations);
+fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentMm/0.3);
+
+%% Draw etc.
 figure(1);
 drawnow;
-
-
-
-
-
-
-
 
 %% LOCAL FUNCTIONS
 
@@ -128,7 +145,7 @@ mySystem = @(p) assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRe
 myConstraint = @(p) checkLensShape(mySystem(p),radius);
 
 % The objective, which is the requested lens power in diopters
-myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100]));
+myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100],radius/3));
 
 % Set an x0 that is a 20 mm thickness and a curvature based on the thin
 % lens approximation.
@@ -212,5 +229,46 @@ lensLine(12:17) = boundingBoxLens;
 lensLine(18) = 1; % must intersect
 lensLine(end) = mediumRefractiveIndex;
 opticalSystemOut = [opticalSystemOut; lensLine];
+
+end
+
+function z = radiusAtX(F,x)
+    myObj = @(z) F(x,0,z);
+    z = abs(fzero(myObj,0));
+end
+
+
+function opticalSystemOut = addIrisStop(opticalSystemIn, stopCenter, stopRadius, rowInsertAfter)
+
+S = quadric.scale(quadric.unitSphere,[1,20,20]);
+t = stopCenter; t(1) = t(1)-1;
+S = quadric.translate(S,t);
+
+stopFront = stopCenter(1);
+
+% Find the x-axis position at which the height of the ellipsoid is equal to
+% the desired stop radius
+F = quadric.vecToFunc(S);
+myObj = @(x) radiusAtX(F,stopFront-1+x)-stopRadius;
+x = fzero(myObj,0.9999);
+
+% Create the bounding box
+bb = [stopFront-x stopFront  -stopRadius stopRadius -stopRadius stopRadius];
+
+% Assemble a line for the optical system
+stopLine = nan(1,19);
+stopLine(1:10) = quadric.matrixToVec(S);
+stopLine(11) = 1; % Rays traveling left-to-right encounter concave surface
+stopLine(12:17) = bb;
+stopLine(18) = 1; % Must intersect
+% Use the same index of refraction as the surrounding medium, so that the
+% aperture stop does not have any effect of refraction.
+stopLine(19) = opticalSystemIn(rowInsertAfter,19);
+
+% Add this line to the opticalSystem
+opticalSystemOut = [ ...
+    opticalSystemIn(1:rowInsertAfter,:); ...
+    stopLine; ...
+    opticalSystemIn(rowInsertAfter+1:end,:)];
 
 end
