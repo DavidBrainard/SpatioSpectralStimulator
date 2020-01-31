@@ -36,7 +36,7 @@ DLPpostion = 600;
 % lensFocalLengthsMm = [50 50];       % Focal lengths of lenses
 % lensCenters = [50 150];             % Positions of the lenses, in mm, ordered near to far from eye
 lensDiametersMm = [75 75 75];                 % Lens diameters in mm
-lensFocalLengthsMm = [105 105 105];           % Focal lengths of lenses
+lensFocalLengthsMm = [100 100 100];           % Focal lengths of lenses
 lensCenters = [100 300 500];                  % Positions of the lenses, in mm, ordered near to far from eye
 
 %% Stops in system
@@ -102,8 +102,9 @@ for hh = 1:length(rayHorizStartPosMm)
         
         % Trace it
         %
-        % For the location in the retina: The ?outputRay? of the ray trace is of the form [p; d],
-        % where p is the point of intersection on the retina in {x,y,z] coords [axial,horizontal,vertical]
+        % For the location in the retina: The outputRay of the ray trace is
+        % of the form [p; d], where p is the point of intersection on the
+        % retina in [x,y,z] coords [axial,horizontal,vertical]
         [outputRay, rayPath] = rayTraceQuadrics(inputRay, opticalSystem);
         retinalHorizPositions(hh,aa) = outputRay(2,1);
         
@@ -124,12 +125,14 @@ end
 
 %% Find retinal extent
 retinalLocationsMm = nanmean(retinalHorizPositions,2);
-retinalExtentMm = max(locations)-min(locations);
+retinalExtentMm = max(retinalLocationsMm)-min(retinalLocationsMm);
 fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentMm/0.3);
 
 %% Draw etc.
 figure(1);
 drawnow;
+
+
 
 %% LOCAL FUNCTIONS
 
@@ -145,7 +148,15 @@ mySystem = @(p) assembleLensWrapper(opticalSystem, lensRefractiveIndex, mediumRe
 myConstraint = @(p) checkLensShape(mySystem(p),radius);
 
 % The objective, which is the requested lens power in diopters
-myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100],radius/3));
+% NOTE THE FOLLOWING HACK -- We are currently creating bi-convex, spherical
+% lenses. These are subject to spherical aberration. As a consequence, the
+% power of the lens varies depending upon the distance from the optical
+% axis at which the power is evaluated. The objective function evaluates
+% the lens power at a height of 0.65*radius, as this is observed to produce
+% lenses with a central tendency of the focal length that matches the
+% called-for power. Really, I should be designing aspheric lenses here, but
+% haven't yet implemented this.
+myObj = @(p) norm(diopters-calcDiopters(mySystem(p),true,[-100 -100],radius*0.65));
 
 % Set an x0 that is a 20 mm thickness and a curvature based on the thin
 % lens approximation.
