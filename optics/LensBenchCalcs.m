@@ -13,7 +13,7 @@
 %   This version developed from DEMO_lensBench in gkaModelEye.
 
 %% Housekeeping
-clear all
+clear
 close all
 clc
 
@@ -65,20 +65,20 @@ for ll = 1:length(lensCenters)
 end
 
 
-%% Extract the opticalSystem matrix
-opticalSystem = opticalSystemStruct.opticalSystem;
-
-
 %% Reverse the optical system direction
 % The optical system is assembled for ray tracing from left-to-right (away
 % from the eye), but we want to do ray tracing from right-to-left (towards
 % the eye)
-opticalSystem = reverseSystemDirection(opticalSystem);
+opticalSystemStruct = reverseSystemDirection(opticalSystemStruct);
 
 
 %% Display the optical system
 fprintf('Setup plot\n');
-plotOpticalSystem('surfaceSet',opticalSystem,'addLighting',true,'viewAngle',[0 90]);
+plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
+
+
+%% Extract the opticalSystem matrix
+opticalSystem = opticalSystemStruct.opticalSystem;
 
 
 %% Add some rays
