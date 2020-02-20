@@ -62,21 +62,17 @@ sceneGeometry = createSceneGeometry('spectralDomain','vis','sphericalAmetropia',
 opticalSystemStruct = sceneGeometry.refraction.retinaToCamera;
 opticalSystemStruct = addStopAfter(opticalSystemStruct, irisStopRadiusMm);
    
-%% Add the first N-1 lenses to the optical system at desired locations
+%% Add the lenses to the optical system at desired locations
 fprintf('Add lenses\n');
-for ll = 1:length(lensCenters)-1
+for ll = 1:length(lensCenters)
     opticalSystemStruct = addBiconvexLens( opticalSystemStruct, lensCenters(ll), lensPowersDiopters(ll), lensRadiiMm(ll));
 end
 
-%% Put in artificial pupil
-% artificialPupilStopRadiusMm = 4;
-% artificalPupilPositionMm = 400;
-% targetRow = length(opticalSystemStruct.surfaceLabels);
-% opticalSystemStruct = addStopAfter(opticalSystemStruct, artificialPupilStopRadiusMm, artificalPupilPositionMm, targetRow, false);
-
-%% Add last lens
-ll = length(lensCenters);
-opticalSystemStruct = addBiconvexLens( opticalSystemStruct, lensCenters(ll), lensPowersDiopters(ll), lensRadiiMm(ll));
+%% Add artificial pupil before the last lens
+artificialPupilStopRadiusMm = 4;
+artificalPupilPositionMm = 400;
+targetRow = length(opticalSystemStruct.surfaceLabels)-2;
+opticalSystemStruct = addStopAfter(opticalSystemStruct, artificialPupilStopRadiusMm, artificalPupilPositionMm, targetRow);
 
 %% Reverse the optical system direction
 % The optical system is assembled for ray tracing from left-to-right (away
