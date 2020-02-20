@@ -13,12 +13,15 @@
 %   This version developed from DEMO_lensBench in gkaModelEye.
 
 %% Housekeeping
-clear
-close all
-clc
+clear; close all
+
 
 %% Plot options
 plotOutputRays = false;
+
+%% Eye params
+sphericalAmetropia = 0;
+mmPerDeg = 0.3;
 
 %% Set the position of DLP chip
 %
@@ -50,7 +53,7 @@ end
 % direction with an emmetropic right eye focused at 1.5 meters, with the
 % refractive indices for the visible spectrum.
 fprintf('Setup base optical system\n');
-sceneGeometry = createSceneGeometry('spectralDomain','vis');
+sceneGeometry = createSceneGeometry('spectralDomain','vis','sphericalAmetropia',sphericalAmetropia);
 
 
 %% Add an iris stop
@@ -85,7 +88,7 @@ opticalSystem = opticalSystemStruct.opticalSystem;
 % Send rays from the horizontal bounds of the DLP chip, which will be 11.5
 % mm on either side of the optical axis, and have an angle w.r.t. the
 % optical axis of +- 12 degrees
-numberRaysPerBundle = 12;
+numberRaysPerBundle = 100;
 rayAnglesDeg = linspace(-12,12,numberRaysPerBundle);
 rayHorizStartPosMm = [-10.5,0,10.5];
 colors = {'red','green','blue'};
@@ -125,7 +128,14 @@ end
 %% Find retinal extent
 retinalLocationsMm = nanmean(retinalHorizPositions,2);
 retinalExtentMm = max(retinalLocationsMm)-min(retinalLocationsMm);
-fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentMm/0.3);
+fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentMm/mmPerDeg);
+
+%% Find spread (analogous to PSF) of each ray bundle where it hits the ey
+for hh = 1:length(rayHorizStartPosMm)
+    retinalPSFHomologue(hh) = nanstd(retinalHorizPositions(hh,:));
+    numberOfRetinalRays(hh) = length(find(~isnan(retinalHorizPositions(hh,:))));
+    fprintf('Bundle %d spread (std): %0.3f mm (%0.3f arcmin), based on %d rays\n',hh,retinalPSFHomologue(hh),60*retinalPSFHomologue(hh)/mmPerDeg,numberOfRetinalRays(hh))
+end
 
 %% Draw etc.
 figure(1);
