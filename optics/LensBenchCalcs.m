@@ -15,7 +15,6 @@
 %% Housekeeping
 clear; close all
 
-
 %% Plot options
 plotOutputRays = false;
 
@@ -26,17 +25,22 @@ mmPerDeg = 0.3;
 %% Set the position of DLP chip
 %
 % DLP distance from the cornea in mm
-DLPpostion = 600;
+totalPixels = 1920;
 
 %% Setup lens params.
-%
-% All of these must have same length, or uh-oh.
-% lensDiametersMm = [60 60];          % Lens diameters in mm
-% lensFocalLengthsMm = [50 50];       % Focal lengths of lenses
-% lensCenters = [50 150];             % Positions of the lenses, in mm, ordered near to far from eye
-lensDiametersMm = [75 75 75];                 % Lens diameters in mm
-lensFocalLengthsMm = [100 100 100];           % Focal lengths of lenses
-lensCenters = [100 300 500];                  % Positions of the lenses, in mm, ordered near to far from eye
+lensDiameterMm = 50;                  % Lens diameters in mm
+lensFocalLengthMm = 200;       % Lens focal lengths in mm
+specifiedLensFocalLengthMm = 203.25;
+nLenses = 3;
+
+% Compute lens center and DLP position from focal lengths, and
+% fill in arrays
+for ll = 1:nLenses
+    lensDiametersMm(ll) = lensDiameterMm;
+    lensFocalLengthsMm(ll) = specifiedLensFocalLengthMm;
+    lensCenters(ll) = lensFocalLengthMm + (ll-1)*2*lensFocalLengthMm;
+end
+DLPposition = lensFocalLengthMm*nLenses*2;
 
 %% Stops in system
 irisStopRadiusMm = 2;
@@ -47,7 +51,6 @@ for ll = 1:length(lensCenters)
     lensPowersDiopters(ll) = 1000./lensFocalLengthsMm(ll); 
 end
 
-
 %% Initialize the optical system with an eye
 % Create an initial optical system in the eyeToCamera (left to right)
 % direction with an emmetropic right eye focused at 1.5 meters, with the
@@ -55,18 +58,25 @@ end
 fprintf('Setup base optical system\n');
 sceneGeometry = createSceneGeometry('spectralDomain','vis','sphericalAmetropia',sphericalAmetropia);
 
-
 %% Add an iris stop
 opticalSystemStruct = sceneGeometry.refraction.retinaToCamera;
 opticalSystemStruct = addStopAfter(opticalSystemStruct, irisStopRadiusMm);
-
-    
-%% Add the lenses to the optical system at desired locations
+   
+%% Add the first N-1 lenses to the optical system at desired locations
 fprintf('Add lenses\n');
-for ll = 1:length(lensCenters)
+for ll = 1:length(lensCenters)-1
     opticalSystemStruct = addBiconvexLens( opticalSystemStruct, lensCenters(ll), lensPowersDiopters(ll), lensRadiiMm(ll));
 end
 
+%% Put in artificial pupil
+% artificialPupilStopRadiusMm = 4;
+% artificalPupilPositionMm = 400;
+% targetRow = length(opticalSystemStruct.surfaceLabels);
+% opticalSystemStruct = addStopAfter(opticalSystemStruct, artificialPupilStopRadiusMm, artificalPupilPositionMm, targetRow, false);
+
+%% Add last lens
+ll = length(lensCenters);
+opticalSystemStruct = addBiconvexLens( opticalSystemStruct, lensCenters(ll), lensPowersDiopters(ll), lensRadiiMm(ll));
 
 %% Reverse the optical system direction
 % The optical system is assembled for ray tracing from left-to-right (away
@@ -74,15 +84,12 @@ end
 % the eye)
 opticalSystemStruct = reverseSystemDirection(opticalSystemStruct);
 
-
 %% Display the optical system
 fprintf('Setup plot\n');
 plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
 
-
 %% Extract the opticalSystem matrix
 opticalSystem = opticalSystemStruct.opticalSystem;
-
 
 %% Add some rays
 % Send rays from the horizontal bounds of the DLP chip, which will be 11.5
@@ -100,7 +107,7 @@ for hh = 1:length(rayHorizStartPosMm)
     color = colors{hh};
     for aa = 1:length(rayAnglesDeg)
         % Create the ray
-        inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPpostion;rayHorizStartPosMm(hh);0],-180+rayAnglesDeg(aa),0));
+        inputRay = quadric.normalizeRay(quadric.anglesToRay([DLPposition;rayHorizStartPosMm(hh);0],-180+rayAnglesDeg(aa),0));
         
         % Trace it
         %
@@ -128,7 +135,8 @@ end
 %% Find retinal extent
 retinalLocationsMm = nanmean(retinalHorizPositions,2);
 retinalExtentMm = max(retinalLocationsMm)-min(retinalLocationsMm);
-fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentMm/mmPerDeg);
+retinalExtentDeg = retinalExtentMm/mmPerDeg;
+fprintf('Retinal extent mm: %0.1f, degrees (approx): %0.1f\n',retinalExtentMm,retinalExtentDeg);
 
 %% Find spread (analogous to PSF) of each ray bundle where it hits the ey
 for hh = 1:length(rayHorizStartPosMm)
@@ -136,6 +144,23 @@ for hh = 1:length(rayHorizStartPosMm)
     numberOfRetinalRays(hh) = length(find(~isnan(retinalHorizPositions(hh,:))));
     fprintf('Bundle %d spread (std): %0.3f mm (%0.3f arcmin), based on %d rays\n',hh,retinalPSFHomologue(hh),60*retinalPSFHomologue(hh)/mmPerDeg,numberOfRetinalRays(hh))
 end
+
+%% Spatial sampling calcs
+pixelsPerDeg = totalPixels/retinalExtentDeg;
+
+%% Max spatial frequcency sampling
+maxSpatialFrequencyCpd = 30;
+maxSpatialFrequencyDegPerCycle = 1/maxSpatialFrequencyCpd;
+maxSpatialFrequencyPixelsPerCycle = pixelsPerDeg*maxSpatialFrequencyDegPerCycle;
+fprintf('At %0.1f cycles per deg, have %0.3f deg per cycle, %0.1f pixels per cycle\n', ...
+    maxSpatialFrequencyCpd,maxSpatialFrequencyDegPerCycle,maxSpatialFrequencyPixelsPerCycle);
+
+%% Min spatial frequency sampling
+minSpatialFrequencyCpd = 1;
+minSpatialFrequencyDegPerCycle = 1/minSpatialFrequencyCpd;
+minSpatialFrequencyPixelsPerCycle = pixelsPerDeg*minSpatialFrequencyDegPerCycle;
+fprintf('At %0.1f cycles per deg, have %0.1f cycles per image\n', ...
+    minSpatialFrequencyCpd,retinalExtentDeg/minSpatialFrequencyDegPerCycle);
 
 %% Draw etc.
 figure(1);
