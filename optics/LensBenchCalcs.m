@@ -27,10 +27,10 @@ mmPerDeg = 0.3;
 % DLP distance from the cornea in mm
 totalPixels = 1920;
 
-%% Setup lens params.
+%% Setup lens params
 lensDiameterMm = 50;                  % Lens diameters in mm
-lensFocalLengthMm = 200;       % Lens focal lengths in mm
-specifiedLensFocalLengthMm = 203.25;
+lensFocalLengthMm = 200;              % Lens focal lengths in mm
+specifiedLensFocalLengthMm = 1.01*lensFocalLengthMm;
 nLenses = 3;
 
 % Compute lens center and DLP position from focal lengths, and
@@ -44,6 +44,8 @@ DLPposition = lensFocalLengthMm*nLenses*2;
 
 %% Stops in system
 irisStopRadiusMm = 2;
+artificialPupilRadiusMm = 1;
+artificalPupilPositionMm = 4*lensFocalLengthMm;
 
 % Convert to useful format
 for ll = 1:length(lensCenters)
@@ -69,10 +71,8 @@ for ll = 1:length(lensCenters)
 end
 
 %% Add artificial pupil before the last lens
-artificialPupilStopRadiusMm = 4;
-artificalPupilPositionMm = 400;
 targetRow = length(opticalSystemStruct.surfaceLabels)-2;
-opticalSystemStruct = addStopAfter(opticalSystemStruct, artificialPupilStopRadiusMm, artificalPupilPositionMm, targetRow);
+opticalSystemStruct = addStopAfter(opticalSystemStruct, artificialPupilRadiusMm, artificalPupilPositionMm, targetRow);
 
 %% Reverse the optical system direction
 % The optical system is assembled for ray tracing from left-to-right (away
@@ -82,7 +82,9 @@ opticalSystemStruct = reverseSystemDirection(opticalSystemStruct);
 
 %% Display the optical system
 fprintf('Setup plot\n');
-plotOpticalSystem('surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
+figure;
+set(gcf,'Position',[100 725 1290 620]);
+%plotOpticalSystem('newFigure',true,'surfaceSet',opticalSystemStruct,'addLighting',true,'viewAngle',[0 90]);
 
 %% Extract the opticalSystem matrix
 opticalSystem = opticalSystemStruct.opticalSystem;
@@ -91,7 +93,7 @@ opticalSystem = opticalSystemStruct.opticalSystem;
 % Send rays from the horizontal bounds of the DLP chip, which will be 11.5
 % mm on either side of the optical axis, and have an angle w.r.t. the
 % optical axis of +- 12 degrees
-numberRaysPerBundle = 100;
+numberRaysPerBundle = 400;
 rayAnglesDeg = linspace(-12,12,numberRaysPerBundle);
 rayHorizStartPosMm = [-10.5,0,10.5];
 colors = {'red','green','blue'};
@@ -160,6 +162,8 @@ fprintf('At %0.1f cycles per deg, have %0.1f cycles per image\n', ...
 
 %% Draw etc.
 figure(1);
+title(sprintf('Focal length %0.1f, lens diameter %0.1f mm, artificial pupil %0.1f mm', ...
+    lensFocalLengthMm,lensDiameterMm,artificialPupilRadiusMm));
 drawnow;
 
 
