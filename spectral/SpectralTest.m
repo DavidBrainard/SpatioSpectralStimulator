@@ -17,6 +17,10 @@ cal = sssSpoofOneLightCal;
 S = cal.describe.S;
 wls = SToWls(S);
 
+%% Cone fundamentals
+psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
+T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
+
 %% Get half on spectrum
 halfOnPrimaries = 0.5*ones(cal.describe.numWavelengthBands,1);
 halfOnSpd = OLPrimaryToSpd(cal,halfOnPrimaries);
