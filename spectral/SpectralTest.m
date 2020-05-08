@@ -70,24 +70,25 @@ plot(wls,theFitSpdRegress,'g','LineWidth',1);
 %% Generate cone isolating spectral modulations with a simple basis
 load B_cieday
 theBasis = SplineSpd(S_cieday,B_cieday,S);
-M_BasisToCones = Tcones*theBasis;
-M_ConesToBasis = inv(M_BasisToCones);
+M_PrimariesToCones = Tcones*theBasis;
+M_ConesToPrimaries = inv(M_PrimariesToCones);
 
 % Get background within basis
-theBgPrimaries = lsqnonneg(theBasis,theSpd);
+theBgPrimaries = theBasis\theSpd;
 theBgSpd = theBasis*theBgPrimaries;
 theBgLms = Tcones*theBgSpd;
+figure; clf; hold on
 plot(wls,theBgSpd,'b:','LineWidth',2);
 
 % Define desired cone contrast
-theLmsContrast = [1 -1 0]';
+theLmsContrast = [1 -1 0]'/10;
 theLmsInc = theLmsContrast.*theBgLms;
-thePrimariesDir = M_ConesToBasis*theLmsInc;
-thePrimariesInc = 
 theLms = theLmsInc+theBgLms;
-thePrimaries = M_ConesToBasis*theLms;
+thePrimaries = M_ConesToPrimaries*theLms;
 theSpd = theBasis*thePrimaries;
 plot(wls,theSpd,'b','LineWidth',2);
+
+%% Now we want to find an in-gamut modulation 
 
 % modulationBasis = ReceptorIsolate(T_receptors,whichReceptorsToTarget, whichReceptorsToIgnore, whichReceptorsToMinimize, ...
 %     theBasis, backgroundPrimary, backgroundPrimary, whichPrimariesToPin,...
