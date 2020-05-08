@@ -13,13 +13,17 @@ clear; close all;
 % ledBasis = sssGetSpectralBasis(S);
 
 %% Generate a OneLight cal file
-cal = sssSpoofOneLightCal;
+S = [400 2 151];
+cal = sssSpoofOneLightCal('S',S, ....
+    'plotBasis',true,...
+    'gaussianPeakWls',[437 485 540 562 585 618 652], ...
+    'gaussianFWHM',25);
 S = cal.describe.S;
 wls = SToWls(S);
 
 %% Cone fundamentals
 psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
-T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
+Tcones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
 
 %% Get half on spectrum
 halfOnPrimaries = 0.5*ones(cal.describe.numWavelengthBands,1);
@@ -62,4 +66,30 @@ figure; clf; hold on
 plot(wls,theSpd,'k','LineWidth',3);
 plot(wls,theFitSpd,'r','LineWidth',2);
 plot(wls,theFitSpdRegress,'g','LineWidth',1);
+
+%% Generate cone isolating spectral modulations with a simple basis
+load B_cieday
+theBasis = SplineSpd(S_cieday,B_cieday,S);
+M_BasisToCones = Tcones*theBasis;
+M_ConesToBasis = inv(M_BasisToCones);
+
+% Get background within basis
+theBgPrimaries = lsqnonneg(theBasis,theSpd);
+theBgSpd = theBasis*theBgPrimaries;
+theBgLms = Tcones*theBgSpd;
+plot(wls,theBgSpd,'b:','LineWidth',2);
+
+% Define desired cone contrast
+theLmsContrast = [1 -1 0]';
+theLmsInc = theLmsContrast.*theBgLms;
+thePrimariesDir = M_ConesToBasis*theLmsInc;
+thePrimariesInc = 
+theLms = theLmsInc+theBgLms;
+thePrimaries = M_ConesToBasis*theLms;
+theSpd = theBasis*thePrimaries;
+plot(wls,theSpd,'b','LineWidth',2);
+
+% modulationBasis = ReceptorIsolate(T_receptors,whichReceptorsToTarget, whichReceptorsToIgnore, whichReceptorsToMinimize, ...
+%     theBasis, backgroundPrimary, backgroundPrimary, whichPrimariesToPin,...
+%     primaryHeadRoom, maxPowerDiff, desiredContrast, ambientSpd);
 

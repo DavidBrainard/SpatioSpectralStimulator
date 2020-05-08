@@ -14,8 +14,17 @@ function cal = sssSpoofOneLightCal(varargin)
 %    cal        - The generated calibration structure.
 %
 % Optional key/value pairs:
-%    plotBasis  - Boolean (default false).  Make a plot of the basis.
-%
+%    S                - Wavelength support. Default [380 2 201].
+%    plotBasis        - Boolean (default false).  Make a plot of the basis.
+%    ledFilename      - Name of the LED Excel ata file to read in.  String,
+%                       default 'LUXEON_CZ_SpectralPowerDistribution.xlsx'.
+%    whichLedsToOmit  - Indices of LEDs in data file to omit from returned
+%                       basis. Row vector, default [6 7 8 12].
+%    gaussianPeakWls  - Row vector of peak wavelengths of Gaussian basis functions.
+%                       Default [440 550].
+%    gaussianFWHM     - Full width at half max of Gaussian basis functions.
+%                       In nanometers. Scalar, default 30.
+
 % See Also:
 %    sssGetSpectralBasis
 %
@@ -28,10 +37,20 @@ function cal = sssSpoofOneLightCal(varargin)
 %{
     cal = sssSpoofOneLightCal;
 %}
+%{
+    cal = sssSpoofOneLightCal('plotBasis',true,...
+        'gaussianPeakWls',[437 485 540 562 585 618 652], ...
+        'gaussianFWHM',25);
+%}
 
-% Massage varargin and parse
+%% Parse varagin
 p = inputParser;
-%p.addParameter('plotBasis', false, @islogical);
+p.addParameter('S',[380 2 201],@isnumeric);
+p.addParameter('plotBasis', false, @islogical);
+p.addParameter('ledFilename','LUXEON_CZ_SpectralPowerDistribution.xlsx', @ischar);
+p.addParameter('whichLedsToOmit',[6 7 8 13],@isnumeric);
+p.addParameter('gaussianPeakWls',[440 540],@isnumeric);
+p.addParameter('gaussianFWHM',30,@isscalar);p.parse(varargin{:});
 p.parse(varargin{:});
 
 %% ID
@@ -44,11 +63,15 @@ cal.describe.nGammaFitLevels = 256;
 cal.describe.nGammaLevels = 24;
 cal.describe.gammaNumberWlUseIndices = 5;
 cal.describe.whichAverageGamma = 'median';
-cal.describe.S = [380 2 201];
+cal.describe.S = p.Results.S;
 cal.describe.useOmni = false;
 
 %% Spectral basis
-B = sssGetSpectralBasis(cal.describe.S);
+B = sssGetSpectralBasis(cal.describe.S,'plotBasis',p.Results.plotBasis,...
+    'ledFilename',p.Results.ledFilename, ...
+    'whichLedsToOmit',p.Results.whichLedsToOmit, ...
+    'gaussianPeakWls',p.Results.gaussianPeakWls, ...
+    'gaussianFWHM',p.Results.gaussianFWHM);
 wls = SToWls(cal.describe.S);
 cal.describe.numWavelengthBands = size(B,2);
 cal.describe.nGammaBands = cal.describe.numWavelengthBands;
