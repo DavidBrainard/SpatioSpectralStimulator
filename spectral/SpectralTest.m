@@ -7,11 +7,6 @@
 %% Clear
 clear; close all;
 
-%% Get basis
-% S = [380 1 401];
-% wls = SToWls(S);
-% ledBasis = sssGetSpectralBasis(S);
-
 %% Generate a OneLight cal file
 S = [400 2 151];
 cal = sssSpoofOneLightCal('S',S, ....
