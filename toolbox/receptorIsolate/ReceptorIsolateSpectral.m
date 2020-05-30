@@ -1,18 +1,15 @@
-function [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolate(T_receptors,whichReceptorsToIsolate, ...
-    whichReceptorsToIgnore,B_primary,backgroundPrimary,initialPrimary, ...
-    primaryHeadroom,maxPowerDiff,targetBasis,projectIndices,targetLambda,desiredContrasts,ambientSpd)
-% [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolate(T_receptors,whichReceptorsToIsolate, ...
-%   whichReceptorsToIgnore,B_primary,backgroundPrimary,initialPrimary, ...
-%   primaryHeadroom,maxPowerDiff,targetBasis,projectIndices,targetLambda,[desiredContrasts],[ambientSpd])
+function [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolateSpectral(T_receptors,desiredContrasts, ...
+    B_primary,backgroundPrimary,initialPrimary, ...
+    primaryHeadroom,targetBasis,projectIndices,targetLambda,ambientSpd,varargin)
+% [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolateSpectral(T_receptors,desiredContrats, ...
+%   B_primary,backgroundPrimary,initialPrimary, ...
+%   primaryHeadroom,targetBasis,projectIndices,targetLambda,ambientSpd)
 %
 % Find the best isolating modulation around a given background.  This is a very general routine,
 % with inputs as follows.
 %
 % T_receptors -             Spectral sensitivities of all receptors being considered, in standard PTB format.
-% whichReceptorsToIsolate - Index vector specifying which receptors we want to modulate.
-% whichReceptorsToIgnore -  Index vector specifying receptors where we don't care what they do. Can be the empty matrix.
-%                           Why, you ask, might you want to do this?  Maybe if T_receptors contains the rods but you're
-%                           working at high light levels.
+% desiredContrasts -        Vector of target contrasts for receptors that will be isolated.
 % B_primary -               These calculations are device dependent.  B_primary is a set of basis vectors for the lights
 %                           that the device can produce, scaled so that the gamut is for the range [0-1] on each primary.
 % backgroundPrimary -       Background around which modulation will occur, in primary space.
@@ -21,63 +18,35 @@ function [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolate(T_recep
 %                           range [0-1] here.  This constrains the primary settings to be within [0+primaryHeadRoom,1-primaryHeadRoom].
 %                           This can be useful for anticipating the fact that the device may get dimmer over time, so that the
 %                           stimulus you compute at time 0 remains in gamut after a subsequent calibration.
-% maxPowerDiff -            This enforces a smoothness constraint on the spectrum of the computed modulation.  You wouldn't
-%                           use this for a device like a monitor, but for our OneLight device this prevents solutions that
-%                           wiggle rapdily as a function of wavelength.  Our intuition is that such wiggly spectra are not
-%                           as robust in their isolationg properties as smooth spectra.  Pass Inf to ignore.
 % targetBasis -             Keep produced spectrum close to the subspaced defined by this basis set.
 % projectIndices -          Only wavelengths corresponding to these indices count in the subspace evaluation.  Pass empty matrix to use them all.
 % targetLambda -            In trying to match subspace, weight the targetSpectrum difference by this scalar. Set to zero to ignore subspace.
-% desiredContrasts -        Vector of target contrasts for receptors that will be isolated.  This is useful, for example,
-%                           if you want to do something like produce a modulation with equal L and M cone contrasts with
-%                           opposite signs while at the same time silencing the S cones.  This vector should have the same
-%                           length as whichReceptorsToIsolate.  It can be the empty vector, in which case the routine maximizes
-%                           the sum of the contrasts of the receptors in whichReceptorsToIsolate.
-% ambientSpd -              Spectral power distribution of the ambient light.  Optional.  Defaults to zero.
+% ambientSpd -              Spectral power distribution of the ambient light.
 %
-% Contrast held at zero for any receptor classes not in the isolate/ignore lists.
+% Optional key/value pairs:
+%    POSITIVE_ONLY         - Boolean (default false). Only consider gamut constraints for positive arm of modulation.
+%    EXCITATIONS           - Aim for target excitations, rather than contrasts.
 %
-% Known Bugs:
-%   A) It looks like the code that enforces gamut limitations in a manner that
-%   handles backgrounds that do not correspond to device primary settings
-%   of 0.5 only works just right if no primaries are being pinned.  There
-%   is an error check at the end of the function which throws an error if
-%   any of the primary values returned are outside the range [0-1], so our
-%   motivation for thinking about this will only cross threshold if this
-%   error ever gets thrown.
-%
-% 05/15/20   dhb      Wrote it from ReceptorIsolate
+% 05/15/20   dhb            Wrote it from ReceptorIsolate
+
+%% Parse key/value pairs
+p = inputParser;
+p.addParameter('POSITIVE_ONLY', false, @islogical);
+p.addParameter('EXCITATIONS', false, @islogical);
+p.parse(varargin{:});
 
 %% Check and if necessary set default for projectIndices
 if (isempty(projectIndices))
     projectIndices = 1:size(targetBasis,1);
 end
 
-%% Check whether the desired contrasts were passed, and if so check
-% consistency of its dimensions.
-if (nargin < 11)
-    desiredContrasts = [];
-end
-if ~isempty(desiredContrasts)
-    if length(whichReceptorsToIsolate) ~= length(desiredContrasts)
+%% Check consitency of passed desired contrasts with photoreceptors
+    if (size(T_receptors,1) ~= length(desiredContrasts))
         error('Size of whichReceptorsToIsolate and of desired contrasts vector do not line up')
     end
-end
-
-%% Default for ambientSpd
-if (nargin < 12 || isempty(ambientSpd))
-    ambientSpd = zeros(size(B_primary,1),1);
-end
 
 %% Initial guess for modulation
 x = initialPrimary-backgroundPrimary;
-
-%% Figure out which receptors get zero modulation and set up constraint for this.
-whichReceptorsToZero = setdiff(1:size(T_receptors,1),[whichReceptorsToIsolate whichReceptorsToIgnore]);
-backgroundReceptors = T_receptors*B_primary*backgroundPrimary;
-backgroundReceptorsZero = backgroundReceptors(whichReceptorsToZero);
-Aeq = T_receptors(whichReceptorsToZero,:)*B_primary;
-beq = backgroundReceptorsZero;
 
 % Since our modulations are symmetric, we need to make sure that we're not
 % out of gamut if our background is not constant across wl band. For a
@@ -107,66 +76,70 @@ for b = 1:size(backgroundPrimary, 1)
     end
 end
 
-C = [eye(size(initialPrimary,1)) ; ...
-    -eye(size(initialPrimary,1)) ; ...
-    -eye(size(initialPrimary,1)) ; ...
-    eye(size(initialPrimary,1))];
-q = [ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
-     zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ; ...
-     ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
-     zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ];
- 
-% C = [eye(size(initialPrimary,1)) ; ...
-%     -eye(size(initialPrimary,1)) ; ...
-%     ];
-% q = [ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
-%      zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ; ...
-%      ];
-
-
-%% Fix numerical issues with vlb > vub that can sometimes come up.
-vlbTolerance = 1e-6;
-for ii = 1:length(vub)
-    if (vlb(ii) > vub(ii) - vlbTolerance)
-        vlb(ii) = vub(ii) - vlbTolerance;
-    end
+POSITIVE_ONLY = p.Results.POSITIVE_ONLY;
+if (POSITIVE_ONLY)
+    C = [eye(size(initialPrimary,1)) ; ...
+        -eye(size(initialPrimary,1)) ; ...
+        ];
+    q = [ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
+        zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ; ...
+        ]; 
+else
+    C = [eye(size(initialPrimary,1)) ; ...
+        -eye(size(initialPrimary,1)) ; ...
+        -eye(size(initialPrimary,1)) ; ...
+        eye(size(initialPrimary,1))];
+    q = [ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
+        zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ; ...
+        ones(length(initialPrimary),1) - primaryHeadroom - backgroundPrimary ; ...
+        zeros(length(initialPrimary),1) - primaryHeadroom + backgroundPrimary ];
 end
 
 %% Optimize.
-% Progressive smoothing seems to work better than providing final value all
-% at once.
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','off','LargeScale','on','Algorithm','sqp', 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-5);
+options = optimset(options,'Diagnostics','off','Display','off'); %,'LargeScale','on','Algorithm','sqp','MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-5);
 
-modulatingPrimary = fmincon(@(x) IsolateFunction(x,B_primary,backgroundPrimary,ambientSpd,T_receptors,whichReceptorsToIsolate,desiredContrasts,targetBasis,projectIndices,targetLambda), ...
-    x,C,q,Aeq,beq,[],[],[],options);
+modulatingPrimary = fmincon(@(x) IsolateFunction(x,B_primary,backgroundPrimary,ambientSpd, ...
+    T_receptors,desiredContrasts,targetBasis,projectIndices,targetLambda,p.Results.EXCITATIONS), ...
+    x,C,q,[],[],[],[],[],options);
 
 %% Check gamut
 upperPrimary = backgroundPrimary + modulatingPrimary;
 lowerPrimary = backgroundPrimary - modulatingPrimary;
-primaryTolerance = 1e-6;
+primaryTolerance = 2e-2;
 if (any(upperPrimary > 1-primaryHeadroom+primaryTolerance))
     error('upperPrimary too large');
 end
 if (any(upperPrimary < 0+primaryHeadroom-primaryTolerance))
     error('upperPrimary too small');
 end
-
+if (~POSITIVE_ONLY)
+    if (any(lowerPrimary > 1-primaryHeadroom+primaryTolerance))
+        error('lowerPrimary too large');
+    end
+    if (any(lowerPrimary < 0+primaryHeadroom-primaryTolerance))
+        error('lowerPrimary too small');
+    end
+end
 
 end
 
-% f = IsolateFunction(x,B_primary,backgroundPrimary,T_receptors,whichReceptorsToIsolate,C,lambda)
+% f = IsolateFunction(x,B_primary,backgroundPrimary,ambientSpd,T_receptors,desiredContrasts,...
+%         targetBasis,projectIndices,targetLambda,EXCITATIONS)
 %
-% Optimization subfunction.  This mixes maximizing response of isolated
-% receptors with smoothness.
-function f = IsolateFunction(x,B_primary,backgroundPrimary,ambientSpd,T_receptors,whichReceptorsToIsolate,desiredContrasts,...
-    targetBasis,projectIndices,targetLambda)
+% Optimization subfunction.  This mixes maximizing acheiving
+% desiredContrasts with staying within the target basis.
+function f = IsolateFunction(x,B_primary,backgroundPrimary,ambientSpd,T_receptors,desiredContrasts,...
+    targetBasis,projectIndices,targetLambda,EXCITATIONS)
 
 % Compute background including ambient
 backgroundSpd = B_primary*backgroundPrimary + ambientSpd;
 modulationSpd = B_primary*x + backgroundSpd;
-isolateContrast = ExcitationsToContrast(T_receptors(whichReceptorsToIsolate,:)*modulationSpd, ...
-    T_receptors(whichReceptorsToIsolate,:)*backgroundSpd);
+if (EXCITATIONS)
+    isolateContrast = T_receptors*modulationSpd;
+else
+    isolateContrast = ExcitationsToContrast(T_receptors*modulationSpd,T_receptors*backgroundSpd);
+end
 
 % Get contrast term
 if isempty(desiredContrasts)

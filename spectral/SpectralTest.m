@@ -49,7 +49,7 @@ plot(wls,halfOnSpdChk,'k','LineWidth',1);
 % Generate a black body radiator and put it into right general scale
 theTemp = 6500;
 theIsolatingNaturalSpd = GenerateBlackBody(theTemp,wls);
-theIsolatingNaturalSpd = 0.6*sum(halfOnSpd)*theIsolatingNaturalSpd/sum(theIsolatingNaturalSpd);
+theIsolatingNaturalSpd = 1.2*sum(halfOnSpd)*theIsolatingNaturalSpd/sum(theIsolatingNaturalSpd);
 
 % Use OL machinery to get primaries and then the spd
 theIsolatingNaturalPrimaries = OLSpdToPrimary(cal,theIsolatingNaturalSpd,'lambda',0.01);
@@ -66,72 +66,76 @@ plot(wls,theFitSpd,'r','LineWidth',2);
 plot(wls,theFitSpdRegress,'g','LineWidth',1);
 
 %% Generate cone isolating spectral modulations with a simple basis
-load B_cieday
-theNaturalBasis = SplineSpd(S_cieday,B_cieday,S);
-M_NaturalPrimariesToCones = Tcones*theNaturalBasis;
+basisType = 'fourier';
+switch (basisType)
+    case 'cieday'
+        load B_cieday
+        theNaturalBasis = SplineSpd(S_cieday,B_cieday,S);
+    case 'fourier'
+        theNaturalBasis = MakeFourierBasis(S,7);
+    otherwise
+        error('Unknown basis set specified');
+end
+
+% Transform
+M_NaturalPrimariesToCones = Tcones*theNaturalBasis(:,1:size(Tcones,1));
 M_ConesToNaturalPrimaries = inv(M_NaturalPrimariesToCones);
 
 % Get background within basis
 theBgNaturalPrimaries = theNaturalBasis\theIsolatingNaturalSpd;
 theBgNaturalSpd = theNaturalBasis*theBgNaturalPrimaries;
-theBgNaturalLms = Tcones*theBgNaturalSpd;
+theBgNaturalLmsTarget = Tcones*theBgNaturalSpd;
 figure; clf; hold on
 plot(wls,theBgNaturalSpd,'b:','LineWidth',2);
 
-% Define desired cone contrast
-theLmsContrast = [1 -1 0]'/10;
-theLmsInc = theLmsContrast.*theBgNaturalLms;
-theLms = theLmsInc+theBgNaturalLms;
-theIsolatingNaturalPrimaries = M_ConesToNaturalPrimaries*theLms;
-theIsolatingNaturalSpd = theNaturalBasis*theIsolatingNaturalPrimaries;
-plot(wls,theIsolatingNaturalSpd,'b','LineWidth',2);
-
-%% Now we want to find an in-gamut modulation 
+%% Approximation to desired background
 IDENTITY = false;
 if (IDENTITY)
     B_DevicePrimary = eye(size(cal.computed.pr650M,1));
-    theBgDevicePrimaries = theBgNaturalSpd;
-    initialDevicePrimaries = theIsolatingNaturalSpd;
+    theBgDevicePrimariesApprox = theBgNaturalSpd;
+    initialDevicePrimariesApprox = theIsolatingNaturalSpd;
 else
     B_DevicePrimary = cal.computed.pr650M;
-    theBgDevicePrimaries = OLSpdToPrimary(cal,theBgNaturalSpd);
-    initialDevicePrimaries = theBgDevicePrimaries;
+    theBgDevicePrimariesApprox = OLSpdToPrimary(cal,theBgNaturalSpd);
+    initialDevicePrimariesApprox = theBgDevicePrimariesApprox;
+end
+fprintf('Mean value of background primaries: %0.2f\n',mean(theBgDevicePrimariesApprox));
+
+%% Search for desired background
+ambientSpd = cal.computed.pr650MeanDark;
+primaryHeadRoom = 0;
+targetBasis = theNaturalBasis;
+targetLambda = 10;
+[backgroundDevicePrimariesIncr] = ReceptorIsolateSpectral(Tcones,theBgNaturalLmsTarget',B_DevicePrimary,theBgDevicePrimariesApprox,initialDevicePrimariesApprox, ...
+    primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
+theBgDevicePrimaries = theBgDevicePrimariesApprox + backgroundDevicePrimariesIncr;
+initialDevicePrimaries = theBgDevicePrimaries;
+theBgDeviceSpd = OLPrimaryToSpd(cal,theBgDevicePrimaries);
+theBgDeviceLms = Tcones*theBgDeviceSpd;
+fprintf('Desired/obtained background excitations\n');
+for rr = 1:length(theBgNaturalLmsTarget)
+    fprintf('\tReceptor %d (desired/obtained): %0.2f, %0.2f\n',rr,theBgNaturalLmsTarget(rr),theBgDeviceLms(rr));
 end
 
-whichReceptorsToIsolate = [1 2];
-whichReceptorsToIgnore = [];
-whichReceptorsToZero = setdiff(1:size(Tcones,1),[whichReceptorsToIsolate whichReceptorsToIgnore]);
-desiredContrast = [1 -1]/10;
-
-ambientSpd = cal.computed.pr650MeanDark;
-maxPowerDiff = Inf;
-targetBasis = theNaturalBasis;
-targetLambda = 2;
-primaryHeadRoom = 0;
-
-[isolatingModulationDevicePrimaries] = ReceptorIsolateSpectral(Tcones,whichReceptorsToIsolate, ...
-    whichReceptorsToIgnore,B_DevicePrimary,theBgDevicePrimaries,initialDevicePrimaries, ...
-    primaryHeadRoom,maxPowerDiff,targetBasis,projectIndices,targetLambda,desiredContrast,ambientSpd);
+% Define desired cone contrast
+theLmsContrast = [1 -1 0]'/10;
+targetLambda = 10;
+[isolatingModulationDevicePrimaries] = ReceptorIsolateSpectral(Tcones,theLmsContrast',B_DevicePrimary,theBgDevicePrimaries,initialDevicePrimaries, ...
+    primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd);
 theBgDeviceSpd = B_DevicePrimary*theBgDevicePrimaries;
-isolatingDeviceUpperPrimaries = isolatingModulationDevicePrimaries + theBgDevicePrimaries;
+isolatingDevicePrimariesUpper = isolatingModulationDevicePrimaries + theBgDevicePrimaries;
 isolatingDevicePrimariesLower = -isolatingModulationDevicePrimaries + theBgDevicePrimaries;
-theIsolatingDeviceSpd = B_DevicePrimary*isolatingDeviceUpperPrimaries;
+theIsolatingDeviceSpd = OLPrimaryToSpd(cal,isolatingDevicePrimariesUpper);
 theBgDeviceLMS = Tcones*theBgDeviceSpd;
 theIsolatingDeviceLMS = Tcones*theIsolatingDeviceSpd;
 theIsolatingContrast = ExcitationsToContrast(theIsolatingDeviceLMS,theBgDeviceLMS);
 fprintf('Desired/obtained contrasts\n');
-for ii = 1:length(whichReceptorsToIsolate)
-    rr = whichReceptorsToIsolate(ii);
-    fprintf('\tReceptor %d (desired/obtained): %0.2f, %0.2f\n',rr,desiredContrast(rr),theIsolatingContrast(rr));
+for rr = 1:length(theLmsContrast)
+    fprintf('\tReceptor %d (desired/obtained): %0.2f, %0.2f\n',rr,theLmsContrast(rr),theIsolatingContrast(rr));
 end
-for ii = 1:length(whichReceptorsToZero)
-    rr = whichReceptorsToZero(ii);
-    fprintf('\tReceptor %d (desired/obtained): %0.2f, %0.2f\n',rr,0,theIsolatingContrast(rr));
-end
-for ii = 1:length(whichReceptorsToIgnore)
-    rr = whichReceptorsToIgnore(ii);
-    fprintf('\tReceptor %d,ignored (obtained): %0.2f\n',rr,theIsolatingContrast(rr));
-end
+fprintf('Min/max primaries upper: %0.4f, %0.4f, lower: %0.4f, %0.4f\n', ...
+    min(isolatingDevicePrimariesUpper), max(isolatingDevicePrimariesUpper), ...
+    min(isolatingDevicePrimariesLower),  max(isolatingDevicePrimariesLower));
 
 % How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = targetBasis*(targetBasis(projectIndices,:)\theBgDeviceSpd(projectIndices));
