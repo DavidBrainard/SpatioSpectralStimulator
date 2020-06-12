@@ -174,7 +174,7 @@ ylim([0 2]);
 
 %% Render colors
 load T_xyz1931
-T_xyz = SplineCmf(S_xyz1931,T_xyz1931,S);
+T_xyz = 683*SplineCmf(S_xyz1931,T_xyz1931,S);
 theBgDeviceXYZ = T_xyz*theBgDeviceSpd;
 theIsolatingDeviceXYZUpper = T_xyz*theIsolatingDeviceSpdUpper;
 theIsolatingDeviceXYZLower = T_xyz*theIsolatingDeviceSpdLower;
@@ -210,4 +210,23 @@ for kk = 1:3
              kk) = theIsolatingDeviceSRGBLower(kk);
 end
 figure; imshow(uint8(theImage));
+
+%% Some light level tests
+
+% PupilDiameter
+pupilDiameterMM = 4;
+theStimulusExtentDeg = 15;
+theStimulusAreaDeg2 = theStimulusExtentDeg^2;
+
+% Scale background to target cd/m2
+%
+% This makes units Watts/sr-m2-wlband
+% Wavelength band is 2 here, which we need
+% to keep track of.
+targetLum = 1000;
+theBGDeviceRawLum = T_xyz(2,:)*theBgDeviceSpd;
+theBgDeviceSpdScaled = targetLum*theBgDeviceSpd/theBGDeviceRawLum;
+
+
+
 
