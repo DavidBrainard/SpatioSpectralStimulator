@@ -15,8 +15,8 @@ cal = sssSpoofOneLightCal('S',S, ....
     'gaussianFWHM',25);
 S = cal.describe.S;
 wls = SToWls(S);
-lowProjectWl = 420;
-highProjectWl = 680;
+lowProjectWl = 400;
+highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
 %% Cone fundamentals
@@ -47,9 +47,12 @@ plot(wls,halfOnSpdChk,'k','LineWidth',1);
 %% Fit a spectrum with the basis
 %
 % Generate a black body radiator and put it into right general scale
-theTemp = 6500;
-theIsolatingNaturalSpd = GenerateBlackBody(theTemp,wls);
-theIsolatingNaturalSpd = 1.2*sum(halfOnSpd)*theIsolatingNaturalSpd/sum(theIsolatingNaturalSpd);
+theTemp = 4500;
+theIsolatingNaturalSpd1 = GenerateBlackBody(theTemp,wls);
+theTemp2 = 6000;
+theIsolatingNaturalSpd2 = GenerateBlackBody(theTemp2,wls);
+theIsolatingNaturalSpd = theIsolatingNaturalSpd1 + theIsolatingNaturalSpd2;
+theIsolatingNaturalSpd = sum(halfOnSpd)*theIsolatingNaturalSpd/sum(theIsolatingNaturalSpd);
 
 % Use OL machinery to get primaries and then the spd
 theIsolatingNaturalPrimaries = OLSpdToPrimary(cal,theIsolatingNaturalSpd,'lambda',0.01);
@@ -125,9 +128,10 @@ targetLambda = 10;
 theBgDeviceSpd = B_DevicePrimary*theBgDevicePrimaries;
 isolatingDevicePrimariesUpper = isolatingModulationDevicePrimaries + theBgDevicePrimaries;
 isolatingDevicePrimariesLower = -isolatingModulationDevicePrimaries + theBgDevicePrimaries;
-theIsolatingDeviceSpd = OLPrimaryToSpd(cal,isolatingDevicePrimariesUpper);
+theIsolatingDeviceSpdUpper = OLPrimaryToSpd(cal,isolatingDevicePrimariesUpper);
+theIsolatingDeviceSpdLower = OLPrimaryToSpd(cal,isolatingDevicePrimariesLower);
 theBgDeviceLMS = Tcones*theBgDeviceSpd;
-theIsolatingDeviceLMS = Tcones*theIsolatingDeviceSpd;
+theIsolatingDeviceLMS = Tcones*theIsolatingDeviceSpdUpper;
 theIsolatingContrast = ExcitationsToContrast(theIsolatingDeviceLMS,theBgDeviceLMS);
 fprintf('Desired/obtained contrasts\n');
 for rr = 1:length(theLmsContrast)
@@ -139,21 +143,71 @@ fprintf('Min/max primaries upper: %0.4f, %0.4f, lower: %0.4f, %0.4f\n', ...
 
 % How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = targetBasis*(targetBasis(projectIndices,:)\theBgDeviceSpd(projectIndices));
-theIsolatingNaturalApproxSpd = targetBasis*(targetBasis(projectIndices,:)\theIsolatingDeviceSpd(projectIndices));
+theIsolatingNaturalApproxSpdUpper = targetBasis*(targetBasis(projectIndices,:)\theIsolatingDeviceSpdUpper(projectIndices));
+theIsolatingNaturalApproxSpdLower = targetBasis*(targetBasis(projectIndices,:)\theIsolatingDeviceSpdLower(projectIndices));
 
 figure; clf; 
-subplot(1,2,1); hold on
+subplot(1,3,1); hold on
 plot(wls,theBgDeviceSpd,'b','LineWidth',2);
 plot(wls,theBgNaturalApproxSpd,'r:','LineWidth',1);
 plot(wls(projectIndices),theBgDeviceSpd(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),theBgNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
+xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
+title('Background');
 ylim([0 2]);
-subplot(1,2,2); hold on
-plot(wls,theIsolatingDeviceSpd,'b','LineWidth',2);
-plot(wls,theIsolatingNaturalApproxSpd,'r:','LineWidth',1);
-plot(wls(projectIndices),theIsolatingDeviceSpd(projectIndices),'b','LineWidth',4);
-plot(wls(projectIndices),theIsolatingNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
+subplot(1,3,2); hold on
+plot(wls,theIsolatingDeviceSpdUpper,'b','LineWidth',2);
+plot(wls,theIsolatingNaturalApproxSpdUpper,'r:','LineWidth',1);
+plot(wls(projectIndices),theIsolatingDeviceSpdUpper(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),theIsolatingNaturalApproxSpdUpper(projectIndices),'r:','LineWidth',3);
+xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
+title('Modulated (+)');
+ylim([0 2]);
+subplot(1,3,3); hold on
+plot(wls,theIsolatingDeviceSpdLower,'b','LineWidth',2);
+plot(wls,theIsolatingNaturalApproxSpdLower,'r:','LineWidth',1);
+plot(wls(projectIndices),theIsolatingDeviceSpdLower(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),theIsolatingNaturalApproxSpdLower(projectIndices),'r:','LineWidth',3);
+xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
+title('Modulated (-)');
 ylim([0 2]);
 
+%% Render colors
+load T_xyz1931
+T_xyz = SplineCmf(S_xyz1931,T_xyz1931,S);
+theBgDeviceXYZ = T_xyz*theBgDeviceSpd;
+theIsolatingDeviceXYZUpper = T_xyz*theIsolatingDeviceSpdUpper;
+theIsolatingDeviceXYZLower = T_xyz*theIsolatingDeviceSpdLower;
+thBGDeviceSRGBPrimary = XYZToSRGBPrimary(theBgDeviceXYZ);
+theIsolatingDeviceSRGBPrimaryUpper = XYZToSRGBPrimary(theIsolatingDeviceXYZUpper);
+theIsolatingDeviceSRGBPrimaryLower  = XYZToSRGBPrimary(theIsolatingDeviceXYZLower );
 
+scaleFactor = max([thBGDeviceSRGBPrimary ; theIsolatingDeviceSRGBPrimaryUpper; ; theIsolatingDeviceSRGBPrimaryLower]);
+theBGDeviceSRGB = SRGBGammaCorrect(thBGDeviceSRGBPrimary/scaleFactor,0);
+theIsolatingDeviceSRGBUpper = SRGBGammaCorrect(theIsolatingDeviceSRGBPrimaryUpper/scaleFactor,0);
+theIsolatingDeviceSRGBLower = SRGBGammaCorrect(theIsolatingDeviceSRGBPrimaryLower/scaleFactor,0);
+
+imageN = 256;
+centerN = imageN/2;
+theImage = zeros(imageN,imageN,3);
+for kk = 1:3
+	theImage(:,:,kk) = theBGDeviceSRGB(kk);
+end
+for kk = 1:3
+    theImage((imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
+             (imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
+             kk) = theIsolatingDeviceSRGBUpper(kk);
+end
+figure; imshow(uint8(theImage));
+
+theImage = zeros(imageN,imageN,3);
+for kk = 1:3
+	theImage(:,:,kk) = theBGDeviceSRGB(kk);
+end
+for kk = 1:3
+    theImage((imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
+             (imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
+             kk) = theIsolatingDeviceSRGBLower(kk);
+end
+figure; imshow(uint8(theImage));
 
