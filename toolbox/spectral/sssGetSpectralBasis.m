@@ -35,7 +35,8 @@ function theBasis = sssGetSpectralBasis(S,varargin)
 %
 
 % History:
-%    05/03/20  dhb  Pulled out from test script.   
+%    05/03/20  dhb  Pulled out from test script.  
+%    07/09/20  dhb  No negative power in basis
 
 
 % Examples:
@@ -112,6 +113,7 @@ gaussVar = FWHMToStd(p.Results.gaussianFWHM)^2;
 gaussBasis = MakeGaussBasis(wls,p.Results.gaussianPeakWls,gaussVar*ones(size(p.Results.gaussianPeakWls)));
 gaussBasis = gaussBasis/max(gaussBasis(:));
 theBasis = [ledBasis, gaussBasis];
+theBasis(theBasis < 0) = 0;
 nBasis = size(theBasis,2);
 
 %% Plot basis

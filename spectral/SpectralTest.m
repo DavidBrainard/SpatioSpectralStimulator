@@ -112,6 +112,8 @@ targetLambda = 10;
 [backgroundDevicePrimariesIncr] = ReceptorIsolateSpectral(Tcones,theBgNaturalLmsTarget',B_DevicePrimary,theBgDevicePrimariesApprox,initialDevicePrimariesApprox, ...
     primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
 theBgDevicePrimaries = theBgDevicePrimariesApprox + backgroundDevicePrimariesIncr;
+theBgDeviceSettings = uint8(255*theBgDevicePrimaries);
+theBgDevicePrimaries = double(theBgDeviceSettings)/255;
 initialDevicePrimaries = theBgDevicePrimaries;
 theBgDeviceSpd = OLPrimaryToSpd(cal,theBgDevicePrimaries);
 theBgDeviceLms = Tcones*theBgDeviceSpd;
@@ -127,9 +129,16 @@ targetLambda = 10;
     primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd);
 theBgDeviceSpd = B_DevicePrimary*theBgDevicePrimaries;
 isolatingDevicePrimariesUpper = isolatingModulationDevicePrimaries + theBgDevicePrimaries;
+isolatingDeviceSettingsUpper = uint8(255*isolatingDevicePrimariesUpper);
+isolatingDevicePrimariesUpper = double(isolatingDeviceSettingsUpper)/255;
+
 isolatingDevicePrimariesLower = -isolatingModulationDevicePrimaries + theBgDevicePrimaries;
+isolatingDeviceSettingsLower = uint8(255*isolatingDevicePrimariesLower);
+isolatingDevicePrimariesLower = double(isolatingDeviceSettingsLower)/255;
+
 theIsolatingDeviceSpdUpper = OLPrimaryToSpd(cal,isolatingDevicePrimariesUpper);
 theIsolatingDeviceSpdLower = OLPrimaryToSpd(cal,isolatingDevicePrimariesLower);
+
 theBgDeviceLMS = Tcones*theBgDeviceSpd;
 theIsolatingDeviceLMS = Tcones*theIsolatingDeviceSpdUpper;
 theIsolatingContrast = ExcitationsToContrast(theIsolatingDeviceLMS,theBgDeviceLMS);
@@ -172,9 +181,61 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Modulated (-)');
 ylim([0 2]);
 
-%% Render colors
+%% Render quantized colors between the two primaries
+imageN = 512;
+centerN = imageN/2;
 load T_xyz1931
 T_xyz = 683*SplineCmf(S_xyz1931,T_xyz1931,S);
+
+nPrimaries = size(isolatingDevicePrimariesUpper,1);
+for ii = 1:nPrimaries
+    thesePrimaries = linspace(isolatingDevicePrimariesLower(ii),isolatingDevicePrimariesUpper(ii),256);
+    for jj = 1:length(thesePrimaries)
+        isolatingPrimaries(ii,jj) = thesePrimaries(jj);
+    end
+end
+isolatingSettings = uint8(255*isolatingPrimaries);
+isolatingPrimaries = double(isolatingSettings)/255;
+for ii = 1:size(isolatingPrimaries,2)
+    isolatingSpd(:,ii) = OLPrimaryToSpd(cal,isolatingPrimaries(:,ii));
+end
+isolatingXYZ = T_xyz*isolatingSpd;
+for ii = 1:size(isolatingPrimaries,2)
+    isolatingSRGBPrimary(:,ii) = XYZToSRGBPrimary(isolatingXYZ(:,ii));
+end
+scaleFactor = max(isolatingSRGBPrimary(:));
+for ii = 1:size(isolatingPrimaries,2)
+    isolatingSRGB(:,ii) = SRGBGammaCorrect(isolatingSRGBPrimary(:,ii)/scaleFactor,0);
+end
+sineFreq = 4;
+sineImage = MakeSineImage(0,sineFreq,imageN);
+sineImage = uint8(255*(sineImage+1)/2);
+isolatingImage = uint8(zeros(imageN,imageN,3));
+isolatingXYZImage = zeros(imageN,imageN,3);
+for ii = 1:imageN
+    for jj = 1:imageN
+        index = double(sineImage(ii,jj) + 1);
+        isolatingImage(ii,jj,:) = isolatingSRGB(:,index);
+        isolatingXYZImage(ii,jj,:) = isolatingXYZ(:,index);
+    end
+end
+figure; imshow(isolatingImage);
+figure; hold on
+plot(1:imageN,isolatingImage(centerN,:,1),'ro','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,isolatingImage(centerN,:,2),'go','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,isolatingImage(centerN,:,3),'bo','MarkerFaceColor','b','MarkerSize',4);
+title('Image Slice, Rendered RGB');
+xlabel('x position (pixels)')
+ylabel('Rendered R,G,B');
+figure; hold on
+plot(1:imageN,isolatingXYZImage(centerN,:,1),'ro','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,isolatingXYZImage(centerN,:,2),'go','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,isolatingXYZImage(centerN,:,3),'bo','MarkerFaceColor','b','MarkerSize',4);
+title('Image Slice, Predicted XYZ');
+xlabel('x position (pixels)')
+ylabel('Rendered X, Y, Z');
+
+%% Render colors
 theBgDeviceXYZ = T_xyz*theBgDeviceSpd;
 theIsolatingDeviceXYZUpper = T_xyz*theIsolatingDeviceSpdUpper;
 theIsolatingDeviceXYZLower = T_xyz*theIsolatingDeviceSpdLower;
