@@ -8,17 +8,50 @@
 clear; close all;
 
 %% Parameters
-targetMaxLMSContrast = [1 -1 0]'/10;
-primaryContrastReMax = 0.1;
-imageModulationContrast = 0.5;
-sineFreq = 4;
-gaborSdImageFraction = 0.1;
 
-% Bit levels
-LEDBits = 10;
+%% Background xy
+targetBgxy = [0.325 0.34]';
+
+% Target color direction and max contrasts.
+%
+% This is the basic desired modulation direction positive excursion. We go
+% equally in positive and negative directions.
+targetLMSContrast = [1 -1 0]';
+
+% These are the target contrasts for the three primaries. We want these to
+% span a triangle around the line specified above. Here we define that
+% triangle by hand.  May need a little fussing for other directions, and
+% might be able to autocompute good choices.
+target1MaxLMSContrast = [-1 1 0]';
+target2MaxLMSContrast = [1 -1 0.5]';
+target3MaxLMSContrast = [1 -1 -0.5]';
+
+% We may not need the whole direction excursion above. The first number is
+% the amount we want to use, the second has a little headroom so we don't
+% run into numerical error at the edges. The second number is used when
+% defining the three primaries, the first when computing desired weights on
+% the primaries.
+ledContrastReMax = 0.05;
+ledContrastReMaxWithHeadroom = 1.1*ledContrastReMax;
+
+% When we compute a specific image, we may not want full contrast available
+% with the primaries. This tells us fraction of max available relative to
+% ledContrastReMax.
+imageModulationContrast = 0.25;
+
+% Image spatial parameters
+sineFreq = 6;
+gaborSdImageFraction = 0.15;
+
+% Bit levels. We want to understand effects of bit depth.  Here we specify
+% what bit depths we're using.
+LEDBits = 8;
 nLEDLevels = 2^LEDBits;
 displayBits = 8;
 nDisplayLevels = 2^displayBits;
+
+% This is a computational bit depth that we use to define the lookup table
+% between contrast and primary values.
 fineBits = 14;
 nFineLevels = 2^fineBits;
 
@@ -32,6 +65,7 @@ cal = sssSpoofOneLightCal('S',S, ....
     'gaussianPeakWls',[437 485 540 562 585 618 652], ...
     'gaussianFWHM',25);
 S = cal.describe.S;
+ambientSpd = cal.computed.pr650MeanDark;
 wls = SToWls(S);
 lowProjectWl = 400;
 highProjectWl = 700;
@@ -44,8 +78,11 @@ load T_xyz1931
 T_xyz = 683*SplineCmf(S_xyz1931,T_xyz1931,S);
 
 %% Get half on spectrum
+%
+% This is useful for scaling things reasonably
 halfOnPrimaries = 0.5*ones(cal.describe.numWavelengthBands,1);
 halfOnSpd = OLPrimaryToSpd(cal,halfOnPrimaries);
+nPrimaries = size(halfOnPrimaries,1);
 
 %% Make sure gamma correction behaves well
 halfOnSettings = OLPrimaryToSettings(cal,halfOnPrimaries);
@@ -64,397 +101,301 @@ halfOnSpdChk = OLPrimaryToSpd(cal,halfOnPrimariesChk);
 % plot(wls,halfOnSpd,'r','LineWidth',3);
 % plot(wls,halfOnSpdChk,'k','LineWidth',1);
 
-%% Fit a spectrum with the basis
-%
-% Generate a black body radiator and put it into right general scale
-theTemp = 4500;
-theBackgroundNaturalSpd1 = GenerateBlackBody(theTemp,wls);
-theTemp2 = 6000;
-theBackgroundNaturalSpd2 = GenerateBlackBody(theTemp2,wls);
-theBackgroundNaturalSpd = theBackgroundNaturalSpd1 + theBackgroundNaturalSpd2;
-theBackgroundNaturalSpd = ones(size(theBackgroundNaturalSpd));
-theBackgroundNaturalSpd = sum(halfOnSpd)*theBackgroundNaturalSpd/sum(theBackgroundNaturalSpd);
-
-% Use OL machinery to get primaries and then the spd
-theIsolatingNaturalPrimaries = OLSpdToPrimary(cal,theBackgroundNaturalSpd,'lambda',0.01);
-theFitSpd = OLPrimaryToSpd(cal,theIsolatingNaturalPrimaries);
-
-% Use non-neg least squares for comparison
-weights = lsqnonneg(cal.computed.pr650M,theBackgroundNaturalSpd);
-theFitSpdRegress = cal.computed.pr650M*weights;
-
-% Plot
-% figure; clf; hold on
-% plot(wls,theIsolatingNaturalSpd,'k','LineWidth',3);
-% plot(wls,theFitSpd,'r','LineWidth',2);
-% plot(wls,theFitSpdRegress,'g','LineWidth',1);
-
-%% Generate cone isolating spectral modulations with a simple basis
+%% Set up basis to try to keep spectra close to
 basisType = 'fourier';
 switch (basisType)
     case 'cieday'
         load B_cieday
-        theNaturalBasis = SplineSpd(S_cieday,B_cieday,S);
+        B_natural = SplineSpd(S_cieday,B_cieday,S);
     case 'fourier'
-        theNaturalBasis = MakeFourierBasis(S,7);
+        B_natural = MakeFourierBasis(S,7);
     otherwise
         error('Unknown basis set specified');
 end
 
-% Transform
-M_NaturalPrimariesToCones = T_cones*theNaturalBasis(:,1:size(T_cones,1));
-M_ConesToNaturalPrimaries = inv(M_NaturalPrimariesToCones);
+%% Some transformation matrices
+M_NaturalToXYZ = T_xyz*B_natural(:,1:3);
+M_XYZToNatural = inv(M_NaturalToXYZ);
+M_NaturalToLMS = T_cones*B_natural(:,1:3);
+M_LMSToNatural = inv(M_NaturalToLMS);
 
-% Get background within basis
-theBgNaturalPrimaries = theNaturalBasis\theBackgroundNaturalSpd;
-theBgNaturalSpd = theNaturalBasis*theBgNaturalPrimaries;
-theBgNaturalLmsTarget = T_cones*theBackgroundNaturalSpd;
-theBgNaturalXYZTarget = T_xyz*theBackgroundNaturalSpd;
-figure; clf; hold on
-plot(wls,theBgNaturalSpd,'b:','LineWidth',2);
-
-%% Approximation to desired background
-IDENTITY = false;
-if (IDENTITY)
-    B_DevicePrimary = eye(size(cal.computed.pr650M,1));
-    theBgDevicePrimariesApprox = theBgNaturalSpd;
-    initialDevicePrimariesApprox = theBackgroundNaturalSpd;
-else
-    B_DevicePrimary = cal.computed.pr650M;
-    theBgDevicePrimariesApprox = OLSpdToPrimary(cal,theBgNaturalSpd);
-    initialDevicePrimariesApprox = theBgDevicePrimariesApprox;
-end
-fprintf('Mean value of background primaries: %0.2f\n',mean(theBgDevicePrimariesApprox));
+%% Get background
+targetBgxyY = [targetBgxy ; 1];
+targetBgXYZ = xyYToXYZ(targetBgxyY);
+desiredBgSpd = B_natural(:,1:3)*M_XYZToNatural*targetBgXYZ;
+desiredBgSpd = sum(halfOnSpd)*desiredBgSpd/sum(desiredBgSpd);
+desiredBgXYZ = T_xyz*desiredBgSpd;
+desiredBgxyY = XYZToxyY(desiredBgXYZ);
 
 %% Search for desired background
-ambientSpd = cal.computed.pr650MeanDark;
+B_primary = cal.computed.pr650M;
+startingBgPrimaries = OLSpdToPrimary(cal,desiredBgSpd);
+startingBgSpd = OLPrimaryToSpd(cal,startingBgPrimaries);
+startingBgXYZ = T_xyz*startingBgSpd;
+startingBgxyY = XYZToxyY(startingBgXYZ);
+
 primaryHeadRoom = 0;
-targetBasis = theNaturalBasis;
 targetLambda = 10;
-[backgroundDevicePrimariesIncr] = ReceptorIsolateSpectral(T_cones,theBgNaturalLmsTarget',B_DevicePrimary,theBgDevicePrimariesApprox,initialDevicePrimariesApprox, ...
-    primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
-theBgDevicePrimaries = theBgDevicePrimariesApprox + backgroundDevicePrimariesIncr;
-theBgDeviceSettings = round((nLEDLevels-1)*theBgDevicePrimaries);
-theBgDevicePrimaries = double(theBgDeviceSettings)/(nLEDLevels-1);
-theBgDeviceSpd = OLPrimaryToSpd(cal,theBgDevicePrimaries);
-theBgDeviceLMS = T_cones*theBgDeviceSpd;
-theBgDeviceXYZ = T_xyz*theBgDeviceSpd;
+[bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,B_primary,startingBgPrimaries,startingBgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
+bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
+bgSettings = round((nLEDLevels-1)*bgPrimaries);
+bgPrimaries = double(bgSettings)/(nLEDLevels-1);
+bgSpd = OLPrimaryToSpd(cal,bgPrimaries);
+bgLMS = T_cones*bgSpd;
+bgXYZ = T_xyz*bgSpd;
+bgxyY = XYZToxyY(bgXYZ);
+fprintf('Desired  background x,y = %0.3f,%0.3f\n',desiredBgxyY(1),desiredBgxyY(2));
+fprintf('Starting background x,y = %0.3f,%0.3f\n',startingBgxyY(1),startingBgxyY(2));
+fprintf('Obtained background x,y = %0.3f,%0.3f\n',bgxyY(1),bgxyY(2));
+fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
 
-fprintf('Desired/obtained background excitations\n');
-for rr = 1:length(theBgNaturalLmsTarget)
-    fprintf('\tReceptor %d (desired/obtained): %0.2f, %0.2f\n',rr,theBgNaturalLmsTarget(rr),theBgDeviceLMS(rr));
-end
-
-% Define desired cone contrast
-theLMSContrast = primaryContrastReMax*targetMaxLMSContrast;
+%% Get primaries based on contrast specification
+%
+LMSContrast1 = ledContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 10;
-initialDevicePrimaries = theBgDevicePrimaries;
-[isolatingModulationDevicePrimaries] = ReceptorIsolateSpectral(T_cones,theLMSContrast',B_DevicePrimary,theBgDevicePrimaries,initialDevicePrimaries, ...
-    primaryHeadRoom,targetBasis,projectIndices,targetLambda,ambientSpd);
+[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,B_primary,bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
-isolatingDevicePrimariesUpper = isolatingModulationDevicePrimaries + theBgDevicePrimaries;
-isolatingDeviceSettingsUpper = round((nLEDLevels-1)*isolatingDevicePrimariesUpper);
-isolatingDevicePrimariesUpper = double(isolatingDeviceSettingsUpper)/(nLEDLevels-1);
+% Quantize
+isolatingSettings1 = round((nLEDLevels-1)*isolatingPrimaries1);
+isolatingPrimaries1 = double(isolatingSettings1)/(nLEDLevels-1);
 
-isolatingDevicePrimariesLower = -isolatingModulationDevicePrimaries + theBgDevicePrimaries;
-isolatingDeviceSettingsLower = round((nLEDLevels-1)*isolatingDevicePrimariesLower);
-isolatingDevicePrimariesLower = double(isolatingDeviceSettingsLower)/(nLEDLevels-1);
-
-theIsolatingDeviceSpdUpper = OLPrimaryToSpd(cal,isolatingDevicePrimariesUpper);
-theIsolatingDeviceSpdLower = OLPrimaryToSpd(cal,isolatingDevicePrimariesLower);
-
-theIsolatingDeviceLMS = T_cones*theIsolatingDeviceSpdUpper;
-theIsolatingContrast = ExcitationsToContrast(theIsolatingDeviceLMS,theBgDeviceLMS);
-fprintf('Desired/obtained contrasts\n');
-for rr = 1:length(theLMSContrast)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,theLMSContrast(rr),theIsolatingContrast(rr));
+% Report
+isolatingSpd1 = OLPrimaryToSpd(cal,isolatingPrimaries1);
+isolatingLMS1 = T_cones*isolatingSpd1;
+isolatingContrast1 = ExcitationsToContrast(isolatingLMS1,bgLMS);
+fprintf('Desired/obtained contrasts 1\n');
+for rr = 1:length(LMSContrast1)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast1(rr),isolatingContrast1(rr));
 end
-fprintf('Min/max primaries upper: %0.4f, %0.4f, lower: %0.4f, %0.4f\n', ...
-    min(isolatingDevicePrimariesUpper), max(isolatingDevicePrimariesUpper), ...
-    min(isolatingDevicePrimariesLower),  max(isolatingDevicePrimariesLower));
+fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
+    min(isolatingPrimaries1), max(isolatingPrimaries1));
 
-% How close are spectra to subspace defined by basis?
-theBgNaturalApproxSpd = targetBasis*(targetBasis(projectIndices,:)\theBgDeviceSpd(projectIndices));
-theIsolatingNaturalApproxSpdUpper = targetBasis*(targetBasis(projectIndices,:)\theIsolatingDeviceSpdUpper(projectIndices));
-theIsolatingNaturalApproxSpdLower = targetBasis*(targetBasis(projectIndices,:)\theIsolatingDeviceSpdLower(projectIndices));
+% Primary 2
+LMSContrast2 = ledContrastReMaxWithHeadroom*target2MaxLMSContrast;
+targetLambda = 10;
+[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,B_primary,bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
+% Quantize
+isolatingSettings2 = round((nLEDLevels-1)*isolatingPrimaries2);
+isolatingPrimaries2 = double(isolatingSettings2)/(nLEDLevels-1);
+
+% Report
+isolatingSpd2 = OLPrimaryToSpd(cal,isolatingPrimaries2);
+isolatingLMS2 = T_cones*isolatingSpd2;
+isolatingContrast2 = ExcitationsToContrast(isolatingLMS2,bgLMS);
+fprintf('Desired/obtained contrasts 2\n');
+for rr = 1:length(LMSContrast2)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast2(rr),isolatingContrast2(rr));
+end
+fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
+    min(isolatingPrimaries2), max(isolatingPrimaries2));
+
+% Primary 3
+LMSContrast3 = ledContrastReMaxWithHeadroom*target3MaxLMSContrast;
+targetLambda = 10;
+[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,B_primary,bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
+
+% Quantize
+isolatingSettings3 = round((nLEDLevels-1)*isolatingPrimaries3);
+isolatingPrimaries3 = double(isolatingSettings3)/(nLEDLevels-1);
+
+% Report
+isolatingSpd3 = OLPrimaryToSpd(cal,isolatingPrimaries3);
+isolatingLMS3 = T_cones*isolatingSpd3;
+isolatingContrast3 = ExcitationsToContrast(isolatingLMS3,bgLMS);
+fprintf('Desired/obtained contrasts 3\n');
+for rr = 1:length(LMSContrast3)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast3(rr),isolatingContrast3(rr));
+end
+fprintf('Min/max primaries 3: %0.4f, %0.4f\n', ...
+    min(isolatingPrimaries3), max(isolatingPrimaries3));
+
+
+%% How close are spectra to subspace defined by basis?
+theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
+isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd1(projectIndices));
+isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd2(projectIndices));
+isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd3(projectIndices));
+
+% Plot
 figure; clf; 
-subplot(1,3,1); hold on
-plot(wls,theBgDeviceSpd,'b','LineWidth',2);
+subplot(2,2,1); hold on
+plot(wls,bgSpd,'b','LineWidth',2);
 plot(wls,theBgNaturalApproxSpd,'r:','LineWidth',1);
-plot(wls(projectIndices),theBgDeviceSpd(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),bgSpd(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),theBgNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Background');
 ylim([0 2]);
-subplot(1,3,2); hold on
-plot(wls,theIsolatingDeviceSpdUpper,'b','LineWidth',2);
-plot(wls,theIsolatingNaturalApproxSpdUpper,'r:','LineWidth',1);
-plot(wls(projectIndices),theIsolatingDeviceSpdUpper(projectIndices),'b','LineWidth',4);
-plot(wls(projectIndices),theIsolatingNaturalApproxSpdUpper(projectIndices),'r:','LineWidth',3);
+subplot(2,2,2); hold on
+plot(wls,isolatingSpd1,'b','LineWidth',2);
+plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
+plot(wls(projectIndices),isolatingSpd1(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
-title('Modulated (+)');
+title('Primary 1');
 ylim([0 2]);
-subplot(1,3,3); hold on
-plot(wls,theIsolatingDeviceSpdLower,'b','LineWidth',2);
-plot(wls,theIsolatingNaturalApproxSpdLower,'r:','LineWidth',1);
-plot(wls(projectIndices),theIsolatingDeviceSpdLower(projectIndices),'b','LineWidth',4);
-plot(wls(projectIndices),theIsolatingNaturalApproxSpdLower(projectIndices),'r:','LineWidth',3);
+subplot(2,2,3); hold on
+plot(wls,isolatingSpd2,'b','LineWidth',2);
+plot(wls,isolatingNaturalApproxSpd2,'r:','LineWidth',1);
+plot(wls(projectIndices),isolatingSpd2(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
-title('Modulated (-)');
+title('Primary 2');
+ylim([0 2]);
+subplot(2,2,4); hold on
+plot(wls,isolatingSpd3,'b','LineWidth',2);
+plot(wls,isolatingNaturalApproxSpd3,'r:','LineWidth',1);
+plot(wls(projectIndices),isolatingSpd3(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
+xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
+title('Primary 3');
 ylim([0 2]);
 
-%% Render quantized colors between the two primaries
+%% Create lookup table that maps between [-1,1] in contrast to LMS
+fprintf('Making fine contrast to LMS lookup table\n');
+fineContrastLevels = linspace(-1,1,nFineLevels);
+% spdMatrix1 = [bgSpd , theIsolatingDeviceSpdLower];
+% spdMatrix2 = [bgSpd , isolatingSpd1];
+spdMatrix = [isolatingSpd1, isolatingSpd2, isolatingSpd3];
+LMSMatrix = T_cones*spdMatrix;
+for ll = 1:nFineLevels
+    % Find the LMS values corresponding to desired contrast
+    fineLMSContrast(:,ll) = fineContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
+    fineLMS(:,ll) = ContrastToExcitation(fineLMSContrast(:,ll),bgLMS);
+    
+    % Find primary mixture to best prodcue those values
+    thisMixture = LMSMatrix\fineLMS(:,ll);
+    thisMixture(thisMixture > 1) = 1;
+    thisMixture(thisMixture < 0) = 0;
+    
+    % Store
+    finePrimaries(:,ll) = thisMixture;
+    predictedFineLMS(:,ll) = T_cones*spdMatrix*thisMixture;
+end
+
+% Do this at quantized levels
+fprintf('Making display quantized primary lookup table\n');
+quantizedIntegerLevels = 1:nDisplayLevels;
+quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(nDisplayLevels-1))-1;
+quantizedLMSContrast = zeros(3,nDisplayLevels);
+quantizedLMS = zeros(3,nDisplayLevels);
+minIndices = zeros(1,nDisplayLevels);
+predictedQuantizedLMS = zeros(3,nDisplayLevels);
+quantizedDisplayPrimaries = zeros(3,nDisplayLevels);
+
+% Set up point cloud for fast finding of nearest neighbors
+finePtCloud = pointCloud(fineLMS');
+for ll = 1:nDisplayLevels
+    quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
+    quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
+    
+    minIndices(ll) = findNearestNeighbors(finePtCloud,quantizedLMS(:,ll)',1);
+    predictedQuantizedLMS(:,ll) = fineLMS(:,minIndices(ll));
+    quantizedDisplayPrimaries(:,ll) = finePrimaries(:,minIndices(ll));      
+end
+
+%% Make Gabor patch in range 0-1
+%
+% This is our contrast modulation
+fprintf('Making Gabor contrast image\n');
 centerN = imageN/2;
-
-% Get the quantized primaries
-nPrimaries = size(isolatingDevicePrimariesUpper,1);
-for ii = 1:nPrimaries
-    thesePrimaries = linspace(isolatingDevicePrimariesLower(ii),isolatingDevicePrimariesUpper(ii),256);
-    for jj = 1:length(thesePrimaries)
-        isolatingPrimariesRaw(ii,jj) = thesePrimaries(jj);
-    end
-end
-isolatingSettings = uint8(255*isolatingPrimariesRaw);
-isolatingPrimaries = double(isolatingSettings)/255;
-
-% Get the quantized spds and LMS values
-for ii = 1:size(isolatingPrimaries,2)
-    isolatingSpd(:,ii) = OLPrimaryToSpd(cal,isolatingPrimaries(:,ii));
-end
-isolatingLMS = T_cones*isolatingSpd;
-
-% Get the quantized XYZ values and convert to sRGB
-isolatingXYZ = T_xyz*isolatingSpd;
-for ii = 1:size(isolatingPrimaries,2)
-    isolatingSRGBPrimary(:,ii) = XYZToSRGBPrimary(isolatingXYZ(:,ii));
-end
-scaleFactor = max(isolatingSRGBPrimary(:));
-for ii = 1:size(isolatingPrimaries,2)
-    isolatingSRGB(:,ii) = SRGBGammaCorrect(isolatingSRGBPrimary(:,ii)/scaleFactor,0);
-end
-
-%% Make Gabor patch
 gaborSdPixels = gaborSdImageFraction*imageN;
 rawSineImage = MakeSineImage(0,sineFreq,imageN);
 gaussianWindow = normpdf(MakeRadiusMat(imageN,imageN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
 rawGaborImage = imageModulationContrast*rawSineImage.*gaussianWindow;
 quantizedIntegerGaborImage = round((nDisplayLevels-1)*(rawGaborImage+1)/2 );
-quantizedContrastGaborImage = (2*(quantizedIntegerGaborImage-1)/(nDisplayLevels-1))-1;
+quantizedIntegerGaborImageCal = ImageToCalFormat(quantizedIntegerGaborImage);
+% quantizedContrastGaborImage = (2*(quantizedIntegerGaborImage-1)/(nDisplayLevels-1))-1;
 
-%% Create lookup table that maps between [-1,1] in contrast to LMS
-fineContrastLevels = linspace(-1,1,nFineLevels);
-spdMatrix1 = [theBgDeviceSpd , theIsolatingDeviceSpdLower];
-spdMatrix2 = [theBgDeviceSpd , theIsolatingDeviceSpdUpper];
-spdMatrix = [theBgDeviceSpd , theIsolatingDeviceSpdLower , theIsolatingDeviceSpdUpper];
-LMSMatrix1 = T_cones*spdMatrix1;
-LMSMatrix2 = T_cones*spdMatrix2;
-LMSMatrix = T_cones*spdMatrix;
-for ll = 1:nFineLevels
-    fineLMSContrast(:,ll) = fineContrastLevels(ll)*theLMSContrast;
-    fineLMS(:,ll) = ContrastToExcitation(fineLMSContrast(:,ll),theBgDeviceLMS);
-    
-    thisMixtureRaw1 = LMSMatrix1\fineLMS(:,ll);
-    thisMixtureRaw2 = LMSMatrix2\fineLMS(:,ll);
-    if (any(thisMixtureRaw1 < 0))
-        thisMixture = [thisMixtureRaw2(1) 0 thisMixtureRaw2(2)]';
-    else
-        thisMixture = [thisMixtureRaw1(1) thisMixtureRaw1(2) 0]';
-    end
-    thisMixture(thisMixture > 1) = 1;
-    thisMixture(thisMixture < 0) = 0;
-    finePrimaries(:,ll) = thisMixture;
-    predictedFineLMS(:,ll) = T_cones*spdMatrix*thisMixture;
+%% Create the Gabor image with quantized primary mixtures
+fprintf('Making Gabor primary mixture image\n');
+quantizedDisplayPrimariesGaborImageCal = zeros(3,imageN*imageN);
+for ii = 1:imageN*imageN
+    thisIndex = quantizedIntegerGaborImageCal(ii);
+    quantizedDisplayPrimariesGaborImageCal(:,ii) = quantizedDisplayPrimaries(:,thisIndex);
 end
 
-% Do this at quantized levels
-quantizedIntegerLevels = 1:nDisplayLevels;
-quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(nDisplayLevels-1))-1;
-for ll = 1:nDisplayLevels
-    quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*theLMSContrast;
-    quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),theBgDeviceLMS);
-    minErr = Inf;
-    minIndex = Inf;
-    for jj = 1:nFineLevels
-        thisDiff = quantizedLMS(:,ll)-fineLMS(:,jj);
-        thisErr = norm(thisDiff);
-        if (thisErr < minErr)
-            minErr = thisErr;
-            minIndex = jj;
-        end
-    end
-    minIndices(ll) = minIndex;
-    predictedQuantizedLMS(:,ll) = fineLMS(:,minIndex);
-    quantizedPrimaries(:,ll) = finePrimaries(:,minIndex);      
+%% Convert of useful formats for analysis, rendering
+%
+% Get spectral power distribution
+fprintf('Convert Gabor for rendering, analysis\n');
+isolatingSpdCal = spdMatrix*quantizedDisplayPrimariesGaborImageCal;
+
+% LMS image and cone contrast image
+isolatingLMSCal = T_cones*isolatingSpdCal;
+isolatingLMSImage = CalFormatToImage(isolatingLMSCal,imageN,imageN);
+meanLMS = mean(isolatingLMSCal,2);
+isolatingContrastCal = zeros(3,imageN*imageN);
+for ii = 1:imageN*imageN
+    isolatingContrastCal(:,ii) = ExcitationsToContrast(isolatingLMSCal(:,ii),meanLMS);
 end
+isolatingContrastImage = CalFormatToImage(isolatingContrastCal,imageN,imageN);
 
+% SRGB image via XYZ
+isolatingXYZCal = T_xyz*isolatingSpdCal;
+isolatingSRGBPrimaryCal = XYZToSRGBPrimary(isolatingXYZCal);
+scaleFactor = max(isolatingSRGBPrimaryCal(:));
+isolatingSRGBCal = SRGBGammaCorrect(isolatingSRGBPrimaryCal/scaleFactor,0);
+isolatingSRGBImage = uint8(CalFormatToImage(isolatingSRGBCal,imageN,imageN));
 
-% %% Create the continuous LMS image that we want
+% Show the SRGB image
+figure; imshow(isolatingSRGBImage)
+
+%% Convert gabor to SRGB, XYZ and LMS images
+% isolatingSRGBPrimaryImage = zeros(imageN,imageN,3);
+% isolatingXYZImage = zeros(imageN,imageN,3);
+% isolatingLMSImage = zeros(imageN,imageN,3);
+% predictLMSQuantized = zeros(3,imageN^2);
+% inIndex = 1;
+% for ii = 1:imageN*imageN
+%         thesePrimaries = quantizedDisplayPrimariesGaborImageCal(:,ii); %squeeze(quantizedPrimariesGaborImage(ii,jj,:));
+%         %quantizedDisplayPrimaries(:,inIndex) = thesePrimaries;
+%         thisSpd = spdMatrix*thesePrimaries;
+%         thisLMS = T_cones*thisSpd;
+%         thisXYZ = T_xyz*thisSpd;
+%         thisSRGBPrimary = (thisXYZ);
+%         isolatingXYZImage(ii,jj,:) = thisXYZ;
+%         isolatingLMSImage(ii,jj,:) = thisLMS;
+%         isolatingSRGBPrimaryImage(ii,jj,:) = thisSRGBPrimary;
+%         predictLMSQuantized(:,inIndex) = thisLMS;
+%         inIndex = inIndex + 1;
+% end
+
+% Get cone contrast image
+% fprintf('Computing cone contrast image\n');
+% for cc = 1:3
+%     temp = isolatingLMSImage(:,:,cc);
+%     meanLMSImage(cc) = mean(temp(:));
+%     temp = isolatingXYZImage(:,:,cc);
+%     meanXYZImage(cc) = mean(temp(:));
+% end
 % for ii = 1:imageN
 %     for jj = 1:imageN
 %         for cc = 1:3
-%             gaborImageLMS(ii,jj,cc) = theBgDeviceLMS(cc)*theLMSContrast(cc)*rawGaborImage(ii,jj) + theBgDeviceLMS(cc);
+%             isolatingContrastImage(ii,jj,cc) = (isolatingLMSImage(ii,jj,cc)-meanLMSImage(cc))/meanLMSImage(cc);
 %         end
 %     end
 % end
 
-%% Create the Gabor image with quantized primary mixtures
-quantizedPrimariesGaborImage = zeros(imageN,imageN,3);
-for ii = 1:imageN
-    for jj = 1:imageN
-        thisIndex = quantizedIntegerGaborImage(ii,jj);
-        thisPrimaries = quantizedPrimaries(:,thisIndex);
-        quantizedPrimariesGaborImage(ii,jj,:) = thisPrimaries;
-    end
-end
-
-% gaborImagePrimariesRaw = zeros(imageN,imageN,3);
-% fineLMS = zeros(3,imageN^2);
-% predictLMS = zeros(3,imageN^2);
-% inIndex = 1;
-% for ii = 1:imageN
-%     for jj = 1:imageN
-%         fineLMS(:,inIndex) = squeeze(gaborImageLMS(ii,jj,:));
-%         thisMixtureRaw1 = LMSMatrix1\fineLMS(:,inIndex);
-%         thisMixtureRaw2 = LMSMatrix2\fineLMS(:,inIndex);
-%         if (any(thisMixtureRaw1 < 0))
-%             thisMixture = [thisMixtureRaw2(1) 0 thisMixtureRaw2(2)]';
-%         else
-%             thisMixture = [thisMixtureRaw1(1) thisMixtureRaw1(2) 0]';
-%         end
-%         thisMixture(thisMixture > 1) = 1;
-%         thisMixture(thisMixture < 0) = 0;
-%         predictLMS(:,inIndex) = T_cones*spdMatrix*thisMixture;
-%         finePrimaries(:,inIndex) = thisMixture;
-%         gaborImagePrimariesRaw(ii,jj,:) = thisMixture;
-%         inIndex = inIndex+1;
-%     end
-% end
-% gaborImagePrimaries = round((nDisplayLevels-1)*gaborImagePrimariesRaw);
-% gaborImagePrimaries01 = gaborImagePrimaries/(nDisplayLevels-1);
-
-% Convert gabor to SRGB, XYZ and LMS images
-isolatingSRGBPrimaryImage = zeros(imageN,imageN,3);
-isolatingXYZImage = zeros(imageN,imageN,3);
-isolatingLMSImage = zeros(imageN,imageN,3);
-predictLMSQuantized = zeros(3,imageN^2);
-inIndex = 1;
-for ii = 1:imageN
-    for jj = 1:imageN
-        thesePrimaries = squeeze(quantizedPrimariesGaborImage(ii,jj,:));
-        quantizedPrimaries(:,inIndex) = thesePrimaries;
-        thisSpd = spdMatrix*thesePrimaries;
-        thisLMS = T_cones*thisSpd;
-        thisXYZ = T_xyz*thisSpd;
-        thisSRGBPrimary = XYZToSRGBPrimary(thisXYZ);
-        isolatingXYZImage(ii,jj,:) = thisXYZ;
-        isolatingLMSImage(ii,jj,:) = thisLMS;
-        isolatingSRGBPrimaryImage(ii,jj,:) = thisSRGBPrimary;
-        predictLMSQuantized(:,inIndex) = thisLMS;
-        inIndex = inIndex + 1;
-    end
-end
-scaleFactor = max(isolatingSRGBPrimaryImage(:));
-isolatingSRGB = uint8(zeros(imageN,imageN,3));
-for ii = 1:imageN
-    for jj = 1:imageN
-        isolatingSRGB(ii,jj,:) = SRGBGammaCorrect(isolatingSRGBPrimaryImage(ii,jj,:)/scaleFactor,0);
-    end
-end
-
-%% Compute some errors
-% Lerror = predictLMS(1,:)-predictLMSQuantized(1,:);
-% quantError = finePrimaries(1,:) - quantizedPrimaries(1,:);
-% figure; plot((nDisplayLevels-1)*quantError,Lerror,'ro');
-
-
-% Show the SRGB image
-figure; imshow(isolatingSRGB)
-
-% Get cone contrast image
-for cc = 1:3
-    temp = isolatingLMSImage(:,:,cc);
-    meanLMSImage(cc) = mean(temp(:));
-    temp = isolatingXYZImage(:,:,cc);
-    meanXYZImage(cc) = mean(temp(:));
-end
-for ii = 1:imageN
-    for jj = 1:imageN
-        for cc = 1:3
-            contrastLMSImage(ii,jj,cc) = (isolatingLMSImage(ii,jj,cc)-meanLMSImage(cc))/meanLMSImage(cc);
-        end
-    end
-end
-for cc = 1:3
-    contrastLMS(cc,:) = (isolatingLMS(cc,:)-meanLMSImage(cc))/meanLMSImage(cc);
-end
-
-% Slice through LMS contrast image
-% figure; hold on
-% plot(1:imageN,gaborImage(centerN,:),'r','MarkerFaceColor','r+','MarkerSize',4);
-% %plot(1:imageN,gaborImage(centerN+1,:),'g','MarkerFaceColor','g','MarkerSize',4);
-% title('Gabor Image Slice');
-% xlabel('x position (pixels)')
-% ylabel('LMS Cone Contrast');
+%% Plot slice through LMS contrast image
 figure; hold on
-plot(1:imageN,100*contrastLMSImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*contrastLMSImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*contrastLMSImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*isolatingContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*isolatingContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*isolatingContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
 title('Image Slice, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
-% figure; hold on
-% plot(1:imageN,isolatingImage(centerN,:,1),'ro','MarkerFaceColor','r','MarkerSize',4);
-% plot(1:imageN,isolatingImage(centerN,:,2),'go','MarkerFaceColor','g','MarkerSize',4);
-% plot(1:imageN,isolatingImage(centerN,:,3),'bo','MarkerFaceColor','b','MarkerSize',4);
-% title('Image Slice, Rendered RGB');
-% xlabel('x position (pixels)')
-% ylabel('Rendered R,G,B');
-% figure; hold on
-% plot(1:imageN,isolatingXYZImage(centerN,:,1),'ro','MarkerFaceColor','r','MarkerSize',4);
-% plot(1:imageN,isolatingXYZImage(centerN,:,2),'go','MarkerFaceColor','g','MarkerSize',4);
-% plot(1:imageN,isolatingXYZImage(centerN,:,3),'bo','MarkerFaceColor','b','MarkerSize',4);
-% title('Image Slice, Predicted XYZ');
-% xlabel('x position (pixels)')
-% ylabel('Rendered X, Y, Z');
 
-%% Render colors
-% theBgDeviceXYZ = T_xyz*theBgDeviceSpd;
-% theIsolatingDeviceXYZUpper = T_xyz*theIsolatingDeviceSpdUpper;
-% theIsolatingDeviceXYZLower = T_xyz*theIsolatingDeviceSpdLower;
-% thBGDeviceSRGBPrimary = XYZToSRGBPrimary(theBgDeviceXYZ);
-% theIsolatingDeviceSRGBPrimaryUpper = XYZToSRGBPrimary(theIsolatingDeviceXYZUpper);
-% theIsolatingDeviceSRGBPrimaryLower  = XYZToSRGBPrimary(theIsolatingDeviceXYZLower );
-% 
-% scaleFactor = max([thBGDeviceSRGBPrimary ; theIsolatingDeviceSRGBPrimaryUpper; ; theIsolatingDeviceSRGBPrimaryLower]);
-% theBGDeviceSRGB = SRGBGammaCorrect(thBGDeviceSRGBPrimary/scaleFactor,0);
-% theIsolatingDeviceSRGBUpper = SRGBGammaCorrect(theIsolatingDeviceSRGBPrimaryUpper/scaleFactor,0);
-% theIsolatingDeviceSRGBLower = SRGBGammaCorrect(theIsolatingDeviceSRGBPrimaryLower/scaleFactor,0);
-% 
-% theImage = zeros(imageN,imageN,3);
-% for kk = 1:3
-% 	theImage(:,:,kk) = theBGDeviceSRGB(kk);
-% end
-% for kk = 1:3
-%     theImage((imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
-%              (imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
-%              kk) = theIsolatingDeviceSRGBUpper(kk);
-% end
-% figure; imshow(uint8(theImage));
-% 
-% theImage = zeros(imageN,imageN,3);
-% for kk = 1:3
-% 	theImage(:,:,kk) = theBGDeviceSRGB(kk);
-% end
-% for kk = 1:3
-%     theImage((imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
-%              (imageN-centerN)/2:imageN-(imageN-centerN)/2, ...
-%              kk) = theIsolatingDeviceSRGBLower(kk);
-% end
-% figure; imshow(uint8(theImage));
-
-%% Some light level tests
+%% Light level tests
 
 % PupilDiameter
 pupilDiameterMM = 4;
@@ -467,8 +408,8 @@ theStimulusAreaDeg2 = theStimulusExtentDeg^2;
 % Wavelength band is 2 here, which we need
 % to keep track of.
 targetLum = 1000;
-theBGDeviceRawLum = T_xyz(2,:)*theBgDeviceSpd;
-theBgDeviceSpdScaled = targetLum*theBgDeviceSpd/theBGDeviceRawLum;
+theBGDeviceRawLum = T_xyz(2,:)*bgSpd;
+theBgDeviceSpdScaled = targetLum*bgSpd/theBGDeviceRawLum;
 
 
 

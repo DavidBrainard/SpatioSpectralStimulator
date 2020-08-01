@@ -151,7 +151,7 @@ if isempty(desiredContrasts)
     f1 = sqrt( sum((isolateContrast-1).^2) ) / norm(desiredContrasts);
 else
     % Minimize difference between desired and what we get
-    f1 = sqrt( sum((isolateContrast-desiredContrasts').^2) ) / norm(desiredContrasts);
+    f1 = sqrt( sum((isolateContrast-desiredContrasts).^2) ) / norm(desiredContrasts);
 end
 
 % Get basis term
