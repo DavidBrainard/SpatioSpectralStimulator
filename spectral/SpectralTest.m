@@ -314,7 +314,6 @@ gaussianWindow = gaussianWindow/max(gaussianWindow(:));
 rawGaborImage = imageModulationContrast*rawSineImage.*gaussianWindow;
 quantizedIntegerGaborImage = round((nDisplayLevels-1)*(rawGaborImage+1)/2 );
 quantizedIntegerGaborImageCal = ImageToCalFormat(quantizedIntegerGaborImage);
-% quantizedContrastGaborImage = (2*(quantizedIntegerGaborImage-1)/(nDisplayLevels-1))-1;
 
 %% Create the Gabor image with quantized primary mixtures
 fprintf('Making Gabor primary mixture image\n');
@@ -349,42 +348,6 @@ isolatingSRGBImage = uint8(CalFormatToImage(isolatingSRGBCal,imageN,imageN));
 
 % Show the SRGB image
 figure; imshow(isolatingSRGBImage)
-
-%% Convert gabor to SRGB, XYZ and LMS images
-% isolatingSRGBPrimaryImage = zeros(imageN,imageN,3);
-% isolatingXYZImage = zeros(imageN,imageN,3);
-% isolatingLMSImage = zeros(imageN,imageN,3);
-% predictLMSQuantized = zeros(3,imageN^2);
-% inIndex = 1;
-% for ii = 1:imageN*imageN
-%         thesePrimaries = quantizedDisplayPrimariesGaborImageCal(:,ii); %squeeze(quantizedPrimariesGaborImage(ii,jj,:));
-%         %quantizedDisplayPrimaries(:,inIndex) = thesePrimaries;
-%         thisSpd = spdMatrix*thesePrimaries;
-%         thisLMS = T_cones*thisSpd;
-%         thisXYZ = T_xyz*thisSpd;
-%         thisSRGBPrimary = (thisXYZ);
-%         isolatingXYZImage(ii,jj,:) = thisXYZ;
-%         isolatingLMSImage(ii,jj,:) = thisLMS;
-%         isolatingSRGBPrimaryImage(ii,jj,:) = thisSRGBPrimary;
-%         predictLMSQuantized(:,inIndex) = thisLMS;
-%         inIndex = inIndex + 1;
-% end
-
-% Get cone contrast image
-% fprintf('Computing cone contrast image\n');
-% for cc = 1:3
-%     temp = isolatingLMSImage(:,:,cc);
-%     meanLMSImage(cc) = mean(temp(:));
-%     temp = isolatingXYZImage(:,:,cc);
-%     meanXYZImage(cc) = mean(temp(:));
-% end
-% for ii = 1:imageN
-%     for jj = 1:imageN
-%         for cc = 1:3
-%             isolatingContrastImage(ii,jj,cc) = (isolatingLMSImage(ii,jj,cc)-meanLMSImage(cc))/meanLMSImage(cc);
-%         end
-%     end
-% end
 
 %% Plot slice through LMS contrast image
 figure; hold on
