@@ -4,13 +4,15 @@
 % 
 % 4/22/2020  Started on it
 
+%% STILL SOME NUMERICAL ISSUE TO BE SOLVED.  RUN WITH CURRENT CONFIG TO SEE PROBLEM.
+
 %% Clear
 clear; close all;
 
 %% Parameters
 
 %% Background xy
-targetBgxy = [0.325 0.34]';
+targetBgxy = [0.3127 0.3290]';
 
 % Target color direction and max contrasts.
 %
@@ -31,17 +33,21 @@ target3MaxLMSContrast = [1 -1 -0.5]';
 % run into numerical error at the edges. The second number is used when
 % defining the three primaries, the first when computing desired weights on
 % the primaries.
-ledContrastReMax = 0.05;
+ledContrastReMax = 0.02;
 ledContrastReMaxWithHeadroom = 1.1*ledContrastReMax;
+plotAxisLimit = 2;
 
 % When we compute a specific image, we may not want full contrast available
 % with the primaries. This tells us fraction of max available relative to
 % ledContrastReMax.
-imageModulationContrast = 0.25;
+imageModulationContrast = 1;
+
+% Frozen factor for SRGB conversions, so it's preserved across contrasts
+scaleFactor = 2.4985e+04;
 
 % Image spatial parameters
 sineFreq = 6;
-gaborSdImageFraction = 0.15;
+gaborSdImageFraction = 0.1;
 
 % Bit levels. We want to understand effects of bit depth.  Here we specify
 % what bit depths we're using.
@@ -159,8 +165,7 @@ targetLambda = 10;
 isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
 % Quantize
-isolatingSettings1 = round((nLEDLevels-1)*isolatingPrimaries1);
-isolatingPrimaries1 = double(isolatingSettings1)/(nLEDLevels-1);
+isolatingPrimaries1 = QuantizePrimaries(isolatingPrimaries1,(nLEDLevels-1));
 
 % Report
 isolatingSpd1 = OLPrimaryToSpd(cal,isolatingPrimaries1);
@@ -181,8 +186,7 @@ targetLambda = 10;
 isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
 % Quantize
-isolatingSettings2 = round((nLEDLevels-1)*isolatingPrimaries2);
-isolatingPrimaries2 = double(isolatingSettings2)/(nLEDLevels-1);
+isolatingPrimaries2 = QuantizePrimaries(isolatingPrimaries2,(nLEDLevels-1));
 
 % Report
 isolatingSpd2 = OLPrimaryToSpd(cal,isolatingPrimaries2);
@@ -203,8 +207,7 @@ targetLambda = 10;
 isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 
 % Quantize
-isolatingSettings3 = round((nLEDLevels-1)*isolatingPrimaries3);
-isolatingPrimaries3 = double(isolatingSettings3)/(nLEDLevels-1);
+isolatingPrimaries3 = QuantizePrimaries(isolatingPrimaries3,(nLEDLevels-1));
 
 % Report
 isolatingSpd3 = OLPrimaryToSpd(cal,isolatingPrimaries3);
@@ -235,6 +238,7 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Background');
 ylim([0 2]);
 subplot(2,2,2); hold on
+plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd1,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
 plot(wls(projectIndices),isolatingSpd1(projectIndices),'b','LineWidth',4);
@@ -243,6 +247,7 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 1');
 ylim([0 2]);
 subplot(2,2,3); hold on
+plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd2,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd2,'r:','LineWidth',1);
 plot(wls(projectIndices),isolatingSpd2(projectIndices),'b','LineWidth',4);
@@ -251,6 +256,7 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 2');
 ylim([0 2]);
 subplot(2,2,4); hold on
+plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd3,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd3,'r:','LineWidth',1);
 plot(wls(projectIndices),isolatingSpd3(projectIndices),'b','LineWidth',4);
@@ -259,20 +265,21 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 ylim([0 2]);
 
-%% Create lookup table that maps between [-1,1] in contrast to LMS
+%% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale
+%
+% Also find and save best mixture of quantized primaries to acheive those
+% contrasts.
 fprintf('Making fine contrast to LMS lookup table\n');
 fineContrastLevels = linspace(-1,1,nFineLevels);
-% spdMatrix1 = [bgSpd , theIsolatingDeviceSpdLower];
-% spdMatrix2 = [bgSpd , isolatingSpd1];
 spdMatrix = [isolatingSpd1, isolatingSpd2, isolatingSpd3];
 LMSMatrix = T_cones*spdMatrix;
 for ll = 1:nFineLevels
     % Find the LMS values corresponding to desired contrast
-    fineLMSContrast(:,ll) = fineContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
-    fineLMS(:,ll) = ContrastToExcitation(fineLMSContrast(:,ll),bgLMS);
+    fineDesiredContrast(:,ll) = fineContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
+    fineDesiredLMS(:,ll) = ContrastToExcitation(fineDesiredContrast(:,ll),bgLMS);
     
     % Find primary mixture to best prodcue those values
-    thisMixture = LMSMatrix\fineLMS(:,ll);
+    thisMixture = LMSMatrix\fineDesiredLMS(:,ll);
     thisMixture(thisMixture > 1) = 1;
     thisMixture(thisMixture < 0) = 0;
     
@@ -292,13 +299,13 @@ predictedQuantizedLMS = zeros(3,nDisplayLevels);
 quantizedDisplayPrimaries = zeros(3,nDisplayLevels);
 
 % Set up point cloud for fast finding of nearest neighbors
-finePtCloud = pointCloud(fineLMS');
+finePtCloud = pointCloud(fineDesiredLMS');
 for ll = 1:nDisplayLevels
     quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
     quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
     
     minIndices(ll) = findNearestNeighbors(finePtCloud,quantizedLMS(:,ll)',1);
-    predictedQuantizedLMS(:,ll) = fineLMS(:,minIndices(ll));
+    predictedQuantizedLMS(:,ll) = fineDesiredLMS(:,minIndices(ll));
     quantizedDisplayPrimaries(:,ll) = finePrimaries(:,minIndices(ll));      
 end
 
@@ -308,58 +315,83 @@ end
 fprintf('Making Gabor contrast image\n');
 centerN = imageN/2;
 gaborSdPixels = gaborSdImageFraction*imageN;
-rawSineImage = MakeSineImage(0,sineFreq,imageN);
+rawMonochromeSineImage = MakeSineImage(0,sineFreq,imageN);
 gaussianWindow = normpdf(MakeRadiusMat(imageN,imageN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
-rawGaborImage = imageModulationContrast*rawSineImage.*gaussianWindow;
-quantizedIntegerGaborImage = round((nDisplayLevels-1)*(rawGaborImage+1)/2 );
-quantizedIntegerGaborImageCal = ImageToCalFormat(quantizedIntegerGaborImage);
+rawMonochromeGaborImage = imageModulationContrast*rawMonochromeSineImage.*gaussianWindow;
+
+% Quantized for display bit depth
+displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,nDisplayLevels);
+displayIntegerMonochromeGaborCal = ImageToCalFormat(displayIntegerMonochromeGaborImage);
+
+% Quantized for fine bit depth
+fineIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,nFineLevels);
+fineIntegerMonochromeGaborCal = ImageToCalFormat(fineIntegerMonochromeGaborImage);
+
+%% Create the Gabor image with desired LMS contrasts
+fprintf('Making Gabor desired (fine) LMS contrast image\n');
+quantizedFineLMSGaborCal = zeros(3,imageN*imageN);
+for ii = 1:imageN*imageN
+    thisIndex = fineIntegerMonochromeGaborImage(ii);
+    fineLMSContrastCal(:,ii) = fineDesiredContrast(:,thisIndex);
+    quantizedFineLMSGaborCal(:,ii) = predictedFineLMS(:,thisIndex);
+end
+fineLMSContrastGaborImage = CalFormatToImage(fineLMSContrastCal,imageN,imageN);
+meanLMS = mean(quantizedFineLMSGaborCal,2);
+quantizedFineContrastGaborCal = ExcitationsToContrast(quantizedFineLMSGaborCal,meanLMS);
+quantizedFineContrastGaborImage = CalFormatToImage(quantizedFineContrastGaborCal,imageN,imageN);
+
 
 %% Create the Gabor image with quantized primary mixtures
 fprintf('Making Gabor primary mixture image\n');
-quantizedDisplayPrimariesGaborImageCal = zeros(3,imageN*imageN);
+quantizedDisplayPrimariesGaborCal = zeros(3,imageN*imageN);
 for ii = 1:imageN*imageN
-    thisIndex = quantizedIntegerGaborImageCal(ii);
-    quantizedDisplayPrimariesGaborImageCal(:,ii) = quantizedDisplayPrimaries(:,thisIndex);
+    thisIndex = displayIntegerMonochromeGaborCal(ii);
+    quantizedDisplayPrimariesGaborCal(:,ii) = quantizedDisplayPrimaries(:,thisIndex);
 end
 
 %% Convert of useful formats for analysis, rendering
 %
 % Get spectral power distribution
 fprintf('Convert Gabor for rendering, analysis\n');
-isolatingSpdCal = spdMatrix*quantizedDisplayPrimariesGaborImageCal;
+quantizedSpdCal = spdMatrix*quantizedDisplayPrimariesGaborCal;
 
-% LMS image and cone contrast image
-isolatingLMSCal = T_cones*isolatingSpdCal;
-isolatingLMSImage = CalFormatToImage(isolatingLMSCal,imageN,imageN);
-meanLMS = mean(isolatingLMSCal,2);
-isolatingContrastCal = zeros(3,imageN*imageN);
-for ii = 1:imageN*imageN
-    isolatingContrastCal(:,ii) = ExcitationsToContrast(isolatingLMSCal(:,ii),meanLMS);
-end
-isolatingContrastImage = CalFormatToImage(isolatingContrastCal,imageN,imageN);
+% Quantized LMS image and cone contrast image
+quantizedLMSCal = T_cones*quantizedSpdCal;
+meanLMS = mean(quantizedLMSCal,2);
+quantizedContrastCal = ExcitationsToContrast(quantizedLMSCal,meanLMS);
+quantizedContrastImage = CalFormatToImage(quantizedContrastCal,imageN,imageN);
 
 % SRGB image via XYZ
-isolatingXYZCal = T_xyz*isolatingSpdCal;
-isolatingSRGBPrimaryCal = XYZToSRGBPrimary(isolatingXYZCal);
-scaleFactor = max(isolatingSRGBPrimaryCal(:));
-isolatingSRGBCal = SRGBGammaCorrect(isolatingSRGBPrimaryCal/scaleFactor,0);
-isolatingSRGBImage = uint8(CalFormatToImage(isolatingSRGBCal,imageN,imageN));
+quantizedXYZCal = T_xyz*quantizedSpdCal;
+quantizedSRGBPrimaryCal = XYZToSRGBPrimary(quantizedXYZCal);
+%scaleFactor = max(quantizedSRGBPrimaryCal(:));
+quantizedSRGBCal = SRGBGammaCorrect(quantizedSRGBPrimaryCal/scaleFactor,0);
+quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
 
 % Show the SRGB image
-figure; imshow(isolatingSRGBImage)
+figure; imshow(quantizedSRGBImage)
 
 %% Plot slice through LMS contrast image
 figure; hold on
-plot(1:imageN,100*isolatingContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*isolatingContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*isolatingContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*quantizedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+
+plot(1:imageN,100*quantizedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+
+plot(1:imageN,100*quantizedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 title('Image Slice, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
+ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Light level tests
-
+%
 % PupilDiameter
 pupilDiameterMM = 4;
 theStimulusExtentDeg = 15;
