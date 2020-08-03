@@ -4,8 +4,6 @@
 % 
 % 4/22/2020  Started on it
 
-%% STILL SOME NUMERICAL ISSUE TO BE SOLVED.  RUN WITH CURRENT CONFIG TO SEE PROBLEM.
-
 %% Clear
 clear; close all;
 
@@ -33,14 +31,14 @@ target3MaxLMSContrast = [1 -1 -0.5]';
 % run into numerical error at the edges. The second number is used when
 % defining the three primaries, the first when computing desired weights on
 % the primaries.
-ledContrastReMax = 0.02;
+ledContrastReMax = 0.025;
 ledContrastReMaxWithHeadroom = 1.1*ledContrastReMax;
 plotAxisLimit = 2;
 
 % When we compute a specific image, we may not want full contrast available
 % with the primaries. This tells us fraction of max available relative to
 % ledContrastReMax.
-imageModulationContrast = 1;
+imageModulationContrast = 0.0025/ledContrastReMax;
 
 % Frozen factor for SRGB conversions, so it's preserved across contrasts
 scaleFactor = 2.4985e+04;
@@ -285,7 +283,7 @@ for ll = 1:nFineLevels
     
     % Store
     finePrimaries(:,ll) = thisMixture;
-    predictedFineLMS(:,ll) = T_cones*spdMatrix*thisMixture;
+    finePredictedLMS(:,ll) = T_cones*spdMatrix*thisMixture;
 end
 
 % Do this at quantized levels
@@ -299,13 +297,13 @@ predictedQuantizedLMS = zeros(3,nDisplayLevels);
 quantizedDisplayPrimaries = zeros(3,nDisplayLevels);
 
 % Set up point cloud for fast finding of nearest neighbors
-finePtCloud = pointCloud(fineDesiredLMS');
+finePtCloud = pointCloud(finePredictedLMS');
 for ll = 1:nDisplayLevels
     quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
     quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
     
     minIndices(ll) = findNearestNeighbors(finePtCloud,quantizedLMS(:,ll)',1);
-    predictedQuantizedLMS(:,ll) = fineDesiredLMS(:,minIndices(ll));
+    predictedQuantizedLMS(:,ll) = finePredictedLMS(:,minIndices(ll));
     quantizedDisplayPrimaries(:,ll) = finePrimaries(:,minIndices(ll));      
 end
 
@@ -334,7 +332,7 @@ quantizedFineLMSGaborCal = zeros(3,imageN*imageN);
 for ii = 1:imageN*imageN
     thisIndex = fineIntegerMonochromeGaborImage(ii);
     fineLMSContrastCal(:,ii) = fineDesiredContrast(:,thisIndex);
-    quantizedFineLMSGaborCal(:,ii) = predictedFineLMS(:,thisIndex);
+    quantizedFineLMSGaborCal(:,ii) = finePredictedLMS(:,thisIndex);
 end
 fineLMSContrastGaborImage = CalFormatToImage(fineLMSContrastCal,imageN,imageN);
 meanLMS = mean(quantizedFineLMSGaborCal,2);
