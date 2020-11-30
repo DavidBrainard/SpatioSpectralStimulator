@@ -1,7 +1,18 @@
 % LightLevelConversions
 %
-% Take monochromatic retinal irradiance and convert it to many other
-% equivalent units.
+% Take LED power and convert it to various units.
+%
+% Some comparisons
+%
+%     Will's summation paper.  25 nW entering eye at 550nm, paper gives about 828 cd/m2,
+%     for 1.2 by 1.2 degree field, 7.75 mm pupil.  We get about 984 here.  This
+%     depends on exact pupil size, which is used to convert power entering eye
+%     to retinal irradiance.
+%     LEDPeaksNm = 550;
+%     LEDPowerUW = 25e-3;
+%
+%     Derek calculation.  6.7 uW entering eye for 4 deg square stimulus for
+%     some broadband stimulus.  Gets 100-160 cd/m2 luminance.
 %
 % 10/29/15  dhb  Wrote (again, since I lost the first version) from OLLightLevelCheck
 % 11/02/18  dhb  Added isomerization rate and fraction bleached calculations.
@@ -20,16 +31,26 @@ wls = SToWls(S);
 %% Define LED properties.
 %
 % Assume equal max power and bandwidth across LEDs
-LEDPeaksNm = [420   439   457   476   494   513   531   550   569   587   606   624   643   661   680];
-% LEDPeaksNm = [550];
+LEDPeaksNm = [425  450  467.5  480 502.5 527.5  532.5  560  571  587.  595  619  629  640  657  670];
+
+% Amount of light we lose between measurement and entering the eye.
+powerLossFactor = 0.01;
+
+% These are the one panel numbers from spreadsheet in email of 11/20/20
+LEDMaxPowerUW = [7.7936   10.1609   14.8317   10.2381    7.6416    9.0432    6.4153    0.0526    0.0609    4.3816    1.9000    7.7766    8.8047   11.7608   13.0074    8.6279];
+LEDMaxPowerUW = [2   2   2   2    2    2    2    2    2    2    2    2    2   2   2    2];
+
+% Turn LEDs into Gaussian spds of specified power each
 LEDFWHM = 15;
 LEDStandardDeviationNm = FWHMToStd(LEDFWHM);
 LEDPrimaries = zeros(length(wls),length(LEDPeaksNm));
 for ii = 1:length(LEDPeaksNm)
     LEDPrimaries(:,ii) = normpdf(wls, LEDPeaksNm(ii), LEDStandardDeviationNm);
+    LEDPrimaries(:,ii) = powerLossFactor*LEDMaxPowerUW(ii)*LEDPrimaries(:,ii)/sum(LEDPrimaries(:,ii));
 end
 maxSpd = sum(LEDPrimaries,2);
-
+maxSpdPowerUW = sum(maxSpd);
+fprintf('Total max power is %0.3f uW\n',maxSpdPowerUW);
 
 %% Get inputs and put into common format
 pupilDiamMm = GetWithDefault('Enter pupil diameter in mm',3);
@@ -56,7 +77,8 @@ degPerCm = degPerMm*10;
 % Convert retinal area from deg2 to cm2
 stimulusAreaCm2 = stimulusAreaDegrees2/(degPerCm^2);
 
-% Accept either corneal or retinal illuminance
+% Accept either retinal illuminance, corneal illuminance, or power entering
+% eye.  Convert to retinal and corneal irradiance for further computations.
 RETORCORN = GetWithDefault('Enter retinal irradiance (1), corneal irradiance (2), or power entering eye (3)?',3);
 switch (RETORCORN)
     case 1
@@ -74,18 +96,20 @@ switch (RETORCORN)
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);
     case 3
-        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',10);
+        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',maxSpdPowerUW);
         rawCornIrradianceMicrowattsPerCm2In = rawPowerIntoEyeIn/pupilAreaCm2;
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);  
 end
+clear rawRadianceMicrowattsPerCm2Sr;
 
-% Pupil adjustment factor for Ansi MPE 
+%% Pupil adjustment factor for Ansi MPE 
 mpePupilDiamMm = 3;
 mpePupilDiamMm  = GetWithDefault('Enter ANSI 2007 MPE caclulations assumed pupil diameter in mm',mpePupilDiamMm );
 pupilAdjustFactor = (pupilDiamMm/mpePupilDiamMm).^2;
  
 %% Given that we have retinal irradiance, corneal irradiance, the pupil area, and the stimulus area ...
+%
 % it is easy to check the retinal irradiance.
 retIrradianceMicrowattsPerDeg2Check = rawCornIrradianceMicrowattsPerCm2In*pupilAreaCm2/stimulusAreaDegrees2;
 retIrradianceMicrowattsPerCm2Check = retIrradianceMicrowattsPerDeg2Check/(0.01*DegreesToRetinalMM(1,eyeLengthCm*10)^2);
@@ -155,7 +179,7 @@ if (max(abs(retIrradianceMicrowattsPerCm2(:)-retIrradianceMicrowattsPerCm2In(:))
     error('Failure to go there and back');
 end
 
-%% Conver retinal irradiance to trolands, etc.
+%% Convert retinal irradiance to trolands, etc.
 irradianceScotTrolands = RetIrradianceToTrolands(retIrradianceWattsPerUm2, S, 'Scotopic', [], num2str(eyeLengthMm));
 irradiancePhotTrolands = RetIrradianceToTrolands(retIrradianceWattsPerUm2, S, 'Photopic', [], num2str(eyeLengthMm));
 retIrradianceQuantaPerUm2Sec = EnergyToQuanta(S,retIrradianceWattsPerUm2);
@@ -180,15 +204,13 @@ T_scotopicVlambda = SplineCmf(S_rods,T_rods,S);
 irradianceScotTrolands_check = pupilAreaMm2*1700*(T_scotopicVlambda*radianceWattsPerM2Sr);
 irradiancePhotTrolands_check = pupilAreaMm2*photopicLuminanceCdM2;
 
-%% Compute corneal irradiance
+%% Compute spectral corneal irradiance
+%
+% Make sure total corneal irradiance matches what we computed above
 cornealIrradianceMicrowattsPerCm2 = RadianceAndDegrees2ToCornIrradiance(radianceMicrowattsPerCm2Sr,stimulusAreaDegrees2);
 switch (RETORCORN)
     case 2
-        index = find(cornealIrradianceMicrowattsPerCm2 ~= 0);
-        if (length(index) ~= 1)
-            error('Oops.  Somebody isn''t monochromatic');
-        end
-        if (abs(cornealIrradianceMicrowattsPerCm2(index)-rawCornIrradianceMicrowattsPerCm2In) > tolerance)
+        if (abs(sum(cornealIrradianceMicrowattsPerCm2)-rawCornIrradianceMicrowattsPerCm2In) > tolerance)
             error('Corneal irradiance computation did not invert');
         end
 end
