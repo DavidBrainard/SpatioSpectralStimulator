@@ -24,21 +24,41 @@ markerindex = 0.5; % Set the centered point
 figure(1);
 preview(vid, hImage)
 hLine = line(hAxes, round([markerindex*imWidth, markerindex*imWidth]),round([markerindex*imHeight, markerindex*imHeight]),'Marker','+','MarkerSize',30,'color','r','LineWidth',1,'LineStyle','none');
-txtcamera = 'Real time Camera Image';
-text(0.73*imWidth*markerindex,0.1*imHeight*markerindex,txtcamera,'Color','w','fontsize',14);
+a = 0.45*imWidth; % rect starting x-coordinate
+b = 0.46*imHeight; % rect starting y-coordinate
+c = 309; % rect width
+d = 166; % rect height
+rectangle('Position',[a,b,c,d],'Curvature',[0,0],'LineWidth',1,'LineStyle','--','edgecolor','y')
+txtrect = 'Measure area';
+text(0.44*imWidth,0.4*imHeight,txtrect,'Color','y','fontsize',12);
 
-% Save an image
+txtcamera = 'Real time Camera Image';
+text(0.36*imWidth,0.05*imHeight,txtcamera,'Color','w','fontsize',14);
+
+txtimage_contrast=num2str(0);
+txtimage_FFT=num2str(0);
+
+%% 2) Contrast measurement routine
+% It is possible to repeat this part to update the contrast and fft area
+% calculation results on the camera preview screen
+%
+% It is not 100% real-time measurements, but it works pretty fast which
+% will make the setting the lens position easier
+
+% Clear text on the camera preview (contrast and FFT results)
+delete(txtimage_contrast);
+delete(txtimage_FFT);
+
+% Save a camera image
 start(vid);
 image = getdata(vid);
 imagesize = size(image);
 Xpixel = imagesize(1);
 Ypixel = imagesize(2);
 
-%% 2) Image processing
-
-% Cut image of the DMD
-a = 0.45*Xpixel;
-b = 0.55*Xpixel;
+% Cut image of the DMD (a,b,c,d values are from above)
+a = 0.46*Xpixel;
+b = 0.54*Xpixel;
 c = 0.45*Ypixel;
 d = 0.55*Ypixel;
 imagecrop = image(a:b,c:d);
@@ -53,7 +73,9 @@ imagecrop_75 = imagecrop(round(0.75*Ypixel_crop),:);
 imagecrop_avg = mean([imagecrop_25;imagecrop_50;imagecrop_75]);
 % imagecrop_std = std([imagecrop_25;imagecrop_50;imagecrop_75]);
 
-%%  3) Contrast measure 
+
+
+%  3) Contrast measure 
 white = max(imagecrop_avg);
 black = min(imagecrop_avg);
 contrast = (white-black)/(white+black)
@@ -68,10 +90,9 @@ contrast = (white-black)/(white+black)
 % ylabel('Intensity');
 % legend('25%','50%','75%','Avg');
 
-txtcamera_contrast = append('Contrast:  ',num2str(contrast));
-text(1.3*imWidth*markerindex,0.7*imHeight*markerindex,txtcamera_contrast,'Color','w');
 
-%% 4) FFT area measure
+
+% 4) FFT area measure
 % Calculate MTF (modulus of OTF)
 FFT_25 = abs(fftshift(fft(imagecrop_25)));
 FFT_50 = abs(fftshift(fft(imagecrop_50)));
@@ -107,5 +128,12 @@ sumFFT_50 = sum(FFT_50);
 sumFFT_75 = sum(FFT_75);
 sumFFT_avg = sum(FFT_avg)
 
-txtcamera_MTF = append('FFT area:  ',num2str(sumFFT_avg));
-text(1.3*imWidth*markerindex,0.8*imHeight*markerindex,txtcamera_MTF,'Color','w');
+% Close the cropped DMD image
+% close(figure(2));
+
+% Display measured contrast and FFT area results on the camera preview
+txtcamera_contrast = append('Contrast:  ',num2str(contrast));
+txtimage_contrast=text(1.3*imWidth*markerindex,0.7*imHeight*markerindex,txtcamera_contrast,'Color','w');
+
+txtcamera_FFT = append('FFT area:  ',num2str(sumFFT_avg));
+txtimage_FFT = text(1.3*imWidth*markerindex,0.8*imHeight*markerindex,txtcamera_FFT,'Color','w');
