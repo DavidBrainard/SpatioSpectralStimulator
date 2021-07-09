@@ -107,7 +107,7 @@ rectColor = [0 0 0];
 
 % Set the barwidth
 rectColor = [0 0 0];
-barwidth=20; % in pixel unit
+barwidth=0; % in pixel unit
 logic=2; % 1=vertical / 2=horizontal
 
 % Single rectangle
@@ -138,5 +138,7 @@ else
 end 
 
 Screen('Flip', window);
-KbStrokeWait;
-sca;
+
+%% Activate the following commands if you want to quit the screen with key stroke
+% KbStrokeWait;
+% sca;
