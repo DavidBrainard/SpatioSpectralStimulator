@@ -44,6 +44,9 @@ switch (sysInfo.localHostName)
         end
 end
 
+%% Project prefs
+setpref(projectName,'LEDSpectraDir',fullfile(baseDir,'SACC_materials','JandJProjector','LEDSpectrumMeasurements'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.
