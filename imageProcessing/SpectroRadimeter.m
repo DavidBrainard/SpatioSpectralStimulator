@@ -4,39 +4,75 @@
 clear all; close all; clc;
 tbUse('BrainardLabBase')
 
-% Run terminal command 'vputil' (case sensitive) / both unix and system
-% work
-command = 'vputil';
-unix(command)
-
-devsel ppx % Select the PROPixx with the command (Just type this on the command)
-
-% VPixx Primary settings (type each on the command screen)
-rw 0x1c8 0x1 % (Primary 0 always ON) > Screen goes red 
-rw 0x1c8 0x2 % (Primary 1 always ON) > Screen goes green
-rw 0x1c8 0x4 % (Primary 2 always ON) > Screen goes blue
-rw 0x1c8 0x7 % (All primaries on) > Screen goes brighter with no chromaticity changes (at least visually)
-rw 0x1c8 0x0 % (Set to default) > Back to the first screen
-
 %% Measurement using PR-670 Spectroradiometer
-% In terminal, command to authorize to read and write 'sudo chomd a+rw /dev/ttyACM0'
+% In terminal, command to authorize to read and write 'sudo chmod a+rw /dev/ttyACM0 (the last character is number zero)'
 % Also command to check the status 'ls -l /dev/ttyACM0'
 
-CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
-S=[380 2 201];
-fw=MeasSpd(S,5,'all'); % Measurement (it takes a while)
-plot(SToWls(S),fw);
-xlabel('Wavelength(nm)')
-ylabel('Spectral irradiance')
+%% Initialize (authorization)
+% Mostly PR670 connects to 'ttyACM0', but sometimes to 'ttyACM1', so just
+% do both to make it sure to be connected
 
+command_PR670 = 'sudo chmod a+rw /dev/ttyACM0';
+unix(command_PR670)
+
+command_PR670 = 'sudo chmod a+rw /dev/ttyACM1';
+unix(command_PR670)
+
+command_check = 'ls -l /dev/ttyACM0';
+unix(command_check)
+
+%% Measurement 
+CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
+
+S=[380 2 201]; % Wavelength range (380-780 nm) / S=[380 2 201]
+fw=MeasSpd(S,5,'all'); % Measurement (it takes a while)
+plot(SToWls(S),fw,'b-');
+
+num=subColor;
+filename = append('sub',num2str(num),'.mat'); 
+% filename = append('blk','.mat'); 
+save(filename,'fw')
+
+%%
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
 T_XYZ = T_xyzJuddVos';
-load T_cones_sp % Smith-Pokorny Cone spectral sensitivity function
-T_Cones = T_cones_sp';
+XYZ = 683*fw'*T_XYZ; % XYZ calculation
+xyY = XYZToxyY(XYZ'); % xyY
+colorgamut=XYZToxyY(T_XYZ');
+colorgamut(:,82)=colorgamut(:,1);
 
-XYZ = fw'*T_XYZ; % XYZ calculation
-Cones = fw'*T_Cones; % Cone signals calculation
-xyY = XYZToxyY(XYZ); % xyY
 XYZw = [100 100 100]'; % Lab white
-Lab = XYZToLab(XYZ,XYZw); % Lab calculation
+Lab = XYZToLab(XYZ',XYZw); % Lab calculation
+
+% Power spectrum
+figure(1); subplot(2,2,1); hold on;
+plot(SToWls(S),fw,'b-');
+xlabel('Wavelength(nm)')
+ylabel('Spectral irradiance')
+xlim([380 780]);
+
+% CIE (x,y) chromaticity
+figure(1);subplot(2,2,2); hold on;
+plot(xyY(1,:),xyY(2,:),'r.'); % Measurement point
+plot(colorgamut(1,:),colorgamut(2,:),'k-');
+xlabel('CIE x')
+ylabel('CIE y')
+xlim([0 1]);
+ylim([0 1]);
+legend('Test');
+
+% CIELAB 
+figure(1);subplot(2,2,3); hold on;
+plot(Lab(1,:),Lab(2,:),'r.'); % Measurement point
+xlabel('CIELAB a*')
+ylabel('CIELAB b*')
+xlim([-100 100]);
+ylim([-100 100]);
+legend('Test');
+
+
+%% Cone signals calculation
+% load T_cones_sp % Smith-Pokorny Cone spectral sensitivity function
+% T_Cones = T_cones_sp';
+% Cones = fw'.*T_Cones; % Cone signals calculation
 
