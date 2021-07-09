@@ -28,34 +28,57 @@ if (S(2) ~= 1)
 end
 wls = SToWls(S);
 
-%% Define LED properties.
-%
-% Assume equal max power and bandwidth across LEDs
-LEDPeaksNm = [425  450  467.5  480 502.5 527.5  532.5  560  571  587.  595  619  629  640  657  670];
+%% Point at directory with spectra
+projectName = 'SpatioSpectralStimulator';
+LEDMeasDateStr = '2021-07-08';
+LEDSpectraDir = fullfile(getpref(projectName,'LEDSpectraDir'),LEDMeasDateStr);
 
-% Amount of light we lose between measurement and entering the eye.
-powerLossFactor = 0.01;
 
-% These are the one panel numbers from spreadsheet in email of 11/20/20
-LEDMaxPowerUW = [7.7936   10.1609   14.8317   10.2381    7.6416    9.0432    6.4153    0.0526    0.0609    4.3816    1.9000    7.7766    8.8047   11.7608   13.0074    8.6279];
-LEDMaxPowerUW = [2   2   2   2    2    2    2    2    2    2    2    2    2   2   2    2];
+%% Get full on spectrum
+measS = [380 5 81];
+measWls = SToWls(measS);
+white = load(fullfile(LEDSpectraDir,append('white','.mat')));
+black = load(fullfile(LEDSpectraDir,append('black','.mat')));
+spd_w = SplineSpd(measS,white.white,S);
+spd_blk = SplineSpd(measS,black.black,S);
+figure; clf; hold on
+plot(wls,spd_w,'r');
+plot(wls,spd_blk,'k');
+xlabel('Wavelength (nm)');
+ylabel('Power');
+maxSpd = spd_w;
 
-% Turn LEDs into Gaussian spds of specified power each
-LEDFWHM = 15;
-LEDStandardDeviationNm = FWHMToStd(LEDFWHM);
-LEDPrimaries = zeros(length(wls),length(LEDPeaksNm));
-for ii = 1:length(LEDPeaksNm)
-    LEDPrimaries(:,ii) = normpdf(wls, LEDPeaksNm(ii), LEDStandardDeviationNm);
-    LEDPrimaries(:,ii) = powerLossFactor*LEDMaxPowerUW(ii)*LEDPrimaries(:,ii)/sum(LEDPrimaries(:,ii));
-end
-maxSpd = sum(LEDPrimaries,2);
+% %% Define LED properties.
+% %
+% % Assume equal max power and bandwidth across LEDs
+% LEDPeaksNm = [425  450  467.5  480 502.5 527.5  532.5  560  571  587.  595  619  629  640  657  670];
+% 
+% % Amount of light we lose between measurement and entering the eye.
+% powerLossFactor = 0.01;
+% 
+% % These are the one panel numbers from spreadsheet in email of 11/20/20
+% LEDMaxPowerUW = [7.7936   10.1609   14.8317   10.2381    7.6416    9.0432    6.4153    0.0526    0.0609    4.3816    1.9000    7.7766    8.8047   11.7608   13.0074    8.6279];
+% LEDMaxPowerUW = [2   2   2   2    2    2    2    2    2    2    2    2    2   2   2    2];
+% 
+% % Turn LEDs into Gaussian spds of specified power each
+% LEDFWHM = 15;
+% LEDStandardDeviationNm = FWHMToStd(LEDFWHM);
+% LEDPrimaries = zeros(length(wls),length(LEDPeaksNm));
+% for ii = 1:length(LEDPeaksNm)
+%     LEDPrimaries(:,ii) = normpdf(wls, LEDPeaksNm(ii), LEDStandardDeviationNm);
+%     LEDPrimaries(:,ii) = powerLossFactor*LEDMaxPowerUW(ii)*LEDPrimaries(:,ii)/sum(LEDPrimaries(:,ii));
+% end
+% maxSpd = sum(LEDPrimaries,2);
+% maxSpdPowerUW = sum(maxSpd);
+% fprintf('Total max power is %0.3f uW\n',maxSpdPowerUW);
+
+% Power in maxSpd *assumes 1 nm spacing enforced above)
 maxSpdPowerUW = sum(maxSpd);
-fprintf('Total max power is %0.3f uW\n',maxSpdPowerUW);
 
 %% Get inputs and put into common format
 pupilDiamMm = GetWithDefault('Enter pupil diameter in mm',3);
 eyeLengthMm = GetWithDefault('Enter assumed eye length in mm',16.67);
-LENGTHORAREA = GetWithDefault('Enter stimulus side (1), stimulus diameter (2), or stimulus area (3)?',1);
+LENGTHORAREA = GetWithDefault('Enter stimulus side (1), stimulus diameter (2), or stimulus area (3)?',3);
 switch (LENGTHORAREA)
     case 1
         rawStimulusSideDegIn = GetWithDefault('Enter square stimulus side in deg',12);
@@ -64,7 +87,7 @@ switch (LENGTHORAREA)
         rawStimulusSideDegIn = GetWithDefault('Enter circular stimulus diameter in deg',1.8);
         stimulusAreaDegrees2 = pi*(rawStimulusSideDegIn/2)^2;
     case 3
-        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',1);
+        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',6*10.7);
 end
 
 % Utility calculations
@@ -96,7 +119,7 @@ switch (RETORCORN)
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);
     case 3
-        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',maxSpdPowerUW);
+        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',11);
         rawCornIrradianceMicrowattsPerCm2In = rawPowerIntoEyeIn/pupilAreaCm2;
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);  
@@ -223,6 +246,7 @@ fprintf('\n');
 fprintf('  * Analyzing light levels as input\n');
 fprintf('  * Stimulus radiance %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(radianceWattsPerM2Sr)),log10(sum(radianceWattsPerCm2Sr)));
 fprintf('  * Stimulus luminance %0.1f candelas/m2\n',photopicLuminanceCdM2);
+fprintf('    * For comparison, luminance directly from PR spectrum: %01.f cd/m2\n',T_xyz(2,:)*maxSpd);
 fprintf('    * For comparison, sunlight in Philly: %0.1f cd/m2\n',photopicLuminancePhillyBrightCdM2);
 fprintf('    * For comparison, sunlight in Philly: %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(spd_phillybright)),log10(sum(spd_phillybright/10000)));
 fprintf('    * For comparison, sunlight in Philly near 790 nm: %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(spd_790bright)),log10(sum(spd_790bright/10000)));
