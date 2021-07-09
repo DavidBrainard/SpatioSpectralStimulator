@@ -1,5 +1,4 @@
-%% LensBenchCalcs
-% A simple optical bench explorer
+%% TelecentricInput
 %
 % Description:
 %   The origin of the optical system [0,0,0] corresponds to the apex of the
