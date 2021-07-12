@@ -16,15 +16,18 @@ addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx')); % add VPixx
 % Run terminal command 'vputil' (case sensitive) / both unix and system work
 % Terminal command 'devsel ppx' selects the PROPixx device (Just type this on the command)
 
-command = 'vputil devsel ppx';
-unix(command)
+% command = 'vputil devsel ppx -q';
+% unix(command)
 
-%% VPixx Primary settings (type each on the command screen)
-rw 0x1c8 0x1 % (Primary 0 always ON) > Screen goes red 
-rw 0x1c8 0x2 % (Primary 1 always ON) > Screen goes green
-rw 0x1c8 0x4 % (Primary 2 always ON) > Screen goes blue
-rw 0x1c8 0x7 % (All primaries on) > Screen goes brighter with no chromaticity changes (at least visually)
-rw 0x1c8 0x0 % (Set to default) > Back to the first screen
+command_primaries = 'vputil rw 0x1c8 0x7 -q quit'; % Set to 'All Primaries on' without typing the command / '-q' is the key and 'quit' command terminates the vputil
+unix(command_primaries)
+
+% VPixx Primary settings (type each on the command screen)
+% rw 0x1c8 0x1 % (Primary 0 always ON) > Screen goes red 
+% rw 0x1c8 0x2 % (Primary 1 always ON) > Screen goes green
+% rw 0x1c8 0x4 % (Primary 2 always ON) > Screen goes blue
+% rw 0x1c8 0x7 % (All primaries on) > Screen goes brighter with no chromaticity changes (at least visually)
+% rw 0x1c8 0x0 % (Set to default) > Back to the first screen
 
 %% Call out the Datapixx function
 % addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx')); % add VPixx toolbox ('Datapixx') to path (incl. all subfolders)
@@ -58,6 +61,33 @@ currents
 % current = Datapixx('GetPropixxHSLedCurrent',primaryColor,subColor) % Single 'subColor' channel
 % currents = Datapixx('GetPropixxHSLedCurrents',primaryColor) % All 'subColor' channel
 
+%% Control by each primary color channel
+
+isReady = Datapixx('open'); 
+isReady = Datapixx('IsReady');
+
+current = 50;
+
+subcolor_R = 13; % 0-15 / 8 is not working
+subcolor_G = 6; % 0-15
+subcolor_B = 2; % 0-15
+
+Datapixx('SetPropixxHSLedCurrent',0,subcolor_R,current) % R
+Datapixx('SetPropixxHSLedCurrent',1,subcolor_G,current) % G
+Datapixx('SetPropixxHSLedCurrent',2,subcolor_B,current) % B
+
+% Read the current settings
+for j=1:3; % PrimaryColor (0-2)with 
+    for i=1:16; % SubColor (0-15)
+    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
+    end
+end 
+isReady = Datapixx('open');
+isReady = Datapixx('IsReady');
+
+currents
+
+
 %% 1) Control one SubColor 
 
 isReady = Datapixx('open'); 
@@ -81,10 +111,11 @@ isReady = Datapixx('IsReady');
 
 currents
 
+
 %% 2) Control all subColors within a Primary color
 
 % Control currents
-primaryColor = 2; % 0-2
+primaryColor = 1; % 0-2
 current = 100; % 0-255
 
 for i=1:16 % subColorrw 0x1c8 0x7
@@ -145,8 +176,8 @@ for j=1:3; % PrimaryColor (0-2)
 end 
 
 % Set the subColor No. for investication
-subColor = 8; % 0-15 / 
-current = 252;
+subColor = 5; % 0-15 / 
+current = 50;
 
 for i=1:3 % subColor
       Datapixx('SetPropixxHSLedCurrent', i-1, subColor, current); 
@@ -162,6 +193,7 @@ isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
 
 currents
+
 %% Original command for setting the currents
 % Datapixx('SavePropixxHSLedCurrents'); % Save the present currents
 % Datapixx('SetPropixxHSLedCurrent', primaryColor, subColor, current); % Set a single current
