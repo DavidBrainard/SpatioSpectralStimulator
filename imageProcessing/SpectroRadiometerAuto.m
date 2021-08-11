@@ -13,12 +13,15 @@ addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx')); % add VPixx
 % Mostly PR670 connects to 'ttyACM0', but sometimes to 'ttyACM1', so just
 % do both to make it sure to be connected
 % Also command to check the status 'ls -l /dev/ttyACM0'
+% The password should be typed at the very first command
 
 command_PR670 = 'sudo chmod a+rw /dev/ttyACM0';
 unix(command_PR670)
 command_PR670 = 'sudo chmod a+rw /dev/ttyACM1';
 unix(command_PR670)
 command_check = 'ls -l /dev/ttyACM0';
+unix(command_check)
+command_check = 'ls -l /dev/ttyACM1';
 unix(command_check)
 
 %% Start 2 (Vpixx projector)
@@ -29,7 +32,7 @@ unix(command_check)
 % rw 0x1c8 0x7 % (All primaries on) > Screen goes brighter with no chromaticity changes (at least visually)
 % rw 0x1c8 0x0 % (Set to default) > Back to the first screen
 
-command_primaries = 'vputil rw 0x1c8 0x7 -q quit'; % Set to 'All Primaries on'
+command_primaries = 'vputil rw 0x1c8 0x0 -q quit'; % Set to 'All Primaries on'
 unix(command_primaries)
 
 % Connect the Vpixx device
@@ -60,7 +63,269 @@ end
 
 currents
 
-%% *********ROUTINE STARTS FROM HERE********* (Stability)
+%% ******************************************************ROUTINE STARTS FROM HERE****************************************************************
+%% SINGLE CHANNEL MEASUREMENT
+% Measurement time = 18 min / 68 test colors (48 singles + 20 randoms)
+clear start; clear fw_single; clear fw_white; clear fw_blk; clear fw_rand; clear SpectrumInput;
+
+CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
+S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
+Date = 'Dataset8)';
+ADD = '(WithinPrimary)_black10_Primary12_normal';
+
+% Black and white levels
+current_white = 252; 
+current_blk = 10; % Set black level (10 is measurable)
+current_base = 10; % Set the black level as a base
+currentset = [252];
+datatype = 1; % 1 = within primary / 2 = across primary
+numsample = 20; % Number of random spectra to generate
+
+% Input data needs to be filled till this part
+% *************************************************************************
+
+% Time delay before start (go out the room before it's done)
+timesec = 15;
+t = timer('TimerFcn','stat=false; disp(''Time OFF to leave!'')','StartDelay',timesec);
+start(t)
+stat=true;
+while(stat==true)
+     disp('.')
+     pause(1) % Pause for 1 seconds (unit)
+end
+delete(t)
+
+% White measurement
+isReady = Datapixx('open');
+isReady = Datapixx('IsReady');
+
+for j=1:3 % PrimaryColor
+   for i=1:16 % subColor             
+       Datapixx('SetPropixxHSLedCurrent', j-1, i-1, current_white); 
+   end
+end
+
+fw_white = MeasSpd(S,5,'all'); 
+disp(append('White ','measurement',' complete!'))
+
+% Black measurement
+isReady = Datapixx('open');
+isReady = Datapixx('IsReady');
+
+for j=1:3 % PrimaryColor
+   for i=1:16 % subColor
+         Datapixx('SetPropixxHSLedCurrent', j-1, i-1, current_blk); 
+   end
+end
+
+fw_blk = MeasSpd(S,5,'all');
+disp(append('Black ','measurement',' complete!'))
+
+% Single peak spectrum measurements
+if datatype == 1
+
+    % 1) WITHIN PRIMARY (All primaries have a same value)
+    for i=1:16 % Num of 15 LED channels (i=1-16 / Vpixx input=0-15)
+
+        % Set all channel currents to 0 as baseline
+        isReady = Datapixx('open');
+        isReady = Datapixx('IsReady');
+
+        for j=1:3 % PrimaryColor
+            for k=1:16 % subColor
+             Datapixx('SetPropixxHSLedCurrent', j-1, k-1, current_base);
+            end
+        end
+
+          % currentset = [10:10:240,252]; % p.s. These all sets took 1hr 45min (a total of 368 measurements)
+          currentset = [252];
+
+          for f = 1:length(currentset);
+            current = currentset(f);
+
+            % Measure each LED channel
+            isReady = Datapixx('open');
+            isReady = Datapixx('IsReady');
+
+            Datapixx('SetPropixxHSLedCurrent', 0, i-1, current); % Primary 1
+            Datapixx('SetPropixxHSLedCurrent', 1, i-1, current); % Primary 2
+            Datapixx('SetPropixxHSLedCurrent', 2, i-1, current); % Primary 3
+
+            % PR670 measurement
+            fw_single(:,f+length(currentset)*(i-1))=MeasSpd(S,5,'all');
+            disp(append('LED Channel ',num2str(i),' current ',num2str(f),' complete!'))
+          end
+    end
+    
+elseif datatype == 2
+    
+    % 2) ACROSS PRIMARY (Primary has a different value)
+    for p=1:3 % Primary
+
+          for s = 1:16 % Subprimary
+
+                % Set all channel currents as baseline
+                isReady = Datapixx('open');
+                isReady = Datapixx('IsReady');
+
+                for j=1:3 % PrimaryColor
+                    for k=1:16 % subColor
+                     Datapixx('SetPropixxHSLedCurrent', j-1, k-1, current_base);
+                    end
+                end
+
+                for c = 1:length(currentset);
+                    current = currentset(c);
+
+                    % Measure each LED channel
+                    isReady = Datapixx('open');
+                    isReady = Datapixx('IsReady');
+                    Datapixx('SetPropixxHSLedCurrent', p-1, s-1, current);
+
+                    % PR670 measurement
+                    fw_single(:,c + length(currentset)*(s-1) + 16*length(currentset)*(p-1))=MeasSpd(S,5,'all');
+                    disp(append('Primary ',num2str(p),' Subchannel ',num2str(s),' current ',num2str(c),' complete!'))
+                end
+          end
+      
+    end
+end
+
+% Save the spectrums (.mat file)
+filename = append(Date,'Spectrum_single',ADD,'.mat');            
+save(filename,'fw_single') 
+
+filename2 = append(Date,'Spectrum_white',ADD,'.mat');            
+save(filename2,'fw_white')
+
+filename3 = append(Date,'Spectrum_black',ADD,'.mat');        
+save(filename3,'fw_blk') 
+
+% ******************************************************ROUTINE STARTS FROM HERE****************************************************************
+% RANDOM COMBO OF SPECTRUM
+clear start; clear SpectrumInput; clear fw_rand;
+
+% Date = '0805';
+% ADD = '(AcrossPrimary)_black0';
+
+% Time delay before start (go out the room before it's done)
+% timesec = 15;
+% t = timer('TimerFcn','stat=false; disp(''Time OFF to leave!'')','StartDelay',timesec);
+% start(t)
+% stat=true;
+% while(stat==true)
+%      disp('.')
+%      pause(1) % Pause for 1 seconds (unit)
+% end
+% delete(t)
+
+CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
+S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
+
+% % Generate random combinations
+% numsample = 20; % Set the number of the samples to be measured
+%     
+% if datatype == 1
+%     
+%     % 1) WITHIN PRIMARY
+% %     SpectrumInput = ones(numsample,16).*current_base; % Base structure
+%     SpectrumInputSet = [current_base,252]; % Set the current set to be randomized (current_base=off)
+% 
+%     for i = 1:numsample
+%         SpectrumInput(i,:) = datasample(SpectrumInputSet,16); % Set current randomly per each channel from the 'currentset_combo'
+%     end
+% 
+%     SpectrumInput(:,9) = 0; % Turn off for specific LED Channels (Ch 9 not working)
+%     
+% elseif datatype == 2
+%     
+%     % 2) ACROSS PRIMARY
+%     SpectrumInput = ones(numsample*3,16).*current_base; % Base structure
+%     
+%     SubColorSet = [1:8,10:16]; % Ch 1-16 without Ch 9 which is not working
+% 
+%     for i = 1:numsample*3
+%         idx_RandSubColor(i) = datasample(SubColorSet,1); % Set SubColor channel (rand)
+%         idx_SpectrumInput(i) = datasample(CurrentSet,1); % Set current value (rand)
+%     end
+% 
+%     for i = 1:numsample*3
+%         SpectrumInput(i,idx_RandSubColor(i))=idx_SpectrumInput(i);
+%     end
+% 
+%     SpectrumInput_R = SpectrumInput(1:numsample,:); % Primary 1
+%     SpectrumInput_G = SpectrumInput(1+numsample:numsample*2,:); % Primary 2
+% %     SpectrumInput_B = SpectrumInput(1+numsample*2:numsample*3,:); % Primary 3
+%     
+%     SpectrumInput_B = ones(numsample,16).* current_base; % Primary 3 turnoff
+%     
+%     SpectrumInput = {SpectrumInput_R SpectrumInput_G SpectrumInput_B}; % SpectrumInput {R G B}
+% end
+
+
+% Load the pre-saved SpectrumInput set
+load('Dataset3)SpectrumInput(WithinPrimary)_black10'); % 'SpectrumInput'
+
+% SpectrumInput_base = ones(numsample,16).*current_base;
+% SpectrumInput(3) = [];
+% SpectrumInput{3} = SpectrumInput_base;
+
+% if datatype == 1
+%     SpectrumInput = SpectrumInput_base + max(SpectrumInput - SpectrumInput_base,0);
+% elseif datatype == 2
+%     SpectrumInput_R = SpectrumInput_base + max(cell2mat(SpectrumInput(1)) - SpectrumInput_base,0); % Primary 1
+%     SpectrumInput_G = SpectrumInput_base + max(cell2mat(SpectrumInput(2)) - SpectrumInput_base,0); % Primary 2
+%     SpectrumInput_B = SpectrumInput_base + max(cell2mat(SpectrumInput(3)) - SpectrumInput_base,0); % Primary 3
+%     SpectrumInput = {SpectrumInput_R SpectrumInput_G SpectrumInput_B};
+% end
+
+% VPixx project current control
+if datatype == 1
+
+    % 1) WITHIN PRIMARY (All Primaries have the same value)current = 252; % 0-252
+
+    for t = 1:numsample    
+
+        % Set SubColors
+        for k=1:16
+            Datapixx('SetPropixxHSLedCurrent', 0, k-1, SpectrumInput(t,k)); % Primary 1
+            Datapixx('SetPropixxHSLedCurrent', 1, k-1, SpectrumInput(t,k)); % Primary 2
+            Datapixx('SetPropixxHSLedCurrent', 2, k-1, SpectrumInput(t,k)); % Primary 3
+        end
+
+        % PR670 measure
+        fw_rand(:,t)=MeasSpd(S,5,'all');
+        disp(append('Rand Measurement ',num2str(t),' complete!'))
+    end
+
+elseif datatype == 2
+
+    % 2) ACROSS PRIMARY (Only one primary is turned on)
+    for t = 1:numsample    
+
+          % Set SubColors with the different value
+        for k=1:16
+            Datapixx('SetPropixxHSLedCurrent', 0, k-1, SpectrumInput_R(t,k)); % Primary 1
+            Datapixx('SetPropixxHSLedCurrent', 1, k-1, SpectrumInput_G(t,k)); % Primary 2
+            Datapixx('SetPropixxHSLedCurrent', 2, k-1, SpectrumInput_B(t,k)); % Primary 3
+        end
+
+           % PR670 measure
+            fw_rand(:,t)=MeasSpd(S,5,'all');
+            disp(append('Testcolor ',num2str(t),' measurement complete!'))
+    end
+end 
+
+% Save the spectrums (.mat file)
+filename = append(Date,'SpectrumInput',ADD,'.mat');
+save(filename,'SpectrumInput')
+
+filename = append(Date,'Spectrum_rand',ADD,'.mat');
+save(filename,'fw_rand')
+
+
+%% ******************************************************ROUTINE STARTS FROM HERE****************************************************************
+%% STABILITY TEST OVER TIME
 % Measure the spectrum automatically in a specific time interval
 
 % Set the measurement date (it reflects the saved file name)
@@ -127,129 +392,3 @@ XYZ = 683*fw_5nm'*T_XYZ; % XYZ calculation
 
 filename2 = append(Date,'XYZ','.mat'); 
 save(filename2,'XYZ') 
-
-%% *********ROUTINE STARTS FROM HERE********* (Additivity)
-%% 1) Single Channel measurement (A total of 15 LED channels)
-CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
-S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
-Date = '0728';
-
-% Time delay before start (go out the room before it's done)
-timesec = 15;
-t = timer('TimerFcn','stat=false; disp(''Time OFF to leave!'')','StartDelay',timesec);
-start(t)
-stat=true;
-while(stat==true)
-     disp('.')
-     pause(1) % Pause for 1 seconds (unit)
-end
-delete(t)
-
-for i=6:16 % Num of 15 LED channels
-
-    % Set all channel currents to 0 as baseline
-    isReady = Datapixx('open');
-    isReady = Datapixx('IsReady');
-    current_base = 0;
-    for j=1:3 % PrimaryColor
-        for k=1:16 % subColor
-         Datapixx('SetPropixxHSLedCurrent', j-1, k-1, current_base);
-        end
-    end
-
-    % Measurement with different currents
-    % current_set = [10, 126, 252]; % current=10 will be used as 'black'
-      current_set = [10:10:240,252]; % p.s. These all sets took 1hr 45min (a total of 368 measurements)
-
-      for f = 1:length(current_set);
-        current = current_set(f);
-
-        % Measure each LED channel
-        isReady = Datapixx('open');
-        isReady = Datapixx('IsReady');
-        % current = 252;
-        Datapixx('SetPropixxHSLedCurrent', 0, i-1, current); % Primary 1
-        Datapixx('SetPropixxHSLedCurrent', 1, i-1, current); % Primary 2
-        Datapixx('SetPropixxHSLedCurrent', 2, i-1, current); % Primary 3
-
-        % PR670 measurement
-        fw_single(:,f+length(current_set)*(i-1))=MeasSpd(S,5,'all');
-        disp(append('LED Channel ',num2str(i),' current ',num2str(f),' complete!'))
-      end
-
-end
-
-% Save the spectrums (.mat file)
-filename = append(Date,'Spectrum_single','.mat');
-save(filename,'fw_single')% Wavelength linear interpolation (1/2/5 nm interval)
-
-%% 2) Random combinations of the LED channels
-
-Date = '0728';
-
-% Time delay before start (go out the room before it's done)
-timesec = 15;
-t = timer('TimerFcn','stat=false; disp(''Time OFF to leave!'')','StartDelay',timesec);
-start(t)
-stat=true;
-while(stat==true)
-     disp('.')
-     pause(1) % Pause for 1 seconds (unit)
-end
-delete(t)
-
-CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
-S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
-
-% Set random channel combinations to turn on
-numsample = 30; % Set the number of the samples to be measured
-SpectrumInputSet = [0,150,200,252]; % Set the current set to be randomized (0=off)
-
-% Generate the random combinations of the LED channels
-for i = 1:numsample
-    SpectrumInput(i,:) = datasample(SpectrumInputSet,16); % Set current randomly per each channel from the 'current_set_combo'
-end
-
-% Turn off for some LED Channels
-SpectrumInput(:,1:5) = 0;
-SpectrumInput(:,9) = 0;
-
-% Vpixx control
-for t = 1:numsample    
-   
-    % Set SubColors
-    for k=1:16
-        Datapixx('SetPropixxHSLedCurrent', 0, k-1, SpectrumInput(t,k)); % Primary 1
-        Datapixx('SetPropixxHSLedCurrent', 1, k-1, SpectrumInput(t,k)); % Primary 2
-        Datapixx('SetPropixxHSLedCurrent', 2, k-1, SpectrumInput(t,k)); % Primary 3
-    end
-   
-    % PR670 measure
-    fw_rand(:,t)=MeasSpd(S,5,'all');
-    disp(append('Measurement ',num2str(t),' complete!'))
-end
-
-% Save the spectrums (.mat file)
-filename = append(Date,'SpectrumInput','.mat');
-save(filename,'SpectrumInput')
-
-filename = append(Date,'Spectrum_rand','.mat');
-save(filename,'fw_rand')
-
-
-%% Plot Power spectrum
-figure(1); subplot(2,2,1); hold on;
-plot(SToWls(S),fw,'b-');
-xlabel('Wavelength(nm)')
-ylabel('Spectral irradiance')
-xlim([380 780]);
-
-% CIE (x,y) chromaticity
-figure(1);subplot(2,2,2); hold on;
-plot(xyY(1,:),xyY(2,:),'r.'); % Measurement point
-plot(colorgamut(1,:),colorgamut(2,:),'k-');
-xlabel('CIE x')
-ylabel('CIE y')
-xlim([0 1]);
-ylim([0 1]);
-legend('Test');
