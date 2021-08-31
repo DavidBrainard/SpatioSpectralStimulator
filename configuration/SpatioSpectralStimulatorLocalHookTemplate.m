@@ -47,6 +47,9 @@ end
 %% Project prefs
 setpref(projectName,'LEDSpectraDir',fullfile(baseDir,'SACC_materials','JandJProjector','LEDSpectrumMeasurements'));
 
+% Calibration
+setpref('BrainardLabToolbox','CalDataFolder',fullfile(baseDir,'SACC_materials','Calibration'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.
