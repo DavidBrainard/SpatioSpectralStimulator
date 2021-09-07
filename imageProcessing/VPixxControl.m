@@ -45,7 +45,7 @@ isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
 
 % Read all primaryColor and subColor channels
-for j=1:3; % PrimaryColor (0-2)
+for j=1:3; % PrimaryColor      0     0     0     0     0     0     0     0     0     0   252     0     0     0   200     0(0-2)
     for i=1:16; % SubColor (0-15)
     currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
     end
@@ -53,23 +53,16 @@ end
 
 currents
 
-% current_R = currents(1,:);
-% current_G = currents(2,:);
-% current_B = currents(3,:);
 
-% Original commands ('currents' does not work sometimes on Linux box)
-% current = Datapixx('GetPropixxHSLedCurrent',primaryColor,subColor) % Single 'subColor' channel
-% currents = Datapixx('GetPropixxHSLedCurrents',primaryColor) % All 'subColor' channel
-
-%% Control by each primary color channel
+%% ***************Control by each primary color channel***************
 
 isReady = Datapixx('open'); 
 isReady = Datapixx('IsReady');
 
-current = 50;
+current = 252;
 
-subcolor_R = 13; % 0-15 / 8 is not working
-subcolor_G = 6; % 0-15
+subcolor_R = 15; % 0-15 / 8 is not working
+subcolor_G = 7; % 0-15
 subcolor_B = 2; % 0-15
 
 Datapixx('SetPropixxHSLedCurrent',0,subcolor_R,current) % R
@@ -87,51 +80,7 @@ isReady = Datapixx('IsReady');
 
 currents
 
-
-%% 1) Control one SubColor 
-
-isReady = Datapixx('open'); 
-isReady = Datapixx('IsReady');
-
-subColor = 0; % 0-15
-current = 252;
-
-for i=1:3 % subColor
-      Datapixx('SetPropixxHSLedCurrent', i-1, subColor, current); 
-end
-
-% Read the current settings
-for j=1:3; % PrimaryColor (0-2)with 
-    for i=1:16; % SubColor (0-15)
-    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
-    end
-end 
-isReady = Datapixx('open');
-isReady = Datapixx('IsReady');
-
-currents
-
-
-%% 2) Control all subColors within a Primary color
-
-% Control currents
-primaryColor = 1; % 0-2
-current = 100; % 0-255
-
-for i=1:16 % subColorrw 0x1c8 0x7
-      Datapixx('SetPropixxHSLedCurrent', primaryColor, i-1, current); 
-end 
-
-% Read the current settings
-for j=1:3; % PrimaryColor (0-2)
-    for i=1:16; % SubColor (0-15)
-    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
-    end
-end 
-
-currents
-
-%% 3) Control all primaryColor and subColor
+%% ***************Control all primaryColor and subColor***************
 
 isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
@@ -155,7 +104,60 @@ end
 currents
 
 
-%% 4) Control one SubColor and the others set as 0 
+%% ACROSS PRIMARY
+
+isReady = Datapixx('open'); 
+isReady = Datapixx('IsReady');
+
+load('Dataset5-2)SpectrumInput(AcrossPrimary)_black10_Primary12.mat');
+SpectrumInput_R = cell2mat(SpectrumInput(1));
+SpectrumInput_G = cell2mat(SpectrumInput(2));
+SpectrumInput_B = cell2mat(SpectrumInput(3));
+
+t = 2; % Testcolor No.  2 3 6
+
+% Set SubColors with the different value
+for k=1:16
+    Datapixx('SetPropixxHSLedCurrent', 0, k-1, SpectrumInput_R(t,k)); % Primary 1
+    Datapixx('SetPropixxHSLedCurrent', 1, k-1, SpectrumInput_G(t,k)); % Primary 2
+    Datapixx('SetPropixxHSLedCurrent', 2, k-1, SpectrumInput_B(t,k)); % Primary 3
+end
+
+% Read the current settings
+for j=1:3; % PrimaryColor (0-2)with 
+    for i=1:16; % SubColor (0-15)
+    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
+    end
+end 
+
+currents
+
+% Control all subColors within a Primary color
+
+isReady = Datapixx('open'); 
+isReady = Datapixx('IsReady');
+
+% Control currents
+primaryColor = 1; % 1-3
+current = 10; % 0-255
+
+for i=1:16 
+      Datapixx('SetPropixxHSLedCurrent', primaryColor-1, i-1, current); 
+end 
+
+% Read the current settings
+for j=1:3; % PrimaryColor (0-2)
+    for i=1:16; % SubColor (0-15)
+    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
+    end
+end 
+
+currents
+
+
+
+
+%% Control one SubColor and the others set as 0 
 
 isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
@@ -177,7 +179,7 @@ end
 
 % Set the subColor No. for investication
 subColor = 5; % 0-15 / 
-current = 50;
+current = 200;
 
 for i=1:3 % subColor
       Datapixx('SetPropixxHSLedCurrent', i-1, subColor, current); 
@@ -193,6 +195,32 @@ isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
 
 currents
+
+
+%% Control one SubColor 
+
+isReady = Datapixx('open'); 
+isReady = Datapixx('IsReady');
+
+subColor = 1; % 0-15
+current = 0;
+
+for i=1:3 % subColor
+      Datapixx('SetPropixxHSLedCurrent', i-1, subColor, current); 
+end
+
+% Read the current settings
+for j=1:3; % PrimaryColor (0-2)with 
+    for i=1:16; % SubColor (0-15)
+    currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
+    end
+end 
+isReady = Datapixx('open');
+isReady = Datapixx('IsReady');
+
+currents
+
+
 
 %% Original command for setting the currents
 % Datapixx('SavePropixxHSLedCurrents'); % Save the present currents
@@ -213,12 +241,13 @@ currents
 %   Most of the time you won't use this function directly, but instead use
 %   the PsychDataPixx() function vid = videoinput('gentl', 1, 'Mono8');
 %   common tasks.
+
 %  
 %   For setup of Datapixx video operations, check the online help of
 %   PsychImaging(), which has multiple functions for interacting with the
 %   Datapixx device.
 %  
-%   For an overview of demos and other useful helper functions for the DataPixx,
+%   For an overview of demos and other useful helpeseminr functions for the DataPixx,
 %   type "help DatapixxToolbox".
 
 %% Setup functions:

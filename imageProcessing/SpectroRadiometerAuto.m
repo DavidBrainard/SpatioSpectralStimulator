@@ -24,7 +24,7 @@ unix(command_check)
 command_check = 'ls -l /dev/ttyACM1';
 unix(command_check)
 
-%% Start 2 (Vpixx projector)
+% Start 2 (Vpixx projector)
 % Run terminal command 'vputil' on here using unix function
 % rw 0x1c8 0x1 % (Primary 0 always ON) > Screen goes red 
 % rw 0x1c8 0x2 % (Primary 1 always ON) > Screen goes green
@@ -32,7 +32,7 @@ unix(command_check)
 % rw 0x1c8 0x7 % (All primaries on) > Screen goes brighter with no chromaticity changes (at least visually)
 % rw 0x1c8 0x0 % (Set to default) > Back to the first screen
 
-command_primaries = 'vputil rw 0x1c8 0x0 -q quit'; % Set to 'All Primaries on'
+command_primaries = 'vputil rw 0x1c8 0x7 -q quit'; % Set to 'All Primaries on'
 unix(command_primaries)
 
 % Connect the Vpixx device
@@ -63,6 +63,13 @@ end
 
 currents
 
+%% Single measurement (TEST)
+CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
+
+S=[380 2 201]; % Wavelength range (380-780 nm) / S=[380 2 201]
+fw=MeasSpd(S,5,'all'); % Measurement (it takes a while)
+plot(SToWls(S),fw,'b-');
+
 %% ******************************************************ROUTINE STARTS FROM HERE****************************************************************
 %% SINGLE CHANNEL MEASUREMENT
 % Measurement time = 18 min / 68 test colors (48 singles + 20 randoms)
@@ -70,8 +77,8 @@ clear start; clear fw_single; clear fw_white; clear fw_blk; clear fw_rand; clear
 
 CMCheckInit(5) % CMCheckInit([meterType], [PortString]) / 5 is allocated to PR670
 S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
-Date = 'Dataset8)';
-ADD = '(WithinPrimary)_black10_Primary12_normal';
+Date = 'Dataset3-3)';
+ADD = '(WithinPrimary)_black10';
 
 % Black and white levels
 current_white = 252; 
@@ -266,10 +273,9 @@ S=[380 2 201]; % Wavelength range (380-780 nm) with 2 nm interval
 % Load the pre-saved SpectrumInput set
 load('Dataset3)SpectrumInput(WithinPrimary)_black10'); % 'SpectrumInput'
 
+% Correct current base level on loaded SpectrumInput
 % SpectrumInput_base = ones(numsample,16).*current_base;
-% SpectrumInput(3) = [];
-% SpectrumInput{3} = SpectrumInput_base;
-
+% 
 % if datatype == 1
 %     SpectrumInput = SpectrumInput_base + max(SpectrumInput - SpectrumInput_base,0);
 % elseif datatype == 2

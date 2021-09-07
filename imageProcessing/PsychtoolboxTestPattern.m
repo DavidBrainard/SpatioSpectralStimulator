@@ -45,7 +45,7 @@ Screen('BlendFunction', window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 %% Draw lines for Rectangle diagoanl elements
-
+% 
 % % 0. So, "full red" is [1 0 0]. "Full green" [0 1 0] and "full blue" [0 0
 % % 1]. Play around with these numbers and see the result.
 % lineColor = [0 0 0];
@@ -60,7 +60,7 @@ Screen('BlendFunction', window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 % toH2 = 0; % end point of the line (x)
 % toV2 = screenYpixels; % end point of the line (y)
 % 
-% % Screen('DrawDots', window, [dotXpos dotYpos], dotSizePix, dotColor, [], 2);
+% % Screen('DrawDots', window, [dotXpos dotYpos]theClut, dotSizePix, dotColor, [], 2);
 % Screen('DrawLine', window, lineColor, fromH, fromV, toH, toV,3); %Screen(‘DrawLine’, windowPtr [,color], fromH, fromV, toH, toV [,penWidth]);
 % Screen('DrawLine', window, lineColor, fromH2, fromV2, toH2, toV2,3); %Screen(‘DrawLine’, windowPtr [,color], fromH, fromV, toH, toV [,penWidth]);
 % 
@@ -74,11 +74,11 @@ Screen('BlendFunction', window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 % % Take a center of the screen
 % [xCenter, yCenter] = RectCenter(windowRect);
-% size_circle = 130;
+% size_circle = 700;
 % baseRect = [0 0 size_circle size_circle];
 % maxDiameter = max(baseRect) * 1.01;% For Ovals we set a miximum dcodeiameter up to which it is perfect for
 % centeredRect = CenterRectOnPointd(baseRect, xCenter, yCenter); % Center the rectangle on the centre of the screen
-% rectColor = [0 0 0];
+% rectColor = [0 0 1];
 % Screen('FillOval', window, rectColor, centeredRect, maxDiameter);
 % 
 % % Get an displayed image
