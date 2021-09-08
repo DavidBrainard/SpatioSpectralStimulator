@@ -39,8 +39,8 @@ switch (sysInfo.localHostName)
         switch(sysInfo.userShortName)
             % Could put user specific things in, but at the moment generic
             % is good enough.
-            otherwise
-                baseDir = fullfile('/Users/',sysInfo.userShortName,'Dropbox (Aguirre-Brainard Lab)');
+            otherwise % This is for Linux box ('home' instead of 'users') / Semin
+                baseDir = fullfile('/home/',sysInfo.userShortName,'Dropbox (Aguirre-Brainard Lab)');
         end
 end
 
