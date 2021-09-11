@@ -1,6 +1,6 @@
 % SpectralTest
 %
-% Start exploring spectral fits with LEDs
+% Start exploring spectral fits with swubprimarys
 %
 % 4/22/2020  Started on it
 
@@ -14,7 +14,7 @@ primaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
 primaryNInputLevels = 252;
 
 %% Load projector calibration
-projectorCal = LoadCalFile(projectorCalName,[],getpref('BrainardLabToolbox','CalDataFolder'));
+projectorCal = LoadCalFile(projectorCalName);
 projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
 CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 
@@ -22,7 +22,7 @@ CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 subprimaryCals = cell(3,1);
 subprimaryCalObjs = cell(3,1);
 for cc = 1:length(primaryCalNames)
-    subprimaryCals{cc} = LoadCalFile(primaryCalNames{cc},[],getpref('BrainardLabToolbox','CalDataFolder'));
+    subprimaryCals{cc} = LoadCalFile(primaryCalNames{cc});
     subprimaryCalObjs{cc} = ObjectToHandleCalOrCalStruct(subprimaryCals{cc});
     CalibrateFitGamma(subprimaryCalObjs{cc}, primaryNInputLevels);
 end
@@ -45,8 +45,15 @@ gammaMeasurements = subprimaryCals{1}.rawData.gammaCurveMeanMeasurements;
 PLOT_SUBPRIMARYINVARIANCE = false;
 if (PLOT_SUBPRIMARYINVARIANCE)
     for pp = 1:nPrimaries
-        figure; hold on;
         maxSpd = squeeze(gammaMeasurements(pp,end,:));
+        figure;
+        subplot(1,2,1); hold on;
+        plot(wls,maxSpd,'r','LineWidth',3);
+        for mm = 1:nMeas-1
+            temp = squeeze(gammaMeasurements(pp,mm,:));
+            plot(wls,temp,'k','LineWidth',1);
+        end
+        subplot(1,2,2); hold on
         plot(wls,maxSpd,'r','LineWidth',3);
         for mm = 1:nMeas-1
             temp = squeeze(gammaMeasurements(pp,mm,:));
@@ -57,7 +64,7 @@ if (PLOT_SUBPRIMARYINVARIANCE)
 end
 
 %% Plot subprimary gamma functions
-PLOT_SUBPRIMARYGAMMA = true;
+PLOT_SUBPRIMARYGAMMA = false;
 if (PLOT_SUBPRIMARYGAMMA)
     for pp = 1:nPrimaries
         figure; hold on;
@@ -65,7 +72,6 @@ if (PLOT_SUBPRIMARYGAMMA)
         plot(gammaInput,gammaTable(:,pp),'k','LineWidth',2);
     end 
 end
-
 
 %% Background xy
 targetBgxy = [0.3127 0.3290]';
@@ -107,8 +113,7 @@ gaborSdImageFraction = 0.1;
 
 % Bit levels. We want to understand effects of bit depth.  Here we specify
 % what bit depths we're using.
-LEDBits = 8;
-nLEDLevels = 2^LEDBits;
+nSubprimaryLevels = 252;
 displayBits = 8;
 nDisplayLevels = 2^displayBits;
 
@@ -120,15 +125,15 @@ nFineLevels = 2^fineBits;
 % Image size
 imageN = 512;
 
-%% Generate a OneLight cal file with narrowband LEDs
-S = [380 2 201];
-cal = sssSpoofOneLightCal('S',S, ....
-    'plotBasis',false,...
-    'gaussianPeakWls',[437 485 540 562 585 618 652], ...
-    'gaussianFWHM',25);
-S = cal.describe.S;
-ambientSpd = cal.computed.pr650MeanDark;
-wls = SToWls(S);
+%% Generate a OneLight cal file with narrowband Subprimarys
+% S = [380 2 201];
+% cal = sssSpoofOneLightCal('S',S, ....
+%     'plotBasis',false,...
+%     'gaussianPeakWls',[437 485 540 562 585 618 652], ...
+%     'gaussianFWHM',25);
+% S = cal.describe.S;
+% ambientSpd = cal.computed.pr650MeanDark;
+% wls = SToWls(S);
 lowProjectWl = 400;
 highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
@@ -142,18 +147,16 @@ T_xyz = 683*SplineCmf(S_xyz1931,T_xyz1931,S);
 %% Get half on spectrum
 %
 % This is useful for scaling things reasonably
-halfOnPrimaries = 0.5*ones(cal.describe.numWavelengthBands,1);
-halfOnSpd = OLPrimaryToSpd(cal,halfOnPrimaries);
-nPrimaries = size(halfOnPrimaries,1);
+nPrimaries = subprimaryCalObjs{1}.get('nDevices');
+halfOnPrimaries = 0.5*ones(nPrimaries,1);
+halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimaries);
 
 %% Make sure gamma correction behaves well
-halfOnSettings = OLPrimaryToSettings(cal,halfOnPrimaries);
-if (max(abs(halfOnPrimaries-halfOnSettings)) > 1e-8)
-    error('Spoofed cal file does not have linear gamma');
-end
-halfOnPrimariesChk = OLSettingsToPrimary(cal,halfOnSettings);
+SetGammaMethod(subprimaryCalObjs{1},0);
+halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimaries);
+halfOnPrimariesChk = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettings);
 if (max(abs(halfOnPrimaries-halfOnPrimariesChk)) > 1e-8)
-    error('Spoofed cal file does not have linear inverse gamma');
+    error('Gamma self-inversion not sufficiently precise');
 end
 
 %% Use OL machinery to get primaries from spectrum
@@ -201,8 +204,8 @@ targetLambda = 10;
 [bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,B_primary,startingBgPrimaries,startingBgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
 bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
-bgSettings = round((nLEDLevels-1)*bgPrimaries);
-bgPrimaries = double(bgSettings)/(nLEDLevels-1);
+bgSettings = round((nSubprimaryLevels-1)*bgPrimaries);
+bgPrimaries = double(bgSettings)/(nSubprimaryLevels-1);
 bgSpd = OLPrimaryToSpd(cal,bgPrimaries);
 bgLMS = T_cones*bgSpd;
 bgXYZ = T_xyz*bgSpd;
@@ -221,7 +224,7 @@ targetLambda = 10;
 isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries1 = QuantizePrimaries(isolatingPrimaries1,(nLEDLevels-1));
+isolatingPrimaries1 = QuantizePrimaries(isolatingPrimaries1,(nSubprimaryLevels-1));
 
 % Report
 isolatingSpd1 = OLPrimaryToSpd(cal,isolatingPrimaries1);
@@ -242,7 +245,7 @@ targetLambda = 10;
 isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries2 = QuantizePrimaries(isolatingPrimaries2,(nLEDLevels-1));
+isolatingPrimaries2 = QuantizePrimaries(isolatingPrimaries2,(nSubprimaryLevels-1));
 
 % Report
 isolatingSpd2 = OLPrimaryToSpd(cal,isolatingPrimaries2);
@@ -263,7 +266,7 @@ targetLambda = 10;
 isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries3 = QuantizePrimaries(isolatingPrimaries3,(nLEDLevels-1));
+isolatingPrimaries3 = QuantizePrimaries(isolatingPrimaries3,(nSubprimaryLevels-1));
 
 % Report
 isolatingSpd3 = OLPrimaryToSpd(cal,isolatingPrimaries3);
