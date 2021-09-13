@@ -23,6 +23,14 @@ subprimaryCals = cell(3,1);
 subprimaryCalObjs = cell(3,1);
 for cc = 1:length(primaryCalNames)
     subprimaryCals{cc} = LoadCalFile(primaryCalNames{cc});
+
+    % Hack to handle what should not happen, P_ambient is empty.
+    if (isempty(subprimaryCals{cc}.processedData.P_ambient))
+        Stemp = subprimaryCals{cc}.rawData.S;
+        subprimaryCals{cc}.processedData.P_ambient = zeros(size(SToWls(Stemp)));
+        clear Stemp;
+    end
+
     subprimaryCalObjs{cc} = ObjectToHandleCalOrCalStruct(subprimaryCals{cc});
     CalibrateFitGamma(subprimaryCalObjs{cc}, primaryNInputLevels);
 end
@@ -30,7 +38,10 @@ end
 %% Get out some data to work with for now
 S = subprimaryCalObjs{1}.get('S');
 wls = SToWls(S);
-ambient = subprimaryCalObjs{1}.get('P_ambient');
+ambientSpd = subprimaryCalObjs{1}.get('P_ambient');
+if (isempty(ambientSpd))
+    subprimaryCalObjs{1}.P_ambient = zeros(size(wls));
+end
 P_device = subprimaryCalObjs{1}.get('P_device');
 gammaInput = subprimaryCalObjs{1}.get('gammaInput');
 gammaTable = subprimaryCalObjs{1}.get('gammaTable');
@@ -159,12 +170,12 @@ if (max(abs(halfOnPrimaries-halfOnPrimariesChk)) > 1e-8)
     error('Gamma self-inversion not sufficiently precise');
 end
 
-%% Use OL machinery to get primaries from spectrum
-halfOnPrimariesChk = OLSpdToPrimary(cal,halfOnSpd);
-halfOnSpdChk = OLPrimaryToSpd(cal,halfOnPrimariesChk);
-% figure; hold on;
-% plot(wls,halfOnSpd,'r','LineWidth',3);
-% plot(wls,halfOnSpdChk,'k','LineWidth',1);
+%% Use extant machinery to get primaries from spectrum
+halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
+halfOnSpdChk = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk);
+figure; hold on;
+plot(wls,halfOnSpd,'r','LineWidth',3);
+plot(wls,halfOnSpdChk,'k','LineWidth',1);
 
 %% Set up basis to try to keep spectra close to
 basisType = 'fourier';
@@ -193,20 +204,19 @@ desiredBgXYZ = T_xyz*desiredBgSpd;
 desiredBgxyY = XYZToxyY(desiredBgXYZ);
 
 %% Search for desired background
-B_primary = cal.computed.pr650M;
-startingBgPrimaries = OLSpdToPrimary(cal,desiredBgSpd);
-startingBgSpd = OLPrimaryToSpd(cal,startingBgPrimaries);
+startingBgPrimaries = SpdToPrimary(subprimaryCalObjs{1},desiredBgSpd);
+startingBgSpd = PrimaryToSpd(subprimaryCalObjs{1},startingBgPrimaries);
 startingBgXYZ = T_xyz*startingBgSpd;
 startingBgxyY = XYZToxyY(startingBgXYZ);
 
 primaryHeadRoom = 0;
 targetLambda = 10;
-[bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,B_primary,startingBgPrimaries,startingBgPrimaries, ...
+[bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,P_device,startingBgPrimaries,startingBgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
 bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
 bgSettings = round((nSubprimaryLevels-1)*bgPrimaries);
 bgPrimaries = double(bgSettings)/(nSubprimaryLevels-1);
-bgSpd = OLPrimaryToSpd(cal,bgPrimaries);
+bgSpd = PrimaryToSpd(subprimaryCalObjs{1},bgPrimaries);
 bgLMS = T_cones*bgSpd;
 bgXYZ = T_xyz*bgSpd;
 bgxyY = XYZToxyY(bgXYZ);
@@ -219,7 +229,7 @@ fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
 %
 LMSContrast1 = ledContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 10;
-[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,B_primary,bgPrimaries,bgPrimaries, ...
+[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
@@ -227,7 +237,7 @@ isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 isolatingPrimaries1 = QuantizePrimaries(isolatingPrimaries1,(nSubprimaryLevels-1));
 
 % Report
-isolatingSpd1 = OLPrimaryToSpd(cal,isolatingPrimaries1);
+isolatingSpd1 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries1);
 isolatingLMS1 = T_cones*isolatingSpd1;
 isolatingContrast1 = ExcitationsToContrast(isolatingLMS1,bgLMS);
 fprintf('Desired/obtained contrasts 1\n');
@@ -240,7 +250,7 @@ fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
 % Primary 2
 LMSContrast2 = ledContrastReMaxWithHeadroom*target2MaxLMSContrast;
 targetLambda = 10;
-[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,B_primary,bgPrimaries,bgPrimaries, ...
+[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
@@ -248,7 +258,7 @@ isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 isolatingPrimaries2 = QuantizePrimaries(isolatingPrimaries2,(nSubprimaryLevels-1));
 
 % Report
-isolatingSpd2 = OLPrimaryToSpd(cal,isolatingPrimaries2);
+isolatingSpd2 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries2);
 isolatingLMS2 = T_cones*isolatingSpd2;
 isolatingContrast2 = ExcitationsToContrast(isolatingLMS2,bgLMS);
 fprintf('Desired/obtained contrasts 2\n');
@@ -261,7 +271,7 @@ fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
 % Primary 3
 LMSContrast3 = ledContrastReMaxWithHeadroom*target3MaxLMSContrast;
 targetLambda = 10;
-[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,B_primary,bgPrimaries,bgPrimaries, ...
+[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 
@@ -269,7 +279,7 @@ isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 isolatingPrimaries3 = QuantizePrimaries(isolatingPrimaries3,(nSubprimaryLevels-1));
 
 % Report
-isolatingSpd3 = OLPrimaryToSpd(cal,isolatingPrimaries3);
+isolatingSpd3 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries3);
 isolatingLMS3 = T_cones*isolatingSpd3;
 isolatingContrast3 = ExcitationsToContrast(isolatingLMS3,bgLMS);
 fprintf('Desired/obtained contrasts 3\n');
@@ -399,7 +409,6 @@ fineLMSContrastGaborImage = CalFormatToImage(fineLMSContrastCal,imageN,imageN);
 meanLMS = mean(quantizedFineLMSGaborCal,2);
 quantizedFineContrastGaborCal = ExcitationsToContrast(quantizedFineLMSGaborCal,meanLMS);
 quantizedFineContrastGaborImage = CalFormatToImage(quantizedFineContrastGaborCal,imageN,imageN);
-
 
 %% Create the Gabor image with quantized primary mixtures
 fprintf('Making Gabor primary mixture image\n');
