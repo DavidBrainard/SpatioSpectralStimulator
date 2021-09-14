@@ -91,26 +91,26 @@ PLOT_SUBPRIMARYCHROMATICITY = true;
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
 T_XYZ = T_xyzJuddVos';
 colorgamut=XYZToxyY(T_XYZ'); % Color gamut
-colorgamut(:,82)=colorgamut(:,1); % Connect the end-to-end of the color gamut
+colorgamut(:,end+1)=colorgamut(:,1); % Connect the end-to-end of the color gamut
 
-% Linear interpolation of the measured spectrum from 2 nm (measurement) to 5 nm (XYZ calculation)
+% Linear interpolation range of the measured spectrum from 2 nm (measurement) to 5 nm (XYZ calculation)
 w_2nm = [380:2:780]; % Given range (measurement) - 2 nm interval
 w_1nm = [380:1:780]; % Interpolation range - 1 nm interval
-w_5nm = [380:5:780]; % Extract range - 5 nm interval
+w_Interval = 5; % Set Wavelength interval
 
 if (PLOT_SUBPRIMARYCHROMATICITY)
     for pp = 1:nPrimaries
         figure; hold on;
         for mm = 1:nMeas
-            fw_2nm = squeeze(gammaMeasurements(pp,mm,:));
-            fw_1nm = interp1(w_2nm,fw_2nm,w_1nm);
-            fw_1nm = fw_1nm';
-            fw_5nm = fw_1nm(1:5:length(w_1nm),:);
             
-            XYZ = 683*fw_5nm'*T_XYZ; % XYZ calculation
-            xyY = XYZToxyY(XYZ');
-
-            plot(xyY(1,:),xyY(2,:),'r.'); % Coordinates of the subprimary
+            fw_2nm = squeeze(gammaMeasurements(pp,mm,:));
+            fw_1nm = interp1(w_2nm,fw_2nm,w_1nm)';
+            fw_5nm = fw_1nm(1:w_Interval:end,:);
+            
+            XYZ_temp = 683*fw_5nm'*T_XYZ; % XYZ calculation
+            xyY_temp = XYZToxyY(XYZ_temp');
+            
+            plot(xyY_temp(1,:),xyY_temp(2,:),'r.','Markersize',10); % Coordinates of the subprimary
             plot(colorgamut(1,:),colorgamut(2,:),'k-'); % Color gamut
             xlabel('CIE x');
             ylabel('CIE y');
