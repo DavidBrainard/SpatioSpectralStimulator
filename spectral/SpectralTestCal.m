@@ -24,13 +24,6 @@ subprimaryCalObjs = cell(3,1);
 for cc = 1:length(primaryCalNames)
     subprimaryCals{cc} = LoadCalFile(primaryCalNames{cc});
 
-    % Hack to handle what should not happen, P_ambient is empty.
-    if (isempty(subprimaryCals{cc}.processedData.P_ambient))
-        Stemp = subprimaryCals{cc}.rawData.S;
-        subprimaryCals{cc}.processedData.P_ambient = zeros(size(SToWls(Stemp)));
-        clear Stemp;
-    end
-
     subprimaryCalObjs{cc} = ObjectToHandleCalOrCalStruct(subprimaryCals{cc});
     CalibrateFitGamma(subprimaryCalObjs{cc}, primaryNInputLevels);
 end
@@ -85,37 +78,32 @@ if (PLOT_SUBPRIMARYGAMMA)
 end
 
 %% Plot (x, y) chromaticity of each subprimary
-PLOT_SUBPRIMARYCHROMATICITY = true;
 
 % Load CMFs (5 nm interval) and calculate the color gamut
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
-T_XYZ = T_xyzJuddVos';
-colorgamut=XYZToxyY(T_XYZ'); % Color gamut
-colorgamut(:,end+1)=colorgamut(:,1); % Connect the end-to-end of the color gamut
+T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
-% Linear interpolation range of the measured spectrum from 2 nm (measurement) to 5 nm (XYZ calculation)
-w_2nm = [380:2:780]; % Given range (measurement) - 2 nm interval
-w_1nm = [380:1:780]; % Interpolation range - 1 nm interval
-w_Interval = 5; % Set Wavelength interval
-
+% Plot if desired
+PLOT_SUBPRIMARYCHROMATICITY = false;
 if (PLOT_SUBPRIMARYCHROMATICITY)
+    figure; hold on;
     for pp = 1:nPrimaries
-        figure; hold on;
         for mm = 1:nMeas
-            
-            fw_2nm = squeeze(gammaMeasurements(pp,mm,:));
-            fw_1nm = interp1(w_2nm,fw_2nm,w_1nm)';
-            fw_5nm = fw_1nm(1:w_Interval:end,:);
-            
-            XYZ_temp = 683*fw_5nm'*T_XYZ; % XYZ calculation
-            xyY_temp = XYZToxyY(XYZ_temp');
+            % XYZ calculation for each measurement
+            spd_temp = squeeze(gammaMeasurements(pp,mm,:));      
+            XYZ_temp = T_xyz*spd_temp; 
+            xyY_temp = XYZToxyY(XYZ_temp);
             
             plot(xyY_temp(1,:),xyY_temp(2,:),'r.','Markersize',10); % Coordinates of the subprimary
-            plot(colorgamut(1,:),colorgamut(2,:),'k-'); % Color gamut
             xlabel('CIE x');
             ylabel('CIE y');
         end
     end
+    
+    % Add spectrum locus to plot, connected end to end
+    colorgamut=XYZToxyY(T_xyz); 
+    colorgamut(:,end+1)=colorgamut(:,1);
+    plot(colorgamut(1,:),colorgamut(2,:),'k-'); 
 end
 
 %% Background xy
@@ -171,14 +159,6 @@ nFineLevels = 2^fineBits;
 imageN = 512;
 
 %% Generate a OneLight cal file with narrowband Subprimarys
-% S = [380 2 201];
-% cal = sssSpoofOneLightCal('S',S, ....
-%     'plotBasis',false,...
-%     'gaussianPeakWls',[437 485 540 562 585 618 652], ...
-%     'gaussianFWHM',25);
-% S = cal.describe.S;
-% ambientSpd = cal.computed.pr650MeanDark;
-% wls = SToWls(S);
 lowProjectWl = 400;
 highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
@@ -186,8 +166,6 @@ projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 %% Cone fundamentals and XYZ CMFs
 psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
 T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
-load T_xyz1931
-T_xyz = 683*SplineCmf(S_xyz1931,T_xyz1931,S);
 
 %% Get half on spectrum
 %
@@ -196,13 +174,16 @@ nPrimaries = subprimaryCalObjs{1}.get('nDevices');
 halfOnPrimaries = 0.5*ones(nPrimaries,1);
 halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimaries);
 
-%% Make sure gamma correction behaves well
+%% Make sure gamma correction behaves well with unquantized conversion
 SetGammaMethod(subprimaryCalObjs{1},0);
 halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimaries);
 halfOnPrimariesChk = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettings);
 if (max(abs(halfOnPrimaries-halfOnPrimariesChk)) > 1e-8)
     error('Gamma self-inversion not sufficiently precise');
 end
+
+%% Use quantized conversion from here on
+SetGammaMethod(subprimaryCalObjs{1},2);
 
 %% Use extant machinery to get primaries from spectrum
 halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
@@ -243,17 +224,22 @@ startingBgSpd = PrimaryToSpd(subprimaryCalObjs{1},startingBgPrimaries);
 startingBgXYZ = T_xyz*startingBgSpd;
 startingBgxyY = XYZToxyY(startingBgXYZ);
 
+% Play with targetLambda a bit by hand to determine tradeoff between
+% smoothness and obtaining desired chromaticity.
 primaryHeadRoom = 0;
-targetLambda = 10;
+targetLambda = 3;
 [bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,P_device,startingBgPrimaries,startingBgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
 bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
-bgSettings = round((nSubprimaryLevels-1)*bgPrimaries);
-bgPrimaries = double(bgSettings)/(nSubprimaryLevels-1);
+bgSettings = PrimaryToSettings(subprimaryCalObjs{1},bgPrimaries);
+bgPrimariesQuantized = SettingsToPrimary(subprimaryCalObjs{1},bgSettings);
 bgSpd = PrimaryToSpd(subprimaryCalObjs{1},bgPrimaries);
 bgLMS = T_cones*bgSpd;
 bgXYZ = T_xyz*bgSpd;
 bgxyY = XYZToxyY(bgXYZ);
+figure; clf; hold on
+plot(wls,startingBgSpd,'r','LineWidth',4);
+plot(wls,bgSpd,'k','LineWidth',2);
 fprintf('Desired  background x,y = %0.3f,%0.3f\n',desiredBgxyY(1),desiredBgxyY(2));
 fprintf('Starting background x,y = %0.3f,%0.3f\n',startingBgxyY(1),startingBgxyY(2));
 fprintf('Obtained background x,y = %0.3f,%0.3f\n',bgxyY(1),bgxyY(2));
@@ -262,13 +248,13 @@ fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
 %% Get primaries based on contrast specification
 %
 LMSContrast1 = ledContrastReMaxWithHeadroom*target1MaxLMSContrast;
-targetLambda = 10;
+targetLambda = 3;
 [isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries1 = QuantizePrimaries(isolatingPrimaries1,(nSubprimaryLevels-1));
+isolatingPrimaries1 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries1));
 
 % Report
 isolatingSpd1 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries1);
@@ -283,13 +269,13 @@ fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
 
 % Primary 2
 LMSContrast2 = ledContrastReMaxWithHeadroom*target2MaxLMSContrast;
-targetLambda = 10;
+targetLambda = 3;
 [isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries2 = QuantizePrimaries(isolatingPrimaries2,(nSubprimaryLevels-1));
+isolatingPrimaries2 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries2));
 
 % Report
 isolatingSpd2 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries2);
@@ -304,13 +290,13 @@ fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
 
 % Primary 3
 LMSContrast3 = ledContrastReMaxWithHeadroom*target3MaxLMSContrast;
-targetLambda = 10;
+targetLambda = 3;
 [isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
 isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries3 = QuantizePrimaries(isolatingPrimaries3,(nSubprimaryLevels-1));
+isolatingPrimaries3 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries3));
 
 % Report
 isolatingSpd3 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries3);
@@ -339,7 +325,7 @@ plot(wls(projectIndices),bgSpd(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),theBgNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Background');
-ylim([0 2]);
+%ylim([0 2]);
 subplot(2,2,2); hold on
 plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd1,'b','LineWidth',2);
@@ -348,7 +334,7 @@ plot(wls(projectIndices),isolatingSpd1(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 1');
-ylim([0 2]);
+%ylim([0 2]);
 subplot(2,2,3); hold on
 plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd2,'b','LineWidth',2);
@@ -357,7 +343,7 @@ plot(wls(projectIndices),isolatingSpd2(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 2');
-ylim([0 2]);
+%ylim([0 2]);
 subplot(2,2,4); hold on
 plot(wls,bgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd3,'b','LineWidth',2);
@@ -366,7 +352,7 @@ plot(wls(projectIndices),isolatingSpd3(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
-ylim([0 2]);
+%ylim([0 2]);
 
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale
 %
@@ -467,7 +453,7 @@ quantizedContrastImage = CalFormatToImage(quantizedContrastCal,imageN,imageN);
 % SRGB image via XYZ
 quantizedXYZCal = T_xyz*quantizedSpdCal;
 quantizedSRGBPrimaryCal = XYZToSRGBPrimary(quantizedXYZCal);
-%scaleFactor = max(quantizedSRGBPrimaryCal(:));
+scaleFactor = max(quantizedSRGBPrimaryCal(:));
 quantizedSRGBCal = SRGBGammaCorrect(quantizedSRGBPrimaryCal/scaleFactor,0);
 quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
 
