@@ -9,7 +9,7 @@
 % 10/18/2017 npc   Reset Radiometer before crashing
 % 12/12/2017 ana   Added eye tracker LCD case
 
-function OOC_calibrateMonitor
+function SACC_calibrateMonitor
     
     % Select a calibration configuration name
     AvailableCalibrationConfigs = {  ...
@@ -17,8 +17,8 @@ function OOC_calibrateMonitor
         'SACCPrimary1'
     };
     
-    % Default config is debugMode
-    defaultCalibrationConfig = AvailableCalibrationConfigs{find(contains(AvailableCalibrationConfigs, 'debugMode'))};
+    % Default config is SACCPrimary1
+    defaultCalibrationConfig = AvailableCalibrationConfigs{find(contains(AvailableCalibrationConfigs, 'SACCPrimary1'))};
     
     while (true)
         fprintf('Available calibration configurations \n');
@@ -174,6 +174,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
     
     % SACCPrimary calibrator - specific params struct
     SACCPrimaryCalibratorSpecificParamsStruct = struct(...
+        'DLPbackgroundSettings', [0.5 0.5 0.5], ...                 % Set DLP background to initiate the PTB screen 
         'whichPrimary',  1, ...                                     % Which primary to calibrate subprimaries for
         'nInputLevels', 252, ...                                    % Number of input levels
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
