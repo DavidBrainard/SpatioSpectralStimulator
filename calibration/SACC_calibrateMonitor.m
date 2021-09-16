@@ -180,8 +180,9 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
         'nSubprimaries', 15, ...                                    % Number of subprimaries
-        'logicalToPhysical', [0:7 9:15] ...                         % Mapping of logical subprimary number to physical LED to write
-        );
+        'logicalToPhysical', [0:7 9:15], ...                        % Mapping of logical subprimary number to physical LED to write
+        'LEDWarmupDurationSeconds', 5 ...                           % Time in seconds to delay before each measurement for warming up the device    
+    );
 
     % Specify the @Calibrator's optional params using a CalibratorOptions object
     % To see what options are available type: doc CalibratorOptions
