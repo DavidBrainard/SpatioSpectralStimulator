@@ -174,7 +174,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
     
     % SACCPrimary calibrator - specific params struct
     SACCPrimaryCalibratorSpecificParamsStruct = struct(...
-        'DLPbackgroundSettings', [0.5 0.5 0.5], ...                 % Set DLP background to initiate the PTB screen 
+        'DLPbackgroundSettings', [0.5 0.5 0.5], ...                 % Set DLP background to initiate the PTB screen (This is needed because the DLP still works with 3 primaries)
         'whichPrimary',  1, ...                                     % Which primary to calibrate subprimaries for
         'nInputLevels', 252, ...                                    % Number of input levels
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
@@ -192,13 +192,13 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'emailAddressForDoneNotification',  GetWithDefault('Enter email address for done notification',  emailAddressForNotification), ...
         'blankOtherScreen',                 0, ...                          % whether to blank other displays attached to the host computer (1=yes, 0 = no), ...
         'whichBlankScreen',                 1, ...                          % screen number of the display to be blanked  (main screen = 1, second display = 2)
-        'blankSettings',                    zeros(1,displayPrimariesNum), ...         % color of the whichBlankScreen 
-        'bgColor',                          0.05*ones(1,displayPrimariesNum), ...     % color of the background  
-        'fgColor',                          0.05*ones(1,displayPrimariesNum), ...     % color of the foreground
+        'blankSettings',                    zeros(1,displayPrimariesNum), ... % color of the whichBlankScreen 
+        'bgColor',                          zeros(1,displayPrimariesNum), ... % color of the background  
+        'fgColor',                          zeros(1,displayPrimariesNum), ... %color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         2, ...                          % number of repeated measurements for averaging
-        'nMeas',                            4, ...                          % samples along gamma curve
+        'nAverage',                         5, ...                          % number of repeated measurements for averaging
+        'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels (it was 150 / Semin)
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
