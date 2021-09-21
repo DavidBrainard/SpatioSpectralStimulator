@@ -128,17 +128,14 @@ target3MaxLMSContrast = [1 -1 -0.5]';
 % run into numerical error at the edges. The second number is used when
 % defining the three primaries, the first when computing desired weights on
 % the primaries.
-ledContrastReMax = 0.025;
+ledContrastReMax = 0.05;
 ledContrastReMaxWithHeadroom = 1.1*ledContrastReMax;
 plotAxisLimit = 2;
 
 % When we compute a specific image, we may not want full contrast available
 % with the primaries. This tells us fraction of max available relative to
 % ledContrastReMax.
-imageModulationContrast = 0.0025/ledContrastReMax;
-
-% Frozen factor for SRGB conversions, so it's preserved across contrasts
-scaleFactor = 2.4985e+04;
+imageModulationContrast = 0.05/ledContrastReMax;
 
 % Image spatial parameters
 sineFreq = 6;
@@ -246,7 +243,6 @@ fprintf('Obtained background x,y = %0.3f,%0.3f\n',bgxyY(1),bgxyY(2));
 fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
 
 %% Get primaries based on contrast specification
-%
 LMSContrast1 = ledContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 3;
 [isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,P_device,bgPrimaries,bgPrimaries, ...
@@ -308,7 +304,6 @@ for rr = 1:length(LMSContrast3)
 end
 fprintf('Min/max primaries 3: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries3), max(isolatingPrimaries3));
-
 
 %% How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
@@ -454,11 +449,43 @@ quantizedContrastImage = CalFormatToImage(quantizedContrastCal,imageN,imageN);
 quantizedXYZCal = T_xyz*quantizedSpdCal;
 quantizedSRGBPrimaryCal = XYZToSRGBPrimary(quantizedXYZCal);
 scaleFactor = max(quantizedSRGBPrimaryCal(:));
-quantizedSRGBCal = SRGBGammaCorrect(quantizedSRGBPrimaryCal/scaleFactor,0);
+quantizedSRGBCal = SRGBGammaCorrect(quantizedSRGBPrimaryCal/(2*scaleFactor),0);
 quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
 
 % Show the SRGB image
 figure; imshow(quantizedSRGBImage)
+
+%% Now compute projector image
+%
+% First step is to make a DLP calibration file that has as primaries
+% the three spds we've computed above.
+%
+% In an actual display program, we would set each of the primary's
+% subprimaries to isolatingPrimaries1, isolatingPrimaries2,
+% isolatingPrimaries3 as computed above.  That now allows the DLP
+% to produce mixtures of these primaries.  Here we tell the calibration
+% object for the DLP that it has these desired primaries.
+P_device = [isolatingSpd1 isolatingSpd2 isolatingSpd3];
+projectorCal.processedData.P_device = P_device;
+
+% Initialze the calibration structure
+projectorCal = SetSensorColorSpace(projectorCal,T_cones,S);
+projectorCal = SetGammaMethod(projectorCal,2);
+
+% Convert excitations image to projector settings
+[projectorSettingsCal,outOfGamutIndex] = SensorToSettings(projectorCal,quantizedFineLMSGaborCal);
+if (any(outOfGamutIndex))
+    error('Oops: Some pixels out of gamut');
+end
+projectorSettingsImage = CalFormatToImage(projectorSettingsCal,imageN,imageN);
+figure; clf;
+imshow(projectorSettingsImage)
+
+% Show this image on the DLP, and it should look more or less like
+% the sRGB image we display below.
+testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+testFilename = fullfile(testFiledir,'testImageData1');
+save(testFilename,'projectorSettingsImage','isolatingPrimaries1','isolatingPrimaries2','isolatingPrimaries3');
 
 %% Plot slice through LMS contrast image
 figure; hold on
