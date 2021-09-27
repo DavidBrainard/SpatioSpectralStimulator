@@ -1,6 +1,7 @@
-% SpectralTest
+% SpectralTestCal
 %
-% Start exploring spectral fits with swubprimarys
+% Start exploring spectral fits with swubprimarys, this
+% version using the calibration structures.
 %
 % 4/22/2020  Started on it
 
@@ -8,10 +9,18 @@
 clear; close all;
 
 %% Define calibration filenames/params
+%
+% This is a standard calibration file for the DLP projector,
+% with the subprimaries set to something.  As we'll see below,
+% we're going to rewrite those.
 projectorCalName = 'SACC';
 projectorNInputLevels = 256;
-primaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
-primaryNInputLevels = 252;
+
+% These are the calibration files for each of the primaries, which
+% then entails measuring the spectra of all the subprimaries for that
+% primary.
+subprimaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
+subprimaryNInputLevels = 252;
 
 %% Load projector calibration
 projectorCal = LoadCalFile(projectorCalName);
@@ -21,14 +30,16 @@ CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 %% Load subprimary calibrations
 subprimaryCals = cell(3,1);
 subprimaryCalObjs = cell(3,1);
-for cc = 1:length(primaryCalNames)
-    subprimaryCals{cc} = LoadCalFile(primaryCalNames{cc});
+for cc = 1:length(subprimaryCalNames)
+    subprimaryCals{cc} = LoadCalFile(subprimaryCalNames{cc});
 
     subprimaryCalObjs{cc} = ObjectToHandleCalOrCalStruct(subprimaryCals{cc});
-    CalibrateFitGamma(subprimaryCalObjs{cc}, primaryNInputLevels);
+    CalibrateFitGamma(subprimaryCalObjs{cc}, subprimaryNInputLevels);
 end
 
-%% Get out some data to work with for now
+%% Get out some data to work with.
+%
+% This is from the subprimary calibration file.
 S = subprimaryCalObjs{1}.get('S');
 wls = SToWls(S);
 ambientSpd = subprimaryCalObjs{1}.get('P_ambient');
@@ -39,7 +50,13 @@ P_device = subprimaryCalObjs{1}.get('P_device');
 gammaInput = subprimaryCalObjs{1}.get('gammaInput');
 gammaTable = subprimaryCalObjs{1}.get('gammaTable');
 gammaMeasurements = subprimaryCals{1}.rawData.gammaCurveMeanMeasurements;
-[nPrimaries,nMeas,~] = size(gammaMeasurements);
+[nSubprimaries,nMeas,~] = size(gammaMeasurements);
+
+%% Cone fundamentals and XYZ CMFs
+psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
+T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
+load T_xyzJuddVos % Judd-Vos XYZ Color matching function
+T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
 %% Let's look at little at the subprimary calibration.
 %
@@ -48,7 +65,7 @@ gammaMeasurements = subprimaryCals{1}.rawData.gammaCurveMeanMeasurements;
 % we are impatient people so we will hack something up here.
 PLOT_SUBPRIMARYINVARIANCE = false;
 if (PLOT_SUBPRIMARYINVARIANCE)
-    for pp = 1:nPrimaries
+    for pp = 1:nSubprimaries
         maxSpd = squeeze(gammaMeasurements(pp,end,:));
         figure;
         subplot(1,2,1); hold on;
@@ -70,24 +87,18 @@ end
 %% Plot subprimary gamma functions
 PLOT_SUBPRIMARYGAMMA = false;
 if (PLOT_SUBPRIMARYGAMMA)
-    for pp = 1:nPrimaries
+    for pp = 1:nSubprimaries
         figure; hold on;
         plot(subprimaryCals{1}.rawData.gammaInput,subprimaryCals{1}.rawData.gammaTable(:,pp),'ko','MarkerSize',12,'MarkerFaceColor','k');
         plot(gammaInput,gammaTable(:,pp),'k','LineWidth',2);
     end 
 end
 
-%% Plot (x, y) chromaticity of each subprimary
-
-% Load CMFs (5 nm interval) and calculate the color gamut
-load T_xyzJuddVos % Judd-Vos XYZ Color matching function
-T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
-
-% Plot if desired
+%% Plot x,y if desired
 PLOT_SUBPRIMARYCHROMATICITY = false;
 if (PLOT_SUBPRIMARYCHROMATICITY)
     figure; hold on;
-    for pp = 1:nPrimaries
+    for pp = 1:nSubprimaries
         for mm = 1:nMeas
             % XYZ calculation for each measurement
             spd_temp = squeeze(gammaMeasurements(pp,mm,:));      
@@ -107,14 +118,19 @@ if (PLOT_SUBPRIMARYCHROMATICITY)
 end
 
 %% Background xy
+%
+% Specify the chromaticity, but we'll chose the luminance based
+% on the range available in the device.
 targetBgxy = [0.3127 0.3290]';
 
-% Target color direction and max contrasts.
+%% Target color direction and max contrasts.
 %
 % This is the basic desired modulation direction positive excursion. We go
 % equally in positive and negative directions.
 targetLMSContrast = [1 -1 0]';
 
+%% Specify desired primary properties
+%
 % These are the target contrasts for the three primaries. We want these to
 % span a triangle around the line specified above. Here we define that
 % triangle by hand.  May need a little fussing for other directions, and
@@ -128,78 +144,98 @@ target3MaxLMSContrast = [1 -1 -0.5]';
 % run into numerical error at the edges. The second number is used when
 % defining the three primaries, the first when computing desired weights on
 % the primaries.
-ledContrastReMax = 0.05;
-ledContrastReMaxWithHeadroom = 1.1*ledContrastReMax;
+targetContrastReMax = 0.05;
+targetPrimaryHeadroom = 1.1;
+targetContrastReMaxWithHeadroom = targetPrimaryHeadroom*targetContrastReMax;
 plotAxisLimit = 2;
 
+%% Comment this better later on
+%
 % When we compute a specific image, we may not want full contrast available
 % with the primaries. This tells us fraction of max available relative to
 % ledContrastReMax.
-imageModulationContrast = 0.05/ledContrastReMax;
+imageModulationContrast = 0.05/targetContrastReMax;
 
-% Image spatial parameters
-sineFreq = 6;
+%% Image spatial parameters
+sineFreqCyclesPerImage = 6;
 gaborSdImageFraction = 0.1;
 
-% Bit levels. We want to understand effects of bit depth.  Here we specify
-% what bit depths we're using.
-nSubprimaryLevels = 252;
-displayBits = 8;
-nDisplayLevels = 2^displayBits;
+% Image size in pixels
+imageN = 512;
 
+%% Computational bit depth 
+%
 % This is a computational bit depth that we use to define the lookup table
 % between contrast and primary values.
 fineBits = 14;
 nFineLevels = 2^fineBits;
 
-% Image size
-imageN = 512;
-
-%% Generate a OneLight cal file with narrowband Subprimarys
-lowProjectWl = 400;
-highProjectWl = 700;
-projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
-
-%% Cone fundamentals and XYZ CMFs
-psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
-T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
-
 %% Get half on spectrum
 %
-% This is useful for scaling things reasonably
-nPrimaries = subprimaryCalObjs{1}.get('nDevices');
-halfOnPrimaries = 0.5*ones(nPrimaries,1);
-halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimaries);
+% This is useful for scaling things reasonably - we start with half of the
+% available range of the primaries.
+halfOnSubprimaries = 0.5*ones(nSubprimaries,1);
+halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnSubprimaries);
 
 %% Make sure gamma correction behaves well with unquantized conversion
 SetGammaMethod(subprimaryCalObjs{1},0);
-halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimaries);
+halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnSubprimaries);
 halfOnPrimariesChk = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettings);
-if (max(abs(halfOnPrimaries-halfOnPrimariesChk)) > 1e-8)
+if (max(abs(halfOnSubprimaries-halfOnPrimariesChk)) > 1e-8)
     error('Gamma self-inversion not sufficiently precise');
 end
 
 %% Use quantized conversion from here on
+%
+% Comment in the line that refits the gamma to see
+% effects of extreme quantization below
+%
+% CalibrateFitGamma(subprimaryCalObjs{1},10);
 SetGammaMethod(subprimaryCalObjs{1},2);
 
 %% Use extant machinery to get primaries from spectrum
+%
+% This isn't used in our calculations.  Any difference in the
+% two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair.  
 halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
 halfOnSpdChk = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk);
 figure; hold on;
 plot(wls,halfOnSpd,'r','LineWidth',3);
 plot(wls,halfOnSpdChk,'k','LineWidth',1);
 
+%% Show effect of quantization
+%
+% It's very small at the nominal 252 levels of the subprimaries, but will
+% increase if you refit the gamma functios to a small number of levels.
+halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
+halfOnSettingsChk = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimariesChk);
+halfOnPrimariesChk1 = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettingsChk);
+halfOnSpdChk1 = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk1);
+plot(wls,halfOnSpdChk1,'g','LineWidth',1);
+
 %% Set up basis to try to keep spectra close to
+%
+% This is how we enforce a smoothness or other constraint
+% on the spectra.
 basisType = 'fourier';
+nFourierBases = 7;
 switch (basisType)
     case 'cieday'
         load B_cieday
         B_natural = SplineSpd(S_cieday,B_cieday,S);
     case 'fourier'
-        B_natural = MakeFourierBasis(S,7);
+        B_natural = MakeFourierBasis(S,nFourierBases);
     otherwise
         error('Unknown basis set specified');
 end
+
+% Define wavelength range that will be used to enforce the smoothnes
+% thorugh the projection onto an underlying basis set.  We don't the whole
+% visible spectrum as putting weights on the extrema where people are not
+% sensitive costs us smoothness in the spectral region we care most about.
+lowProjectWl = 400;
+highProjectWl = 700;
+projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
 %% Some transformation matrices
 M_NaturalToXYZ = T_xyz*B_natural(:,1:3);
@@ -208,6 +244,10 @@ M_NaturalToLMS = T_cones*B_natural(:,1:3);
 M_LMSToNatural = inv(M_NaturalToLMS);
 
 %% Get background
+%
+% Start by defining a smooth spectrum with the chromaticity
+% we want.  This is not necessarily within the span of the
+% subprimaries we have, but serves as a starting point.
 targetBgxyY = [targetBgxy ; 1];
 targetBgXYZ = xyYToXYZ(targetBgxyY);
 desiredBgSpd = B_natural(:,1:3)*M_XYZToNatural*targetBgXYZ;
@@ -216,15 +256,17 @@ desiredBgXYZ = T_xyz*desiredBgSpd;
 desiredBgxyY = XYZToxyY(desiredBgXYZ);
 
 %% Search for desired background
+%
+% Make a guess at reasonable primary values to start at.
 startingBgPrimaries = SpdToPrimary(subprimaryCalObjs{1},desiredBgSpd);
 startingBgSpd = PrimaryToSpd(subprimaryCalObjs{1},startingBgPrimaries);
 startingBgXYZ = T_xyz*startingBgSpd;
 startingBgxyY = XYZToxyY(startingBgXYZ);
 
-% Play with targetLambda a bit by hand to determine tradeoff between
+% You can play with targetLambda a bit by hand to determine tradeoff between
 % smoothness and obtaining desired chromaticity.
 primaryHeadRoom = 0;
-targetLambda = 3;
+targetLambda = 5;
 [bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,P_device,startingBgPrimaries,startingBgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
 bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
@@ -243,7 +285,7 @@ fprintf('Obtained background x,y = %0.3f,%0.3f\n',bgxyY(1),bgxyY(2));
 fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
 
 %% Get primaries based on contrast specification
-LMSContrast1 = ledContrastReMaxWithHeadroom*target1MaxLMSContrast;
+LMSContrast1 = targetContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 3;
 [isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
@@ -264,7 +306,7 @@ fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries1), max(isolatingPrimaries1));
 
 % Primary 2
-LMSContrast2 = ledContrastReMaxWithHeadroom*target2MaxLMSContrast;
+LMSContrast2 = targetContrastReMaxWithHeadroom*target2MaxLMSContrast;
 targetLambda = 3;
 [isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
@@ -285,7 +327,7 @@ fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries2), max(isolatingPrimaries2));
 
 % Primary 3
-LMSContrast3 = ledContrastReMaxWithHeadroom*target3MaxLMSContrast;
+LMSContrast3 = targetContrastReMaxWithHeadroom*target3MaxLMSContrast;
 targetLambda = 3;
 [isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,P_device,bgPrimaries,bgPrimaries, ...
     primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
@@ -359,7 +401,7 @@ spdMatrix = [isolatingSpd1, isolatingSpd2, isolatingSpd3];
 LMSMatrix = T_cones*spdMatrix;
 for ll = 1:nFineLevels
     % Find the LMS values corresponding to desired contrast
-    fineDesiredContrast(:,ll) = fineContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
+    fineDesiredContrast(:,ll) = fineContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
     fineDesiredLMS(:,ll) = ContrastToExcitation(fineDesiredContrast(:,ll),bgLMS);
     
     % Find primary mixture to best prodcue those values
@@ -374,18 +416,18 @@ end
 
 % Do this at quantized levels
 fprintf('Making display quantized primary lookup table\n');
-quantizedIntegerLevels = 1:nDisplayLevels;
-quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(nDisplayLevels-1))-1;
-quantizedLMSContrast = zeros(3,nDisplayLevels);
-quantizedLMS = zeros(3,nDisplayLevels);
-minIndices = zeros(1,nDisplayLevels);
-predictedQuantizedLMS = zeros(3,nDisplayLevels);
-quantizedDisplayPrimaries = zeros(3,nDisplayLevels);
+quantizedIntegerLevels = 1:projectorNInputLevels;
+quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(projectorNInputLevels-1))-1;
+quantizedLMSContrast = zeros(3,projectorNInputLevels);
+quantizedLMS = zeros(3,projectorNInputLevels);
+minIndices = zeros(1,projectorNInputLevels);
+predictedQuantizedLMS = zeros(3,projectorNInputLevels);
+quantizedDisplayPrimaries = zeros(3,projectorNInputLevels);
 
 % Set up point cloud for fast finding of nearest neighbors
 finePtCloud = pointCloud(finePredictedLMS');
-for ll = 1:nDisplayLevels
-    quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*ledContrastReMax*targetLMSContrast;
+for ll = 1:projectorNInputLevels
+    quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
     quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
     
     minIndices(ll) = findNearestNeighbors(finePtCloud,quantizedLMS(:,ll)',1);
@@ -399,13 +441,13 @@ end
 fprintf('Making Gabor contrast image\n');
 centerN = imageN/2;
 gaborSdPixels = gaborSdImageFraction*imageN;
-rawMonochromeSineImage = MakeSineImage(0,sineFreq,imageN);
+rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,imageN);
 gaussianWindow = normpdf(MakeRadiusMat(imageN,imageN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
 rawMonochromeGaborImage = imageModulationContrast*rawMonochromeSineImage.*gaussianWindow;
 
 % Quantized for display bit depth
-displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,nDisplayLevels);
+displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,projectorNInputLevels);
 displayIntegerMonochromeGaborCal = ImageToCalFormat(displayIntegerMonochromeGaborImage);
 
 % Quantized for fine bit depth
