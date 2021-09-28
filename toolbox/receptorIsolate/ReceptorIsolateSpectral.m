@@ -1,33 +1,47 @@
 function [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolateSpectral(T_receptors,desiredContrasts, ...
     B_primary,backgroundPrimary,initialPrimary, ...
     primaryHeadroom,targetBasis,projectIndices,targetLambda,ambientSpd,varargin)
-% [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolateSpectral(T_receptors,desiredContrats, ...
-%   B_primary,backgroundPrimary,initialPrimary, ...
-%   primaryHeadroom,targetBasis,projectIndices,targetLambda,ambientSpd)
+% Find modulating primaries to produce desired contrast/excitations re background.
+% 
+% Syntax:
+%    [modulatingPrimary,upperPrimary,lowerPrimary] = ReceptorIsolateSpectral(T_receptors,desiredContrats, ...
+%       B_primary,backgroundPrimary,initialPrimary, ...
+%       primaryHeadroom,targetBasis,projectIndices,targetLambda,ambientSpd)
 %
-% Find the best isolating modulation around a given background.  This is a very general routine,
-% with inputs as follows.
+% Description:
+%     Find the best isolating modulation around a given background.  This
+%     is a very general routine. It enforces constraints on primary values
+%     (between 0 and 1, with possible headroom specified) and can enforce
+%     a constraint that maximizes projection onto a subspace speicifed by
+%     a set of basis vectors.
 %
-% T_receptors -             Spectral sensitivities of all receptors being considered, in standard PTB format.
-% desiredContrasts -        Vector of target contrasts for receptors that will be isolated.
-% B_primary -               These calculations are device dependent.  B_primary is a set of basis vectors for the lights
-%                           that the device can produce, scaled so that the gamut is for the range [0-1] on each primary.
-% backgroundPrimary -       Background around which modulation will occur, in primary space.
-% initialPrimary -          Initial guess for primary search.  Usually passed as backgroundPrimary.
-% primaryHeadroom -         If you don't want to modulate all the way to the edge of the device gamut, pass a number in the
-%                           range [0-1] here.  This constrains the primary settings to be within [0+primaryHeadRoom,1-primaryHeadRoom].
-%                           This can be useful for anticipating the fact that the device may get dimmer over time, so that the
-%                           stimulus you compute at time 0 remains in gamut after a subsequent calibration.
-% targetBasis -             Keep produced spectrum close to the subspaced defined by this basis set.
-% projectIndices -          Only wavelengths corresponding to these indices count in the subspace evaluation.  Pass empty matrix to use them all.
-% targetLambda -            In trying to match subspace, weight the targetSpectrum difference by this scalar. Set to zero to ignore subspace.
-% ambientSpd -              Spectral power distribution of the ambient light.
+% Inputs:
+%     T_receptors -             Spectral sensitivities of all receptors being considered, in standard PTB format.
+%     desiredContrasts -        Vector of target contrasts for receptors that will be isolated.
+%     B_primary -               These calculations are device dependent.  B_primary is a set of basis vectors for the lights
+%                               that the device can produce, scaled so that the gamut is for the range [0-1] on each primary.
+%     backgroundPrimary -       Background around which modulation will occur, in primary space.
+%     initialPrimary -          Initial guess for primary search.  Usually passed as backgroundPrimary.
+%     primaryHeadroom -         If you don't want to modulate all the way to the edge of the device gamut, pass a number in the
+%                               range [0-1] here.  This constrains the primary settings to be within [0+primaryHeadRoom,1-primaryHeadRoom].
+%                               This can be useful for anticipating the fact that the device may get dimmer over time, so that the
+%                               stimulus you compute at time 0 remains in gamut after a subsequent calibration.
+%     targetBasis -             Keep produced spectrum close to the subspaced defined by this basis set.
+%     projectIndices -          Only wavelengths corresponding to these indices count in the subspace evaluation.  Pass empty matrix to use them all.
+%     targetLambda -            In trying to match subspace, weight the targetSpectrum difference by this scalar. Set to zero to ignore subspace.
+%     ambientSpd -              Spectral power distribution of the ambient light.
+%
+% Outputs:
+%    modulatingPrimary -        Primary values to add to background to produce desired contrast/excitations
+%    upperPrimary -             The primary values when modulatingPrimary is added to the background.
+%    lowerPrimary -             The primary values when modulatingPrimary is subtracted from the background
 %
 % Optional key/value pairs:
 %    POSITIVE_ONLY         - Boolean (default false). Only consider gamut constraints for positive arm of modulation.
-%    EXCITATIONS           - Aim for target excitations, rather than contrasts.
+%    EXCITATIONS           - Boolean (default false). Aim for target excitations, rather than contrasts. By default it does contrast.
 %
 % 05/15/20   dhb            Wrote it from ReceptorIsolate
+% 09/28/21   dhb, smo       Improve comments.
 
 %% Parse key/value pairs
 p = inputParser;

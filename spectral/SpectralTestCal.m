@@ -192,6 +192,8 @@ end
 %
 % CalibrateFitGamma(subprimaryCalObjs{1},10);
 SetGammaMethod(subprimaryCalObjs{1},2);
+SetGammaMethod(subprimaryCalObjs{2},2);
+SetGammaMethod(subprimaryCalObjs{3},2);
 
 %% Use extant machinery to get primaries from spectrum
 %
@@ -237,6 +239,13 @@ lowProjectWl = 400;
 highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
+%% SEMIN - This code from here to ***** below should be a function.
+%
+% Maybe call it FindDesiredBackgroundPrimaries().
+%
+% NOTE: Eventually we will need to form the background as mixture of
+% each of the primaries.  This is just using primary 1.
+
 %% Some transformation matrices
 M_NaturalToXYZ = T_xyz*B_natural(:,1:3);
 M_XYZToNatural = inv(M_NaturalToXYZ);
@@ -267,8 +276,8 @@ startingBgxyY = XYZToxyY(startingBgXYZ);
 % smoothness and obtaining desired chromaticity.
 primaryHeadRoom = 0;
 targetLambda = 5;
-[bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,P_device,startingBgPrimaries,startingBgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd,'EXCITATIONS',true);
+[bgPrimariesIncr] = ReceptorIsolateSpectral(T_xyz,desiredBgXYZ,subprimaryCalObjs{1}.get('P_device'),startingBgPrimaries,startingBgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{1}.get('P_ambient'),'EXCITATIONS',true);
 bgPrimaries = startingBgPrimaries + bgPrimariesIncr;
 bgSettings = PrimaryToSettings(subprimaryCalObjs{1},bgPrimaries);
 bgPrimariesQuantized = SettingsToPrimary(subprimaryCalObjs{1},bgSettings);
@@ -283,12 +292,18 @@ fprintf('Desired  background x,y = %0.3f,%0.3f\n',desiredBgxyY(1),desiredBgxyY(2
 fprintf('Starting background x,y = %0.3f,%0.3f\n',startingBgxyY(1),startingBgxyY(2));
 fprintf('Obtained background x,y = %0.3f,%0.3f\n',bgxyY(1),bgxyY(2));
 fprintf('Mean value of background primaries: %0.2f\n',mean(bgPrimaries));
+%% **********************************
+
+%% SEMIN - Let's make this a function that takes in the desired 
+% primary contrasts, calibration objects etc. and produces the three
+% desired primaries.  As Geoff notes, can probably write a loop over
+% the three primaries as well as part of this.
 
 %% Get primaries based on contrast specification
-LMSContrast1 = targetContrastReMaxWithHeadroom*target1MaxLMSContrast;
+target1LMSContrast = targetContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 3;
-[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,LMSContrast1,P_device,bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,target1LMSContrast,subprimaryCalObjs{1}.get('P_device'),bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{2}.get('P_ambient'),'EXCITATIONS',false);
 isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
 
 % Quantize
@@ -299,53 +314,54 @@ isolatingSpd1 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries1);
 isolatingLMS1 = T_cones*isolatingSpd1;
 isolatingContrast1 = ExcitationsToContrast(isolatingLMS1,bgLMS);
 fprintf('Desired/obtained contrasts 1\n');
-for rr = 1:length(LMSContrast1)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast1(rr),isolatingContrast1(rr));
+for rr = 1:length(target1LMSContrast)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target1LMSContrast(rr),isolatingContrast1(rr));
 end
 fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries1), max(isolatingPrimaries1));
 
 % Primary 2
-LMSContrast2 = targetContrastReMaxWithHeadroom*target2MaxLMSContrast;
+target2LMSContrast = targetContrastReMaxWithHeadroom*target2MaxLMSContrast;
 targetLambda = 3;
-[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,LMSContrast2,P_device,bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,target2LMSContrast,subprimaryCalObjs{2}.get('P_device'),bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{2}.get('P_ambient'),'EXCITATIONS',false);
 isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries2 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries2));
+isolatingPrimaries2 = SettingsToPrimary(subprimaryCalObjs{2},PrimaryToSettings(subprimaryCalObjs{2},isolatingPrimaries2));
 
 % Report
-isolatingSpd2 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries2);
+isolatingSpd2 = PrimaryToSpd(subprimaryCalObjs{2},isolatingPrimaries2);
 isolatingLMS2 = T_cones*isolatingSpd2;
 isolatingContrast2 = ExcitationsToContrast(isolatingLMS2,bgLMS);
 fprintf('Desired/obtained contrasts 2\n');
-for rr = 1:length(LMSContrast2)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast2(rr),isolatingContrast2(rr));
+for rr = 1:length(target2LMSContrast)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target2LMSContrast(rr),isolatingContrast2(rr));
 end
 fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries2), max(isolatingPrimaries2));
 
 % Primary 3
-LMSContrast3 = targetContrastReMaxWithHeadroom*target3MaxLMSContrast;
+target3LMSContrast = targetContrastReMaxWithHeadroom*target3MaxLMSContrast;
 targetLambda = 3;
-[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,LMSContrast3,P_device,bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,ambientSpd);
+[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,target3LMSContrast,subprimaryCalObjs{3}.get('P_device'),bgPrimaries,bgPrimaries, ...
+    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{3}.get('P_ambient'),'EXCITATIONS',false);
 isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
 
 % Quantize
-isolatingPrimaries3 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries3));
+isolatingPrimaries3 = SettingsToPrimary(subprimaryCalObjs{3},PrimaryToSettings(subprimaryCalObjs{3},isolatingPrimaries3));
 
 % Report
-isolatingSpd3 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries3);
+isolatingSpd3 = PrimaryToSpd(subprimaryCalObjs{3},isolatingPrimaries3);
 isolatingLMS3 = T_cones*isolatingSpd3;
 isolatingContrast3 = ExcitationsToContrast(isolatingLMS3,bgLMS);
 fprintf('Desired/obtained contrasts 3\n');
-for rr = 1:length(LMSContrast3)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,LMSContrast3(rr),isolatingContrast3(rr));
+for rr = 1:length(target3LMSContrast)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target3LMSContrast(rr),isolatingContrast3(rr));
 end
 fprintf('Min/max primaries 3: %0.4f, %0.4f\n', ...
     min(isolatingPrimaries3), max(isolatingPrimaries3));
+%% *************************
 
 %% How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
@@ -391,10 +407,16 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
+%% This is where we would measure the primaries we actually get and then use
+%% the measured rather than the nominal primaries to compute the image.
+
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale
 %
-% Also find and save best mixture of quantized primaries to acheive those
-% contrasts.
+% Also find and save best mixture of quantized primaries to acheive each fine
+% % contrast level.
+%
+% DAVID - Convert this to use SensorToSettings() etc, rather than having
+% written it out de novo the way it is here.
 fprintf('Making fine contrast to LMS lookup table\n');
 fineContrastLevels = linspace(-1,1,nFineLevels);
 spdMatrix = [isolatingSpd1, isolatingSpd2, isolatingSpd3];
@@ -546,6 +568,8 @@ title('Image Slice, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
+
+%% DAVID - Add plot of primaries.
 
 %% Light level tests
 %
