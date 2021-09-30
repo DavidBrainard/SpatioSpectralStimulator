@@ -1,11 +1,12 @@
 function [isolatingSpdSet,isolatingContrastSet] = FindDesiredTargetPrimaries(T_cones,B_natural,subprimaryCalstructData, ...
-                                                  targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries,projectIndices,primaryHeadroom,targetLambda)
+                                                  targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries,projectIndices,primaryHeadRoom,targetLambda)
 
 % Find the desired target primaries so that the three primaries can produce
 % desired LMS contrast.
 %
-% Syntax:
-%
+% Syntax: 
+%    [isolatingSpdSet,isolatingContrastSet] = FindDesiredTargetPrimaries(T_cones,B_natural,subprimaryCalstructData, ...
+%                                             targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries,projectIndices,primaryHeadroom,targetLambda)
 %
 % Description:
 %    This function searches for three primaries based on the desired LMS
@@ -26,9 +27,12 @@ function [isolatingSpdSet,isolatingContrastSet] = FindDesiredTargetPrimaries(T_c
 %                                 are stored here for all three primaries.
 %                                 Each column should be aligned as each
 %                                 primary. 
-%    targetPrimaryHeadroom -      
-%    targetContrastReMax -        
-%    bgPrimaries -                
+%    targetPrimaryHeadroom -      This decides a little headroom when setting
+%                                 up the target LMS contrast to avoid a
+%                                 numerical error at the edges.
+%    targetContrastReMax -        The amount of the contrast that we want
+%                                 to use (we do not want the whole range).
+%    bgPrimaries -                The primaries of the background.
 %    projectIndices -             Define wavelength range that will be used to enforce the smoothnes
 %                                 thorugh the projection onto an underlying basis set.
 %    primaryHeadRoom -            Set the headroom to prevent running into
@@ -95,9 +99,14 @@ for pp = 1:numPrimaries;
     fprintf('Min/max primaries 1: %0.4f, %0.4f\n',min(isolatingPrimariesQuantized_temp),max(isolatingPrimariesQuantized_temp));
     
     % Save the target isolating Spd and Contrast.
-    variableName_temp = append('isolatingSpd',num2str(pp));
-    isolatingSpdSet.variableName_temp = isolatingSpd_temp;
-    isolatingContrastSet{pp} = isolatingContrast_temp;
+    % It saves the data temporarily and the data will be stored in the
+    % 'struct' in the following lines after the loop.
+    isolatingSpdSet_temp(:,pp) = isolatingSpd_temp;
+    isolatingContrastSet_temp(:,pp) = isolatingContrast_temp;
 end
 
+% Make a struct for each result of the Spd and the Contrast.
+% There should be better way to do it, so this part would be changed later.
+isolatingSpdSet = struct('isolatingSpd1',isolatingSpdSet_temp(:,1),'isolatingSpd2',isolatingSpdSet_temp(:,2),'isolatingSpd3',isolatingSpdSet_temp(:,3));
+isolatingContrastSet = struct('isolatingContrast1',isolatingContrastSet_temp(:,1),'isolatingContrast2',isolatingContrastSet_temp(:,2),'isolatingContrast3',isolatingContrastSet_temp(:,3));
 end
