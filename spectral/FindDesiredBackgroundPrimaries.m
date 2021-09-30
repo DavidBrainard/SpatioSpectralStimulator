@@ -4,8 +4,8 @@ function [obtainedBgSpd,obtainedBgxyY] = FindDesiredBackgroundPrimaries(T_xyz,T_
 % xy chromaticity values.
 % 
 % Syntax:
-%    [desiredBgSpd,desiredBgxyY] = FindDesiredBackgroundPrimaries(T_xyz,T_cones,B_smoothness,...,
-%                                  targetBgxy,subPrimaryCalstructData,subPrimarySpd,ambientSpd,projectIndices,primaryHeadRoom,targetLambda)
+%    [obtainedBgSpd,obtainedBgxyY] = FindDesiredBackgroundPrimaries(T_xyz,T_cones,B_natural,...,
+%                                    targetBgxy,subPrimaryCalstructData,subPrimarySpd,ambientSpd,projectIndices,primaryHeadRoom,targetLambda)
 % Description:
 %    This function searches for the desired background SPD which matches in the xy chromaticty 
 %    based on the initial guess from the input variable 'targetBgxy'. 
