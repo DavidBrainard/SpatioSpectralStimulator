@@ -60,7 +60,7 @@ function [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(t
 %    N/A
 %
 % History:
-%    09/29/21  smo  Started on it
+%    09/29/21  smo Started on it
 
 %% Set parameters.
 arguments
@@ -106,11 +106,11 @@ for pp = 1:numPrimaries;
     isolatingSpd_temp = PrimaryToSpd(subprimaryCalstructData{pp},isolatingPrimariesQuantized_temp);
     isolatingLMS_temp = T_cones * isolatingSpd_temp;
     isolatingContrast_temp = ExcitationsToContrast(isolatingLMS_temp,bgLMS);
-    fprintf('Desired/obtained contrasts 1\n');
+    fprintf('Desired/obtained contrasts - Primary %d\n',pp);
     for rr = 1:length(targetLMSContrast_temp)
         fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,targetLMSContrast_temp(rr),isolatingContrast_temp(rr));
     end
-    fprintf('Min/max primaries 1: %0.4f, %0.4f\n',min(isolatingPrimariesQuantized_temp),max(isolatingPrimariesQuantized_temp));
+    fprintf('Min/max primaries %d: %0.4f, %0.4f\n',pp,min(isolatingPrimariesQuantized_temp),max(isolatingPrimariesQuantized_temp));
     
     % Save the target isolating Spd and Contrast.
     % It saves the data temporarily and the data will be stored in the
@@ -121,6 +121,6 @@ end
 
 % Make a struct for each result of the Spd and the Contrast. There
 % should be better way to do it, so this part would be changed later.
-targetSpdSet = struct('isolatingSpd1',isolatingSpdSet_temp(:,1),'isolatingSpd2',isolatingSpdSet_temp(:,2),'isolatingSpd3',isolatingSpdSet_temp(:,3));
-targetContrastSet = struct('isolatingContrast1',isolatingContrastSet_temp(:,1),'isolatingContrast2',isolatingContrastSet_temp(:,2),'isolatingContrast3',isolatingContrastSet_temp(:,3));
+targetSpdSet = struct('primary1Spd',isolatingSpdSet_temp(:,1),'primary2Spd',isolatingSpdSet_temp(:,2),'primary3Spd',isolatingSpdSet_temp(:,3));
+targetContrastSet = struct('primary1Contrast',isolatingContrastSet_temp(:,1),'primary2Contrast',isolatingContrastSet_temp(:,2),'primary3Contrast',isolatingContrastSet_temp(:,3));
 end

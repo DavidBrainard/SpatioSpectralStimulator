@@ -249,12 +249,19 @@ if (any(bgPrimaries < 0) | any(bgPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
 end
 
-%% SEMIN - Let's make this a function that takes in the desired 
-% primary contrasts, calibration objects etc. and produces the three
-% desired primaries.  As Geoff notes, can probably write a loop over
-% the three primaries as well as part of this.
+%% Find target primaries with desired contrast. (THIS PART HAS BEEN UPDATED - SEMIN)
+targetMaxLMSContrast = [target1MaxLMSContrast target2MaxLMSContrast target3MaxLMSContrast];
+targetContrastReMax = 0.05;
+targetPrimaryHeadroom = 1.1;
+primaryHeadroom = 0;
+targetLambda = 3;
 
-%% Get primaries based on contrast specification
+[targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
+    T_cones,subprimaryCalObjs,B_natural,projectIndices,primaryHeadroom,targetLambda);
+
+% ****************************
+
+%% Get primaries based on contrast specification (THIS PART WILL BE GONE AFTER CHECKING THE ABOVE FUNCTION - SEMIN)
 target1LMSContrast = targetContrastReMaxWithHeadroom*target1MaxLMSContrast;
 targetLambda = 3;
 [isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,target1LMSContrast,subprimaryCalObjs{1}.get('P_device'),bgPrimaries,bgPrimaries, ...
