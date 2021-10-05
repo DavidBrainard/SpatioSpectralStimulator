@@ -1,6 +1,5 @@
-function [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
-    T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda)
-
+function [isolatingPrimaries,isolatingSpd,isolatingContrast] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
+    T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda,options)
 % Find the desired target primaries so that the three primaries can produce
 % desired LMS contrast.
 %
@@ -13,6 +12,11 @@ function [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(t
 %    contrast from the background. The shape of the final obtained spectrums will
 %    depend on the variable 'targetLambda' which constrains the smoothness
 %    of the curve.
+%
+%    This routine allows for optional passing of an ExtraAmbientSpd
+%    variable, to account for use when we are calculating for subprimaries
+%    for one primary channel, knowing that the other two will also
+%    contribute to the overall background.
 %
 % Inputs:
 %    targetMaxLMSContrast -       The maximum LMS contrast values for the target
@@ -48,6 +52,10 @@ function [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(t
 %                                 smoothness and obtaining desired chromaticity.
 %
 % Outputs:
+%
+% NOTE: Also add return of quantized primaries, so there are four return
+% variables.
+%
 %    targetSpdSet -               This contains the final spectrum results
 %                                 of the three primaries in struct
 %                                 variable.
@@ -57,7 +65,9 @@ function [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(t
 %                                 (cf. targetContrastSet = {primary1Contrast primary2Contrast primary3Contrast}).
 %
 % Optional key/value pairs:
-%    N/A
+%    'ExtraAmbientSpd' -          Vector specifying extra ambient light spd
+%                                 that needs tp be accounted for, for
+%                                 example from the background from other primary channels.
 %
 % History:
 %    09/29/21  smo Started on it
@@ -74,6 +84,7 @@ arguments
     projectIndices
     primaryHeadroom
     targetLambda
+    options.ExtraAmbientSpd = 0;
 end
 
 %% Preparations for the calculations.
@@ -81,46 +92,30 @@ end
 % This part prepares variables for following calculations.
 %
 % Get background Spd and LMS.
-primarySettingForBackground = 1; % Choose which primary to use for the backgroud. / For now, it is set as 1 arbitrarily.
-bgSpd = PrimaryToSpd(subprimaryCalstructData{primarySettingForBackground},bgPrimaries); % This should be updated later for using three primaries for the background?
+bgSpd = PrimaryToSpd(subprimaryCalstructData,bgPrimaries) + ...
+    options.ExtraAmbientSpd;
 bgLMS = T_cones * bgSpd;
 
 % Set the target contrast maximum value with headroom.
 targetContrastReMaxWithHeadroom = targetPrimaryHeadroom * targetContrastReMax;
 
 %% Get primaries based on contrast specification.
-%
-% Make a loop for three primaries.
-numPrimaries = length(subprimaryCalstructData);
-for pp = 1:numPrimaries;
-    % Set the target contrast per each primary.
-    targetLMSContrast_temp = targetContrastReMaxWithHeadroom * targetMaxLMSContrast(:,pp);
-    [isolatingModulationPrimaries_temp] = ReceptorIsolateSpectral(T_cones,targetLMSContrast_temp,subprimaryCalstructData{pp}.get('P_device'),bgPrimaries,bgPrimaries, ...
-        primaryHeadroom,B_natural,projectIndices,targetLambda,subprimaryCalstructData{pp}.get('P_ambient'),'EXCITATIONS',false);
-    isolatingPrimaries_temp = isolatingModulationPrimaries_temp + bgPrimaries;
+    targetLMSContrast = targetContrastReMaxWithHeadroom * targetMaxLMSContrast;
+    [isolatingModulationPrimaries] = ReceptorIsolateSpectral(T_cones,targetLMSContrast,subprimaryCalstructData.get('P_device'),bgPrimaries,bgPrimaries, ...
+        primaryHeadroom,B_natural,projectIndices,targetLambda,subprimaryCalstructData.get('P_ambient')+options.ExtraAmbientSpd,'EXCITATIONS',false);
+    isolatingPrimaries= isolatingModulationPrimaries + bgPrimaries;
     
     % Quantize.
-    isolatingPrimariesQuantized_temp = SettingsToPrimary(subprimaryCalstructData{pp},PrimaryToSettings(subprimaryCalstructData{pp},isolatingPrimaries_temp));
+    isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,isolatingPrimaries));
     
     % Report.
-    isolatingSpd_temp = PrimaryToSpd(subprimaryCalstructData{pp},isolatingPrimariesQuantized_temp);
-    isolatingLMS_temp = T_cones * isolatingSpd_temp;
-    isolatingContrast_temp = ExcitationsToContrast(isolatingLMS_temp,bgLMS);
-    fprintf('Desired/obtained contrasts - Primary %d\n',pp);
-    for rr = 1:length(targetLMSContrast_temp)
-        fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,targetLMSContrast_temp(rr),isolatingContrast_temp(rr));
+    isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized) + options.ExtraAmbientSpd;
+    isolatingLMS = T_cones * isolatingSpd;
+    isolatingContrast = ExcitationsToContrast(isolatingLMS,bgLMS);
+    fprintf('Desired/obtained contrasts:\n');
+    for rr = 1:length(targetLMSContrast)
+        fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,targetLMSContrast(rr),isolatingContrast(rr));
     end
-    fprintf('Min/max primaries %d: %0.4f, %0.4f\n',pp,min(isolatingPrimariesQuantized_temp),max(isolatingPrimariesQuantized_temp));
+    fprintf('Min/max primaries: %0.4f, %0.4f\n',min(isolatingPrimariesQuantized),max(isolatingPrimariesQuantized));
     
-    % Save the target isolating Spd and Contrast.
-    % It saves the data temporarily and the data will be stored in the
-    % 'struct' in the following lines after the loop.
-    isolatingSpdSet_temp(:,pp) = isolatingSpd_temp;
-    isolatingContrastSet_temp(:,pp) = isolatingContrast_temp;
-end
-
-% Make a struct for each result of the Spd and the Contrast. There
-% should be better way to do it, so this part would be changed later.
-targetSpdSet = struct('primary1Spd',isolatingSpdSet_temp(:,1),'primary2Spd',isolatingSpdSet_temp(:,2),'primary3Spd',isolatingSpdSet_temp(:,3));
-targetContrastSet = struct('primary1Contrast',isolatingContrastSet_temp(:,1),'primary2Contrast',isolatingContrastSet_temp(:,2),'primary3Contrast',isolatingContrastSet_temp(:,3));
 end

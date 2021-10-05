@@ -28,8 +28,9 @@ projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
 CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 
 %% Load subprimary calibrations
-subprimaryCals = cell(3,1);
-subprimaryCalObjs = cell(3,1);
+nPrimaries = 3;
+subprimaryCals = cell(nPrimaries ,1);
+subprimaryCalObjs = cell(nPrimaries ,1);
 for cc = 1:length(subprimaryCalNames)
     subprimaryCals{cc} = LoadCalFile(subprimaryCalNames{cc});
 
@@ -243,8 +244,10 @@ projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 primaryHeadRoom = 0;
 targetLambda = 3;
 targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
-[bgPrimaries,obtainedBgSpd,obtainedBgXYZ] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{1}, ...
-    B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
+for pp = 1:nPrimaries
+    [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
+        B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
+end
 if (any(bgPrimaries < 0) | any(bgPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
 end
@@ -256,8 +259,16 @@ targetPrimaryHeadroom = 1.1;
 primaryHeadroom = 0;
 targetLambda = 3;
 
-[targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
-    T_cones,subprimaryCalObjs,B_natural,projectIndices,primaryHeadroom,targetLambda);
+for pp = 1:nPrimaries
+    otherPrimaries = setdiff(1:nPrimaries,pp);
+    extraAmbientSpd = 0;
+    for oo = 1:length(otherPrimaries)
+        extraAmbientSpd = extraAmbientSpd + obtainedBgSpd(:,otherPrimaries(oo));
+    end
+    [isolatingPrimaries(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
+        targetPrimaryHeadroom,targetContrastReMax,bgPrimaries(:,pp), ...
+        T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
+end
 
 % ****************************
 
