@@ -1,11 +1,11 @@
-function [isolatingPrimaries,isolatingSpd,isolatingContrast] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
+function [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingContrast] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
     T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda,options)
 % Find the desired target primaries so that the three primaries can produce
 % desired LMS contrast.
 %
 % Syntax:
-%    [targetSpdSet,targetContrastSet] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
-%                                       T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda)
+%    [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingContrast] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
+%                                                                                      T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda,options)
 %
 % Description:
 %    This function searches for three primaries based on the desired LMS
@@ -52,17 +52,16 @@ function [isolatingPrimaries,isolatingSpd,isolatingContrast] = FindDesiredContra
 %                                 smoothness and obtaining desired chromaticity.
 %
 % Outputs:
-%
-% NOTE: Also add return of quantized primaries, so there are four return
-% variables.
-%
-%    targetSpdSet -               This contains the final spectrum results
-%                                 of the three primaries in struct
-%                                 variable.
-%                                 (cf. targetSpdSet = {primary1Spd primary2Spd primary3Spd}).
-%    targetContrastSet -          This contains the final obtained contrast
-%                                 results for three primaries.
-%                                 (cf. targetContrastSet = {primary1Contrast primary2Contrast primary3Contrast}).
+%    isolatingPrimaries -         Obtained isolating primaries which
+%                                 reproduce the desired LMS contrasts.
+%    isolatingPrimariesQuantized -The quantized results of the isolating primareis.
+%    isolatingSpd -               The spectrums of the isolating primaries.
+%                                 This is calculated based on the quantized
+%                                 primaries results ('isolatingPrimariesQuantized').
+%    isolatingContrast -          The LMS contrasts that isolating primaries
+%                                 reproduce. This is also calculated
+%                                 based on the quantized isolating
+%                                 primaries.
 %
 % Optional key/value pairs:
 %    'ExtraAmbientSpd' -          Vector specifying extra ambient light spd
@@ -70,7 +69,8 @@ function [isolatingPrimaries,isolatingSpd,isolatingContrast] = FindDesiredContra
 %                                 example from the background from other primary channels.
 %
 % History:
-%    09/29/21  smo Started on it
+%    09/29/21  smo                Started on it
+%    10/05/21  dhb,smo            Clean it and added the feature of 'ExtraAmbientSpd'.
 
 %% Set parameters.
 arguments
@@ -93,29 +93,31 @@ end
 %
 % Get background Spd and LMS.
 bgSpd = PrimaryToSpd(subprimaryCalstructData,bgPrimaries) + ...
-    options.ExtraAmbientSpd;
+        options.ExtraAmbientSpd;
 bgLMS = T_cones * bgSpd;
 
 % Set the target contrast maximum value with headroom.
 targetContrastReMaxWithHeadroom = targetPrimaryHeadroom * targetContrastReMax;
 
 %% Get primaries based on contrast specification.
-    targetLMSContrast = targetContrastReMaxWithHeadroom * targetMaxLMSContrast;
-    [isolatingModulationPrimaries] = ReceptorIsolateSpectral(T_cones,targetLMSContrast,subprimaryCalstructData.get('P_device'),bgPrimaries,bgPrimaries, ...
-        primaryHeadroom,B_natural,projectIndices,targetLambda,subprimaryCalstructData.get('P_ambient')+options.ExtraAmbientSpd,'EXCITATIONS',false);
-    isolatingPrimaries= isolatingModulationPrimaries + bgPrimaries;
-    
-    % Quantize.
-    isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,isolatingPrimaries));
-    
-    % Report.
-    isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized) + options.ExtraAmbientSpd;
-    isolatingLMS = T_cones * isolatingSpd;
-    isolatingContrast = ExcitationsToContrast(isolatingLMS,bgLMS);
-    fprintf('Desired/obtained contrasts:\n');
-    for rr = 1:length(targetLMSContrast)
-        fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,targetLMSContrast(rr),isolatingContrast(rr));
-    end
-    fprintf('Min/max primaries: %0.4f, %0.4f\n',min(isolatingPrimariesQuantized),max(isolatingPrimariesQuantized));
-    
+targetLMSContrast = targetContrastReMaxWithHeadroom * targetMaxLMSContrast;
+[isolatingModulationPrimaries] = ReceptorIsolateSpectral(T_cones,targetLMSContrast,subprimaryCalstructData.get('P_device'),bgPrimaries,bgPrimaries, ...
+    primaryHeadroom,B_natural,projectIndices,targetLambda,subprimaryCalstructData.get('P_ambient')+options.ExtraAmbientSpd,'EXCITATIONS',false);
+isolatingPrimaries= isolatingModulationPrimaries + bgPrimaries;
+
+% Quantize.
+isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,isolatingPrimaries));
+
+% Get isolating Spd and LMS contrasts.
+isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized) + options.ExtraAmbientSpd;
+isolatingLMS = T_cones * isolatingSpd;
+isolatingContrast = ExcitationsToContrast(isolatingLMS,bgLMS);
+
+% Report.
+fprintf('Desired/obtained contrasts:\n');
+for rr = 1:length(targetLMSContrast)
+    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,targetLMSContrast(rr),isolatingContrast(rr));
+end
+fprintf('Min/max primaries: %0.4f, %0.4f\n',min(isolatingPrimariesQuantized),max(isolatingPrimariesQuantized));
+
 end

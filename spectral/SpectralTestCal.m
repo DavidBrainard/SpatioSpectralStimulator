@@ -8,7 +8,7 @@
 %% Clear
 clear; close all;
 
-%% Define calibration filenames/params
+%% Define calibration filenames/params.
 %
 % This is a standard calibration file for the DLP projector,
 % with the subprimaries set to something.  As we'll see below,
@@ -22,12 +22,12 @@ projectorNInputLevels = 256;
 subprimaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
 subprimaryNInputLevels = 252;
 
-%% Load projector calibration
+%% Load projector calibration.
 projectorCal = LoadCalFile(projectorCalName);
 projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
 CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 
-%% Load subprimary calibrations
+%% Load subprimary calibrations.
 nPrimaries = 3;
 subprimaryCals = cell(nPrimaries ,1);
 subprimaryCalObjs = cell(nPrimaries ,1);
@@ -53,7 +53,7 @@ gammaTable = subprimaryCalObjs{1}.get('gammaTable');
 gammaMeasurements = subprimaryCals{1}.rawData.gammaCurveMeanMeasurements;
 [nSubprimaries,nMeas,~] = size(gammaMeasurements);
 
-%% Cone fundamentals and XYZ CMFs
+%% Cone fundamentals and XYZ CMFs.
 psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
 T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
@@ -85,7 +85,7 @@ if (PLOT_SUBPRIMARYINVARIANCE)
     end
 end
 
-%% Plot subprimary gamma functions
+%% Plot subprimary gamma functions.
 PLOT_SUBPRIMARYGAMMA = false;
 if (PLOT_SUBPRIMARYGAMMA)
     for pp = 1:nSubprimaries
@@ -95,7 +95,7 @@ if (PLOT_SUBPRIMARYGAMMA)
     end 
 end
 
-%% Plot x,y if desired
+%% Plot x,y if desired.
 PLOT_SUBPRIMARYCHROMATICITY = false;
 if (PLOT_SUBPRIMARYCHROMATICITY)
     figure; hold on;
@@ -118,7 +118,7 @@ if (PLOT_SUBPRIMARYCHROMATICITY)
     plot(colorgamut(1,:),colorgamut(2,:),'k-'); 
 end
 
-%% Background xy
+%% Background xy.
 %
 % Specify the chromaticity, but we'll chose the luminance based
 % on the range available in the device.
@@ -130,7 +130,7 @@ targetBgxy = [0.3127 0.3290]';
 % equally in positive and negative directions.
 targetLMSContrast = [1 -1 0]';
 
-%% Specify desired primary properties
+%% Specify desired primary properties.
 %
 % These are the target contrasts for the three primaries. We want these to
 % span a triangle around the line specified above. Here we define that
@@ -150,35 +150,35 @@ targetPrimaryHeadroom = 1.1;
 targetContrastReMaxWithHeadroom = targetPrimaryHeadroom*targetContrastReMax;
 plotAxisLimit = 2;
 
-%% Comment this better later on
+%% Comment this better later on.
 %
 % When we compute a specific image, we may not want full contrast available
 % with the primaries. This tells us fraction of max available relative to
 % ledContrastReMax.
 imageModulationContrast = 0.05/targetContrastReMax;
 
-%% Image spatial parameters
+%% Image spatial parameters.
 sineFreqCyclesPerImage = 6;
 gaborSdImageFraction = 0.1;
 
 % Image size in pixels
 imageN = 512;
 
-%% Computational bit depth 
+%% Computational bit depth.
 %
 % This is a computational bit depth that we use to define the lookup table
 % between contrast and primary values.
 fineBits = 14;
 nFineLevels = 2^fineBits;
 
-%% Get half on spectrum
+%% Get half on spectrum.
 %
 % This is useful for scaling things reasonably - we start with half of the
 % available range of the primaries.
 halfOnSubprimaries = 0.5*ones(nSubprimaries,1);
 halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnSubprimaries);
 
-%% Make sure gamma correction behaves well with unquantized conversion
+%% Make sure gamma correction behaves well with unquantized conversion.
 SetGammaMethod(subprimaryCalObjs{1},0);
 halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnSubprimaries);
 halfOnPrimariesChk = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettings);
@@ -186,7 +186,7 @@ if (max(abs(halfOnSubprimaries-halfOnPrimariesChk)) > 1e-8)
     error('Gamma self-inversion not sufficiently precise');
 end
 
-%% Use quantized conversion from here on
+%% Use quantized conversion from here on.
 %
 % Comment in the line that refits the gamma to see
 % effects of extreme quantization below
@@ -196,7 +196,7 @@ SetGammaMethod(subprimaryCalObjs{1},2);
 SetGammaMethod(subprimaryCalObjs{2},2);
 SetGammaMethod(subprimaryCalObjs{3},2);
 
-%% Use extant machinery to get primaries from spectrum
+%% Use extant machinery to get primaries from spectrum.
 %
 % This isn't used in our calculations.  Any difference in the
 % two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair.  
@@ -206,7 +206,7 @@ figure; hold on;
 plot(wls,halfOnSpd,'r','LineWidth',3);
 plot(wls,halfOnSpdChk,'k','LineWidth',1);
 
-%% Show effect of quantization
+%% Show effect of quantization.
 %
 % It's very small at the nominal 252 levels of the subprimaries, but will
 % increase if you refit the gamma functios to a small number of levels.
@@ -216,7 +216,7 @@ halfOnPrimariesChk1 = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettingsChk);
 halfOnSpdChk1 = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk1);
 plot(wls,halfOnSpdChk1,'g','LineWidth',1);
 
-%% Set up basis to try to keep spectra close to
+%% Set up basis to try to keep spectra close to.
 %
 % This is how we enforce a smoothness or other constraint
 % on the spectra.
@@ -240,101 +240,43 @@ lowProjectWl = 400;
 highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
-%% Find background primaries to acheive desired xy at intensity scale of display
+%% Find background primaries to acheive desired xy at intensity scale of display.
+% Set parameters for getting desired background primaries.
 primaryHeadRoom = 0;
 targetLambda = 3;
 targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
+
+% Make a loop for getting background primaries for all primaries.
 for pp = 1:nPrimaries
     [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
         B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
 end
+
 if (any(bgPrimaries < 0) | any(bgPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
 end
 
-%% Find target primaries with desired contrast. (THIS PART HAS BEEN UPDATED - SEMIN)
+%% Find target primaries with desired LMS contrast.
+% Set parameters for getting desired target primaries.
 targetMaxLMSContrast = [target1MaxLMSContrast target2MaxLMSContrast target3MaxLMSContrast];
 targetContrastReMax = 0.05;
 targetPrimaryHeadroom = 1.1;
 primaryHeadroom = 0;
 targetLambda = 3;
 
+% Make a loop for getting isolating primaries for all primaries.
 for pp = 1:nPrimaries
     otherPrimaries = setdiff(1:nPrimaries,pp);
     extraAmbientSpd = 0;
+    % Set extra ambient spd.
     for oo = 1:length(otherPrimaries)
         extraAmbientSpd = extraAmbientSpd + obtainedBgSpd(:,otherPrimaries(oo));
     end
-    [isolatingPrimaries(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
+    % Get isolating primaries.
+    [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
         targetPrimaryHeadroom,targetContrastReMax,bgPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
-
-% ****************************
-
-%% Get primaries based on contrast specification (THIS PART WILL BE GONE AFTER CHECKING THE ABOVE FUNCTION - SEMIN)
-target1LMSContrast = targetContrastReMaxWithHeadroom*target1MaxLMSContrast;
-targetLambda = 3;
-[isolatingModulationPrimaries1] = ReceptorIsolateSpectral(T_cones,target1LMSContrast,subprimaryCalObjs{1}.get('P_device'),bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{2}.get('P_ambient'),'EXCITATIONS',false);
-isolatingPrimaries1 = isolatingModulationPrimaries1 + bgPrimaries;
-
-% Quantize
-isolatingPrimaries1 = SettingsToPrimary(subprimaryCalObjs{1},PrimaryToSettings(subprimaryCalObjs{1},isolatingPrimaries1));
-
-% Report
-isolatingSpd1 = PrimaryToSpd(subprimaryCalObjs{1},isolatingPrimaries1);
-isolatingLMS1 = T_cones*isolatingSpd1;
-isolatingContrast1 = ExcitationsToContrast(isolatingLMS1,bgLMS);
-fprintf('Desired/obtained contrasts 1\n');
-for rr = 1:length(target1LMSContrast)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target1LMSContrast(rr),isolatingContrast1(rr));
-end
-fprintf('Min/max primaries 1: %0.4f, %0.4f\n', ...
-    min(isolatingPrimaries1), max(isolatingPrimaries1));
-
-% Primary 2
-target2LMSContrast = targetContrastReMaxWithHeadroom*target2MaxLMSContrast;
-targetLambda = 3;
-[isolatingModulationPrimaries2] = ReceptorIsolateSpectral(T_cones,target2LMSContrast,subprimaryCalObjs{2}.get('P_device'),bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{2}.get('P_ambient'),'EXCITATIONS',false);
-isolatingPrimaries2 = isolatingModulationPrimaries2 + bgPrimaries;
-
-% Quantize
-isolatingPrimaries2 = SettingsToPrimary(subprimaryCalObjs{2},PrimaryToSettings(subprimaryCalObjs{2},isolatingPrimaries2));
-
-% Report
-isolatingSpd2 = PrimaryToSpd(subprimaryCalObjs{2},isolatingPrimaries2);
-isolatingLMS2 = T_cones*isolatingSpd2;
-isolatingContrast2 = ExcitationsToContrast(isolatingLMS2,bgLMS);
-fprintf('Desired/obtained contrasts 2\n');
-for rr = 1:length(target2LMSContrast)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target2LMSContrast(rr),isolatingContrast2(rr));
-end
-fprintf('Min/max primaries 2: %0.4f, %0.4f\n', ...
-    min(isolatingPrimaries2), max(isolatingPrimaries2));
-
-% Primary 3
-target3LMSContrast = targetContrastReMaxWithHeadroom*target3MaxLMSContrast;
-targetLambda = 3;
-[isolatingModulationPrimaries3] = ReceptorIsolateSpectral(T_cones,target3LMSContrast,subprimaryCalObjs{3}.get('P_device'),bgPrimaries,bgPrimaries, ...
-    primaryHeadRoom,B_natural,projectIndices,targetLambda,subprimaryCalObjs{3}.get('P_ambient'),'EXCITATIONS',false);
-isolatingPrimaries3 = isolatingModulationPrimaries3 + bgPrimaries;
-
-% Quantize
-isolatingPrimaries3 = SettingsToPrimary(subprimaryCalObjs{3},PrimaryToSettings(subprimaryCalObjs{3},isolatingPrimaries3));
-
-% Report
-isolatingSpd3 = PrimaryToSpd(subprimaryCalObjs{3},isolatingPrimaries3);
-isolatingLMS3 = T_cones*isolatingSpd3;
-isolatingContrast3 = ExcitationsToContrast(isolatingLMS3,bgLMS);
-fprintf('Desired/obtained contrasts 3\n');
-for rr = 1:length(target3LMSContrast)
-    fprintf('\tReceptor %d (desired/obtained): %0.3f, %0.3f\n',rr,target3LMSContrast(rr),isolatingContrast3(rr));
-end
-fprintf('Min/max primaries 3: %0.4f, %0.4f\n', ...
-    min(isolatingPrimaries3), max(isolatingPrimaries3));
-%% *************************
 
 %% How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
@@ -380,10 +322,10 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
-%% This is where we would measure the primaries we actually get and then use
+%% This is where we would measure the primaries we actually get and then use.
 %% the measured rather than the nominal primaries to compute the image.
 
-%% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale
+%% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
 %
 % Also find and save best mixture of quantized primaries to acheive each fine
 % % contrast level.
@@ -430,7 +372,7 @@ for ll = 1:projectorNInputLevels
     quantizedDisplayPrimaries(:,ll) = finePrimaries(:,minIndices(ll));
 end
 
-%% Make Gabor patch in range 0-1
+%% Make Gabor patch in range 0-1.
 %
 % This is our contrast modulation
 fprintf('Making Gabor contrast image\n');
@@ -449,7 +391,7 @@ displayIntegerMonochromeGaborCal = ImageToCalFormat(displayIntegerMonochromeGabo
 fineIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,nFineLevels);
 fineIntegerMonochromeGaborCal = ImageToCalFormat(fineIntegerMonochromeGaborImage);
 
-%% Create the Gabor image with desired LMS contrasts
+%% Create the Gabor image with desired LMS contrasts.
 fprintf('Making Gabor desired (fine) LMS contrast image\n');
 quantizedFineLMSGaborCal = zeros(3,imageN*imageN);
 for ii = 1:imageN*imageN
@@ -462,7 +404,7 @@ meanLMS = mean(quantizedFineLMSGaborCal,2);
 quantizedFineContrastGaborCal = ExcitationsToContrast(quantizedFineLMSGaborCal,meanLMS);
 quantizedFineContrastGaborImage = CalFormatToImage(quantizedFineContrastGaborCal,imageN,imageN);
 
-%% Create the Gabor image with quantized primary mixtures
+%% Create the Gabor image with quantized primary mixtures.
 fprintf('Making Gabor primary mixture image\n');
 quantizedDisplayPrimariesGaborCal = zeros(3,imageN*imageN);
 for ii = 1:imageN*imageN
@@ -470,7 +412,7 @@ for ii = 1:imageN*imageN
     quantizedDisplayPrimariesGaborCal(:,ii) = quantizedDisplayPrimaries(:,thisIndex);
 end
 
-%% Convert of useful formats for analysis, rendering
+%% Convert of useful formats for analysis, rendering.
 %
 % Get spectral power distribution
 fprintf('Convert Gabor for rendering, analysis\n');
@@ -492,7 +434,7 @@ quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
 % Show the SRGB image
 figure; imshow(quantizedSRGBImage)
 
-%% Now compute projector image
+%% Now compute projector image.
 %
 % First step is to make a DLP calibration file that has as primaries
 % the three spds we've computed above.
@@ -524,7 +466,7 @@ testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
 testFilename = fullfile(testFiledir,'testImageData1');
 save(testFilename,'projectorSettingsImage','isolatingPrimaries1','isolatingPrimaries2','isolatingPrimaries3');
 
-%% Plot slice through LMS contrast image
+%% Plot slice through LMS contrast image.
 figure; hold on
 plot(1:imageN,100*quantizedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
 plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
@@ -544,7 +486,7 @@ ylim([-plotAxisLimit plotAxisLimit]);
 
 %% DAVID - Add plot of primaries.
 
-%% Light level tests
+%% Light level tests.
 %
 % PupilDiameter
 pupilDiameterMM = 4;
