@@ -32,7 +32,7 @@ arguments
     targetPrimaries
     subprimaryNInputLevels
     subPrimaryCalstructData
-    options.projectroMode (1,1) = true
+    options.projectorMode (1,1) = true
 end
 
 %% Initialize (connect to both display and measurement device).
@@ -50,7 +50,7 @@ isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
 
 % Set the projector mode.
-if (options.projectroMode)
+if (options.projectorMode)
     commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
     unix(commandNormal)
     disp('Projector is set as Normal mode');
@@ -95,34 +95,38 @@ screens = Screen('Screens');
 screenNumber = max(screens);
 white = WhiteIndex(screenNumber);
 [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
-%backgroundColor = [255 255 255];
-%[window, backgroundRect] = Screen('OpenWindow', screenNumber, backgroundColor, windowRect);
 
 % Set projector settings and measure.
 otherPrimarySettings = 0;
 for pp = 1:nPrimaries
     otherPrimaries = setdiff(1:nPrimaries,pp);
     % Set target settings.
-    targetSettings = PrimaryToSettings(subPrimaryCalstructData,targetPrimaries((:,pp)) * subprimaryNInputLevels;
-    for ss = logicalToPhysical(1:nSubprimaries)
+    targetSettings = PrimaryToSettings(subPrimaryCalstructData,targetPrimaries(:,pp)) * subprimaryNInputLevels;
+    for ss = 1:nSubprimaries
         % Set projector current levels.
-        Datapixx('SetPropixxHSLedCurrent', pp-1, ss, round(targetSettings(ss))); % Target primary
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, ss, otherPrimarySettings); % Other Primary 1
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, ss, otherPrimarySettings); % Other Primary 2
+        Datapixx('SetPropixxHSLedCurrent', pp-1, logicalToPhysical(ss), round(targetSettings(ss))); % Target primary
+        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 1
+        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 2
     end
     % Measurement.
     targetSpdMeasured(:,pp) = MeasSpd(S,5,'all');
+    disp(sprintf('Measurement complete! - Primary %d',pp)); 
 end
 
 % Close PTB screen.
 sca;
 
+% Conversion factor.
+for pp = 1:nPrimaries
+    targetToMeasured(:,pp) = sum(targetSpd(:,pp))/sum(targetSpdMeasured(:,pp));
+end
+
 % Plot the measurement result.
-figure;
-for pp = 1:nPrimaries;
-    subplot(1,pp);
-    plot(SToWls(S),targetSpd(:,pp),'k-','LineWidth',3); % Target Spd.
-    plot(SToWls(S),targetSpdMeasured(:,pp),'r--','LineWidth',3); % Measured Spd.
+figure; 
+for pp = 1:nPrimaries
+    subplot(nPrimaries,1,pp); hold on;
+    plot(SToWls(S),targetSpd(:,pp),'k-','LineWidth',1); % Target Spd.
+    plot(SToWls(S),targetSpdMeasured(:,pp).*targetToMeasured(pp),'r--','LineWidth',1); % Measured Spd.
     xlabel('Wavelength (nm)');
     ylabel('Spectral power');
     legend('Target','Measurement');
