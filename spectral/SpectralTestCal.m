@@ -322,8 +322,9 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
-%% This is where we would measure the primaries we actually get and then use.
-%% the measured rather than the nominal primaries to compute the image.
+%% Measure the desired target primaries (THIS PART HAS BEEN UPDATED - SEMIN)
+% This result will be used to compute the image.
+[targetSpdMeasured] = MeasureDesiredTargetPrimaries(isolatingPrimaries,subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true);
 
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
 %
