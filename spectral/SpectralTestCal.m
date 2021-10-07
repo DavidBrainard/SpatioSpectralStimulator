@@ -278,6 +278,15 @@ for pp = 1:nPrimaries
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
 
+
+%% Measure the desired target primaries (THIS PART HAS BEEN UPDATED - SEMIN)
+% This result will be used to compute the image.
+%
+% Make a loop for measuring all primaries.
+for pp = 1:nPrimaries
+    [isolatingSpdMeasured(pp,:)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false);
+end
+
 %% How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
 isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd1(projectIndices));
@@ -322,9 +331,6 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
-%% Measure the desired target primaries (THIS PART HAS BEEN UPDATED - SEMIN)
-% This result will be used to compute the image.
-[targetSpdMeasured] = MeasureDesiredTargetPrimaries(isolatingPrimaries,subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true);
 
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
 %
