@@ -288,48 +288,49 @@ for pp = 1:nPrimaries
 end
 
 %% How close are spectra to subspace defined by basis?
-theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\obtainedBgSpd(projectIndices));
-isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(1,projectIndices)');
-isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(2,projectIndices)');
-isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(3,projectIndices)');
+theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\bgSpd(projectIndices));
+isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd1(projectIndices));
+isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd2(projectIndices));
+isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd3(projectIndices));
 
 % Plot
 figure; clf;
 subplot(2,2,1); hold on
-plot(wls,obtainedBgSpd,'b','LineWidth',2);
+plot(wls,bgSpd,'b','LineWidth',2);
 plot(wls,theBgNaturalApproxSpd,'r:','LineWidth',1);
-plot(wls(projectIndices),obtainedBgSpd(projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),bgSpd(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),theBgNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Background');
 %ylim([0 2]);
 subplot(2,2,2); hold on
-plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(1,:),'b','LineWidth',2);
+plot(wls,bgSpd,'b:','LineWidth',1);
+plot(wls,isolatingSpd1,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(1,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd1(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 1');
 %ylim([0 2]);
 subplot(2,2,3); hold on
-plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(2,:),'b','LineWidth',2);
+plot(wls,bgSpd,'b:','LineWidth',1);
+plot(wls,isolatingSpd2,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd2,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(2,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd2(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 2');
 %ylim([0 2]);
 subplot(2,2,4); hold on
-plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(3,:),'b','LineWidth',2);
+plot(wls,bgSpd,'b:','LineWidth',1);
+plot(wls,isolatingSpd3,'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd3,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(3,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd3(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
+
 
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
 %
@@ -340,7 +341,8 @@ title('Primary 3');
 % written it out de novo the way it is here.
 fprintf('Making fine contrast to LMS lookup table\n');
 fineContrastLevels = linspace(-1,1,nFineLevels);
-LMSMatrix = T_cones * isolatingSpd';
+spdMatrix = [isolatingSpd1, isolatingSpd2, isolatingSpd3];
+LMSMatrix = T_cones*spdMatrix;
 for ll = 1:nFineLevels
     % Find the LMS values corresponding to desired contrast
     fineDesiredContrast(:,ll) = fineContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
