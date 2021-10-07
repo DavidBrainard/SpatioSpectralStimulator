@@ -121,13 +121,13 @@ if (options.measurementOption)
     
     % Set projector current levels as the above settings.
     for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum, logicalToPhysical(ss), round(targetSettings(ss))); % Target primary
+        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSettings(ss))); % Target primary
         Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 1
         Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 2
     end
     
     % Measurement.
-    targetSpdMeasured(:,pp) = MeasSpd(S,5,'all');
+    targetSpdMeasured = MeasSpd(S,5,'all');
     disp(sprintf('Measurement complete! - Primary %d',targetPrimaryNum));
 else
     targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
