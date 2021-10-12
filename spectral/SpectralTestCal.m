@@ -284,7 +284,7 @@ end
 %
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [isolatingSpdMeasured(pp,:)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false);
+    [isolatingSpdMeasured(pp,:)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
 end
 
 %% How close are spectra to subspace defined by basis?
@@ -338,9 +338,13 @@ title('Primary 3');
 %
 % DAVID - Convert this to use SensorToSettings() etc, rather than having
 % written it out de novo the way it is here.
+bgLMSMatrix = T_cones * obtainedBgSpd;
+bgLMS = bgLMSMatrix(:,1);
 fprintf('Making fine contrast to LMS lookup table\n');
 fineContrastLevels = linspace(-1,1,nFineLevels);
+spdMatrix = isolatingSpd';
 LMSMatrix = T_cones * isolatingSpd';
+% spdMatrix = 
 for ll = 1:nFineLevels
     % Find the LMS values corresponding to desired contrast
     fineDesiredContrast(:,ll) = fineContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
@@ -353,7 +357,7 @@ for ll = 1:nFineLevels
     
     % Store
     finePrimaries(:,ll) = thisMixture;
-    finePredictedLMS(:,ll) = T_cones*spdMatrix*thisMixture;
+    finePredictedLMS(:,ll) = T_cones * spdMatrix * thisMixture;
 end
 
 % Do this at quantized levels
@@ -449,7 +453,7 @@ figure; imshow(quantizedSRGBImage)
 % isolatingPrimaries3 as computed above.  That now allows the DLP
 % to produce mixtures of these primaries.  Here we tell the calibration
 % object for the DLP that it has these desired primaries.
-P_device = [isolatingSpd1 isolatingSpd2 isolatingSpd3];
+P_device = isolatingSpd';
 projectorCal.processedData.P_device = P_device;
 
 % Initialze the calibration structure
@@ -469,7 +473,7 @@ imshow(projectorSettingsImage)
 % the sRGB image we display below.
 testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
 testFilename = fullfile(testFiledir,'testImageData1');
-save(testFilename,'projectorSettingsImage','isolatingPrimaries1','isolatingPrimaries2','isolatingPrimaries3');
+save(testFilename,'projectorSettingsImage','isolatingPrimaries');
 
 %% Plot slice through LMS contrast image.
 figure; hold on
