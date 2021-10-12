@@ -20,7 +20,7 @@ projectorNInputLevels = 256;
 % then entails measuring the spectra of all the subprimaries for that
 % primary.
 subprimaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
-subprimaryNInputLevels = 252;
+subprimaryNInputLevels = 253;
 
 %% Load projector calibration.
 projectorCal = LoadCalFile(projectorCalName);
