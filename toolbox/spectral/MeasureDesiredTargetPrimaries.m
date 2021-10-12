@@ -1,8 +1,8 @@
-function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subprimaryNInputLevels,subPrimaryCalstructData,targetPrimaryNum,options)
+function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subprimaryNInputLevels,subPrimaryCalStructData,targetPrimaryNum,options)
 % Measure the desired target primaries to use them for computing the contrast image.
 %
 % Syntax:
-%    [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subprimaryNInputLevels,subPrimaryCalstructData,targetPrimaryNum,options)
+%    [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subprimaryNInputLevels,subPrimaryCalStructData,targetPrimaryNum)
 %
 % Description:
 %    This measures the target primaries that we actually get and then use
@@ -10,9 +10,11 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %
 % Inputs:
 %    targetPrimaries -            Target primaries you wish to reproduce.
-%    subprimaryNInputLevels -     Device max input levels for the
-%                                 subprimaries.
-%    subPrimaryCalstructData -    The calibration object that describes the
+%                                 These have not yet been gamma corrected.
+%    subprimaryNInputLevels -     Number of discrete input levels for the
+%                                 device.  So control values go from 0 to
+%                                 (subprimaryNInputLevels-1).
+%    subPrimaryCalStructData -    The calibration object that describes the
 %                                 device we're working with.
 %    targetPrimaryNum -           Target primary number. This is required
 %                                 when setting up the projector current input
@@ -32,6 +34,8 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
+%    'verbose'           -        Boolean. Default true.  Controls plotting
+%                                 and printout.
 %
 % History:
 %    10/06/21  smo                Started on it
@@ -42,10 +46,11 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 arguments
     targetPrimaries
     subprimaryNInputLevels
-    subPrimaryCalstructData
+    subPrimaryCalStructData
     targetPrimaryNum
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
+    options.verbose (1,1) = true
 end
 
 %% Initialize (connect to both display and measurement device).
@@ -92,18 +97,18 @@ end
 logicalToPhysical = [0:7 9:15];
 
 % Measurement range.
-S = subPrimaryCalstructData.get('S');
+S = subPrimaryCalStructData.get('S');
 
 % Set primary and subprimary numbers.
 nPrimaries = 3;
-nSubprimaries = subPrimaryCalstructData.get('nDevices');
+nSubprimaries = subPrimaryCalStructData.get('nDevices');
 if (targetPrimaryNum > 3) && (targetPrimaryNum < 1)
     error('Target primary number should be set within [1, 2, 3]')
 end
 
 % Target Spd.
 % This will be compared to the measurement result at the end.
-targetSpd = PrimaryToSpd(subPrimaryCalstructData,targetPrimaries);
+targetSpd = PrimaryToSpd(subPrimaryCalStructData,targetPrimaries);
 
 %% Set primary settings and measure it.
 if (options.measurementOption)
@@ -114,24 +119,30 @@ if (options.measurementOption)
     white = WhiteIndex(screenNumber);
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
     
-    % Set projector input settings.
-    targetSettings = PrimaryToSettings(subPrimaryCalstructData,targetPrimaries) * subprimaryNInputLevels;
+    % Set projector input settings.  These are gamma corrected but still
+    % live as real numbers on the interval [0,1], following the convention
+    % we use for other types of display.
+    targetSettings = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
     otherPrimaries = setdiff(1:nPrimaries,targetPrimaryNum);
     otherPrimarySettings = 0;
     
     % Set projector current levels as the above settings.
     for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSettings(ss))); % Target primary
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 1
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 2
+        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSettings(ss)*(subprimaryNInputLevels-1)));   % Target primary
+        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), round(otherPrimarySettings*(subprimaryNInputLevels-1)); % Other Primary 1
+        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), round(otherPrimarySettings*(subprimaryNInputLevels-1)); % Other Primary 2
     end
     
     % Measurement.
     targetSpdMeasured = MeasSpd(S,5,'all');
-    disp(sprintf('Measurement complete! - Primary %d',targetPrimaryNum));
+    if (options.verbose)
+        fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
+    end
 else
     targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
-    disp(sprintf('Measurement has been skipped!'));
+    if (options.verbose)
+        fprintf('Measurement has been skipped!\n');
+    end
 end
 
 % Close PTB screen.
@@ -142,11 +153,14 @@ sca;
 measuredToTarget = sum(targetSpd)/sum(targetSpdMeasured);
 
 % Plot the results.
-figure; hold on;
-plot(SToWls(S),targetSpd,'k-','LineWidth',1); % Target Spd.
-plot(SToWls(S),targetSpdMeasured.*measuredToTarget,'r--','LineWidth',1); % Measured Spd.
-xlabel('Wavelength (nm)');
-ylabel('Spectral power');
-legend('Target','Measurement');
-title(sprintf('Primary %d',targetPrimaryNum));
+if (options.verbose)
+    figure; hold on;
+    plot(SToWls(S),targetSpd,'k-','LineWidth',1); % Target Spd.
+    plot(SToWls(S),targetSpdMeasured.*measuredToTarget,'r--','LineWidth',1); % Measured Spd.
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power');
+    legend('Target','Measurement');
+    title(sprintf('Primary %d',targetPrimaryNum));
+end
+
 end
