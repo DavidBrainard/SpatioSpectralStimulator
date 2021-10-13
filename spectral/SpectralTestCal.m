@@ -331,35 +331,50 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
+%% Set the projector primaries
+%
+% We want these to match those we set up with the
+% subprimary calculations above.  Need to reset
+% sensor color space after we do this, so that the
+% conversion matrix is properly recomputed.
+projectorCalObj.set('P_device',isolatingSpd');
+SetSensorColorSpace(projectorCalObj,T_cones,S)
+
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
-%
-% Also find and save best mixture of quantized primaries to acheive each fine
-% % contrast level.
-%
-% DAVID - Convert this to use SensorToSettings() etc, rather than having
-% written it out de novo the way it is here.
-bgLMSMatrix = T_cones * obtainedBgSpd;
-bgLMS = bgLMSMatrix(:,1);
 fprintf('Making fine contrast to LMS lookup table\n');
+bgLMS = T_cones * sum(obtainedBgSpd,2);
 fineContrastLevels = linspace(-1,1,nFineLevels);
-spdMatrix = isolatingSpd';
-LMSMatrix = T_cones * isolatingSpd';
-% spdMatrix = 
-for ll = 1:nFineLevels
-    % Find the LMS values corresponding to desired contrast
-    fineDesiredContrast(:,ll) = fineContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
-    fineDesiredLMS(:,ll) = ContrastToExcitation(fineDesiredContrast(:,ll),bgLMS);
-    
-    % Find primary mixture to best prodcue those values
-    thisMixture = LMSMatrix\fineDesiredLMS(:,ll);
-    thisMixture(thisMixture > 1) = 1;
-    thisMixture(thisMixture < 0) = 0;
-    
-    % Store
-    finePrimaries(:,ll) = thisMixture;
-    finePredictedLMS(:,ll) = T_cones * spdMatrix * thisMixture;
+fineDesiredContrast = targetContrastReMax*targetLMSContrast*fineContrastLevels;
+fineDesiredLMS = ContrastToExcitation(fineDesiredContrast,bgLMS);
+finePrimaries = PrimaryToGamut(projectorCalObj,SensorToPrimary(projectorCalObj,fineDesiredLMS));
+finePredictedLMS = PrimaryToSensor(projectorCalObj,finePrimaries);
+
+% This is an older looped way of doing the above, which does not use
+% the calbration infrastructure.  Delete when satisifed that the
+% differences printout out are always small.
+CHKNEWCODE = true;
+if (CHKNEWCODE)
+    spdMatrix = isolatingSpd';
+    LMSMatrix = T_cones * isolatingSpd';
+    for ll = 1:nFineLevels
+        % Find primary mixture to best prodcue those values
+        thisMixture = LMSMatrix\fineDesiredLMS(:,ll);
+        thisMixture(thisMixture > 1) = 1;
+        thisMixture(thisMixture < 0) = 0;
+
+        % Store
+        finePrimariesChk(:,ll) = thisMixture;
+        finePredictedLMSChk(:,ll) = T_cones * spdMatrix * thisMixture;
+    end
+    if (max(abs(finePrimariesChk(:)-finePrimaries(:))) > 1e-12)
+        error('Do not get same answer in two essentially the same ways');
+    end
+    if (max(abs(finePredictedLMSChk(:)-finePredictedLMS(:))) > 1e-13)
+        error('Do not get same answer in two essentially the same ways');
+    end  
 end
 
+%% DHB got to here in his quest to understand and update this code
 % Do this at quantized levels
 fprintf('Making display quantized primary lookup table\n');
 quantizedIntegerLevels = 1:projectorNInputLevels;
@@ -457,7 +472,6 @@ P_device = isolatingSpd';
 projectorCal.processedData.P_device = P_device;
 
 % Initialze the calibration structure
-projectorCal = SetSensorColorSpace(projectorCal,T_cones,S);
 projectorCal = SetGammaMethod(projectorCal,2);
 
 % Convert excitations image to projector settings
