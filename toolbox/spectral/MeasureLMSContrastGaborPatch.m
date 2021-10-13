@@ -1,4 +1,5 @@
-function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,bgPrimaries,subprimaryNInputLevels,subPrimaryCalstructData,targetPrimaryNum,options)
+function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,bgPrimaries,subprimaryNInputLevels,...
+    obtainedBgSpd,projectorCalObj,imageN,quantizedContrastImage,fineLMSContrastGaborImage,subPrimaryCalstructData,targetPrimaryNum,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
 % Syntax:
@@ -32,9 +33,12 @@ function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
+%    'verbose' -                  Boolean. Default true.  Controls plotting
+%                                 and printout.
 %
 % History:
 %    10/08/21  smo                Started on it
+%    10/13/21  smo                Made a working draft.
 
 %% Set parameters.
 arguments
@@ -133,6 +137,34 @@ sca;
 
 
 %% Measure some points on the Gabor patch for calculating LMS contrast.
+bgLMS = T_cones * sum(obtainedBgSpd,2);
+centerN = imageN/2;
 
+% Set measurement points on the Gabor patch. Points are decided on the
+% X-pixel 2-D plane.
+measureXPixelPoints = round([0.3:0.1:0.7] * imageN); 
+
+% LMS contrast.
+SetGammaMethod(projectorCalObj,2);
+measureDesiredLMSContrast = squeeze(quantizedContrastImage(centerN,measureXPixelPoints,:))'; 
+measureDesiredLMS = ContrastToExcitation(measureDesiredLMSContrast,bgLMS);
+measureDesiredPrimaries = SensorToPrimary(projectorCalObj,measureDesiredLMS);
+
+
+
+
+figure; hold on
+% L contrast.
+plot(1:imageN,100*quantizedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+% M contrast.
+plot(1:imageN,100*quantizedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+% S contrast.
+plot(1:imageN,100*quantizedContrastImage(centerN,:,3),'b+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+title('Image Slice, LMS Cone Contrast');
+xlabel('x position (pixels)')
+ylabel('LMS Cone Contrast (%)');
 
 end
