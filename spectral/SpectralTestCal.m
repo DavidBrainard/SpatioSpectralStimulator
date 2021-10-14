@@ -8,6 +8,11 @@
 %% Clear
 clear; close all;
 
+%% Verbose
+%
+% Set to true to get more output
+VERBOSE = false;
+
 %% Define calibration filenames/params.
 %
 % This is a standard calibration file for the DLP projector,
@@ -127,8 +132,20 @@ targetBgxy = [0.3127 0.3290]';
 %% Target color direction and max contrasts.
 %
 % This is the basic desired modulation direction positive excursion. We go
-% equally in positive and negative directions.
-targetLMSContrast = [1 -1 0]';
+% equally in positive and negative directions.  Make this unit vector
+% length, as that is good convention for contrast.
+targetLMSContrastDir = [1 -1 0]';
+targetLMSContrastDir = targetLMSContrastDir/norm(targetLMSContrastDir);
+
+% We may not need the whole direction contrast excursion. Specify max
+% contrast we want relative to that direction vector. 
+% The first number is
+% the amount we want to use, the second has a little headroom so we don't
+% run into numerical error at the edges. The second number is used when
+% defining the three primaries, the first when computing desired weights on
+% the primaries.
+targetContrast = 0.05;
+plotAxisLimit = 100*targetContrast;
 
 %% Specify desired primary properties.
 %
@@ -136,26 +153,9 @@ targetLMSContrast = [1 -1 0]';
 % span a triangle around the line specified above. Here we define that
 % triangle by hand.  May need a little fussing for other directions, and
 % might be able to autocompute good choices.
-target1MaxLMSContrast = [-1 1 0]';
-target2MaxLMSContrast = [1 -1 0.5]';
-target3MaxLMSContrast = [1 -1 -0.5]';
-
-% We may not need the whole direction excursion above. The first number is
-% the amount we want to use, the second has a little headroom so we don't
-% run into numerical error at the edges. The second number is used when
-% defining the three primaries, the first when computing desired weights on
-% the primaries.
-targetContrastReMax = 0.05;
-targetPrimaryHeadroom = 1.1;
-targetContrastReMaxWithHeadroom = targetPrimaryHeadroom*targetContrastReMax;
-plotAxisLimit = 2;
-
-%% Comment this better later on.
-%
-% When we compute a specific image, we may not want full contrast available
-% with the primaries. This tells us fraction of max available relative to
-% ledContrastReMax.
-imageModulationContrast = 0.05/targetContrastReMax;
+targetPrimary1MaxLMSContrast = [-1 1 0]'; targetPrimary1MaxLMSContrast = targetPrimary1MaxLMSContrast/norm(targetPrimary1MaxLMSContrast);
+targetPrimary2MaxLMSContrast = [1 -1 0.5]'; targetPrimary2MaxLMSContrast = targetPrimary2MaxLMSContrast/norm(targetPrimary2MaxLMSContrast);
+targetPrimary3MaxLMSContrast = [1 -1 -0.5]'; targetPrimary3MaxLMSContrast = targetPrimary3MaxLMSContrast/norm(targetPrimary3MaxLMSContrast);
 
 %% Image spatial parameters.
 sineFreqCyclesPerImage = 6;
@@ -168,8 +168,8 @@ imageN = 512;
 %
 % This is a computational bit depth that we use to define the lookup table
 % between contrast and primary values.
-fineBits = 14;
-nFineLevels = 2^fineBits;
+% fineBits = 14;
+% nFineLevels = 2^fineBits;
 
 %% Get half on spectrum.
 %
@@ -192,29 +192,32 @@ end
 % effects of extreme quantization below
 %
 % CalibrateFitGamma(subprimaryCalObjs{1},10);
-SetGammaMethod(subprimaryCalObjs{1},2);
-SetGammaMethod(subprimaryCalObjs{2},2);
-SetGammaMethod(subprimaryCalObjs{3},2);
+subprimaryGammaMethod = 2;
+SetGammaMethod(subprimaryCalObjs{1},subprimaryGammaMethod);
+SetGammaMethod(subprimaryCalObjs{2},subprimaryGammaMethod);
+SetGammaMethod(subprimaryCalObjs{3},subprimaryGammaMethod);
 
 %% Use extant machinery to get primaries from spectrum.
 %
 % This isn't used in our calculations.  Any difference in the
-% two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair.  
-halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
-halfOnSpdChk = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk);
-figure; hold on;
-plot(wls,halfOnSpd,'r','LineWidth',3);
-plot(wls,halfOnSpdChk,'k','LineWidth',1);
+% two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair. 
+if (VERBOSE)
+    halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
+    halfOnSpdChk = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk);
+    figure; hold on;
+    plot(wls,halfOnSpd,'r','LineWidth',3);
+    plot(wls,halfOnSpdChk,'k','LineWidth',1);
 
-%% Show effect of quantization.
-%
-% It's very small at the nominal 252 levels of the subprimaries, but will
-% increase if you refit the gamma functios to a small number of levels.
-halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
-halfOnSettingsChk = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimariesChk);
-halfOnPrimariesChk1 = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettingsChk);
-halfOnSpdChk1 = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk1);
-plot(wls,halfOnSpdChk1,'g','LineWidth',1);
+    %% Show effect of quantization.
+    %
+    % It's very small at the nominal 252 levels of the subprimaries, but will
+    % increase if you refit the gamma functios to a small number of levels.
+    halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
+    halfOnSettingsChk = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimariesChk);
+    halfOnPrimariesChk1 = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettingsChk);
+    halfOnSpdChk1 = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk1);
+    plot(wls,halfOnSpdChk1,'g','LineWidth',1);
+end
 
 %% Set up basis to try to keep spectra close to.
 %
@@ -241,45 +244,54 @@ highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
 %% Find background primaries to acheive desired xy at intensity scale of display.
+%
 % Set parameters for getting desired background primaries.
 primaryHeadRoom = 0;
 targetLambda = 3;
 targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
 
-% Make a loop for getting background primaries for all primaries.
+% Make a loop for getting background for all primaries.
+% Passing true for key 'Scale' causes these to be scaled reasonably
+% relative to gamut, which is why we can set the target luminance
+% arbitrarily to 1 just above.
 for pp = 1:nPrimaries
     [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
         B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
 end
-
 if (any(bgPrimaries < 0) | any(bgPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
 end
 
-%% Find target primaries with desired LMS contrast.
+%% Find primaries with desired LMS contrast.
+%
 % Set parameters for getting desired target primaries.
-targetMaxLMSContrast = [target1MaxLMSContrast target2MaxLMSContrast target3MaxLMSContrast];
-targetContrastReMax = 0.05;
-targetPrimaryHeadroom = 1.1;
+targetMaxLMSContrast = [targetPrimary1MaxLMSContrast targetPrimary2MaxLMSContrast targetPrimary3MaxLMSContrast];
+targetPrimaryContrast = 0.05;
+targetPrimaryHeadroom = 1.05;
 primaryHeadroom = 0;
 targetLambda = 3;
 
 % Make a loop for getting isolating primaries for all primaries.
 for pp = 1:nPrimaries
+
+    % The ambient with respect to which we compute contrast is from all
+    % three primaries, which we handle via the extraAmbientSpd key-value
+    % pair in the call.  The extra is for the primaries not being found in
+    % the current call - the contribution from the current primary is known
+    % because we pass the primaries for the background.
     otherPrimaries = setdiff(1:nPrimaries,pp);
     extraAmbientSpd = 0;
-    % Set extra ambient spd.
     for oo = 1:length(otherPrimaries)
         extraAmbientSpd = extraAmbientSpd + obtainedBgSpd(:,otherPrimaries(oo));
     end
+
     % Get isolating primaries.
     [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
-        targetPrimaryHeadroom,targetContrastReMax,bgPrimaries(:,pp), ...
+        targetPrimaryHeadroom,targetPrimaryContrast,bgPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
 
-
-%% Measure the desired target primaries (THIS PART HAS BEEN UPDATED - SEMIN)
+%% Measure the desired target primaries
 % This result will be used to compute the image.
 %
 % Make a loop for measuring all primaries.
@@ -293,7 +305,7 @@ isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd
 isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(2,projectIndices)');
 isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(3,projectIndices)');
 
-% Plot
+%% Plot of the background and primary spectra
 figure; clf;
 subplot(2,2,1); hold on
 plot(wls,obtainedBgSpd,'b','LineWidth',2);
@@ -302,7 +314,7 @@ plot(wls(projectIndices),obtainedBgSpd(projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),theBgNaturalApproxSpd(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Background');
-%ylim([0 2]);
+
 subplot(2,2,2); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd(1,:),'b','LineWidth',2);
@@ -311,7 +323,7 @@ plot(wls(projectIndices),isolatingSpd(1,projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 1');
-%ylim([0 2]);
+
 subplot(2,2,3); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd(2,:),'b','LineWidth',2);
@@ -320,7 +332,7 @@ plot(wls(projectIndices),isolatingSpd(2,projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 2');
-%ylim([0 2]);
+
 subplot(2,2,4); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
 plot(wls,isolatingSpd(3,:),'b','LineWidth',2);
@@ -329,7 +341,6 @@ plot(wls(projectIndices),isolatingSpd(3,projectIndices),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
-%ylim([0 2]);
 
 %% Set the projector primaries
 %
@@ -338,197 +349,182 @@ title('Primary 3');
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
 projectorCalObj.set('P_device',isolatingSpd');
-SetSensorColorSpace(projectorCalObj,T_cones,S)
+SetSensorColorSpace(projectorCalObj,T_cones,S);
 
-%% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
-fprintf('Making fine contrast to LMS lookup table\n');
-bgLMS = T_cones * sum(obtainedBgSpd,2);
-fineContrastLevels = linspace(-1,1,nFineLevels);
-fineDesiredContrast = targetContrastReMax*targetLMSContrast*fineContrastLevels;
-fineDesiredLMS = ContrastToExcitation(fineDesiredContrast,bgLMS);
-finePrimaries = PrimaryToGamut(projectorCalObj,SensorToPrimary(projectorCalObj,fineDesiredLMS));
-finePredictedLMS = PrimaryToSensor(projectorCalObj,finePrimaries);
-
-% This is an older looped way of doing the above, which does not use
-% the calbration infrastructure.  Delete when satisifed that the
-% differences printout out are always small.
-CHKNEWCODE = true;
-if (CHKNEWCODE)
-    spdMatrix = isolatingSpd';
-    LMSMatrix = T_cones * isolatingSpd';
-    for ll = 1:nFineLevels
-        % Find primary mixture to best prodcue those values
-        thisMixture = LMSMatrix\fineDesiredLMS(:,ll);
-        thisMixture(thisMixture > 1) = 1;
-        thisMixture(thisMixture < 0) = 0;
-
-        % Store
-        finePrimariesChk(:,ll) = thisMixture;
-        finePredictedLMSChk(:,ll) = T_cones * spdMatrix * thisMixture;
-    end
-    if (max(abs(finePrimariesChk(:)-finePrimaries(:))) > 1e-12)
-        error('Do not get same answer in two essentially the same ways');
-    end
-    if (max(abs(finePredictedLMSChk(:)-finePredictedLMS(:))) > 1e-13)
-        error('Do not get same answer in two essentially the same ways');
-    end  
-end
-
-%% DHB got to here in his quest to understand and update this code
-% Do this at quantized levels
-fprintf('Making display quantized primary lookup table\n');
-quantizedIntegerLevels = 1:projectorNInputLevels;
-quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(projectorNInputLevels-1))-1;
-quantizedLMSContrast = zeros(3,projectorNInputLevels);
-quantizedLMS = zeros(3,projectorNInputLevels);
-minIndices = zeros(1,projectorNInputLevels);
-predictedQuantizedLMS = zeros(3,projectorNInputLevels);
-quantizedDisplayPrimaries = zeros(3,projectorNInputLevels);
-
-% Set up point cloud for fast finding of nearest neighbors
-finePtCloud = pointCloud(finePredictedLMS');
-for ll = 1:projectorNInputLevels
-    quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
-    quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
-    
-    minIndices(ll) = findNearestNeighbors(finePtCloud,quantizedLMS(:,ll)',1);
-    predictedQuantizedLMS(:,ll) = finePredictedLMS(:,minIndices(ll));
-    quantizedDisplayPrimaries(:,ll) = finePrimaries(:,minIndices(ll));
-end
-
-%% Make Gabor patch in range 0-1.
+%% Set gamma method
 %
-% This is our contrast modulation
+% If we set to 0, there is no quantization and the result is excellent.
+% If we set to 2, this is quantized at 256 levels and the result is more
+% of a mess.  The choice of 2 represents what we think will actually happen
+% since the real device is quantized.
+%
+% The point cloud method below reduces this problem.
+projectorGammaMethod = 2;
+SetGammaMethod(projectorCalObj,projectorGammaMethod);
+
+%% Make Gabor patch in range -1 to 1.
+%
+% This is our monochrome contrast modulation image.  Multiply
+% by the max contrast vector to get the LMS contrast image.
 fprintf('Making Gabor contrast image\n');
 centerN = imageN/2;
 gaborSdPixels = gaborSdImageFraction*imageN;
 rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,imageN);
 gaussianWindow = normpdf(MakeRadiusMat(imageN,imageN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
-rawMonochromeGaborImage = imageModulationContrast*rawMonochromeSineImage.*gaussianWindow;
+rawMonochromeContrastGaborImage = rawMonochromeSineImage.*gaussianWindow;
 
-% Quantized for display bit depth
-displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,projectorNInputLevels);
-displayIntegerMonochromeGaborCal = ImageToCalFormat(displayIntegerMonochromeGaborImage);
+% Put it into cal format.  Each pixel in cal format is one column.  Here
+% there is just one row since it is a monochrome image at this point.
+rawMonochromeContrastGaborCal = ImageToCalFormat(rawMonochromeContrastGaborImage);
 
-% Quantized for fine bit depth
-fineIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,nFineLevels);
-fineIntegerMonochromeGaborCal = ImageToCalFormat(fineIntegerMonochromeGaborImage);
-
-%% Create the Gabor image with desired LMS contrasts.
-fprintf('Making Gabor desired (fine) LMS contrast image\n');
-quantizedFineLMSGaborCal = zeros(3,imageN*imageN);
-for ii = 1:imageN*imageN
-    thisIndex = fineIntegerMonochromeGaborImage(ii);
-    fineLMSContrastCal(:,ii) = fineDesiredContrast(:,thisIndex);
-    quantizedFineLMSGaborCal(:,ii) = finePredictedLMS(:,thisIndex);
-end
-fineLMSContrastGaborImage = CalFormatToImage(fineLMSContrastCal,imageN,imageN);
-meanLMS = mean(quantizedFineLMSGaborCal,2);
-quantizedFineContrastGaborCal = ExcitationsToContrast(quantizedFineLMSGaborCal,meanLMS);
-quantizedFineContrastGaborImage = CalFormatToImage(quantizedFineContrastGaborCal,imageN,imageN);
-
-%% Create the Gabor image with quantized primary mixtures.
-fprintf('Making Gabor primary mixture image\n');
-quantizedDisplayPrimariesGaborCal = zeros(3,imageN*imageN);
-for ii = 1:imageN*imageN
-    thisIndex = displayIntegerMonochromeGaborCal(ii);
-    quantizedDisplayPrimariesGaborCal(:,ii) = quantizedDisplayPrimaries(:,thisIndex);
-end
-
-%% Convert of useful formats for analysis, rendering.
+% Convert background to LMS
 %
-% Get spectral power distribution
-fprintf('Convert Gabor for rendering, analysis\n');
-quantizedSpdCal = spdMatrix*quantizedDisplayPrimariesGaborCal;
+% Background is sum of backgrounds for each of the three primaries
+bgSpd = sum(obtainedBgSpd,2);
+bgLMS = T_cones*bgSpd;
 
-% Quantized LMS image and cone contrast image
-quantizedLMSCal = T_cones*quantizedSpdCal;
-meanLMS = mean(quantizedLMSCal,2);
-quantizedContrastCal = ExcitationsToContrast(quantizedLMSCal,meanLMS);
-quantizedContrastImage = CalFormatToImage(quantizedContrastCal,imageN,imageN);
+% Scale target LMS contrast vector at max excursion by contrast modulation
+% at each pixel.  This is done by a single matrix multiply plus a lead
+% factor.  We work cal format here as that makes color transforms
+% efficient.
+theDesiredLMSContrastGaborCal = targetContrast*targetLMSContrastDir*rawMonochromeContrastGaborCal;
 
-% SRGB image via XYZ
-quantizedXYZCal = T_xyz*quantizedSpdCal;
-quantizedSRGBPrimaryCal = XYZToSRGBPrimary(quantizedXYZCal);
-scaleFactor = max(quantizedSRGBPrimaryCal(:));
-quantizedSRGBCal = SRGBGammaCorrect(quantizedSRGBPrimaryCal/(2*scaleFactor),0);
-quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
+% Convert cone contrast to excitations
+theDesiredLMSExcitationsGaborCal = ContrastToExcitation(theDesiredLMSContrastGaborCal,bgLMS);
+
+% Get primaries using standard calibration code
+thePrimariesGaborCal = SensorToPrimary(projectorCalObj,theDesiredLMSExcitationsGaborCal);
+
+% Gamma correct and quantize (if gamma method set to 2 above; with gamma
+% method set to zero there is no quantization).  Then convert back from
+% the gamma corrected settings.
+theSettingsGaborCal = PrimaryToSettings(projectorCalObj,thePrimariesGaborCal);
+thePredictedPrimariesGaborCal = SettingsToPrimary(projectorCalObj,theSettingsGaborCal);
+thePredictedLMSExcitationsGaborCal = PrimaryToSensor(projectorCalObj,thePredictedPrimariesGaborCal);
+thePredictedLMSContrastGaborCal = ExcitationsToContrast(thePredictedLMSExcitationsGaborCal,bgLMS);
+thePredictedSpdGaborCal = PrimaryToSpd(projectorCalObj,thePredictedPrimariesGaborCal);
+
+%% Do SensorToSettings by finding nearest points in point cloud
+% 
+% The method above is subject to imperfect quantization because each primary is
+% quantized individually. Here we'll quantize jointly across the three
+% primaries, using an exhaustive search process.  Amazingly, it is feasible
+% to search all possible quantized settings for each image pixel, and choose
+% the settings that best approximate the desired LMS excitations at that pixel.
+%
+% Compute an array with all possible triplets of projector settings,
+% quantized on the interval [0,1].
+fprintf('Point cloud method, setting up cloud\n')
+allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+idx = 1;
+for ii = 0:(projectorNInputLevels-1)
+    for jj = 0:(projectorNInputLevels-1)
+        for kk = 0:(projectorNInputLevels-1)
+            allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+            idx = idx+1;
+        end
+    end
+end
+
+% Get LMS excitations for each triplet of projector settings, and build a
+% point cloud object from these.
+allProjectorLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
+allProjectorLMSContrastGaborCal = ExcitationsToContrast(allProjectorLMSExcitationsGaborCal,bgLMS);
+allSensorPtCloud = pointCloud(allProjectorLMSContrastGaborCal');
+
+% Force point cloud setup by finding one nearest neighbor. This is slow,
+% but once it is done subsequent calls are considerably faster.
+findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
+
+% Go through the gabor image, and for each pixel find the settings that
+% come as close as possible to producing the desired excitations.
+fprintf('Point cloud method, finding settings\n')
+printIter = 10000;
+thePointCloudSettingsGaborCal = zeros(3,size(theDesiredLMSContrastGaborCal,2));
+minIndex = zeros(1,size(theDesiredLMSContrastGaborCal,2));
+for ll = 1:size(theDesiredLMSContrastGaborCal,2) 
+    if (rem(ll,printIter) == 0)
+        fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredLMSContrastGaborCal,2));
+    end
+    minIndex(ll) = findNearestNeighbors(allSensorPtCloud,theDesiredLMSContrastGaborCal(:,ll)',1);
+    thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex(ll));
+end
+thePointCloudLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
+thePointCloudLMSContrastGaborCal = ExcitationsToContrast(thePointCloudLMSExcitationsGaborCal,bgLMS);
+
+% Plot of how well point cloud method does in obtaining desired contrats
+figure; clf;
+plot(theDesiredLMSContrastGaborCal(:),thePointCloudLMSContrastGaborCal(:),'r+');
+axis('square');
+xlabel('Desired L, M or S contrast');
+ylabel('Predicted L, M, or S contrast');
+
+%% Convert representations we want to take forward to image format
+theDesiredLMSContrastGaborImage = CalFormatToImage(theDesiredLMSContrastGaborCal,imageN,imageN);
+thePredictedLMSContrastImage = CalFormatToImage(thePredictedLMSContrastGaborCal,imageN,imageN);
+theSettingsGaborImage = CalFormatToImage(theSettingsGaborCal,imageN,imageN);
+thePointCloudLMSContrastGaborImage = CalFormatToImage(thePointCloudLMSContrastGaborCal,imageN,imageN);
+
+%% SRGB image via XYZ, scaled to display
+thePredictedXYZCal = T_xyz*thePredictedSpdGaborCal;
+theSRGBPrimaryCal = XYZToSRGBPrimary(thePredictedXYZCal);
+scaleFactor = max(theSRGBPrimaryCal(:));
+theSRGBCal = SRGBGammaCorrect(theSRGBPrimaryCal/(2*scaleFactor),0);
+theSRGBImage = uint8(CalFormatToImage(theSRGBCal,imageN,imageN));
 
 % Show the SRGB image
-figure; imshow(quantizedSRGBImage)
+figure; imshow(theSRGBImage);
 
-%% Now compute projector image.
-%
-% First step is to make a DLP calibration file that has as primaries
-% the three spds we've computed above.
-%
-% In an actual display program, we would set each of the primary's
-% subprimaries to isolatingPrimaries1, isolatingPrimaries2,
-% isolatingPrimaries3 as computed above.  That now allows the DLP
-% to produce mixtures of these primaries.  Here we tell the calibration
-% object for the DLP that it has these desired primaries.
-P_device = isolatingSpd';
-projectorCal.processedData.P_device = P_device;
-
-% Initialze the calibration structure
-projectorCal = SetGammaMethod(projectorCal,2);
-
-% Convert excitations image to projector settings
-[projectorSettingsCal,outOfGamutIndex] = SensorToSettings(projectorCal,quantizedFineLMSGaborCal);
-if (any(outOfGamutIndex))
-    error('Oops: Some pixels out of gamut');
-end
-projectorSettingsImage = CalFormatToImage(projectorSettingsCal,imageN,imageN);
+%% Show the settings image
 figure; clf;
-imshow(projectorSettingsImage)
+imshow(theSettingsGaborImage);
 
-% Show this image on the DLP, and it should look more or less like
-% the sRGB image we display below.
-testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-testFilename = fullfile(testFiledir,'testImageData1');
-save(testFilename,'projectorSettingsImage','isolatingPrimaries');
+%% Save image and subprimaries so we can show them on the DLP
+projectorSettingsImage = theSettingsGaborImage;
+if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFilename = fullfile(testFiledir,'testImageData1');
+    save(testFilename,'projectorSettingsImage','isolatingPrimaries');
+end
 
-%% Plot slice through LMS contrast image.
+%% Plot slice through predicted LMS contrast image.
+%
+% Note that the y-axis in this plot is individual cone contrast, which is
+% not the same as the vector length contrast of the modulation.
 figure; hold on
-plot(1:imageN,100*quantizedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:imageN,100*quantizedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:imageN,100*quantizedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-title('Image Slice, LMS Cone Contrast');
+plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+if (projectorGammaMethod == 2)
+    title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone Contrast');
+else
+    title('Image Slice, SensorToSettings Method, No Quantization, LMS Cone Contrast');
+end
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
 
-%% Measure LMS contrast on the gabor patch image. (THIS PART HAS BEEN ADDED - SEMIN)
-[targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,projectorCalObj,obtainedBgSpd,T_cones, ...
-    subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true,'measurementOption',false,'verbose',true);
-
-%% DAVID - Add plot of primaries.
-
-%% Light level tests.
+%% Plot slice through point cloud LMS contrast image.
 %
-% PupilDiameter
-pupilDiameterMM = 4;
-theStimulusExtentDeg = 15;
-theStimulusAreaDeg2 = theStimulusExtentDeg^2;
+% Note that the y-axis in this plot is individual cone contrast, which is
+% not the same as the vector length contrast of the modulation.
+figure; hold on
+plot(1:imageN,100*thePointCloudLMSContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-% Scale background to target cd/m2
-%
-% This makes units Watts/sr-m2-wlband
-% Wavelength band is 2 here, which we need
-% to keep track of.
-targetLum = 1000;
-theBGDeviceRawLum = T_xyz(2,:)*bgSpd;
-theBgDeviceSpdScaled = targetLum*bgSpd/theBGDeviceRawLum;
+plot(1:imageN,100*thePointCloudLMSContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-
-
+plot(1:imageN,100*thePointCloudLMSContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+title('Image Slice, Point Cloud Method, LMS Cone Contrast');
+xlabel('x position (pixels)')
+ylabel('LMS Cone Contrast (%)');
+ylim([-plotAxisLimit plotAxisLimit]);
 
