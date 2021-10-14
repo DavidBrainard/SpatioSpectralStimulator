@@ -1,4 +1,4 @@
-function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImage,isolatingPrimaries,projectorCalObj,bgSpd,...
+function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImage,isolatingPrimaries,projectorCalObj,bgSpd,T_cones,...
     subprimaryNInputLevels,subPrimaryCalstructData,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
@@ -16,7 +16,8 @@ function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImag
 %                                 reproduce the desired LMS contrasts.
 %    projectorCalObj -            The calibration object that contains the
 %                                 the data for the projector.
-%    bgSpd                        Background Spd of the gabor patch.
+%    bgSpd -                      Background Spd of the gabor patch.
+%    T_cones -                    Spectral cone sensitivities in standard PTB format.
 %    subprimaryNInputLevels -     Device max input levels for the
 %                                 subprimaries.
 %    subPrimaryCalstructData -    The calibration object that describes the
@@ -49,6 +50,7 @@ arguments
     isolatingPrimaries
     projectorCalObj
     bgSpd
+    T_cones
     subprimaryNInputLevels
     subPrimaryCalstructData
     options.projectorMode (1,1) = true
@@ -100,17 +102,20 @@ end
 logicalToPhysical = [0:7 9:15];
 
 % Measurement range.
-S = subPrimaryCalstructData.get('S');
+S = subPrimaryCalstructData{1}.get('S');
 
 % Set primary and subprimary numbers.
 nPrimaries = 3;
-nSubprimaries = subPrimaryCalstructData.get('nDevices');
+nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
 
-%% Pick some points on the Gabor patch and calculate target settings for measurements.
+% Get background LMS.
 bgLMS = T_cones * sum(bgSpd,2);
+
+% Get test image size and set the center point.
 imageN = size(contrastImage,1);
 centerN = imageN/2;
 
+%% Pick the points on the Gabor patch and calculate target settings for measurements.
 % Set measurement points on the Gabor patch. Points are decided on the
 % X-pixel 2-D plane.
 measureXPixelPoints = round([0.3:0.1:0.7] * imageN);
@@ -153,9 +158,12 @@ if (options.measurementOption)
         % Measure it.
         targetSpdMeasured(:,tt) = MeasSpd(S,5,'all');
         if (options.verbose)
-            fprintf('Measurement complete! - Primary %d Test Point %d ',pp,tt);
+            fprintf('Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
+else
+     % Show the same results as background when measurement skipped.
+       targetSpdMeasured = ones(S(3),nTestPoints).* sum(bgSpd,2); 
 end
 
 % Close PTB screen.
@@ -166,24 +174,21 @@ targetLMSMeasured = T_cones * targetSpdMeasured;
 targetLMSContrastMeasured = ExcitationToContrast(targetLMSMeasured,bgLMS);
 
 %% Plot the results.
-% Here I used quantizedContrastImage
 if (options.verbose)
     figure; hold on
     % L contrast.
     plot(measureXPixelPoints,100*measureDesiredLMSContrast(1,:),'r+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(1,:),'r.','MarkerSize',5); % Desired contrast.
-    plot(1:imageN,contrastImage(centerN,:,1),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(1,:),'ro','MarkerSize',7); % Desired contrast.
     % M contrast.
     plot(measureXPixelPoints,100*measureDesiredLMSContrast(2,:),'g+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'g.','MarkerSize',5); % Desired contrast.
-    plot(1:imageN,contrastImage(centerN,:,2),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'go','MarkerSize',7); % Desired contrast.
     % S contrast.
-    plot(measureXPixelPoints,100*measureDesiredLMSContrast(2,:),'b+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'b.','MarkerSize',5); % Desired contrast.
-    plot(1:imageN,contrastImage(centerN,:,3),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    plot(measureXPixelPoints,100*measureDesiredLMSContrast(3,:),'b+','MarkerSize',4); % Measured contrast.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(3,:),'bo','MarkerSize',7); % Desired contrast.
     title('Image Slice, LMS Cone Contrast');
     xlabel('x position (pixels)')
     ylabel('LMS Cone Contrast (%)');
+    legend('Desired-L','Measured-L','Desired-M','Measured-M','Desired-S','Measured-S');
 end
 
 end

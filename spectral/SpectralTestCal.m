@@ -507,6 +507,10 @@ xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
 
+%% Measure LMS contrast on the gabor patch image. (THIS PART HAS BEEN ADDED - SEMIN)
+[targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,projectorCalObj,obtainedBgSpd,T_cones, ...
+    subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true,'measurementOption',false,'verbose',true);
+
 %% DAVID - Add plot of primaries.
 
 %% Light level tests.
