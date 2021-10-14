@@ -71,6 +71,7 @@ function [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingC
 % History:
 %    09/29/21  smo                Started on it
 %    10/05/21  dhb,smo            Clean it and added the feature of 'ExtraAmbientSpd'.
+%    10/14/21  dhb                Quantize computation of background primaries before computing spectra.
 
 %% Set parameters.
 arguments
@@ -91,8 +92,9 @@ end
 %
 % This part prepares variables for following calculations.
 %
-% Get background Spd and LMS.
-bgSpd = PrimaryToSpd(subprimaryCalstructData,bgPrimaries) + ...
+% Get background Spd and LMS. Pass this through quantization
+bgPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,bgPrimaries));
+bgSpd = PrimaryToSpd(subprimaryCalstructData,bgPrimariesQuantized) + ...
         options.ExtraAmbientSpd;
 bgLMS = T_cones * bgSpd;
 
