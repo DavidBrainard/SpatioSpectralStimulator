@@ -1,8 +1,9 @@
-function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,bgPrimaries,subprimaryNInputLevels,...
-    obtainedBgSpd,projectorCalObj,imageN,quantizedContrastImage,fineLMSContrastGaborImage,subPrimaryCalstructData,targetPrimaryNum,options)
+function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImage,isolatingPrimaries,projectorCalObj,bgSpd,...
+    subprimaryNInputLevels,subPrimaryCalstructData,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
-% Syntax:
+% Syntax: [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,projectorCalObj,bgSpd,...
+%    subprimaryNInputLevels,subPrimaryCalstructData)
 %
 %
 % Description:
@@ -10,18 +11,20 @@ function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,
 %    patch image, so we can check if the modulation was done properly.
 %
 % Inputs:
-%    targetLMSContrast -          To be filled
+%    contrastImage -              Modulated contrast gabor patch image.
+%    isolatingPrimaries -         Isolating primaries which
+%                                 reproduce the desired LMS contrasts.
+%    projectorCalObj -            The calibration object that contains the
+%                                 the data for the projector.
+%    bgSpd                        Background Spd of the gabor patch.
 %    subprimaryNInputLevels -     Device max input levels for the
 %                                 subprimaries.
 %    subPrimaryCalstructData -    The calibration object that describes the
 %                                 device we're working with.
-%    targetPrimaryNum -           Target primary number. This is required
-%                                 when setting up the projector current input
-%                                 levels.
 %
 % Outputs:
-%    measuredLMSContrast -        Measured LMS contrast of the modulated
-%                                 gabor patch image.
+%    targetLMSContrastMeasured -  Measurement results of the some points on
+%                                 the contrast gabor patch image.
 %
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
@@ -38,15 +41,19 @@ function [measuredLMSContrast] = MeasureLMSContrastGaborPatch(targetLMSContrast,
 %
 % History:
 %    10/08/21  smo                Started on it
-%    10/13/21  smo                Made a working draft.
+%    10/14/21  smo                Made a working draft.
 
 %% Set parameters.
 arguments
+    contrastImage
+    isolatingPrimaries
+    projectorCalObj
+    bgSpd
     subprimaryNInputLevels
     subPrimaryCalstructData
-    targetPrimaryNum
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
+    options.verbose (1,1) = true
 end
 
 %% Initialize (connect to both display and measurement device).
@@ -98,11 +105,35 @@ S = subPrimaryCalstructData.get('S');
 % Set primary and subprimary numbers.
 nPrimaries = 3;
 nSubprimaries = subPrimaryCalstructData.get('nDevices');
-if (targetPrimaryNum > 3) && (targetPrimaryNum < 1)
-    error('Target primary number should be set within [1, 2, 3]')
+
+%% Pick some points on the Gabor patch and calculate target settings for measurements.
+bgLMS = T_cones * sum(bgSpd,2);
+imageN = size(contrastImage,1);
+centerN = imageN/2;
+
+% Set measurement points on the Gabor patch. Points are decided on the
+% X-pixel 2-D plane.
+measureXPixelPoints = round([0.3:0.1:0.7] * imageN);
+nTestPoints = size(measureXPixelPoints,2);
+
+% Calculate LMS contrast.
+SetGammaMethod(projectorCalObj,0);
+measureDesiredLMSContrast = squeeze(contrastImage(centerN,measureXPixelPoints,:))';
+measureDesiredLMS = ContrastToExcitation(measureDesiredLMSContrast,bgLMS);
+measureDesiredPrimaries = SensorToPrimary(projectorCalObj,measureDesiredLMS);
+
+% Get target settings for the projector.
+for tt = 1:nTestPoints
+    % Set target primaries.
+    measureTargetPrimaries(:,:,tt) = isolatingPrimaries .* measureDesiredPrimaries(:,tt)';
+    for pp = 1:nPrimaries
+        % Set target settings per each test point.
+        measureTargetSettings(:,pp,tt) = PrimaryToSettings(subPrimaryCalstructData{pp},measureTargetPrimaries(:,pp,tt));
+    end
 end
 
-%% Set the desired LMS contrast point and measure it. This part should be updated later.
+%% Measure it.
+% Set projector setting for each test point on the gabor patch and measure it.
 if (options.measurementOption)
     % Display plain screen on DLP using PTB.
     PsychDefaultSetup(2); % PTB pre-setup
@@ -111,60 +142,48 @@ if (options.measurementOption)
     white = WhiteIndex(screenNumber);
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
     
-    % Set projector input settings.
-    targetSettings = PrimaryToSettings(subPrimaryCalstructData,targetPrimaries) * subprimaryNInputLevels;
-    otherPrimaries = setdiff(1:nPrimaries,targetPrimaryNum);
-    otherPrimarySettings = 0;
-    
     % Set projector current levels as the above settings.
-    for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSettings(ss))); % Target primary
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 1
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), otherPrimarySettings); % Other Primary 2
+    for tt = 1:nTestPoints
+        % Set projector current levels.
+        for ss = 1:nSubprimaries
+            Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(measureTargetSettings(ss,1,tt)*(subprimaryNInputLevels-1))); % Primary 1
+            Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(measureTargetSettings(ss,2,tt)*(subprimaryNInputLevels-1))); % Primary 2
+            Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(measureTargetSettings(ss,3,tt)*(subprimaryNInputLevels-1))); % Primary 3
+        end
+        % Measure it.
+        targetSpdMeasured(:,tt) = MeasSpd(S,5,'all');
+        if (options.verbose)
+            fprintf('Measurement complete! - Primary %d Test Point %d ',pp,tt);
+        end
     end
-    
-    % Measurement.
-    targetSpdMeasured = MeasSpd(S,5,'all');
-    disp(sprintf('Measurement complete! - Primary %d',targetPrimaryNum));
-else
-    targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
-    disp(sprintf('Measurement has been skipped!'));
 end
 
 % Close PTB screen.
 sca;
 
+% Calculate LMS contrast from the measurements.
+targetLMSMeasured = T_cones * targetSpdMeasured;
+targetLMSContrastMeasured = ExcitationToContrast(targetLMSMeasured,bgLMS);
 
-
-%% Measure some points on the Gabor patch for calculating LMS contrast.
-bgLMS = T_cones * sum(obtainedBgSpd,2);
-centerN = imageN/2;
-
-% Set measurement points on the Gabor patch. Points are decided on the
-% X-pixel 2-D plane.
-measureXPixelPoints = round([0.3:0.1:0.7] * imageN); 
-
-% LMS contrast.
-SetGammaMethod(projectorCalObj,2);
-measureDesiredLMSContrast = squeeze(quantizedContrastImage(centerN,measureXPixelPoints,:))'; 
-measureDesiredLMS = ContrastToExcitation(measureDesiredLMSContrast,bgLMS);
-measureDesiredPrimaries = SensorToPrimary(projectorCalObj,measureDesiredLMS);
-
-
-
-
-figure; hold on
-% L contrast.
-plot(1:imageN,100*quantizedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-% M contrast.
-plot(1:imageN,100*quantizedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-% S contrast.
-plot(1:imageN,100*quantizedContrastImage(centerN,:,3),'b+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*fineLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-title('Image Slice, LMS Cone Contrast');
-xlabel('x position (pixels)')
-ylabel('LMS Cone Contrast (%)');
+%% Plot the results.
+% Here I used quantizedContrastImage
+if (options.verbose)
+    figure; hold on
+    % L contrast.
+    plot(measureXPixelPoints,100*measureDesiredLMSContrast(1,:),'r+','MarkerSize',4); % Measured contrast.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(1,:),'r.','MarkerSize',5); % Desired contrast.
+    plot(1:imageN,contrastImage(centerN,:,1),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    % M contrast.
+    plot(measureXPixelPoints,100*measureDesiredLMSContrast(2,:),'g+','MarkerSize',4); % Measured contrast.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'g.','MarkerSize',5); % Desired contrast.
+    plot(1:imageN,contrastImage(centerN,:,2),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    % S contrast.
+    plot(measureXPixelPoints,100*measureDesiredLMSContrast(2,:),'b+','MarkerSize',4); % Measured contrast.
+    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'b.','MarkerSize',5); % Desired contrast.
+    plot(1:imageN,contrastImage(centerN,:,3),'r','LineWidth',0.5); % Whole contrast range of the gabor patch.
+    title('Image Slice, LMS Cone Contrast');
+    xlabel('x position (pixels)')
+    ylabel('LMS Cone Contrast (%)');
+end
 
 end
