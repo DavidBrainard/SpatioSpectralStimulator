@@ -378,6 +378,32 @@ thePredictedLMSContrastCal = ExcitationsToContrast(thePredictedLMSExcitationsGab
 thePredictedLMSContrastImage = CalFormatToImage(thePredictedLMSContrastCal,imageN,imageN);
 theSettingsGaborImage = CalFormatToImage(theSettingsGaborCal,imageN,imageN);
 
+%% Set up exhaustive point cloud for all possible quantized input settings
+allSettingsCal = zeros(3,256^3);
+idx = 1;
+for ii = 0:255
+    for jj = 0:255
+        for kk = 0:255
+            allSettingsCal(:,idx) = [ii jj kk]';
+            idx = idx+1;
+        end
+    end
+end
+allSettingsCal = allSettingsCal/255;
+allSensorCal = SettingsToSensor(projectorCalObj,allSettingsCal);
+allSensorContrastCal = ExcitationsToContrast(thePointCloudLMSExcitationsGaborCal,meanLMS);
+allSensorPtCloud = pointCloud(allSensorContrastCal');
+
+%% Do SensorToSettings by finding nearest points in point cloud
+thePointCloudSettingsGaborCal = zeros(3,size(theDesiredLMSContrastGaborCal,2));
+for ll = 1:size(theDesiredLMSContrastGaborCal,2) 
+    minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredLMSContrastGaborCal(:,ll)',1);
+    thePointCloudSettingsGaborCal(:,ll) = allSensorCal(:,minIndex);
+end
+thePointCloudLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
+thePointCloudLMSContrastGaborCal = ExcitationsToContrast(thePointCloudLMSExcitationsGaborCal,meanLMS);
+thePointCloudLMSContrastGaborImage = CalFormatToImage(thePointCloudLMSContrastGaborCal,imageN,imageN);
+
 % SRGB image via XYZ
 thePredictedXYZCal = T_xyz*thePredictedSpdGaborCal;
 theSRGBPrimaryCal = XYZToSRGBPrimary(thePredictedXYZCal);
@@ -399,25 +425,35 @@ testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
 testFilename = fullfile(testFiledir,'testImageData1');
 save(testFilename,'projectorSettingsImage','isolatingPrimaries');
 
-%% Plot slice through LMS contrast image.
+%% Plot slice through predicted LMS contrast image.
 figure; hold on
 plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
 plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
 plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
 plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
 plot(1:imageN,100*thePredictedLMSContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
 plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-%plot(1:imageN,100*quantizedFineContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 title('Image Slice, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
 
-%% DAVID - Add plot of primaries.
+%% Plot slice through point cloud LMS contrast image.
+figure; hold on
+plot(1:imageN,100*thePointCloudLMSContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+
+plot(1:imageN,100*thePointCloudLMSContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+
+plot(1:imageN,100*thePointCloudLMSContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*theDesiredLMSContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+title('Image Slice, LMS Cone Contrast');
+xlabel('x position (pixels)')
+ylabel('LMS Cone Contrast (%)');
+ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Light level tests.
 %
