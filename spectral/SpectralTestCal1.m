@@ -339,6 +339,13 @@ title('Primary 3');
 % conversion matrix is properly recomputed.
 projectorCalObj.set('P_device',isolatingSpd');
 SetSensorColorSpace(projectorCalObj,T_cones,S);
+
+%% Set gamma method
+%
+% If we set to 0, there is no quantization and the result is excellent.
+% If we set to 2, this is quantized at 256 levels and the result is a mess.
+% This is what the nearest neighbor code, which I have stripped out, fixes.
+% Need to put that back in, but maybe not in the same way.
 SetGammaMethod(projectorCalObj,0);
 
 %% Make Gabor patch in range 0-1.
