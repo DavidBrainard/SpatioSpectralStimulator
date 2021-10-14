@@ -1,10 +1,9 @@
-function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImage,isolatingPrimaries,projectorCalObj,bgSpd,T_cones,...
+function [testLMSContrastMeasured,testSpdMeasured] = MeasureLMSContrastGaborPatch(contrastImage,isolatingPrimaries,projectorCalObj,bgSpd,T_cones,...
     subprimaryNInputLevels,subPrimaryCalstructData,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
 % Syntax: [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,projectorCalObj,bgSpd,...
 %    subprimaryNInputLevels,subPrimaryCalstructData)
-%
 %
 % Description:
 %    This measures and calculates the LMS contrasts of the modulated gabor
@@ -24,8 +23,10 @@ function [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(contrastImag
 %                                 device we're working with.
 %
 % Outputs:
-%    targetLMSContrastMeasured -  Measurement results of the some points on
+%    testLMSContrastMeasured -    Measurement results of the some points on
 %                                 the contrast gabor patch image.
+%    testSpdMeasured -            Measurement results of the SPDs for the
+%                                 points on the slice of the gabor patch.
 %
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
@@ -118,22 +119,24 @@ centerN = imageN/2;
 %% Pick the points on the Gabor patch and calculate target settings for measurements.
 % Set measurement points on the Gabor patch. Points are decided on the
 % X-pixel 2-D plane.
+% Now it picks five points of 30%, 40%, 50%, 60%, 70% positions of X pixel
+% of the contrast image which should be changed later on.
 measureXPixelPoints = round([0.3:0.1:0.7] * imageN);
 nTestPoints = size(measureXPixelPoints,2);
 
 % Calculate LMS contrast.
 SetGammaMethod(projectorCalObj,0);
-measureDesiredLMSContrast = squeeze(contrastImage(centerN,measureXPixelPoints,:))';
-measureDesiredLMS = ContrastToExcitation(measureDesiredLMSContrast,bgLMS);
-measureDesiredPrimaries = SensorToPrimary(projectorCalObj,measureDesiredLMS);
+testLMSContrast = squeeze(contrastImage(centerN,measureXPixelPoints,:))';
+testLMS = ContrastToExcitation(testLMSContrast,bgLMS);
+testPrimariesRatio = SensorToPrimary(projectorCalObj,testLMS);
 
 % Get target settings for the projector.
 for tt = 1:nTestPoints
     % Set target primaries.
-    measureTargetPrimaries(:,:,tt) = isolatingPrimaries .* measureDesiredPrimaries(:,tt)';
+    testSubprimaries(:,:,tt) = isolatingPrimaries .* testPrimariesRatio(:,tt)';
     for pp = 1:nPrimaries
         % Set target settings per each test point.
-        measureTargetSettings(:,pp,tt) = PrimaryToSettings(subPrimaryCalstructData{pp},measureTargetPrimaries(:,pp,tt));
+        testSubprimarySettings(:,pp,tt) = PrimaryToSettings(subPrimaryCalstructData{pp},testSubprimaries(:,pp,tt));
     end
 end
 
@@ -151,44 +154,43 @@ if (options.measurementOption)
     for tt = 1:nTestPoints
         % Set projector current levels.
         for ss = 1:nSubprimaries
-            Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(measureTargetSettings(ss,1,tt)*(subprimaryNInputLevels-1))); % Primary 1
-            Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(measureTargetSettings(ss,2,tt)*(subprimaryNInputLevels-1))); % Primary 2
-            Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(measureTargetSettings(ss,3,tt)*(subprimaryNInputLevels-1))); % Primary 3
+            Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(testSubprimarySettings(ss,1,tt)*(subprimaryNInputLevels-1))); % Primary 1
+            Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(testSubprimarySettings(ss,2,tt)*(subprimaryNInputLevels-1))); % Primary 2
+            Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(testSubprimarySettings(ss,3,tt)*(subprimaryNInputLevels-1))); % Primary 3
         end
         % Measure it.
-        targetSpdMeasured(:,tt) = MeasSpd(S,5,'all');
+        testSpdMeasured(:,tt) = MeasSpd(S,5,'all');
         if (options.verbose)
-            fprintf('Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
+            fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
 else
      % Show the same results as background when measurement skipped.
-       targetSpdMeasured = ones(S(3),nTestPoints).* sum(bgSpd,2); 
+       testSpdMeasured = ones(S(3),nTestPoints).* sum(bgSpd,2); 
 end
 
 % Close PTB screen.
 sca;
 
 % Calculate LMS contrast from the measurements.
-targetLMSMeasured = T_cones * targetSpdMeasured;
-targetLMSContrastMeasured = ExcitationToContrast(targetLMSMeasured,bgLMS);
+testLMSMeasured = T_cones * testSpdMeasured;
+testLMSContrastMeasured = ExcitationToContrast(testLMSMeasured,bgLMS);
 
 %% Plot the results.
 if (options.verbose)
     figure; hold on
     % L contrast.
-    plot(measureXPixelPoints,100*measureDesiredLMSContrast(1,:),'r+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(1,:),'ro','MarkerSize',7); % Desired contrast.
+    plot(measureXPixelPoints,100*testLMSContrast(1,:),'r+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
+    plot(measureXPixelPoints,100*testLMSContrastMeasured(1,:),'ro--','MarkerSize',7,'LineWidth',1); % Desired contrast.
     % M contrast.
-    plot(measureXPixelPoints,100*measureDesiredLMSContrast(2,:),'g+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(2,:),'go','MarkerSize',7); % Desired contrast.
+    plot(measureXPixelPoints,100*testLMSContrast(2,:),'g+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
+    plot(measureXPixelPoints,100*testLMSContrastMeasured(2,:),'go--','MarkerSize',7,'LineWidth',1); % Desired contrast.
     % S contrast.
-    plot(measureXPixelPoints,100*measureDesiredLMSContrast(3,:),'b+','MarkerSize',4); % Measured contrast.
-    plot(measureXPixelPoints,100*targetLMSContrastMeasured(3,:),'bo','MarkerSize',7); % Desired contrast.
+    plot(measureXPixelPoints,100*testLMSContrast(3,:),'b+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
+    plot(measureXPixelPoints,100*testLMSContrastMeasured(3,:),'bo--','MarkerSize',7,'LineWidth',1); % Desired contrast.
     title('Image Slice, LMS Cone Contrast');
     xlabel('x position (pixels)')
     ylabel('LMS Cone Contrast (%)');
     legend('Desired-L','Measured-L','Desired-M','Measured-M','Desired-S','Measured-S');
 end
-
 end
