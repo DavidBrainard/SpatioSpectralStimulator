@@ -288,7 +288,7 @@ for pp = 1:nPrimaries
     end
 
     % Get isolating primaries.
-    [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
+    [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(:,pp),isolatingContrast(:,pp)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
         targetPrimaryHeadroom,targetPrimaryContrast,bgPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
@@ -300,14 +300,14 @@ end
 %
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [isolatingSpdMeasured(pp,:)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
+    [isolatingSpdMeasured(:,pp)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
 end
 
 %% How close are spectra to subspace defined by basis?
 theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\obtainedBgSpd(projectIndices));
-isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(1,projectIndices)');
-isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(2,projectIndices)');
-isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(3,projectIndices)');
+isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(projectIndices,1));
+isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(projectIndices,2));
+isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\isolatingSpd(projectIndices,3));
 
 %% Plot of the background and primary spectra
 figure; clf;
@@ -321,27 +321,27 @@ title('Background');
 
 subplot(2,2,2); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(1,:),'b','LineWidth',2);
+plot(wls,isolatingSpd(:,1),'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(1,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd(projectIndices,1),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 1');
 
 subplot(2,2,3); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(2,:),'b','LineWidth',2);
+plot(wls,isolatingSpd(:,2),'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd2,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(2,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd(projectIndices,2),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 2');
 
 subplot(2,2,4); hold on
 plot(wls,obtainedBgSpd,'b:','LineWidth',1);
-plot(wls,isolatingSpd(3,:),'b','LineWidth',2);
+plot(wls,isolatingSpd(:,3),'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd3,'r:','LineWidth',1);
-plot(wls(projectIndices),isolatingSpd(3,projectIndices),'b','LineWidth',4);
+plot(wls(projectIndices),isolatingSpd(projectIndices,3),'b','LineWidth',4);
 plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
@@ -354,7 +354,7 @@ title('Primary 3');
 % conversion matrix is properly recomputed.
 MEASURED = false;
 if (~MEASURED)
-    projectorCalObj.set('P_device',isolatingSpd');
+    projectorCalObj.set('P_device',isolatingSpd);
 else
     projectorCalObj.set('P_device',isolatingSpdMeasured);
 end
