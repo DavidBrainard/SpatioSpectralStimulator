@@ -134,8 +134,8 @@ targetBgxy = [0.3127 0.3290]';
 % This is the basic desired modulation direction positive excursion. We go
 % equally in positive and negative directions.  Make this unit vector
 % length, as that is good convention for contrast.
-targetContrastDir = [1 -1 0]';
-targetContrastDir = targetContrastDir/norm(targetContrastDir);
+targetLMSContrastDir = [1 -1 0]';
+targetLMSContrastDir = targetLMSContrastDir/norm(targetLMSContrastDir);
 
 % We may not need the whole direction contrast excursion. Specify max
 % contrast we want relative to that direction vector.
@@ -153,9 +153,9 @@ plotAxisLimit = 100*targetContrast;
 % span a triangle around the line specified above. Here we define that
 % triangle by hand.  May need a little fussing for other directions, and
 % might be able to autocompute good choices.
-targetPrimary1MaxContrast = [-1 1 0]'; targetPrimary1MaxContrast = targetPrimary1MaxContrast/norm(targetPrimary1MaxContrast);
-targetPrimary2MaxContrast = [1 -1 0.5]'; targetPrimary2MaxContrast = targetPrimary2MaxContrast/norm(targetPrimary2MaxContrast);
-targetPrimary3MaxContrast = [1 -1 -0.5]'; targetPrimary3MaxContrast = targetPrimary3MaxContrast/norm(targetPrimary3MaxContrast);
+targetPrimary1MaxLMSContrast = [-1 1 0]'; targetPrimary1MaxLMSContrast = targetPrimary1MaxLMSContrast/norm(targetPrimary1MaxLMSContrast);
+targetPrimary2MaxLMSContrast = [1 -1 0.5]'; targetPrimary2MaxLMSContrast = targetPrimary2MaxLMSContrast/norm(targetPrimary2MaxLMSContrast);
+targetPrimary3MaxLMSContrast = [1 -1 -0.5]'; targetPrimary3MaxLMSContrast = targetPrimary3MaxLMSContrast/norm(targetPrimary3MaxLMSContrast);
 
 %% Image spatial parameters.
 sineFreqCyclesPerImage = 6;
@@ -267,8 +267,8 @@ end
 %% Find primaries with desired LMS contrast.
 %
 % Set parameters for getting desired target primaries.
-targetMaxLMSContrast = [targetPrimary1MaxContrast targetPrimary2MaxContrast targetPrimary3MaxContrast];
-targetPrimaryContrast = 0.07;
+targetMaxLMSContrast = [targetPrimary1MaxLMSContrast targetPrimary2MaxLMSContrast targetPrimary3MaxLMSContrast];
+targetPrimaryContrast = 0.05;
 targetPrimaryHeadroom = 1.05;
 primaryHeadroom = 0;
 targetLambda = 3;
@@ -352,12 +352,7 @@ title('Primary 3');
 % subprimary calculations above.  Need to reset
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-MEASURED = false;
-if (MEASURED)
-    projectorCalObj.set('P_device',isolatingSpd');
-else
-    projectorCalObj.set('P_device',isolatingSpdMeasured);
-end
+projectorCalObj.set('P_device',isolatingSpd');
 SetSensorColorSpace(projectorCalObj,T_cones,S);
 
 %% Set projector gamma method
@@ -390,28 +385,28 @@ rawMonochromeContrastGaborCal = ImageToCalFormat(rawMonochromeContrastGaborImage
 % Convert background to LMS
 %
 % Background is sum of backgrounds for each of the three primaries
-projectorBgSettings = [0.5 0.5 0.5]';
-projectorBgExcitations = SettingsToSensor(projectorCalObj,[projectorBgSettings]);
+bgSpd = sum(obtainedBgSpd,2);
+bgLMS = T_cones*bgSpd;
 
 % Scale target LMS contrast vector at max excursion by contrast modulation
 % at each pixel.  This is done by a single matrix multiply plus a lead
 % factor.  We work cal format here as that makes color transforms
 % efficient.
-theDesiredContrastGaborCal = targetContrast*targetContrastDir*rawMonochromeContrastGaborCal;
+theDesiredLMSContrastGaborCal = targetContrast*targetLMSContrastDir*rawMonochromeContrastGaborCal;
 
 % Convert cone contrast to excitations
-theDesiredExcitationsGaborCal = ContrastToExcitation(theDesiredContrastGaborCal,projectorBgExcitations);
+theDesiredLMSExcitationsGaborCal = ContrastToExcitation(theDesiredLMSContrastGaborCal,bgLMS);
 
 % Get primaries using standard calibration code
-thePrimariesGaborCal = SensorToPrimary(projectorCalObj,theDesiredExcitationsGaborCal);
+thePrimariesGaborCal = SensorToPrimary(projectorCalObj,theDesiredLMSExcitationsGaborCal);
 
 % Gamma correct and quantize (if gamma method set to 2 above; with gamma
 % method set to zero there is no quantization).  Then convert back from
 % the gamma corrected settings.
 theSettingsGaborCal = PrimaryToSettings(projectorCalObj,thePrimariesGaborCal);
 thePredictedPrimariesGaborCal = SettingsToPrimary(projectorCalObj,theSettingsGaborCal);
-thePredictedExcitationsGaborCal = PrimaryToSensor(projectorCalObj,thePredictedPrimariesGaborCal);
-thePredictedContrastGaborCal = ExcitationsToContrast(thePredictedExcitationsGaborCal,projectorBgExcitations);
+thePredictedLMSExcitationsGaborCal = PrimaryToSensor(projectorCalObj,thePredictedPrimariesGaborCal);
+thePredictedLMSContrastGaborCal = ExcitationsToContrast(thePredictedLMSExcitationsGaborCal,bgLMS);
 thePredictedSpdGaborCal = PrimaryToSpd(projectorCalObj,thePredictedPrimariesGaborCal);
 
 %% Do SensorToSettings by finding nearest points in point cloud
@@ -424,68 +419,115 @@ thePredictedSpdGaborCal = PrimaryToSpd(projectorCalObj,thePredictedPrimariesGabo
 %
 % Compute an array with all possible triplets of projector settings,
 % quantized on the interval [0,1].
-%
-% This method takes all possible projector settings and creates a
-% point cloud of the corresponding cone contrasts. It then finds
-% the settings that come as close as possible to producing the
-% desired cone contrast at each point in the image. It's a little
-% slow but conceptually simple and fast enough to be feasible.
-tic;
-fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
-idx = 1;
-for ii = 0:(projectorNInputLevels-1)
-    for jj = 0:(projectorNInputLevels-1)
-        for kk = 0:(projectorNInputLevels-1)
-            allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
-            idx = idx+1;
+pointCloudMethod = 1;
+switch (pointCloudMethod)
+    case 1
+        % This method takes all possible projector settings and creates a
+        % point cloud of the corresponding cone contrasts. It then finds
+        % the settings that come as close as possible to producing the
+        % desired cone contrast at each point in the image. It's a little
+        % slow but conceptually simple and fast enough to be feasible.
+        fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
+        allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+        idx = 1;
+        for ii = 0:(projectorNInputLevels-1)
+            for jj = 0:(projectorNInputLevels-1)
+                for kk = 0:(projectorNInputLevels-1)
+                    allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+                    idx = idx+1;
+                end
+            end
         end
-    end
-end
 
-% Get LMS excitations for each triplet of projector settings, and build a
-% point cloud object from these.
-allProjectorExcitationsGaborCal = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
-allProjectorContrastGaborCal = ExcitationsToContrast(allProjectorExcitationsGaborCal,projectorBgExcitations);
-allSensorPtCloud = pointCloud(allProjectorContrastGaborCal');
+        % Get LMS excitations for each triplet of projector settings, and build a
+        % point cloud object from these.
+        allProjectorLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
+        allProjectorLMSContrastGaborCal = ExcitationsToContrast(allProjectorLMSExcitationsGaborCal,bgLMS);
+        allSensorPtCloud = pointCloud(allProjectorLMSContrastGaborCal');
 
-% Force point cloud setup by finding one nearest neighbor. This is slow,
-% but once it is done subsequent calls are considerably faster.
-findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
-toc
+        % Force point cloud setup by finding one nearest neighbor. This is slow,
+        % but once it is done subsequent calls are considerably faster.
+        findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
 
-% Go through the gabor image, and for each pixel find the settings that
-% come as close as possible to producing the desired excitations.
-tic;
-fprintf('Point cloud exhaustive method, finding image settings\n')
-printIter = 10000;
-thePointCloudSettingsGaborCal = zeros(3,size(theDesiredContrastGaborCal,2));
-minIndex = zeros(1,size(theDesiredContrastGaborCal,2));
-for ll = 1:size(theDesiredContrastGaborCal,2)
-    if (rem(ll,printIter) == 0)
-        fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredContrastGaborCal,2));
-    end
-    minIndex(ll) = findNearestNeighbors(allSensorPtCloud,theDesiredContrastGaborCal(:,ll)',1);
-    thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex(ll));
+        % Go through the gabor image, and for each pixel find the settings that
+        % come as close as possible to producing the desired excitations.
+        fprintf('Point cloud exhaustive method, finding image settings\n')
+        printIter = 10000;
+        thePointCloudSettingsGaborCal = zeros(3,size(theDesiredLMSContrastGaborCal,2));
+        minIndex = zeros(1,size(theDesiredLMSContrastGaborCal,2));
+        for ll = 1:size(theDesiredLMSContrastGaborCal,2)
+            if (rem(ll,printIter) == 0)
+                fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredLMSContrastGaborCal,2));
+            end
+            minIndex(ll) = findNearestNeighbors(allSensorPtCloud,theDesiredLMSContrastGaborCal(:,ll)',1);
+            thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex(ll));
+        end
+        thePointCloudLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
+        thePointCloudLMSContrastGaborCal = ExcitationsToContrast(thePointCloudLMSExcitationsGaborCal,bgLMS);
+
+    case 2
+        % In this method, we set up a point cloud of all possible settings.
+        % This is slow but can be done just once and saved, then read in,
+        % as it is independent of the primaries on the device.  Once we
+        % have this, we find a small nearest neighbors in settings space to
+        % the settings we get with SensorToSettings, and then exhaustively
+        % check for each image point which of these produces the closest to
+        % desired contrasts.
+        fprintf('Point cloud less exhaustive method, setting up settings cloud, this takes a while\n')
+        allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+        idx = 1;
+        for ii = 0:(projectorNInputLevels-1)
+            for jj = 0:(projectorNInputLevels-1)
+                for kk = 0:(projectorNInputLevels-1)
+                    allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+                    idx = idx+1;
+                end
+            end
+        end
+        allSettingsPtCloud = pointCloud(allProjectorSettingsCal');
+        findNearestNeighbors(allSettingsPtCloud,[0 0 0],1);
+
+        % Loop over image and find best settings within neighborhood of
+        % initial guess to produce desired result.  This is unfortunately
+        % slow per image.
+        printIter = 10000;
+        nNearestNeighbors = 20;
+        thePointCloudSettingsGaborCal = zeros(3,size(theDesiredLMSContrastGaborCal,2));
+        minIndex = zeros(1,size(theDesiredLMSContrastGaborCal,2));
+        for ll = 1:size(theDesiredLMSContrastGaborCal,2)
+            if (rem(ll,printIter) == 0)
+                fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredLMSContrastGaborCal,2));
+            end
+            guessSettings = SensorToSettings(projectorCalObj,theDesiredLMSExcitationsGaborCal(:,ll));
+            minIndex = findNearestNeighbors(allSettingsPtCloud,guessSettings',20);
+            checkSettings = allProjectorSettingsCal(:,minIndex);
+            checkLMSExcitations = SettingsToSensor(projectorCalObj,checkSettings);
+            checkLMSContrast = ExcitationsToContrast(checkLMSExcitations,bgLMS);
+            diffLMSContrastNorm = vecnorm(checkLMSContrast - theDesiredLMSContrastGaborCal(:,ll));
+            [~,minNormIndex] = min(diffLMSContrastNorm);
+            thePointCloudSettingsGaborCal(:,ll) = checkSettings(:,minNormIndex);
+        end
+        
+    otherwise
+        error('Unknown point cloud method specified');
 end
 
 % Get contrasts we think we have obtianed.
-thePointCloudExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
-thePointCloudContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,projectorBgExcitations);
-toc
+thePointCloudLMSExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
+thePointCloudLMSContrastGaborCal = ExcitationsToContrast(thePointCloudLMSExcitationsGaborCal,bgLMS);
 
 % Plot of how well point cloud method does in obtaining desired contrats
 figure; clf;
-plot(theDesiredContrastGaborCal(:),thePointCloudContrastGaborCal(:),'r+');
+plot(theDesiredLMSContrastGaborCal(:),thePointCloudLMSContrastGaborCal(:),'r+');
 axis('square');
 xlabel('Desired L, M or S contrast');
 ylabel('Predicted L, M, or S contrast');
 
 %% Convert representations we want to take forward to image format
-theDesiredLMSContrastGaborImage = CalFormatToImage(theDesiredContrastGaborCal,imageN,imageN);
-thePredictedLMSContrastImage = CalFormatToImage(thePredictedContrastGaborCal,imageN,imageN);
+theDesiredLMSContrastGaborImage = CalFormatToImage(theDesiredLMSContrastGaborCal,imageN,imageN);
+thePredictedLMSContrastImage = CalFormatToImage(thePredictedLMSContrastGaborCal,imageN,imageN);
 theSettingsGaborImage = CalFormatToImage(theSettingsGaborCal,imageN,imageN);
-thePointCloudLMSContrastGaborImage = CalFormatToImage(thePointCloudContrastGaborCal,imageN,imageN);
+thePointCloudLMSContrastGaborImage = CalFormatToImage(thePointCloudLMSContrastGaborCal,imageN,imageN);
 
 %% SRGB image via XYZ, scaled to display
 thePredictedXYZCal = T_xyz*thePredictedSpdGaborCal;
@@ -500,6 +542,14 @@ figure; imshow(theSRGBImage);
 %% Show the settings image
 figure; clf;
 imshow(theSettingsGaborImage);
+
+%% Save image and subprimaries so we can show them on the DLP
+projectorSettingsImage = theSettingsGaborImage;
+if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFilename = fullfile(testFiledir,'testImageData1');
+    save(testFilename,'projectorSettingsImage','isolatingPrimaries');
+end
 
 %% Plot slice through predicted LMS contrast image.
 %
@@ -540,39 +590,4 @@ title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
-
-%% Generate some settings values corresponding to known contrasts
-%
-% The reason for this is to measure and check these.  This logic follows
-% how we handled an actual gabor image above.
-rawMonochromeContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
-theDesiredContrastCheckCal = targetContrast*targetContrastDir*rawMonochromeContrastCheckCal;
-theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
-
-% For each pixel find the settings that
-% come as close as possible to producing the desired excitations.
-%
-% If we measure for a uniform field the spectra corresopnding to each of
-% the settings in the columns of thePointCloudSettingsCheckCal, then
-% compute the cone contrasts with respect to the backgound (0 contrast
-% measurement, first settings), we should approximate the cone contrasts in
-% theDesiredContrastCheckCal.
-fprintf('Point cloud exhaustive method, finding check settings\n')
-thePointCloudSettingsCheckCal = zeros(3,size(theDesiredContrastCheckCal,2));
-for ll = 1:size(theDesiredContrastCheckCal,2)
-    minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
-    thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
-end
-thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
-thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
-
-%% Save out what we need to check things on the DLP
-projectorSettingsImage = theSettingsGaborImage;
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,'testImageData1');
-    save(testFilename,'projectorSettingsImage','isolatingPrimaries','theDesiredContrastCheckCal','thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal');
-end
-
-
 
