@@ -353,7 +353,7 @@ title('Primary 3');
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
 MEASURED = false;
-if (MEASURED)
+if (~MEASURED)
     projectorCalObj.set('P_device',isolatingSpd');
 else
     projectorCalObj.set('P_device',isolatingSpdMeasured);
