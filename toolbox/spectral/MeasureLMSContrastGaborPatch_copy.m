@@ -1,4 +1,4 @@
-function [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
+function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
 % Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testContrastProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels)
@@ -46,6 +46,7 @@ function [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSett
 %% Set parameters.
 arguments
     testProjectorSettings
+    bgProjectorSettings
     projectorCalObj
     subPrimaryCalstructData
     T_cones
@@ -118,17 +119,21 @@ end
 %% Display the projector image and measure it.
 % Set projector setting for each test point on the gabor patch and measure it.
 if (options.measurementOption)
+    % Set subprimary settings to reproduce the isolating Spd.
+    for ss = 1:nSubprimaries
+        Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
+        Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
+        Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
+    end
+    
+    % Get ready to use PTB.
+    PsychDefaultSetup(2); % PTB pre-setup
+    screens = Screen('Screens');
+    screenNumber = max(screens);
+              
+    % Measure the test points.
     for tt = 1:nTestPoints
-        % Set subprimary settings to reproduce the isolating Spd.
-        for ss = 1:nSubprimaries
-            Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-            Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-            Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
-        end
         % Set the projector settings and display it as a plane screen.
-        PsychDefaultSetup(2); % PTB pre-setup
-        screens = Screen('Screens');
-        screenNumber = max(screens);
         projectorDisplayColor = testProjectorSettings(:,tt); % This part sets RGB values of the projector image.
         [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
         % Measure it.
@@ -137,9 +142,22 @@ if (options.measurementOption)
             fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
+
+    % Measure the background.
+    % Set the projector settings and display it as a plane screen.
+    projectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
+    % Measure it.
+    bgSpdMeasured = MeasSpd(S,5,'all');
+    if (options.verbose)
+       fprintf('           Measurement complete! - Background \n');
+    end
+
 else
-    % Just print zero spectrum when skipping the measurements.
+    % Just print zero spectrums for both test and background
+    % when skipping the measurements.
     testSpdMeasured = zeros(S(3),nTestPoints);
+    bgSpdMeasured = zeros(S(3),1);
     if (options.verbose)
         fprintf('           Measurement has been skipped \n');
     end
@@ -153,6 +171,7 @@ if (options.verbose)
     figure; hold on
     wls = SToWls(S); % Spectrum range.
     plot(wls,testSpdMeasured); % Measured SPDs.
+    plot(wls,bgSpdMeasured,'k-');
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');

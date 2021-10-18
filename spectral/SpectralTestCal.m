@@ -355,7 +355,7 @@ SetSensorColorSpace(projectorCalObj,T_cones,S);
 %
 % If we set to 0, there is no quantization and the result is excellent.
 % If we set to 2, this is quantized at 256 levels and the result is more
-% of a mess.  The choice of 2 represents what we think will actually happen
+% of a mess.  The choice of 2 represents what we projectorBgSettingsthink will actually happen
 % since the real device is quantized.
 %
 % The point cloud method below reduces this problem.
@@ -618,12 +618,28 @@ thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointClou
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
 
 % Measure the contrast points on the gabor patch. (THIS PART HAS BEEN ADDED - SEMIN)
-[thePointCloudSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorCalObj,subprimaryCalObjs,T_cones,...
-                                                            subprimaryNInputLevels,'projectorMode',true,'measurementOption',false,'verbose',false);
-thePointCloudPrimaries = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured);
-thePointCloudExcitations = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries);
-thePointCloudContrast = ExcitationsToContrast(thePointCloudExcitations,projectorBgExcitations);
-                              
+[thePointCloudSpdMeasured,projectorBgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorBgSettings,projectorCalObj,subprimaryCalObjs,T_cones,...
+                                                            subprimaryNInputLevels,'projectorMode',true,'measurementOption',true,'verbose',true);
+
+projectorBgPrimariesMeasured = SpdToPrimary(projectorCalObj,projectorBgSpdMeasured);
+projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);                                             
+                                                        
+% Plot it out to compare the desired and measured contrast.
+nTestPoints = size(thePointCloudSettingsCheckCal,2);                                                        
+for tt = 1:nTestPoints
+thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
+thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
+thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
+end
+
+figure; hold on;
+plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrast(1,:),'r+'); % L
+plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrast(2,:),'g+'); % M
+plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrast(3,:),'b+'); % S
+axis('square');
+xlabel('Desired contrast')
+ylabel('Measured contrast')
+
 %% Save out what we need to check things on the DLP
 projectorSettingsImage = theSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
