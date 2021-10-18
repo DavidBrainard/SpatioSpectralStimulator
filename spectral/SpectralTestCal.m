@@ -355,7 +355,7 @@ SetSensorColorSpace(projectorCalObj,T_cones,S);
 %
 % If we set to 0, there is no quantization and the result is excellent.
 % If we set to 2, this is quantized at 256 levels and the result is more
-% of a mess.  The choice of 2 represents what we projectorBgSettingsthink will actually happen
+% of a mess.  The choice of 2 represents what we think will actually happen
 % since the real device is quantized.
 %
 % The point cloud method below reduces this problem.
