@@ -577,21 +577,21 @@ ylim([-plotAxisLimit plotAxisLimit]);
 %
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
-figure; hold on
-plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+% figure; hold on
+% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+% 
+% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+% 
+% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+% title('Image Slice, Point Cloud Method, LMS Cone Contrast');
+% xlabel('x position (pixels)')
+% ylabel('LMS Cone Contrast (%)');
+% ylim([-plotAxisLimit plotAxisLimit]);
 
-plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-
-plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-title('Image Slice, Point Cloud Method, LMS Cone Contrast');
-xlabel('x position (pixels)')
-ylabel('LMS Cone Contrast (%)');
-ylim([-plotAxisLimit plotAxisLimit]);
-
-%% Generate some settings values corresponding to known contrasts % (THIS PART IS GOING TO BE A FUNCTION?? - SEMIN)
+%% Generate some settings values corresponding to known contrasts % (THIS PART MAY BE GOING TO BE IN A FUNCTION LATER ON - SEMIN)
 %
 % The reason for this is to measure and check these.  This logic follows
 % how we handled an actual gabor image above.
@@ -617,13 +617,13 @@ end
 thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
 
-%% Measure the contrast points on the gabor patch. 
-% (THIS PART HAS BEEN ADDED SEMIN)
-% Get background Spd.
-subprimaryBackgroundSpd = sum(subprimaryBackgroundSpd,2);
-[thePointCloudContrastMeasured,thePointCloudSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,subprimaryBackgroundSpd,projectorCalObj,T_cones,...
-                                                           subprimaryCalObjs,subprimaryNInputLevels,'projectorMode',true,'measurementOption',false,'verbose',false);
-
+% Measure the contrast points on the gabor patch. (THIS PART HAS BEEN ADDED - SEMIN)
+[thePointCloudSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorCalObj,subprimaryCalObjs,T_cones,...
+                                                            subprimaryNInputLevels,'projectorMode',true,'measurementOption',false,'verbose',false);
+thePointCloudPrimaries = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured);
+thePointCloudExcitations = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries);
+thePointCloudContrast = ExcitationsToContrast(thePointCloudExcitations,projectorBgExcitations);
+                              
 %% Save out what we need to check things on the DLP
 projectorSettingsImage = theSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -631,6 +631,3 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFilename = fullfile(testFiledir,'testImageData1');
     save(testFilename,'projectorSettingsImage','projectorPrimaryPrimaries','theDesiredContrastCheckCal','thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal');
 end
-
-
-

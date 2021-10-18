@@ -1,35 +1,24 @@
-function [testLMSContrastMeasured,testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testContrastProjectorSettings,projectorBgSpd,projectorCalObj,T_cones,...
-    subPrimaryCalstructData,subprimaryNInputLevels,options)
-
-% Following syntax is the original version which decides the contrast
-% points based on X-pixcel values on the gabor patch.
-
-% [testLMSContrastMeasured,testSpdMeasured] = MeasureLMSContrastGaborPatch(projectorContrastImage,projectorBgSpd,projectorCalObj,T_cones,...
-%     subPrimaryCalstructData,subprimaryNInputLevels,options)
-
+function [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
-% Syntax: [testLMSContrastMeasured,testSpdMeasured] = MeasureLMSContrastGaborPatch(projectorContrastImage,projectorBgSpd,projectorCalObj,T_cones,...
-%    subPrimaryCalstructData,subprimaryNInputLevels)
+% Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testContrastProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels)
 %
 % Description:
 %    This measures and calculates the LMS contrasts of the modulated gabor
 %    patch image, so we can check if the modulation was done properly.
 %
 % Inputs:
-%    testContrastProjectorSettings
-%    projectorBgSpd
+%    testProjectorSettings -      Projector input settings that reproduce
+%                                 the desired contrast.
 %    projectorCalObj -            The calibration object that contains the
 %                                 the data for the projector.
-%    T_cones -                    Spectral cone sensitivities in standard PTB format.
 %    subPrimaryCalstructData -    The calibration object that describes the
 %                                 device we're working with.
+%    T_cones -                    Spectral cone sensitivities in standard PTB format.
 %    subprimaryNInputLevels -     Device max input levels for the
 %                                 subprimaries.
 %
 % Outputs:
-%    testLMSContrastMeasured -    Measurement results of the some points on
-%                                 the contrast gabor patch image.
 %    testSpdMeasured -            Measurement results of the SPDs for the
 %                                 points on the slice of the gabor patch.
 %
@@ -51,14 +40,15 @@ function [testLMSContrastMeasured,testSpdMeasured] = MeasureLMSContrastGaborPatc
 %    10/14/21  smo                Made a working draft.
 %    10/15/21  smo                Fixed the error, clean it, better naming
 %                                 the variables.
+%    10/18/21  smo                Made it simpler and it takes projector
+%                                 settings and save out the spd data only.
 
 %% Set parameters.
 arguments
-    testContrastProjectorSettings
-    projectorBgSpd
+    testProjectorSettings
     projectorCalObj
-    T_cones
     subPrimaryCalstructData
+    T_cones
     subprimaryNInputLevels
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
@@ -106,7 +96,7 @@ if (options.measurementOption)
 end
 
 % Number of contrast test points.
-nTestPoints = size(testContrastProjectorSettings,2);
+nTestPoints = size(testProjectorSettings,2);
 
 % Set the working range of subprimary channels (chanel 8 is not working at the moment).
 logicalToPhysical = [0:7 9:15];
@@ -118,12 +108,8 @@ S = subPrimaryCalstructData{1}.get('S');
 nPrimaries = 3;
 nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
 
-% Get background LMS.
-projectorBgLMS = T_cones * projectorBgSpd;
-
 % Set subprimary settings.
 isolatingPrimariesSpd = projectorCalObj.get('P_device');
-
 for pp = 1:nPrimaries
     isolatingPrimaries(:,pp) = SpdToPrimary(subPrimaryCalstructData{pp},isolatingPrimariesSpd(:,pp));
     subPrimarySettings(:,pp) = PrimaryToSettings(subPrimaryCalstructData{pp},isolatingPrimaries(:,pp));
@@ -143,7 +129,7 @@ if (options.measurementOption)
         PsychDefaultSetup(2); % PTB pre-setup
         screens = Screen('Screens');
         screenNumber = max(screens);
-        projectorDisplayColor = testContrastProjectorSettings(:,tt); % This part sets RGB values of the projector image.
+        projectorDisplayColor = testProjectorSettings(:,tt); % This part sets RGB values of the projector image.
         [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
         % Measure it.
         testSpdMeasured(:,tt) = MeasSpd(S,5,'all');
@@ -152,32 +138,23 @@ if (options.measurementOption)
         end
     end
 else
-    % Show the same results as background when measurement skipped.
-    testSpdMeasured = ones(S(3),nTestPoints).* sum(projectorBgSpd,2);
+    % Just print zero spectrum when skipping the measurements.
+    testSpdMeasured = zeros(S(3),nTestPoints);
+    if (options.verbose)
+        fprintf('           Measurement has been skipped \n');
+    end
 end
 
 % Close PTB screen.
 sca;
 
-% Calculate LMS contrast from the measurements.
-testLMSMeasured = T_cones * testSpdMeasured;
-testLMSContrastMeasured = ExcitationToContrast(testLMSMeasured,projectorBgLMS);
-
 %% Plot the results.
 if (options.verbose)
     figure; hold on
-    % L contrast.
-    plot(linspace(0,1,nTestPoints),100*testContrastProjectorSettings(1,:),'r+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
-    plot(linspace(0,1,nTestPoints),100*testLMSContrastMeasured(1,:),'ro--','MarkerSize',7,'LineWidth',1); % Desired contrast.
-    % M contrast.
-    plot(linspace(0,1,nTestPoints),100*testContrastProjectorSettings(2,:),'g+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
-    plot(linspace(0,1,nTestPoints),100*testLMSContrastMeasured(2,:),'go--','MarkerSize',7,'LineWidth',1); % Desired contrast.
-    % S contrast.
-    plot(linspace(0,1,nTestPoints),100*testContrastProjectorSettings(3,:),'b+-','MarkerSize',4,'LineWidth',0.5); % Measured contrast.
-    plot(linspace(0,1,nTestPoints),100*testLMSContrastMeasured(3,:),'bo--','MarkerSize',7,'LineWidth',1); % Desired contrast.
-    title('Image Slice, LMS Cone Contrast');
-    xlabel('Test contrast point No.')
-    ylabel('LMS Cone Contrast (%)');
-    legend('Test-L','Measured-L','Test-M','Measured-M','Test-S','Measured-S');
+    wls = SToWls(S); % Spectrum range.
+    plot(wls,testSpdMeasured); % Measured SPDs.
+    title('Measured SPDs');
+    xlabel('Wavelength (nm)')
+    ylabel('Spectral Intensity');
 end
 end
