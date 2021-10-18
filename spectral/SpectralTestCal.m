@@ -585,13 +585,13 @@ xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
 
-%% Generate some settings values corresponding to known contrasts
+%% Generate some settings values corresponding to known contrasts % (THIS PART IS GOING TO BE A FUNCTION?? - SEMIN)
 %
 % The reason for this is to measure and check these.  This logic follows
 % how we handled an actual gabor image above.
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-theDesiredContrastCheckCal = targetContrast*targetStimulusContrastDir*rawMonochromeContrastCheckCal;
+theDesiredContrastCheckCal = targetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
 theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
 
 % For each pixel find the settings that
@@ -610,6 +610,13 @@ for ll = 1:size(theDesiredContrastCheckCal,2)
 end
 thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
+
+%% Measure the contrast points on the gabor patch. 
+% (THIS PART HAS BEEN ADDED SEMIN)
+% Get background Spd.
+subprimaryBackgroundSpd = sum(subprimaryBackgroundSpd,2);
+[thePointCloudContrastMeasured,thePointCloudSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,subprimaryBackgroundSpd,projectorCalObj,T_cones,...
+                                                           subprimaryCalObjs,subprimaryNInputLevels,'projectorMode',true,'measurementOption',false,'verbose',false);
 
 %% Save out what we need to check things on the DLP
 projectorSettingsImage = theSettingsGaborImage;
