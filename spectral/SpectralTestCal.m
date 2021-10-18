@@ -137,8 +137,8 @@ targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulu
 % run into numerical error at the edges. The second number is used when
 % defining the three primaries, the first when computing desired weights on
 % the primaries.
-targetContrast = 0.05;
-plotAxisLimit = 100*targetContrast;
+spatialGaborTargetContrast = 0.07;
+plotAxisLimit = 100*spatialGaborTargetContrast;
 
 %% Specify desired primary properties.
 %
@@ -406,7 +406,7 @@ ylabel('Quantized Gabor contrasts');
 % at each pixel.  This is done by a single matrix multiply plus a lead
 % factor.  We work cal format here as that makes color transforms
 % efficient.
-theDesiredContrastGaborCal = targetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
+theDesiredContrastGaborCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
 
 % Convert cone contrast to excitations
 theDesiredExcitationsGaborCal = ContrastToExcitation(theDesiredContrastGaborCal,projectorBgExcitations);
@@ -454,9 +454,9 @@ end
 
 % Get LMS excitations for each triplet of projector settings, and build a
 % point cloud object from these.
-allProjectorExcitationsGaborCal = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
-allProjectorContrastGaborCal = ExcitationsToContrast(allProjectorExcitationsGaborCal,projectorBgExcitations);
-allSensorPtCloud = pointCloud(allProjectorContrastGaborCal');
+allProjectorExcitations = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
+allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,projectorBgExcitations);
+allSensorPtCloud = pointCloud(allProjectorContrast');
 
 % Force point cloud setup by finding one nearest neighbor. This is slow,
 % but once it is done subsequent calls are considerably faster.
@@ -468,32 +468,32 @@ toc
 % Go through the gabor image, and for each pixel find the settings that
 % come as close as possible to producing the desired excitations.
 % Conceptually straightforward, but a bit slow.
-tic;
-fprintf('Point cloud exhaustive method, finding image settings\n')
-printIter = 10000;
-thePointCloudSettingsGaborCal = zeros(3,size(theDesiredContrastGaborCal,2));
-minIndex = zeros(1,size(theDesiredContrastGaborCal,2));
-for ll = 1:size(theDesiredContrastGaborCal,2)
-    if (rem(ll,printIter) == 0)
-        fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredContrastGaborCal,2));
-    end
-    minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastGaborCal(:,ll)',1);
-    thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex);
-end
-toc
+% tic;
+% fprintf('Point cloud exhaustive method, finding image settings\n')
+% printIter = 10000;
+% thePointCloudSettingsGaborCal = zeros(3,size(theDesiredContrastGaborCal,2));
+% minIndex = zeros(1,size(theDesiredContrastGaborCal,2));
+% for ll = 1:size(theDesiredContrastGaborCal,2)
+%     if (rem(ll,printIter) == 0)
+%         fprintf('Finding settings for iteration %d of %d\n',ll,size(theDesiredContrastGaborCal,2));
+%     end
+%     minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastGaborCal(:,ll)',1);
+%     thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex);
+% end
+% toc
 
-% Get contrasts we think we have obtianed
-thePointCloudExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
-thePointCloudContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,projectorBgExcitations);
+% Get contrasts we think we have obtained.
+% thePointCloudExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
+% theQuantizedContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,projectorBgExcitations);
 
 % Plot of how well point cloud method does in obtaining desired contrats
-figure; clf;
-plot(theDesiredContrastGaborCal(:),thePointCloudContrastGaborCal(:),'r+');
-axis('square');
-xlabel('Desired L, M or S contrast');
-ylabel('Predicted L, M, or S contrast');
+% figure; clf;
+% plot(theDesiredContrastGaborCal(:),theQuantizedContrastGaborCal(:),'r+');
+% axis('square');
+% xlabel('Desired L, M or S contrast');
+% ylabel('Predicted L, M, or S contrast');
 
-%% Altnerate way to get image settings
+%% Alternate way to get image settings
 %
 % Only look up each unique cone contrast once, and then fill in the image
 %
@@ -506,30 +506,36 @@ uniqueDesiredContrastGaborCal = uniqueDesiredContrastGaborCal';
 % For each unique contrast, find the right settings and then plug into
 % output image.
 theUniqueSettingsCal = zeros(3,size(uniqueDesiredContrastGaborCal,2));
-theUniqueMethodSettingsGaborCal = zeros(3,size(theDesiredContrastGaborCal,2));
+theQuantizedSettingsGaborCal = zeros(3,size(theDesiredContrastGaborCal,2));
 minIndex = zeros(1,size(theDesiredContrastGaborCal,2));
 for ll = 1:size(uniqueDesiredContrastGaborCal,2)
     minIndex = findNearestNeighbors(allSensorPtCloud,uniqueDesiredContrastGaborCal(:,ll)',1);
     theUniqueSettingsCal(:,ll) = allProjectorSettingsCal(:,minIndex);
 end
-theUniqueMethodSettingsGaborCal = theUniqueSettingsCal(:,uniqueIC);
+theQuantizedSettingsGaborCal = theUniqueSettingsCal(:,uniqueIC);
 toc
 
 % Get contrasts we think we have obtianed
-theUniqueMethodExcitationsGaborCal = SettingsToSensor(projectorCalObj,theUniqueMethodSettingsGaborCal);
-theUniqueMethodContrastGaborCal = ExcitationsToContrast(theUniqueMethodExcitationsGaborCal,projectorBgExcitations);
+theQuantizedExcitationsGaborCal = SettingsToSensor(projectorCalObj,theQuantizedSettingsGaborCal);
+theQuantizedContrastGaborCal = ExcitationsToContrast(theQuantizedExcitationsGaborCal,projectorBgExcitations);
+
+% Plot of how well point cloud method does in obtaining desired contrats
+figure; clf;
+plot(theDesiredContrastGaborCal(:),theQuantizedContrastGaborCal(:),'r+');
+axis('square');
+xlabel('Desired L, M or S contrast');
+ylabel('Predicted L, M, or S contrast');
 
 % Check that we get the same answer
-if (max(abs(thePointCloudContrastGaborCal(:)-theUniqueMethodContrastGaborCal(:))) > 0)
-    fprintf('Point cloud and unique method methods do not agree\n');
-end
+% if (max(abs(theQuantizedContrastGaborCal(:)-theUniqueMethodContrastGaborCal(:))) > 0)
+%     fprintf('Point cloud and unique method methods do not agree\n');
+% end
 
 %% Convert representations we want to take forward to image format
 theDesiredContrastGaborImage = CalFormatToImage(theDesiredContrastGaborCal,imageN,imageN);
 thePredictedContrastImage = CalFormatToImage(thePredictedContrastGaborCal,imageN,imageN);
 theSettingsGaborImage = CalFormatToImage(theSettingsGaborCal,imageN,imageN);
-thePointCloudContrastGaborImage = CalFormatToImage(thePointCloudContrastGaborCal,imageN,imageN);
-theUniqueMethodContrastGaborImage = CalFormatToImage(theUniqueMethodContrastGaborCal,imageN,imageN);
+theQuantizedContrastGaborImage = CalFormatToImage(theQuantizedContrastGaborCal,imageN,imageN);
 
 %% SRGB image via XYZ, scaled to display
 thePredictedXYZCal = T_xyz*thePredictedSpdGaborCal;
@@ -591,7 +597,7 @@ ylim([-plotAxisLimit plotAxisLimit]);
 % how we handled an actual gabor image above.
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-theDesiredContrastCheckCal = targetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
+theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
 theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
 
 % For each pixel find the settings that
