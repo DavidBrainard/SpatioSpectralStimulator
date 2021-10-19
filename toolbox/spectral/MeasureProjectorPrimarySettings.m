@@ -1,23 +1,18 @@
-function [testSpdMeasured] = MeasureProjectorSettings(testProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,options)
-% Measure the LMS contrasts at some points on the gabor patch image.
+function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,projectorCalObj,T_cones,options)
+% Measure the SPD over projector primary settings.
 %
-% Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,...
-%                                                               projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels)
+% Syntax: [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,projectorCalObj,T_cones)
 %
 % Description:
-%    This measures and calculates the SPD for calculating LMS contrasts
-%    of the modulated gabor patch, so we can check if the modulation
-%    was done properly.
+%    This measures the SPD according to projector primary settings. In case
+%    you use multi-subprimary device, you should set subprimary settings in
+%    advance before calling this function. 
 %
 % Inputs:
 %    testProjectorSettings -      Projector input settings that reproduce
 %                                 the desired contrast.
-%    bgProjectorSettings -        Projector input settings for the
-%                                 background.
 %    projectorCalObj -            The calibration object that contains the
 %                                 the data for the projector.
-%    subPrimaryCalstructData -    The calibration object that describes the
-%                                 device we're working with.
 %    T_cones -                    Spectral cone sensitivities in standard PTB format.
 %    subprimaryNInputLevels -     Device max input levels for the
 %                                 subprimaries.
@@ -25,8 +20,6 @@ function [testSpdMeasured] = MeasureProjectorSettings(testProjectorSettings,proj
 % Outputs:
 %    testSpdMeasured -            Measurement results of the SPDs for the
 %                                 contrast testing points.
-%    bgSpdMeasured -              Measurement result of the SPD for the
-%                                 bakground.
 %
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
@@ -48,12 +41,14 @@ function [testSpdMeasured] = MeasureProjectorSettings(testProjectorSettings,proj
 %                                 the variables.
 %    10/18/21  smo                Made it simpler and it takes projector
 %                                 settings and save out the spd data only.
+%    10/19/21  smo                Now it does not take subprimary settings
+%                                 as input. It only takes care of the
+%                                 projector primary settings.
 
 %% Set parameters.
 arguments
     testProjectorSettings
     projectorCalObj
-    subPrimaryCalstructData
     T_cones
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
@@ -103,33 +98,35 @@ end
 % Number of contrast test points.
 nTestPoints = size(testProjectorSettings,2);
 
-% Set the working range of subprimary channels (chanel 8 is not working at the moment).
-logicalToPhysical = [0:7 9:15];
-
 % Measurement range.
-S = subPrimaryCalstructData{1}.get('S');
+S = projectorCalObj{1}.get('S');
 
+%% Followings are Disabled since 10/19/2021 (Settings including subprimary)
 % Get number of discrete input levels for the device.  
 % So, control values go from 0 to (subprimaryNInputLevels-1).
-subprimaryNInputLevels = size(subPrimaryCalstructData{1}.get('gammaInput'),1);
+% subprimaryNInputLevels = size(subPrimaryCalstructData{1}.get('gammaInput'),1);
 
 % Set primary and subprimary numbers.
-nPrimaries = 3;
-nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
+% nPrimaries = 3;
+% nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
+
+% Set the working range of subprimary channels (chanel 8 is not working at the moment).
+% logicalToPhysical = [0:7 9:15];
 
 % Set subprimary settings.  These ought to match what we get from the
 % primary settings we computed that produced SpectralTestCal.  But
 % we also ought to take the measured primaries into account, which we
 % are not currently doing.
-isolatingPrimariesSpd = projectorCalObj.get('P_device');
-for pp = 1:nPrimaries
-    isolatingPrimaries(:,pp) = SpdToPrimary(subPrimaryCalstructData{pp},isolatingPrimariesSpd(:,pp));
-    subPrimarySettings(:,pp) = PrimaryToSettings(subPrimaryCalstructData{pp},isolatingPrimaries(:,pp));
-end
+% isolatingPrimariesSpd = projectorCalObj.get('P_device');
+% for pp = 1:nPrimaries
+%     isolatingPrimaries(:,pp) = SpdToPrimary(subPrimaryCalstructData{pp},isolatingPrimariesSpd(:,pp));
+%     subPrimarySettings(:,pp) = PrimaryToSettings(subPrimaryCalstructData{pp},isolatingPrimaries(:,pp));
+% end
 
 %% Display the projector image and measure it.
 % Set projector setting for each test point on the gabor patch and measure it.
 if (options.measurementOption)
+    % Following subprimary setting Disabled since 10/19/2021
     % Set subprimary settings to reproduce the isolating Spd.
 %     for ss = 1:nSubprimaries
 %         Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
@@ -156,18 +153,6 @@ if (options.measurementOption)
             fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
-    
-%     % Measure the background.
-%     % Set the projector settings and display it as a plane screen.
-%     bgProjectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
-%     Screen('FillRect',window,bgProjectorDisplayColor,windowRect);
-%     Screen('Flip', window);
-%     % Measure it.
-%     bgSpdMeasured = MeasSpd(S,5,'all');
-%     if (options.verbose)
-%         fprintf('           Measurement complete! - Background \n');
-%     end
-    
 else
     % Just print zero spectrums for both test and background
     % when skipping the measurements.

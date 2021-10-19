@@ -91,7 +91,7 @@ end
 % need to do is loop through and set a uniform field to each of the
 % settings in thePointCloudSettingsCheckCal and measure the corresponding
 % spd.
-[thePointCloudSpdMeasured] = MeasureProjectorSettings(theData.thePointCloudSettingsCheckCal,...
+[thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
     theData.projectorCalObj,theData.subprimaryCalObjs,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
 
 % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
