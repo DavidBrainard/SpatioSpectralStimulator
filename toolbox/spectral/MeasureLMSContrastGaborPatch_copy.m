@@ -137,12 +137,15 @@ if (options.measurementOption)
     PsychDefaultSetup(2); % PTB pre-setup
     screens = Screen('Screens');
     screenNumber = max(screens);
+    white = WhiteIndex(screenNumber); % Starting with white screen.
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
     
     % Measure the test points.
     for tt = 1:nTestPoints
         % Set the projector settings and display it as a plane screen.
-        projectorDisplayColor = testProjectorSettings(:,tt); % Set projector color with contrast testing point.
-        [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
+        testProjectorDisplayColor = testProjectorSettings(:,tt); % Set projector color with contrast testing point.
+        Screen('FillRect',window,testProjectorDisplayColor,windowRect);
+        Screen('Flip', window);
         % Measure it.
         testSpdMeasured(:,tt) = MeasSpd(S,5,'all');
         if (options.verbose)
@@ -152,8 +155,9 @@ if (options.measurementOption)
     
     % Measure the background.
     % Set the projector settings and display it as a plane screen.
-    projectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
+    bgProjectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
+    Screen('FillRect',window,bgProjectorDisplayColor,windowRect);
+    Screen('Flip', window);
     % Measure it.
     bgSpdMeasured = MeasSpd(S,5,'all');
     if (options.verbose)
@@ -177,8 +181,8 @@ sca;
 if (options.verbose)
     figure; hold on
     wls = SToWls(S); % Spectrum range.
-    plot(wls,testSpdMeasured); % Test points Spd.
-    plot(wls,bgSpdMeasured,'k-'); % Background Spd.
+    plot(wls,testSpdMeasured,'k-','LineWidth',1); % Test points Spd.
+    plot(wls,bgSpdMeasured,'r--','LineWidth',2); % Background Spd.
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');
