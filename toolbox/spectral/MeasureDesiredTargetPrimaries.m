@@ -1,4 +1,4 @@
-function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subprimaryNInputLevels,subPrimaryCalStructData,targetPrimaryNum,options)
+function [targetSpdMeasuredRaw,targetSpdMeasuredNorm,measuredToTarget] = MeasureDesiredTargetPrimaries(targetPrimaries,subPrimaryCalStructData,targetPrimaryNum,options)
 % Measure the desired target primaries to use them for computing the contrast image.
 %
 % Syntax:
@@ -11,9 +11,6 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 % Inputs:
 %    targetPrimaries -            Target primaries you wish to reproduce.
 %                                 These have not yet been gamma corrected.
-%    subprimaryNInputLevels -     Number of discrete input levels for the
-%                                 device.  So control values go from 0 to
-%                                 (subprimaryNInputLevels-1).
 %    subPrimaryCalStructData -    The calibration object that describes the
 %                                 device we're working with.
 %    targetPrimaryNum -           Target primary number. This is required
@@ -45,7 +42,6 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %% Set parameters.
 arguments
     targetPrimaries
-    subprimaryNInputLevels
     subPrimaryCalStructData
     targetPrimaryNum
     options.projectorMode (1,1) = true
@@ -96,6 +92,10 @@ end
 % Set the working range of subprimary channels (chanel 8 is not working at the moment).
 logicalToPhysical = [0:7 9:15];
 
+% Get number of discrete input levels for the device.  
+% So, control values go from 0 to (subprimaryNInputLevels-1).
+subprimaryNInputLevels = size(subPrimaryCalStructData.get('gammaInput'),1);
+
 % Measurement range.
 S = subPrimaryCalStructData.get('S');
 
@@ -134,12 +134,12 @@ if (options.measurementOption)
     end
     
     % Measurement.
-    targetSpdMeasured = MeasSpd(S,5,'all');
+    targetSpdMeasuredRaw = MeasSpd(S,5,'all');
     if (options.verbose)
         fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
     end
 else
-    targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
+    targetSpdMeasuredRaw = targetSpd; % Just put the same spd as desired for here.
     if (options.verbose)
         fprintf('Measurement has been skipped!\n');
     end
@@ -150,13 +150,14 @@ sca;
 
 % Conversion factor.
 % This should be removed later on. Now just checking the shape of the spd.
-measuredToTarget = sum(targetSpd)/sum(targetSpdMeasured);
+measuredToTarget = sum(targetSpd)/sum(targetSpdMeasuredRaw);
+targetSpdMeasuredNorm = targetSpdMeasuredRaw .* measuredToTarget;
 
 % Plot the results.
 if (options.verbose)
     figure; hold on;
     plot(SToWls(S),targetSpd,'k-','LineWidth',1); % Target Spd.
-    plot(SToWls(S),targetSpdMeasured.*measuredToTarget,'r--','LineWidth',1); % Measured Spd.
+    plot(SToWls(S),targetSpdMeasuredNorm,'r--','LineWidth',1); % Measured Spd.
     xlabel('Wavelength (nm)');
     ylabel('Spectral power');
     legend('Target','Measurement');

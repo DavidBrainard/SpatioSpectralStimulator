@@ -1,5 +1,4 @@
-function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,...
-    projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
+function [testSpdMeasured] = MeasureProjectorSettings(testProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
 % Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,...
@@ -53,11 +52,9 @@ function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(tes
 %% Set parameters.
 arguments
     testProjectorSettings
-    bgProjectorSettings
     projectorCalObj
     subPrimaryCalstructData
     T_cones
-    subprimaryNInputLevels
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
     options.verbose (1,1) = true
@@ -112,6 +109,10 @@ logicalToPhysical = [0:7 9:15];
 % Measurement range.
 S = subPrimaryCalstructData{1}.get('S');
 
+% Get number of discrete input levels for the device.  
+% So, control values go from 0 to (subprimaryNInputLevels-1).
+subprimaryNInputLevels = size(subPrimaryCalstructData{1}.get('gammaInput'),1);
+
 % Set primary and subprimary numbers.
 nPrimaries = 3;
 nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
@@ -130,11 +131,11 @@ end
 % Set projector setting for each test point on the gabor patch and measure it.
 if (options.measurementOption)
     % Set subprimary settings to reproduce the isolating Spd.
-    for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-        Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-        Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
-    end
+%     for ss = 1:nSubprimaries
+%         Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
+%         Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
+%         Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
+%     end
     
     % Get ready to use PTB.
     PsychDefaultSetup(2); % PTB pre-setup
@@ -156,22 +157,21 @@ if (options.measurementOption)
         end
     end
     
-    % Measure the background.
-    % Set the projector settings and display it as a plane screen.
-    bgProjectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
-    Screen('FillRect',window,bgProjectorDisplayColor,windowRect);
-    Screen('Flip', window);
-    % Measure it.
-    bgSpdMeasured = MeasSpd(S,5,'all');
-    if (options.verbose)
-        fprintf('           Measurement complete! - Background \n');
-    end
+%     % Measure the background.
+%     % Set the projector settings and display it as a plane screen.
+%     bgProjectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
+%     Screen('FillRect',window,bgProjectorDisplayColor,windowRect);
+%     Screen('Flip', window);
+%     % Measure it.
+%     bgSpdMeasured = MeasSpd(S,5,'all');
+%     if (options.verbose)
+%         fprintf('           Measurement complete! - Background \n');
+%     end
     
 else
     % Just print zero spectrums for both test and background
     % when skipping the measurements.
     testSpdMeasured = zeros(S(3),nTestPoints);
-    bgSpdMeasured = zeros(S(3),1);
     if (options.verbose)
         fprintf('           Measurement has been skipped \n');
     end
@@ -184,8 +184,7 @@ sca;
 if (options.verbose)
     figure; hold on
     wls = SToWls(S); % Spectrum range.
-    plot(wls,testSpdMeasured,'k-','LineWidth',1); % Test points Spd.
-    plot(wls,bgSpdMeasured,'r--','LineWidth',2); % Background Spd.
+    plot(wls,testSpdMeasured,'LineWidth',1); % Test points Spd.
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');
