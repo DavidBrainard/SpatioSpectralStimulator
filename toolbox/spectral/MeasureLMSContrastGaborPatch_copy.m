@@ -1,15 +1,20 @@
-function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
+function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,...
+    projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels,options)
 % Measure the LMS contrasts at some points on the gabor patch image.
 %
-% Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testContrastProjectorSettings,projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels)
+% Syntax: [testSpdMeasured] = MeasureLMSContrastGaborPatch_copy(testProjectorSettings,bgProjectorSettings,...
+%                                                               projectorCalObj,subPrimaryCalstructData,T_cones,subprimaryNInputLevels)
 %
 % Description:
-%    This measures and calculates the LMS contrasts of the modulated gabor
-%    patch image, so we can check if the modulation was done properly.
+%    This measures and calculates the SPD for calculating LMS contrasts
+%    of the modulated gabor patch, so we can check if the modulation
+%    was done properly.
 %
 % Inputs:
 %    testProjectorSettings -      Projector input settings that reproduce
 %                                 the desired contrast.
+%    bgProjectorSettings -        Projector input settings for the
+%                                 background.
 %    projectorCalObj -            The calibration object that contains the
 %                                 the data for the projector.
 %    subPrimaryCalstructData -    The calibration object that describes the
@@ -20,7 +25,9 @@ function [testSpdMeasured,bgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(tes
 %
 % Outputs:
 %    testSpdMeasured -            Measurement results of the SPDs for the
-%                                 points on the slice of the gabor patch.
+%                                 contrast testing points.
+%    bgSpdMeasured -              Measurement result of the SPD for the
+%                                 bakground.
 %
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
@@ -130,11 +137,11 @@ if (options.measurementOption)
     PsychDefaultSetup(2); % PTB pre-setup
     screens = Screen('Screens');
     screenNumber = max(screens);
-              
+    
     % Measure the test points.
     for tt = 1:nTestPoints
         % Set the projector settings and display it as a plane screen.
-        projectorDisplayColor = testProjectorSettings(:,tt); % This part sets RGB values of the projector image.
+        projectorDisplayColor = testProjectorSettings(:,tt); % Set projector color with contrast testing point.
         [window, windowRect] = PsychImaging('OpenWindow', screenNumber, projectorDisplayColor);
         % Measure it.
         testSpdMeasured(:,tt) = MeasSpd(S,5,'all');
@@ -142,7 +149,7 @@ if (options.measurementOption)
             fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
-
+    
     % Measure the background.
     % Set the projector settings and display it as a plane screen.
     projectorDisplayColor = bgProjectorSettings; % This part sets RGB values of the projector image.
@@ -150,9 +157,9 @@ if (options.measurementOption)
     % Measure it.
     bgSpdMeasured = MeasSpd(S,5,'all');
     if (options.verbose)
-       fprintf('           Measurement complete! - Background \n');
+        fprintf('           Measurement complete! - Background \n');
     end
-
+    
 else
     % Just print zero spectrums for both test and background
     % when skipping the measurements.
@@ -170,8 +177,8 @@ sca;
 if (options.verbose)
     figure; hold on
     wls = SToWls(S); % Spectrum range.
-    plot(wls,testSpdMeasured); % Measured SPDs.
-    plot(wls,bgSpdMeasured,'k-');
+    plot(wls,testSpdMeasured); % Test points Spd.
+    plot(wls,bgSpdMeasured,'k-'); % Background Spd.
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');

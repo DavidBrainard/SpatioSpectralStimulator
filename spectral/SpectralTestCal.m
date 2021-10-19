@@ -617,19 +617,19 @@ end
 thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
 
-% Measure the contrast points on the gabor patch. (THIS PART HAS BEEN ADDED - SEMIN)
-[thePointCloudSpdMeasured,projectorBgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorBgSettings,projectorCalObj,subprimaryCalObjs,T_cones,...
-                                                            subprimaryNInputLevels,'projectorMode',true,'measurementOption',true,'verbose',true);
+%% Measure the contrast points on the gabor patch. (THIS PART HAS BEEN ADDED - SEMIN)
+[thePointCloudSpdMeasured,projectorBgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorBgSettings,...
+    projectorCalObj,subprimaryCalObjs,T_cones,subprimaryNInputLevels,'projectorMode',true,'measurementOption',true,'verbose',true);
 
 projectorBgPrimariesMeasured = SpdToPrimary(projectorCalObj,projectorBgSpdMeasured);
-projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);                                             
-                                                        
+projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);
+
 % Plot it out to compare the desired and measured contrast.
-nTestPoints = size(thePointCloudSettingsCheckCal,2);                                                        
+nTestPoints = size(thePointCloudSettingsCheckCal,2);
 for tt = 1:nTestPoints
-thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
-thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
-thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
+    thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
+    thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
+    thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
 end
 
 figure; hold on;
