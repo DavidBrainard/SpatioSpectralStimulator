@@ -282,16 +282,7 @@ for pp = 1:nPrimaries
     [projectorPrimaryPrimaries(:,pp),projectorPrimaryPrimariesQuantized(:,pp),projectorPrimarySpd(:,pp),projectorPrimaryContrast(:,pp)] = FindDesiredContrastTargetPrimaries(targetProjectorPrimaryContrastDir(:,pp), ...
         targetPrimaryHeadroom,targetProjectorPrimaryContrast,subprimaryBackgroundPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
-end
-
-%% Measure the desired target primaries
-%
-% This result will be used to update the calibration file
-% so that it matches reality rather than aspiration.
-%
-% Make a loop for measuring all primaries.
-for pp = 1:nPrimaries
-    [isolatingSpdMeasured(:,pp)] = MeasureDesiredTargetPrimaries(projectorPrimaryPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
+    projectorPrimarySettings(:,pp) = PrimaryToSettings(subprimaryCalObjs{pp},projectorPrimaryPrimaries(:,pp));
 end
 
 %% How close are spectra to subspace defined by basis?
@@ -343,12 +334,7 @@ title('Primary 3');
 % subprimary calculations above.  Need to reset
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-MEASURED = false;
-if (~MEASURED)
-    projectorCalObj.set('P_device',projectorPrimarySpd);
-else
-    projectorCalObj.set('P_device',isolatingSpdMeasured);
-end
+projectorCalObj.set('P_device',projectorPrimarySpd);
 SetSensorColorSpace(projectorCalObj,T_cones,S);
 
 %% Set projector gamma method
@@ -614,36 +600,28 @@ for ll = 1:size(theDesiredContrastCheckCal,2)
     minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
     thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
 end
+thePointCloudPrimariesCheckCal = SettingsToPrimary(projectorCalObj,thePointCloudSettingsCheckCal);
+thePointCloudSpdCheckCal = PrimaryToSpd(projectorCalObj,thePointCloudPrimariesCheckCal);
 thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
 
-%% Measure the contrast points on the gabor patch. (THIS PART HAS BEEN ADDED - SEMIN)
-[thePointCloudSpdMeasured,projectorBgSpdMeasured] = MeasureLMSContrastGaborPatch_copy(thePointCloudSettingsCheckCal,projectorBgSettings,...
-    projectorCalObj,subprimaryCalObjs,T_cones,subprimaryNInputLevels,'projectorMode',true,'measurementOption',true,'verbose',true);
-
-projectorBgPrimariesMeasured = SpdToPrimary(projectorCalObj,projectorBgSpdMeasured);
-projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);
-
-% Plot it out to compare the desired and measured contrast.
-nTestPoints = size(thePointCloudSettingsCheckCal,2);
-for tt = 1:nTestPoints
-    thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
-    thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
-    thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
-end
-
-figure; hold on;
-plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrast(1,:),'r+'); % L
-plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrast(2,:),'g+'); % M
-plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrast(3,:),'b+'); % S
-axis('square');
-xlabel('Desired contrast')
-ylabel('Measured contrast')
+% projectorBgPrimariesMeasured = SpdToPrimary(projectorCalObj,projectorBgSpdMeasured);
+% projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);
+% 
+% % Plot it out to compare the desired and measured contrast.
+% nTestPoints = size(thePointCloudSettingsCheckCal,2);
+% for tt = 1:nTestPoints
+%     thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
+%     thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
+%     thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
+% end
 
 %% Save out what we need to check things on the DLP
 projectorSettingsImage = theSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,'testImageData1');
-    save(testFilename,'projectorSettingsImage','projectorPrimaryPrimaries','theDesiredContrastCheckCal','thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal');
+    save(testFilename,'S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
+        'projectorPrimaryPrimaries','projectorPrimarySettings','theDesiredContrastCheckCal', ...
+        'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal');
 end

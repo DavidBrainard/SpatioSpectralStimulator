@@ -116,7 +116,10 @@ S = subPrimaryCalstructData{1}.get('S');
 nPrimaries = 3;
 nSubprimaries = subPrimaryCalstructData{1}.get('nDevices');
 
-% Set subprimary settings.
+% Set subprimary settings.  These ought to match what we get from the
+% primary settings we computed that produced SpectralTestCal.  But
+% we also ought to take the measured primaries into account, which we
+% are not currently doing.
 isolatingPrimariesSpd = projectorCalObj.get('P_device');
 for pp = 1:nPrimaries
     isolatingPrimaries(:,pp) = SpdToPrimary(subPrimaryCalstructData{pp},isolatingPrimariesSpd(:,pp));
