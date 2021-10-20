@@ -1,4 +1,4 @@
-function [targetSpdMeasuredRaw,targetSpdMeasuredNorm,measuredToTarget] = MeasureDesiredTargetPrimaries(targetPrimaries,subPrimaryCalStructData, ...
+function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,subPrimaryCalStructData, ...
     targetPrimaryNum,options)
 % Measure the desired target primaries to use them for computing the contrast image.
 %
@@ -22,12 +22,7 @@ function [targetSpdMeasuredRaw,targetSpdMeasuredNorm,measuredToTarget] = Measure
 % Outputs:
 %    targetSpdMeasured -          Measured SPDs of the desired isolating
 %                                 target primaries.
-%    targetSpdMeasuredNorm -      Normalized SPDs to match the scale of the
-%                                 target.
-%    measuredToTarget -           Scale factor that match the the intensity
-%                                 of each setting from the measurement spd
-%                                 to target Spd.
-%
+% 
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
 %                                 pulse mode either 'Normal' (true) or
@@ -46,6 +41,7 @@ function [targetSpdMeasuredRaw,targetSpdMeasuredNorm,measuredToTarget] = Measure
 %    10/07/21  smo                Makes it working for a single primary and
 %                                 added a feature to skip the measurement part.
 %    10/19/21  smo                Added to save out the normalized spd results.
+%    10/20/21  smo                Discard the normalized spd outputs.
 
 %% Set parameters.
 arguments
@@ -142,12 +138,12 @@ if (options.measurementOption)
     end
     
     % Measurement.
-    targetSpdMeasuredRaw = MeasSpd(S,5,'all');
+    targetSpdMeasured = MeasSpd(S,5,'all');
     if (options.verbose)
         fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
     end
 else
-    targetSpdMeasuredRaw = targetSpd; % Just put the same spd as desired for here.
+    targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
     if (options.verbose)
         fprintf('Measurement has been skipped!\n');
     end
@@ -156,18 +152,11 @@ end
 % Close PTB screen.
 sca;
 
-% Conversion factor to match the intensity of the setting. Now that the
-% measurement result seems not match well in intensity with the target, so this
-% part may be deleted later on.
-measuredToTarget = sum(targetSpd)/sum(targetSpdMeasuredRaw);
-targetSpdMeasuredNorm = targetSpdMeasuredRaw .* measuredToTarget;
-
 % Plot the results.
 if (options.verbose)
     figure; hold on;
     plot(SToWls(S),targetSpd,'k-','LineWidth',1); % Target Spd.
-    plot(SToWls(S),targetSpdMeasuredRaw,'r--','LineWidth',1); % Measured raw spd.
-    plot(SToWls(S),targetSpdMeasuredNorm,'g--','LineWidth',1); % Measured normalized Spd.
+    plot(SToWls(S),targetSpdMeasured,'r--','LineWidth',1); % Measured raw spd.
     xlabel('Wavelength (nm)');
     ylabel('Spectral power');
     legend('Target','Measurement_Raw','Meausurement_Norm');

@@ -23,7 +23,7 @@ end
 S = theData.S; % Range of the spectrum.
 wls = SToWls(S); % Wavelength. 
 nPrimaries = 3; % Number of primaries.
-nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices'); % Number of subprimaries.
+nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices'); Still, t% Number of subprimaries.
 subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:7 9:15];
 nTestPoints = size(theData.thePointCloudContrastCheckCal,2);
@@ -38,33 +38,22 @@ targetPrimarySpd = theData.projectorCalObj.get('P_device');
 
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [isolatingSpdMeasuredRaw(:,pp) isolatingSpdMeasuredNorm(:,pp), measuredToTarget(pp)] = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
+    isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
                                                theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',false);
 end
 
 % Set the primaries as meausred results.
-theData.projectorCalObj.set('P_device',isolatingSpdMeasuredRaw);
+theData.projectorCalObj.set('P_device',isolatingSpdMeasured);
 
 % Make plot comparing what we wanted for primaries versus what we got.
 % What we want is in targetPrimarySpd, what we got is in
 % isolatingSpdMeasured.
-% Plot the raw spd results.
+% Plot the spd results.
 figure; 
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
     plot(wls,targetPrimarySpd(:,pp),'k-')
-    plot(wls,isolatingSpdMeasuredRaw(:,pp),'r--');
-    xlabel('Wavelength (nm)')
-    ylabel('Spectral power distribution')
-    legend('Target','Measured')
-end
-
-% Plot the normalized spd results.
-figure; 
-for pp = 1:nPrimaries
-    subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetPrimarySpd(:,pp),'k-')
-    plot(wls,isolatingSpdMeasuredNorm(:,pp),'r--');
+    plot(wls,isolatingSpdMeasured(:,pp),'r--');
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
