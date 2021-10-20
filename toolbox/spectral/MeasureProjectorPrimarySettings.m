@@ -99,7 +99,7 @@ end
 nTestPoints = size(testProjectorSettings,2);
 
 % Measurement range.
-S = projectorCalObj{1}.get('S');
+S = projectorCalObj.get('S');
 
 %% Followings are Disabled since 10/19/2021 (Settings including subprimary)
 % Get number of discrete input levels for the device.  

@@ -92,7 +92,7 @@ end
 % settings in thePointCloudSettingsCheckCal and measure the corresponding
 % spd.
 [thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
-    theData.projectorCalObj,theData.subprimaryCalObjs,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
+    theData.projectorCalObj,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
 
 % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 
@@ -123,9 +123,14 @@ testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'r+'); % L
-plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'g+'); % M
+plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'r*'); % L
+plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'gO'); % M
 plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'b+'); % S
-axis('square');
+% axis('square');
 xlabel('Desired contrast');
 ylabel('Measured contrast');
+% xlim([min(theData.thePointCloudContrastCheckCal,[],'all') max(theData.thePointCloudContrastCheckCal,[],'all')])
+% ylim([min(theData.thePointCloudContrastCheckCal,[],'all') max(theData.thePointCloudContrastCheckCal,[],'all')])
+legend('L','M','S','location','southeast')
+axis('square')
+title('Desired vs. Measured LMS Contrast')
