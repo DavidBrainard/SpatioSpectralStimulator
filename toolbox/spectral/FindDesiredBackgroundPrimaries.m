@@ -48,6 +48,9 @@ function [bgPrimaries,bgSpd,bgCoords] = FindDesiredBackgroundPrimaries(targetBgC
 %    bgCoords -                   Coordinates corresponding to obtained primaries/spd.
 %
 % Optional key/value pairs:
+%    'ScaleFactor' -              Factor re 1 to determine target
+%                                 background luminance, when Scale is true.
+%                                 Default 0.5.
 %    'Scale' -                    Boolean (default true). Scale target
 %                                 coordinates into range near middle of
 %                                 projector gamut.
@@ -67,6 +70,7 @@ arguments
     projectIndices
     primaryHeadroom
     targetLambda
+    options.scaleFactor (1,1) = 0.5
     options.Scale (1,1) = true
     options.Verbose (1,1) = true
 end
@@ -86,7 +90,7 @@ M_CoordsToNatural = inv(M_NaturalToCoords);
 
 % Half-on spectrum.
 nSubprimaries = subPrimaryCalstructData.get('nDevices');
-halfOnSubprimaries = 0.5*ones(nSubprimaries,1);
+halfOnSubprimaries = options.scaleFactor*ones(nSubprimaries,1);
 halfOnSpd = PrimaryToSpd(subPrimaryCalstructData,halfOnSubprimaries); % This will be used to set the desired background Y value
 halfOnCoords = T*halfOnSpd;
 
