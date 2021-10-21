@@ -110,10 +110,11 @@ isolatingPrimaries= isolatingModulationPrimaries + bgPrimaries;
 % Quantize.
 isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,isolatingPrimaries));
 
-% Get isolating Spd and LMS contrasts.
-isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized) + options.ExtraAmbientSpd;
-isolatingLMS = T_cones * isolatingSpd;
-isolatingContrast = ExcitationsToContrast(isolatingLMS,bgLMS);
+% Get isolating spd and LMS contrasts.
+isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized);
+isolatingSpdForContrastCalc = isolatingSpd + options.ExtraAmbientSpd;
+isolatingLMSForContrastCalc = T_cones * isolatingSpd;
+isolatingContrast = ExcitationsToContrast(isolatingLMSForContrastCalc,bgLMS);
 
 % Report.
 fprintf('Desired/obtained contrasts:\n');

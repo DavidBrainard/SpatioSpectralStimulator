@@ -604,17 +604,26 @@ thePointCloudPrimariesCheckCal = SettingsToPrimary(projectorCalObj,thePointCloud
 thePointCloudSpdCheckCal = PrimaryToSpd(projectorCalObj,thePointCloudPrimariesCheckCal);
 thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
 thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
+figure; clf; hold on;
 
-% projectorBgPrimariesMeasured = SpdToPrimary(projectorCalObj,projectorBgSpdMeasured);
-% projectorBgExcitationsMeasured = PrimaryToSensor(projectorCalObj,projectorBgPrimariesMeasured);
-% 
-% % Plot it out to compare the desired and measured contrast.
-% nTestPoints = size(thePointCloudSettingsCheckCal,2);
-% for tt = 1:nTestPoints
-%     thePointCloudPrimaries(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdMeasured(:,tt));
-%     thePointCloudExcitations(:,tt) = PrimaryToSensor(projectorCalObj,thePointCloudPrimaries(:,tt));
-%     thePointCloudContrast(:,tt) = ExcitationsToContrast(thePointCloudExcitations(:,tt),projectorBgExcitationsMeasured);
-% end
+% Check that we can recover the settings from the spectral power
+% distributions, etc.
+for tt = 1:size(thePointCloudSettingsCheckCal,2)
+    thePointCloudPrimariesFromSpdCheckCal(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdCheckCal(:,tt),'lambda',0);
+    thePointCloudSettingsFromSpdCheckCal(:,tt) = PrimaryToSettings(projectorCalObj,thePointCloudSettingsCheckCal(:,tt));
+end
+figure; clf; hold on
+plot(thePointCloudSettingsCheckCal(:),thePointCloudSettingsFromSpdCheckCal(:),'+','MarkerSize',12);
+xlabel('Computed primaries'); ylabel('Check primaries from spd'); axis('square');
+
+% Make sure that projectorPrimarySettings leads to projectorPrimarySpd
+clear projectorPrimarySpdCheck
+for pp = 1:length(subprimaryCalObjs)
+    projectorPrimarySpdCheck(:,pp) = PrimaryToSpd(subprimaryCalObjs{pp},SettingsToPrimary(subprimaryCalObjs{pp},projectorPrimarySettings(:,pp)));
+end
+figure; clf; hold on
+plot(SToWls(S),projectorPrimarySpdCheck,'k','LineWidth',4);
+plot(SToWls(S),projectorPrimarySpd,'r','LineWidth',2);
 
 %% Save out what we need to check things on the DLP
 projectorSettingsImage = theSettingsGaborImage;
@@ -622,6 +631,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,'testImageData1');
     save(testFilename,'S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
-        'projectorPrimaryPrimaries','projectorPrimarySettings','theDesiredContrastCheckCal', ...
+        'projectorPrimaryPrimaries','projectorPrimarySettings','projectorPrimarySpd',...
+        'theDesiredContrastCheckCal', ...
         'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal');
 end
