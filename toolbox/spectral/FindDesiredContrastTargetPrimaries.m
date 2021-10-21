@@ -105,7 +105,7 @@ targetContrastReMaxWithHeadroom = targetPrimaryHeadroom * targetContrastReMax;
 targetLMSContrast = targetContrastReMaxWithHeadroom * targetMaxLMSContrast;
 [isolatingModulationPrimaries] = ReceptorIsolateSpectral(T_cones,targetLMSContrast,subprimaryCalstructData.get('P_device'),bgPrimaries,bgPrimaries, ...
     primaryHeadroom,B_natural,projectIndices,targetLambda,subprimaryCalstructData.get('P_ambient')+options.ExtraAmbientSpd,'EXCITATIONS',false);
-isolatingPrimaries= isolatingModulationPrimaries + bgPrimaries;
+isolatingPrimaries = isolatingModulationPrimaries + bgPrimaries;
 
 % Quantize.
 isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryToSettings(subprimaryCalstructData,isolatingPrimaries));
@@ -113,7 +113,7 @@ isolatingPrimariesQuantized = SettingsToPrimary(subprimaryCalstructData,PrimaryT
 % Get isolating spd and LMS contrasts.
 isolatingSpd = PrimaryToSpd(subprimaryCalstructData,isolatingPrimariesQuantized);
 isolatingSpdForContrastCalc = isolatingSpd + options.ExtraAmbientSpd;
-isolatingLMSForContrastCalc = T_cones * isolatingSpd;
+isolatingLMSForContrastCalc = T_cones * isolatingSpdForContrastCalc;
 isolatingContrast = ExcitationsToContrast(isolatingLMSForContrastCalc,bgLMS);
 
 % Report.

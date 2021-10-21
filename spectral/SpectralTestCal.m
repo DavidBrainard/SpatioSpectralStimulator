@@ -351,8 +351,10 @@ SetGammaMethod(projectorCalObj,projectorGammaMethod);
 %% Set up desired background.
 %
 % We aim for the background that we said we wanted when we built the projector primaries. 
-projectorBgSettings = SensorToSettings(projectorCalObj,T_cones*sum(subprimaryBackgroundSpd,2));
+desiredBgExcitations = T_cones*sum(subprimaryBackgroundSpd,2);
+projectorBgSettings = SensorToSettings(projectorCalObj,desiredBgExcitations);
 projectorBgExcitations = SettingsToSensor(projectorCalObj,projectorBgSettings);
+
 
 %% Make monochrome Gabor patch in range -1 to 1.
 %
@@ -563,19 +565,19 @@ ylim([-plotAxisLimit plotAxisLimit]);
 %
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
-% figure; hold on
-% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-% 
-% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-% 
-% plot(1:imageN,100*thePointCloudContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-% plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
-% title('Image Slice, Point Cloud Method, LMS Cone Contrast');
-% xlabel('x position (pixels)')
-% ylabel('LMS Cone Contrast (%)');
-% ylim([-plotAxisLimit plotAxisLimit]);
+figure; hold on
+plot(1:imageN,100*theQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+
+plot(1:imageN,100*theQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+
+plot(1:imageN,100*theQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*theDesiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+title('Image Slice, Point Cloud Method, LMS Cone Contrast');
+xlabel('x position (pixels)')
+ylabel('LMS Cone Contrast (%)');
+ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Generate some settings values corresponding to known contrasts % (THIS PART MAY BE GOING TO BE IN A FUNCTION LATER ON - SEMIN)
 %
