@@ -23,7 +23,7 @@ end
 S = theData.S; % Range of the spectrum.
 wls = SToWls(S); % Wavelength. 
 nPrimaries = 3; % Number of primaries.
-nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices'); Still, t% Number of subprimaries.
+nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices');% Number of subprimaries.
 subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:7 9:15];
 nTestPoints = size(theData.thePointCloudContrastCheckCal,2);
@@ -92,6 +92,19 @@ for tt = 1:nTestPoints
     thePointCloudSpdMeasuredNorm(:,tt) = thePointCloudSpdMeasured(:,tt) .* measuredToTarget(tt)
 end
 
+% Raw Spd
+figure; 
+for tt = 1:nTestPoints
+    subplot(2,round(nTestPoints/2),tt); hold on; 
+    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-') % Target spectra
+    plot(wls,thePointCloudSpdMeasured(:,tt),'r--'); % Measured spectra
+    xlabel('Wavelength (nm)')
+    ylabel('Spectral power distribution')
+    legend('Target','Measured')
+    title('Raw Spd')
+end
+
+% Normalized Spd
 figure; 
 for tt = 1:nTestPoints
     subplot(2,round(nTestPoints/2),tt); hold on; 
@@ -100,6 +113,7 @@ for tt = 1:nTestPoints
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
+    title('Normalized Spd')
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
@@ -115,11 +129,19 @@ figure; hold on;
 plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'r*'); % L
 plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'gO'); % M
 plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'b+'); % S
-% axis('square');
 xlabel('Desired contrast');
 ylabel('Measured contrast');
-% xlim([min(theData.thePointCloudContrastCheckCal,[],'all') max(theData.thePointCloudContrastCheckCal,[],'all')])
-% ylim([min(theData.thePointCloudContrastCheckCal,[],'all') max(theData.thePointCloudContrastCheckCal,[],'all')])
+xlim([-0.03 0.03])
+ylim([-0.05 0.05])
+line(xlim(), [0,0], 'LineWidth', 1, 'Color', 'k');
+line([0,0], ylim(), 'LineWidth', 1, 'Color', 'k');
+grid on;
 legend('L','M','S','location','southeast')
-axis('square')
 title('Desired vs. Measured LMS Contrast')
+
+%% Save out the measurement data.
+if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFilename = fullfile(testFiledir,'testImageData1Check');
+    save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+end
