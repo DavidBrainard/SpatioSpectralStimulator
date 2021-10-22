@@ -40,7 +40,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = false;
+MEASURE = true;
 if (MEASURE)
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
@@ -128,6 +128,7 @@ if (MEASURE)
         projectorBgExcitations = T_cones * theData.thePointCloudSpdCheckCal(:,1);
         
         % Build point cloud
+        tic;
         fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
         allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
         idx = 1;
@@ -178,7 +179,7 @@ if (MEASURE)
         theData.thePointCloudSpdCheckCal = PrimaryToSpd(theData.projectorCalObj,theData.thePointCloudPrimariesCheckCal);
         theData.thePointCloudExcitationsCheckCal = SettingsToSensor(theData.projectorCalObj,theData.thePointCloudSettingsCheckCal);
         theData.thePointCloudContrastCheckCal = ExcitationsToContrast(theData.thePointCloudExcitationsCheckCal,projectorBgExcitations);
-        
+      
     end
     
     %% Measure contrasts of the settings we computed in SpectralTestCal - SEE IF WE CAN WRITE A MEAUSURE SETTINGS ROUTINE THAT DOESN'T NEED CAL FILE OR T_CONES
