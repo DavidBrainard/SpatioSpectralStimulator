@@ -14,21 +14,6 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     theData = load(testFilename);
 end
 
-% In 'theData', following variables are available.
-% ['S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
-%        'projectorPrimaryPrimaries','projectorPrimarySettings','theDesiredContrastCheckCal', ...
-%        'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal']
-
-% Set some variables.
-S = theData.S; % Range of the spectrum.
-wls = SToWls(S); % Wavelength. 
-nPrimaries = 3; % Number of primaries.
-nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices');% Number of subprimaries.
-subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
-logicalToPhysical = [0:7 9:15];
-nTestPoints = size(theData.thePointCloudContrastCheckCal,2);
-T_cones = theData.T_cones;
-
 %% Measure the desired target primaries
 %
 % This just needs to measure.
@@ -36,63 +21,182 @@ T_cones = theData.T_cones;
 % Target Spds.
 targetPrimarySpd = theData.projectorCalObj.get('P_device');
 
-% Make a loop for measuring all primaries.
-for pp = 1:nPrimaries
-    isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-                                               theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',false);
-end
+% In 'theData', following variables are available.
+% ['S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
+%        'projectorPrimaryPrimaries','projectorPrimarySettings','theDesiredContrastCheckCal', ...
+%        'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal']
 
-% Set the primaries as meausred results.
-theData.projectorCalObj.set('P_device',isolatingSpdMeasured);
+% Set some variables.
+S = theData.S;           % Range of the spectrum.
+wls = SToWls(S);         % Wavelength. 
+nPrimaries = 3;          % Number of primaries.
+nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices');% Number of subprimaries.
+subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
+logicalToPhysical = [0:7 9:15];
+nTestPoints = size(theData.thePointCloudContrastCheckCal,2);
+T_cones = theData.T_cones;
+
+% Loop and measure all primaries.
+%
+% IF MEASURE is false, load in the data from a previous run where MEASURE
+% was true.
+MEASURE = false;
+if (MEASURE)
+    for pp = 1:nPrimaries
+        isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
+            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',false);
+    end
+else
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFilename = fullfile(testFiledir,'testImageData1Check');
+        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+    else
+        error('No file to load');
+    end
+end
 
 % Make plot comparing what we wanted for primaries versus what we got.
 % What we want is in targetPrimarySpd, what we got is in
 % isolatingSpdMeasured.
 % Plot the spd results.
-figure; 
+figure; clf; 
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
     plot(wls,targetPrimarySpd(:,pp),'k-')
     plot(wls,isolatingSpdMeasured(:,pp),'r--');
-    xlabel('Wavelength (nm)')
-    ylabel('Spectral power distribution')
-    legend('Target','Measured')
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power distribution');
+    legend('Target','Measured');
+    title('Comparison of raw measured and desired spds');
 end
 
-%% Set each primary to the settings we loaded in and measure
-% Add VPixx toolbox ('Datapixx') to path.
-addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx')); 
+%% Get scale factor between target and measured and plot that comparison too
+for pp = 1:nPrimaries
+    scalePrimaryToTargetFactor(pp) = isolatingSpdMeasured(:,pp)\targetPrimarySpd(:,pp);
+    fprintf('Scale factor in measurement for primary %d is %0.3f\n',pp,scalePrimaryToTargetFactor(pp));
+end
+meanPrimaryScaleFactor = mean(scalePrimaryToTargetFactor);
 
-% Connect to the projector.
-isReady = Datapixx('open');
-isReady = Datapixx('IsReady'); 
+% Make the plot
+figure; clf; 
+for pp = 1:nPrimaries
+    subplot(nPrimaries,1,pp); hold on;
+    plot(wls,targetPrimarySpd(:,pp),'k-')
+    plot(wls,scalePrimaryToTargetFactor(pp)*isolatingSpdMeasured(:,pp),'r--');
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power distribution');
+    legend('Target','Measured');
+    title('Comparison of raw measured and desired spds');
+end
 
-% Set the projector subprimaries here.  
-for ss = 1:nSubprimaries
-    Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-    Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-    Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
-end   
-
-%% Measure contrasts of the settings we computed in SpectralTestCal
+%% Set each primary to the settings we loaded in and measure - NEED TO MODIFY TO USE TbTb
 %
-% Measure the contrast points.  We've already got the settings so all we
-% need to do is loop through and set a uniform field to each of the
-% settings in thePointCloudSettingsCheckCal and measure the corresponding
-% spd.
-[thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
-    theData.projectorCalObj,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
+% Add VPixx toolbox ('Datapixx') to path.
+if (MEASURE)
+    addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx'));
+    
+    % Connect to the projector.
+    isReady = Datapixx('open');
+    isReady = Datapixx('IsReady');
+    
+    % Set the projector subprimaries here.
+    for ss = 1:nSubprimaries
+        Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
+        Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
+        Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
+    end
+    
+    %% Set the primaries in the calibration to the meausred results.
+    theData.projectorCalObj.set('P_device',meanPrimaryScaleFactor*isolatingSpdMeasured);
+    
+    %% Optional recompute of target settings
+    %
+    % We just measured the primaries.  So, we could recompute the contrast
+    % check settings based on these measured primaries, rather than the
+    % nominal ones we used in SpectralTestCal.  Here is where that happens
+    RECOMPUTE = true;
+    if (RECOMPUTE)
+        % Parameters.  Should save these in SpectralTestCal and use here.
+        nQuantizeBits = 14;
+        nQuantizeLevels = 2^nQuantizeBits;
+        projectorNInputLevels = 256;
+        targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
+        spatialGaborTargetContrast = 0.04;
 
-% thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
+        % Figure out desired background excitations
+        projectorBgExcitations = T_cones * theData.thePointCloudSpdCheckCal(:,1);
+        
+        % Build point cloud
+        fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
+        allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+        idx = 1;
+        for ii = 0:(projectorNInputLevels-1)
+            for jj = 0:(projectorNInputLevels-1)
+                for kk = 0:(projectorNInputLevels-1)
+                    allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+                    idx = idx+1;
+                end
+            end
+        end
 
-% Make plot of meeasured versus desired spds.  The desired spds are in
-% theData.thePointCloudSpdCheckCal
-for tt = 1:nTestPoints
-    measuredToTarget(tt) = sum(theData.thePointCloudSpdCheckCal(:,tt))./sum(thePointCloudSpdMeasured(:,tt));
-    thePointCloudSpdMeasuredNorm(:,tt) = thePointCloudSpdMeasured(:,tt) .* measuredToTarget(tt)
+        % Get LMS excitations for each triplet of projector settings, and build a
+        % point cloud object from these.
+        allProjectorExcitations = SettingsToSensor(theData.projectorCalObj,allProjectorSettingsCal);
+        allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,projectorBgExcitations);
+        allSensorPtCloud = pointCloud(allProjectorContrast');
+        
+        % Force point cloud setup by finding one nearest neighbor. This is slow,
+        % but once it is done subsequent calls are considerably faster.
+        findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
+        toc
+        
+        %% Generate some settings values corresponding to known contrasts % (THIS PART MAY BE GOING TO BE IN A FUNCTION LATER ON - SEMIN)
+        %
+        % The reason for this is to measure and check these.  This logic follows
+        % how we handled an actual gabor image above.
+        rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
+        rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+        theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
+        theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
+        
+        % For each check calibration find the settings that
+        % come as close as possible to producing the desired excitations.
+        %
+        % If we measure for a uniform field the spectra corresopnding to each of
+        % the settings in the columns of thePointCloudSettingsCheckCal, then
+        % compute the cone contrasts with respect to the backgound (0 contrast
+        % measurement, first settings), we should approximate the cone contrasts in
+        % theDesiredContrastCheckCal.
+        fprintf('Point cloud exhaustive method, finding settings\n')
+        theData.thePointCloudSettingsCheckCal = zeros(3,size(theDesiredContrastCheckCal,2));
+        for ll = 1:size(theDesiredContrastCheckCal,2)
+            minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
+            theData.thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
+        end
+        theData.thePointCloudPrimariesCheckCal = SettingsToPrimary(theData.projectorCalObj,theData.thePointCloudSettingsCheckCal);
+        theData.thePointCloudSpdCheckCal = PrimaryToSpd(theData.projectorCalObj,theData.thePointCloudPrimariesCheckCal);
+        theData.thePointCloudExcitationsCheckCal = SettingsToSensor(theData.projectorCalObj,theData.thePointCloudSettingsCheckCal);
+        theData.thePointCloudContrastCheckCal = ExcitationsToContrast(theData.thePointCloudExcitationsCheckCal,projectorBgExcitations);
+        
+    end
+    
+    %% Measure contrasts of the settings we computed in SpectralTestCal - SEE IF WE CAN WRITE A MEAUSURE SETTINGS ROUTINE THAT DOESN'T NEED CAL FILE OR T_CONES
+    %
+    % Measure the contrast points.  We've already got the settings so all we
+    % need to do is loop through and set a uniform field to each of the
+    % settings in thePointCloudSettingsCheckCal and measure the corresponding
+    % spd.
+    [thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
+        theData.projectorCalObj,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
+    % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
 
-% Raw Spd
+%% Make plot of meeasured versus desired spds.
+%
+% The desired spds are in theData.thePointCloudSpdCheckCal
+
+% Raw spds
 figure; 
 for tt = 1:nTestPoints
     subplot(2,round(nTestPoints/2),tt); hold on; 
@@ -101,43 +205,57 @@ for tt = 1:nTestPoints
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
-    title('Raw Spd')
+    title('Raw Spds')
 end
 
-% Normalized Spd
+% Scale measured spds to target and then plot
+for tt = 1:nTestPoints
+    % Find scale factor to best bring into alignment with target
+    scaleSpdToTargetFactor(tt) = thePointCloudSpdMeasured(:,tt)\theData.thePointCloudSpdCheckCal(:,pp);
+    thePointCloudSpdMeasuredScaled(:,tt) = scaleSpdToTargetFactor(tt)*thePointCloudSpdMeasured(:,tt);
+end
 figure; 
 for tt = 1:nTestPoints
     subplot(2,round(nTestPoints/2),tt); hold on; 
     plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-') % Target spectra
-    plot(wls,thePointCloudSpdMeasuredNorm(:,tt),'r--'); % Measured spectra
+    plot(wls,thePointCloudSpdMeasuredScaled(:,tt),'r--'); % Measured spectra
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
-    title('Normalized Spd')
+    title('Normalized Spds')
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
 % We use the fact that the background settings are in the first column of 
 % theData.thePointCloudSettingsCheckCal.
-testExcitations = T_cones * thePointCloudSpdMeasured;
+whichToAnalyze = 'raw';
+switch (whichToAnalyze)
+    case 'raw'
+        testExcitations = T_cones * thePointCloudSpdMeasured;
+    case 'scaled'
+        testExcitations = T_cones * thePointCloudSpdMeasuredScaled;
+    otherwise
+        error('Unknown analyze type specified');
+end
 bgExcitations = testExcitations(:,1);
 testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'r*'); % L
-plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'gO'); % M
-plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'b+'); % S
+plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L
+plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M
+plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S
 xlabel('Desired contrast');
 ylabel('Measured contrast');
-xlim([-0.03 0.03])
-ylim([-0.05 0.05])
-line(xlim(), [0,0], 'LineWidth', 1, 'Color', 'k');
-line([0,0], ylim(), 'LineWidth', 1, 'Color', 'k');
+axisLim = 0.05;
+xlim([-axisLim axisLim]);
+ylim([-axisLim axisLim]);
+axis('square');
+line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
 grid on;
-legend('L','M','S','location','southeast')
-title('Desired vs. Measured LMS Contrast')
+legend('L','M','S','location','southeast');
+title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
 %% Save out the measurement data.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
