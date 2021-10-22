@@ -40,7 +40,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = true;
+MEASURE = false;
 if (MEASURE)
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
@@ -230,7 +230,7 @@ end
 %
 % We use the fact that the background settings are in the first column of 
 % theData.thePointCloudSettingsCheckCal.
-whichToAnalyze = 'raw';
+whichToAnalyze = 'scaled';
 switch (whichToAnalyze)
     case 'raw'
         testExcitations = T_cones * thePointCloudSpdMeasured;
@@ -259,8 +259,10 @@ legend('L','M','S','location','southeast');
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
 %% Save out the measurement data.
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,'testImageData1Check');
-    save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+if (MEASURE)
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFilename = fullfile(testFiledir,'testImageData1Check');
+        save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+    end
 end
