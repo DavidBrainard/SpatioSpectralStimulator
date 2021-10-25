@@ -249,7 +249,6 @@ if (addTargetContrast)
     targetBgExcitations = targetExcitations(:,1);
     targetContrasts = (targetExcitations - targetBgExcitations) ./ targetBgExcitations;
 else
-    targetContrasts = zeros(1,size(testContrasts,2)); % If not passing this part, make it negative value not to be seen on the following graph.
 end
 
 % Plot measured versus desired contrasts
