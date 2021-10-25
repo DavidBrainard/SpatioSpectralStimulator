@@ -44,7 +44,7 @@ MEASURE = false;
 if (MEASURE)
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',false);
+            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',true);
     end
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -230,7 +230,7 @@ end
 %
 % We use the fact that the background settings are in the first column of 
 % theData.thePointCloudSettingsCheckCal.
-whichToAnalyze = 'raw';
+whichToAnalyze = 'scaled';
 switch (whichToAnalyze)
     case 'raw'
         testExcitations = T_cones * thePointCloudSpdMeasured;
@@ -242,11 +242,28 @@ end
 bgExcitations = testExcitations(:,1);
 testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 
+% Add the target contrasts to be compared in the following graph.
+addTargetContrast = true;
+if (addTargetContrast)
+    targetExcitations = T_cones * theData.thePointCloudSpdCheckCal;
+    targetBgExcitations = targetExcitations(:,1);
+    targetContrasts = (targetExcitations - targetBgExcitations) ./ targetBgExcitations;
+else
+    targetContrasts = zeros(1,size(testContrasts,2)); % If not passing this part, make it negative value not to be seen on the following graph.
+end
+
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L
-plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M
-plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S
+% Measured contrasts.
+plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+% Target contrasts.
+if (addTargetContrast)
+    plot(theData.thePointCloudContrastCheckCal(1,:),targetContrasts(1,:),'ro','MarkerSize',19);   % L - target
+    plot(theData.thePointCloudContrastCheckCal(2,:),targetContrasts(2,:),'go','MarkerSize',16);   % M - target
+    plot(theData.thePointCloudContrastCheckCal(3,:),targetContrasts(3,:),'bo','MarkerSize',14);   % S - target
+end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
 axisLim = 0.05;
@@ -255,7 +272,11 @@ ylim([-axisLim axisLim]);
 axis('square');
 line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
 grid on;
-legend('L','M','S','location','southeast');
+if (addTargetContrast)
+    legend('L-Test','M-Test','S-Test','L-Target','M-Target','S-Target','location','southeast');
+else
+    legend('L','M','S','location','southeast');
+end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
 %% Save out the measurement data.
