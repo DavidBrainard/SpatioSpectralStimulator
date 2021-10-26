@@ -176,7 +176,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
     SACCPrimaryCalibratorSpecificParamsStruct = struct(...
         'DLPbackgroundSettings', [0.5 0.5 0.5], ...                 % Set DLP background to initiate the PTB screen (This is needed because the DLP still works with 3 primaries)
         'whichPrimary',  1, ...                                     % Which primary to calibrate subprimaries for
-        'nInputLevels', 252, ...                                    % Number of input levels
+        'nInputLevels', 253, ...                                    % Number of input levels
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
         'nSubprimaries', 15, ...                                    % Number of subprimaries

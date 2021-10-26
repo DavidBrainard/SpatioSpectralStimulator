@@ -40,11 +40,11 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = false;
+MEASURE = true;
 if (MEASURE)
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-            S,pp,'projectorMode',true,'measurementOption',true,'verbose',true);
+            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',true);
     end
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -63,8 +63,8 @@ end
 figure; clf; 
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetPrimarySpd(:,pp),'k-')
-    plot(wls,isolatingSpdMeasured(:,pp),'r--');
+    plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',3)
+    plot(wls,isolatingSpdMeasured(:,pp),'r','LineWidth',2);
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
     legend('Target','Measured');
@@ -82,8 +82,8 @@ meanPrimaryScaleFactor = mean(scalePrimaryToTargetFactor);
 figure; clf; 
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetPrimarySpd(:,pp),'k-')
-    plot(wls,scalePrimaryToTargetFactor(pp)*isolatingSpdMeasured(:,pp),'r--');
+    plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',3)
+    plot(wls,scalePrimaryToTargetFactor(pp)*isolatingSpdMeasured(:,pp),'r','LineWidth',2);
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
     legend('Target','Measured');
@@ -107,7 +107,7 @@ if (MEASURE)
         Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
     end
     
-    %% Set the primaries in the calibration to the meausred results.
+    %% Set the primaries in the calibration to the measured results.
     theData.projectorCalObj.set('P_device',meanPrimaryScaleFactor*isolatingSpdMeasured);
     
     %% Optional recompute of target settings
@@ -189,7 +189,7 @@ if (MEASURE)
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
     [thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
-        theData.projectorCalObj,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
+        S,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
     % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
 
