@@ -100,9 +100,6 @@ end
 % Number of contrast test points.
 nTestPoints = size(testProjectorSettings,2);
 
-% Measurement range.
-S = SToWls(S);
-
 %% Followings are Disabled since 10/19/2021 (Settings including subprimary)
 % Get number of discrete input levels for the device.  
 % So, control values go from 0 to (subprimaryNInputLevels-1).
