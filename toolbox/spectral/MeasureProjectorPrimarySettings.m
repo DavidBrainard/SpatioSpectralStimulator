@@ -1,7 +1,7 @@
-function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,projectorCalObj,T_cones,options)
+function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,S,T_cones,options)
 % Measure the SPD over projector primary settings.
 %
-% Syntax: [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,projectorCalObj,T_cones)
+% Syntax: [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,S,T_cones)
 %
 % Description:
 %    This measures the SPD according to projector primary settings. In case
@@ -11,8 +11,7 @@ function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettin
 % Inputs:
 %    testProjectorSettings -      Projector input settings that reproduce
 %                                 the desired contrast.
-%    projectorCalObj -            The calibration object that contains the
-%                                 the data for the projector.
+%    S -                          Spectrum measurement range in wavelength.
 %    T_cones -                    Spectral cone sensitivities in standard PTB format.
 %    subprimaryNInputLevels -     Device max input levels for the
 %                                 subprimaries.
@@ -44,11 +43,14 @@ function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettin
 %    10/19/21  smo                Now it does not take subprimary settings
 %                                 as input. It only takes care of the
 %                                 projector primary settings.
+%    10/26/21  smo                Delete calstruct data in input, and add
+%                                 'S' as input for getting spectrum
+%                                 measurement range.
 
 %% Set parameters.
 arguments
     testProjectorSettings
-    projectorCalObj
+    S
     T_cones
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
@@ -99,7 +101,7 @@ end
 nTestPoints = size(testProjectorSettings,2);
 
 % Measurement range.
-S = projectorCalObj.get('S');
+S = SToWls(S);
 
 %% Followings are Disabled since 10/19/2021 (Settings including subprimary)
 % Get number of discrete input levels for the device.  

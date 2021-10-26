@@ -44,7 +44,7 @@ MEASURE = false;
 if (MEASURE)
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',true);
+            S,pp,'projectorMode',true,'measurementOption',true,'verbose',true);
     end
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
