@@ -1,4 +1,4 @@
-% SACC_ProjectorAdditivityCheck
+% SACC_SubprimaryAdditivityCheck
 %
 % This compares the SPDs between randomly generated spectrum and the sum of
 % its single spectrum to check a projecotr additivity.
