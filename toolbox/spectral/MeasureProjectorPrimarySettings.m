@@ -6,7 +6,7 @@ function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettin
 % Description:
 %    This measures the SPD according to projector primary settings. In case
 %    you use multi-subprimary device, you should set subprimary settings in
-%    advance before calling this function. 
+%    advance before calling this function.
 %
 % Inputs:
 %    testProjectorSettings -      Projector input settings that reproduce
@@ -101,7 +101,7 @@ end
 nTestPoints = size(testProjectorSettings,2);
 
 %% Followings are Disabled since 10/19/2021 (Settings including subprimary)
-% Get number of discrete input levels for the device.  
+% Get number of discrete input levels for the device.
 % So, control values go from 0 to (subprimaryNInputLevels-1).
 % subprimaryNInputLevels = size(subPrimaryCalstructData{1}.get('gammaInput'),1);
 
@@ -127,25 +127,17 @@ nTestPoints = size(testProjectorSettings,2);
 if (options.measurementOption)
     % Following subprimary setting Disabled since 10/19/2021
     % Set subprimary settings to reproduce the isolating Spd.
-%     for ss = 1:nSubprimaries
-%         Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-%         Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-%         Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
-%     end
-    
-    % Get ready to use PTB.
-    PsychDefaultSetup(2); % PTB pre-setup
-    screens = Screen('Screens');
-    screenNumber = max(screens);
-    white = WhiteIndex(screenNumber); % Starting with white screen.
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
-    
+    %     for ss = 1:nSubprimaries
+    %         Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(subPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
+    %         Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(subPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
+    %         Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(subPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
+    %     end
+   
     % Measure the test points.
     for tt = 1:nTestPoints
         % Set the projector settings and display it as a plane screen.
         testProjectorDisplayColor = testProjectorSettings(:,tt); % Set projector color with contrast testing point.
-        Screen('FillRect',window,testProjectorDisplayColor,windowRect);
-        Screen('Flip', window);
+        OpenProjectorPlainScreen(testProjectorDisplayColor);
         % Measure it.
         testSpdMeasured(:,tt) = MeasSpd(S,5,'all');
         if (options.verbose)
@@ -162,7 +154,7 @@ else
 end
 
 % Close PTB screen.
-sca;
+CloseProjectorScreen;
 
 %% Plot the results.
 if (options.verbose)

@@ -117,11 +117,7 @@ targetSpd = PrimaryToSpd(subPrimaryCalStructData,targetPrimaries);
 %% Set primary settings and measure it.
 if (options.measurementOption)
     % Display plain screen on DLP using PTB.
-    PsychDefaultSetup(2); % PTB pre-setup
-    screens = Screen('Screens');
-    screenNumber = max(screens);
-    white = WhiteIndex(screenNumber);
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
+    OpenProjectorPlainScreen([1 1 1]);
     
     % Set projector input settings.  These are gamma corrected but still
     % live as real numbers on the interval [0,1], following the convention
@@ -150,7 +146,7 @@ else
 end
 
 % Close PTB screen.
-sca;
+CloseProjectorScreen;
 
 % Plot the results.
 if (options.verbose)
