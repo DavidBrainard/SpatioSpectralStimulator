@@ -3,14 +3,20 @@
 % Read in output of SpectralTestCal and make some measurements.
 % 
 % 10/19/2021  dhb,smo  Started on it
+% 10/28/2021  dhb      Add condition name and date to output
 
 %% Initialize.
 clear; close all;
 
+%% Which condition
+%
+% This is used to match up with parameters run in SpectralTestCal
+conditionName = 'LminusMSmooth';
+
 %% Load output of SpectralTestCal
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,'testImageData1');
+    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
     theData = load(testFilename);
 end
 
@@ -188,7 +194,7 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    [thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
+    [thePointCloudSpdMeasured] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
         S,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
     % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
@@ -282,7 +288,8 @@ title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 if (MEASURE)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,'testImageData1Check');
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimeStr));
         save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
     end
 end

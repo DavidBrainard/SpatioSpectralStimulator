@@ -1,7 +1,7 @@
-function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,S,T_cones,options)
+function [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSettings,S,options)
 % Measure the SPD over projector primary settings.
 %
-% Syntax: [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettings,S,T_cones)
+% Syntax: [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSettings,S)
 %
 % Description:
 %    This measures the SPD according to projector primary settings. In case
@@ -12,9 +12,6 @@ function [testSpdMeasured] = MeasureProjectorPrimarySettings(testProjectorSettin
 %    testProjectorSettings -      Projector input settings that reproduce
 %                                 the desired contrast.
 %    S -                          Spectrum measurement range in wavelength.
-%    T_cones -                    Spectral cone sensitivities in standard PTB format.
-%    subprimaryNInputLevels -     Device max input levels for the
-%                                 subprimaries.
 %
 % Outputs:
 %    testSpdMeasured -            Measurement results of the SPDs for the
