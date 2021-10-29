@@ -20,6 +20,11 @@ function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
 %    N/A
 %
 % Optional key/value pairs:
+%    'projectorToolboxPath' -     Path to the Vpixx control toolbox.  We
+%                                 add this to the Matlab path if it isn't
+%                                 already there.  This doesn't need to be
+%                                 right if the toolbox is already on the
+%                                 path.
 %    'verbose' -                  Boolean. Default true.  Controls the printout.
 %
 % History:
@@ -29,6 +34,7 @@ function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
 arguments
     projectorDisplayColor (3,1) {mustBeInRange(projectorDisplayColor,0,1,"inclusive")}
     options.verbose (1,1) = true
+    options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
 end
 
 %% Set the default PTB setting. 
@@ -45,7 +51,31 @@ white = WhiteIndex(screenNumber);
 Screen('FillRect',window,projectorDisplayColor,windowRect);
 Screen('Flip', window);
 if (options.verbose)
-    fprintf('             Projector primary is set to [%.2f, %.2f, %.2f] \n',projectorDisplayColor(1),projectorDisplayColor(2),projectorDisplayColor(3));
+    fprintf('Projector primary is set to [%.2f, %.2f, %.2f] \n',projectorDisplayColor(1),projectorDisplayColor(2),projectorDisplayColor(3));
+end
+
+
+%% Also make sure we can talk to the subprimaries.
+%
+% Make sure Vpixx toolbox is on the path and do our best to add it if not.
+thePath = path;
+isThere = findstr(thePath,[filesep 'VPixx']);
+if (isempty(isThere))
+    addpath(genpath(options.projectorToolboxPath));
+    isThere = findstr(thePath,[filesep 'VPixx']);
+    if (isempty(isThere))
+        error('Unable to add VPixx toolbox to path. Figure out why not and fix.');
+    end
+end
+
+% Connect to the Vpixx projector.
+isReady = Datapixx('open');
+if (~isReady)
+    error('Datapixx call returns error');
+end
+isReady = Datapixx('IsReady');
+if (~isReady)
+    error('Datapixx call returns error');
 end
 
 end

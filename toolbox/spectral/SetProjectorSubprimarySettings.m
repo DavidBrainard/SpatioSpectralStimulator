@@ -1,27 +1,35 @@
-function [] = SetProjectorSubprimarySettings(targetSubprimarySettings,options)
+function [] = SetProjectorSubprimarySettings(subprimarySettings,options)
 % Set the projector subprimary settings for SACC project.
 %
-% Syntax: [] = SetProjectorSubprimarySettings(testSubprimarySettings)
+% Syntax: [] = SetProjectorSubprimarySettings(subprimarySettings)
 %
 % Description:
-%    This sets up the projector subprimary settings for the project. This
+%    This sets up the projector subprimary settings for the projector. This
 %    should be used wherever the projector displays an image including
 %    calibration, displaying gabor patch, etc.
 %
 % Inputs:
-%    testSubprimarySettings -      Projector input settings that reproduce
-%                                 the desired contrast.
+%    subprimarySettings -         Subprimary settings we wish to set.  This
+%                                 is a matrix with nPrimaries columns (one for
+%                                 each projector primary) and nSubprimaries
+%                                 rows, one for each subprimary. These
+%                                 values are specified as real numbers
+%                                 between 0 and 1, and are assumed to be
+%                                 after gamma correction.
 %
 % Optional key/value pairs:
+%    'logicalToPhysical' -        Vector containing logical to physical
+%                                 subprimary numbering for this projector.
+%                                 This should have the same length as the
+%                                 number of subprimaries for the given
+%                                 projector.
+%    'nInputLevels' -             Number of subprimary input levels.
+%                                 Default is 253.
+%    'nPrimaries' -               Number of projector primaries. Typicall 3
+%                                 but you never know.
 %    'projectorMode' -            Boolean (default true). Set the projector
-%                                 pulse mode either 'Normal' (true) or
+%                                 pulse mode either to be 'Normal' (true) or
 %                                 'Steady-on' (false).
-%    'measurementOption' -        Boolean (default true). Set if you want
-%                                 to proceed the measurements. If you set
-%                                 'true', measurement will be included, and
-%                                 'false' will skip the measurement. This
-%                                 will be useful if you run the code
-%                                 outside the lab and debugging the code.
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
 %
@@ -30,44 +38,46 @@ function [] = SetProjectorSubprimarySettings(targetSubprimarySettings,options)
 
 %% Set parameters.
 arguments
-    targetSubprimarySettings
+    subprimarySettings
+    options.logicalToPhysical = [0:7 9:15]
+    options.nInputLevels (1,1) = 253
+    options.nPrimaries (1,1) = 3
     options.projectorMode (1,1) = true
-    options.measurementOption (1,1) = true
     options.verbose (1,1) = true
 end
-
-%% Set parameters.
-nPrimaries = 3;
-
-%% Connect the projector and set the projector mode.
-% Add VPixx toolbox 'Datapixx' to the path.
-toolboxDirectory = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx'; % This is where Linux box store the file.
-addpath(genpath(toolboxDirectory));
-
-% Connect to the Vpixx projector.
-isReady = Datapixx('open');
-isReady = Datapixx('IsReady');
 
 % Set the projector mode.
 if (options.projectorMode)
     commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
     unix(commandNormal)
-    disp('Projector is set as Normal mode');
+    if (options.verbose)
+        disp('Projector is set as Normal mode');
+    end
 else
     commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
     unix(commandSteadyOn)
-    disp('Projector is set as Steady-on mode');
+    if (options.verbose)
+        disp('Projector is set as Steady-on mode');
+    end
 end
 
-%% Set projector input settings.
-otherPrimaries = setdiff(1:nPrimaries,targetPrimaryNum);
-otherPrimarySubprimarySettings = 0;
+% Check consistency of passed settings
+[m,n] = size(targetSubprimarySettings);
+if (m ~= length(options.logicalToPhysical))
+    error('Number of subprimary settings passed does not match logicalToPhysical mapping');
+end
+if (n ~= options.nPrimaries)
+    error('Number of columns in subprimary settings does not match number of projector primaries');
+end
+
+% Convert subprimary settings to integers
+subprimaryIntegers = SettingsToIntegers(subprimarySettings,options.nInputLevels);
 
 % Set projector current levels as the above settings.
 for ss = 1:nSubprimaries
-    Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSubprimarySettings(ss)*(subprimaryNInputLevels-1)));   % Target primary
-    Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), round(otherPrimarySubprimarySettings*(subprimaryNInputLevels-1))); % Other Primary 1
-    Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), round(otherPrimarySubprimarySettings*(subprimaryNInputLevels-1))); % Other Primary 2
+    for pp = 1:options.nPrimaries
+        Datapixx('SetPropixxHSLedCurrent', pp-1, options.logicalToPhysical(ss), subprimaryIntegers);
+    end
 end
 
 end
