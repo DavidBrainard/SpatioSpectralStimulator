@@ -11,7 +11,7 @@ function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
 % Inputs:
 %    projectorDisplayColor -      Desired color to display on the
 %                                 projector. This should be in format of
-%                                 1x3 matrix, and each column should be in
+%                                 3x1 matrix, and each column should be in
 %                                 the range from 0 (black) to 1 (white).
 %                                 Each column respectively matches 
 %                                 red, green, and blue channels.
