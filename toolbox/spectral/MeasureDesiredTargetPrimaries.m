@@ -151,8 +151,8 @@ CloseProjectorScreen;
 % Plot the results.
 if (options.verbose)
     figure; hold on;
-    plot(SToWls(S),targetSpd,'k-','LineWidth',1); % Target Spd.
-    plot(SToWls(S),targetSpdMeasured,'r--','LineWidth',1); % Measured raw spd.
+    plot(SToWls(S),targetSpd,'k-','LineWidth',3); % Target Spd.
+    plot(SToWls(S),targetSpdMeasured,'r-','LineWidth',2); % Measured raw spd.
     xlabel('Wavelength (nm)');
     ylabel('Spectral power');
     legend('Target','Measurement_Raw','Meausurement_Norm');

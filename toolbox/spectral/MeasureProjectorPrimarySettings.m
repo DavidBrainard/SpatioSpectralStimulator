@@ -160,7 +160,7 @@ CloseProjectorScreen;
 if (options.verbose)
     figure; hold on
     wls = SToWls(S); % Spectrum range.
-    plot(wls,testSpdMeasured,'LineWidth',1); % Test points Spd.
+    plot(wls,testSpdMeasured,'r-','LineWidth',2); % Test points Spd.
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');
