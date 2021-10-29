@@ -26,7 +26,7 @@ end
 
 %% Close PTB screen.
 sca;
-if (verbose)
+if (options.verbose)
     disp('             Projector screen has been closed')
 end
 

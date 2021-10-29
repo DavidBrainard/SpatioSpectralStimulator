@@ -44,8 +44,8 @@ white = WhiteIndex(screenNumber);
 %% Set the color of plain screen on the projector.
 Screen('FillRect',window,projectorDisplayColor,windowRect);
 Screen('Flip', window);
-if (verbose)
-    fprintf('             Projector is set to %d \n',projectorDisplayColor);
+if (options.verbose)
+    fprintf('             Projector primary is set to [%d, %d, %d] \n',projectorDisplayColor(1),projectorDisplayColor(2),projectorDisplayColor(3));
 end
 
 end
