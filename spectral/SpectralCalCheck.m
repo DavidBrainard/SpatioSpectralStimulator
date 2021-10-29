@@ -194,7 +194,7 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    [thePointCloudSpdMeasured] = MeasureProjectorPrimarySettings(theData.thePointCloudSettingsCheckCal,...
+    [thePointCloudSpdMeasured] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
         S,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
     % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end

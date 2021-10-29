@@ -1,7 +1,7 @@
-function [] = SetProjectorSubprimarySettings(subprimarySettings,options)
+function [] = SetSubprimarySettings(subprimarySettings,options)
 % Set the projector subprimary settings for SACC project.
 %
-% Syntax: [] = SetProjectorSubprimarySettings(subprimarySettings)
+% Syntax: [] = SetSubprimarySettings(subprimarySettings)
 %
 % Description:
 %    This sets up the projector subprimary settings for the projector. This
