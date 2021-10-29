@@ -16,7 +16,7 @@ conditionName = 'LminusMSmooth';
 %% Load output of SpectralTestCal
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprinf('testImageData_%s',conditionName));
+    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
     theData = load(testFilename);
 end
 

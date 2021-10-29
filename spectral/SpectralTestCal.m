@@ -8,11 +8,18 @@
 %% Clear
 clear; close all;
 
+% Set wavelength support.
+%
+% This needs to match what's in the calibration files, but
+% we need it before we read those files.  A mismatch will
+% throw an error below.
+S = [380 2 201];
+
 %% Set key stimulus parameters
 %
 %
 % Condition Name
-conditionName = 'LminusMSmooth';
+conditionName = 'ConeIsolating';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -53,6 +60,89 @@ switch (conditionName)
         % the primaries.
         spatialGaborTargetContrast = 0.04;
         plotAxisLimit = 100*spatialGaborTargetContrast;
+
+        % Set up basis to try to keep spectra close to.
+        %
+        % This is how we enforce a smoothness or other constraint
+        % on the spectra.  What happens in the routine that finds
+        % primaries is that there is a weighted error term that tries to
+        % maximize the projection onto a passed basis set.
+        basisType = 'fourier';
+        nFourierBases = 7;
+        switch (basisType)
+            case 'cieday'
+                load B_cieday
+                B_naturalRaw = SplineSpd(S_cieday,B_cieday,S);
+            case 'fourier'
+                B_naturalRaw = MakeFourierBasis(S,nFourierBases);
+            otherwise
+                error('Unknown basis set specified');
+        end
+        B_natural{1} = B_naturalRaw;
+        B_natural{2} = B_naturalRaw;
+        B_natural{3} = B_naturalRaw;
+
+    case 'ConeIsolating'
+        % Background xy.
+        %
+        % Specify the chromaticity, but we'll chose the luminance based
+        % on the range available in the device.
+        targetBgxy = [0.3127 0.3290]';
+
+        % Target color direction and max contrasts.
+        %
+        % This is the basic desired modulation direction positive excursion. We go
+        % equally in positive and negative directions.  Make this unit vector
+        % length, as that is good convention for contrast.
+        targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
+
+        % Specify desired primary properties.
+        %
+        % These are the target contrasts for the three primaries. We want these to
+        % span a triangle around the line specified above. Here we define that
+        % triangle by hand.  May need a little fussing for other directions, and
+        % might be able to autocompute good choices.
+        targetProjectorPrimaryContrastDir(:,1) = [1 0 0]'; targetProjectorPrimaryContrastDir(:,1) = targetProjectorPrimaryContrastDir(:,1)/norm(targetProjectorPrimaryContrastDir(:,1));
+        targetProjectorPrimaryContrastDir(:,2) = [0 1 0]'; targetProjectorPrimaryContrastDir(:,2) = targetProjectorPrimaryContrastDir(:,2)/norm(targetProjectorPrimaryContrastDir(:,2));
+        targetProjectorPrimaryContrastDir(:,3) = [0 0 1]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
+
+        % Set parameters for getting desired target primaries.
+        targetProjectorPrimaryContrast = 0.05;
+        targetPrimaryHeadroom = 1.05;
+        primaryHeadroom = 0;
+        targetLambda = 3;
+
+        % We may not need the whole direction contrast excursion. Specify max
+        % contrast we want relative to that direction vector.
+        % The first number is
+        % the amount we want to use, the second has a little headroom so we don't
+        % run into numerical error at the edges. The second number is used when
+        % defining the three primaries, the first when computing desired weights on
+        % the primaries.
+        spatialGaborTargetContrast = 0.04;
+        plotAxisLimit = 100*spatialGaborTargetContrast;
+
+        % Set up basis to try to keep spectra close to.
+        %
+        % This is how we enforce a smoothness or other constraint
+        % on the spectra.  What happens in the routine that finds
+        % primaries is that there is a weighted error term that tries to
+        % maximize the projection onto a passed basis set.
+        basisType = 'fourier';
+        nFourierBases = 7;
+        switch (basisType)
+            case 'cieday'
+                load B_cieday
+                B_naturalRaw = SplineSpd(S_cieday,B_cieday,S);
+            case 'fourier'
+                B_naturalRaw = MakeFourierBasis(S,nFourierBases);
+            otherwise
+                error('Unknown basis set specified');
+        end
+        B_natural{1} = B_naturalRaw;
+        B_natural{2} = B_naturalRaw;
+        B_natural{3} = B_naturalRaw;
+
 end
 
 % Verbose?
@@ -92,7 +182,10 @@ end
 %% Get out some data to work with.
 %
 % This is from the subprimary calibration file.
-S = subprimaryCalObjs{1}.get('S');
+Scheck = subprimaryCalObjs{1}.get('S');
+if (any(S ~= Scheck))
+    error('Mismatch between calibration file S and that specified at top');
+end
 wls = SToWls(S);
 nSubprimaries = subprimaryCalObjs{1}.get('nDevices');
 
@@ -164,45 +257,6 @@ if (PLOT_SUBPRIMARYCHROMATICITY)
     plot(colorgamut(1,:),colorgamut(2,:),'k-');
 end
 
-%% Background xy.
-%
-% Specify the chromaticity, but we'll chose the luminance based
-% on the range available in the device.
-targetBgxy = [0.3127 0.3290]';
-
-%% Target color direction and max contrasts.
-%
-% This is the basic desired modulation direction positive excursion. We go
-% equally in positive and negative directions.  Make this unit vector
-% length, as that is good convention for contrast.
-targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
-
-%% Specify desired primary properties.
-%
-% These are the target contrasts for the three primaries. We want these to
-% span a triangle around the line specified above. Here we define that
-% triangle by hand.  May need a little fussing for other directions, and
-% might be able to autocompute good choices.
-targetProjectorPrimaryContrastDir(:,1) = [-1 1 0]'; targetProjectorPrimaryContrastDir(:,1) = targetProjectorPrimaryContrastDir(:,1)/norm(targetProjectorPrimaryContrastDir(:,1));
-targetProjectorPrimaryContrastDir(:,2) = [1 -1 0.5]'; targetProjectorPrimaryContrastDir(:,2) = targetProjectorPrimaryContrastDir(:,2)/norm(targetProjectorPrimaryContrastDir(:,2));
-targetProjectorPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
-
-% Set parameters for getting desired target primaries.
-targetProjectorPrimaryContrast = 0.05;
-targetPrimaryHeadroom = 1.05;
-primaryHeadroom = 0;
-targetLambda = 3;
-
-% We may not need the whole direction contrast excursion. Specify max
-% contrast we want relative to that direction vector.
-% The first number is
-% the amount we want to use, the second has a little headroom so we don't
-% run into numerical error at the edges. The second number is used when
-% defining the three primaries, the first when computing desired weights on
-% the primaries.
-spatialGaborTargetContrast = 0.04;
-plotAxisLimit = 100*spatialGaborTargetContrast;
-
 %% Image spatial parameters.
 sineFreqCyclesPerImage = 6;
 gaborSdImageFraction = 0.1;
@@ -260,24 +314,6 @@ if (VERBOSE)
     plot(wls,halfOnSpdChk1,'g','LineWidth',1);
 end
 
-%% Set up basis to try to keep spectra close to.
-%
-% This is how we enforce a smoothness or other constraint
-% on the spectra.  What happens in the routine that finds
-% primaries is that there is a weighted error term that tries to
-% maximize the projection onto a passed basis set.
-basisType = 'fourier';
-nFourierBases = 7;
-switch (basisType)
-    case 'cieday'
-        load B_cieday
-        B_natural = SplineSpd(S_cieday,B_cieday,S);
-    case 'fourier'
-        B_natural = MakeFourierBasis(S,nFourierBases);
-    otherwise
-        error('Unknown basis set specified');
-end
-
 % Define wavelength range that will be used to enforce the smoothnes
 % through the projection onto an underlying basis set.  We don't the whole
 % visible spectrum as putting weights on the extrema where people are not
@@ -303,7 +339,7 @@ projectorBackgroundScaleFactor = 0.5;
 % arbitrarily to 1 just above.
 for pp = 1:nPrimaries
     [subprimaryBackgroundPrimaries(:,pp),subprimaryBackgroundSpd(:,pp),subprimaryBackgroundXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
-        B_natural,projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
+        B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
 end
 if (any(subprimaryBackgroundPrimaries < 0) | any(subprimaryBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
@@ -329,15 +365,14 @@ for pp = 1:nPrimaries
     % Get isolating primaries.
     [projectorPrimaryPrimaries(:,pp),projectorPrimaryPrimariesQuantized(:,pp),projectorPrimarySpd(:,pp),projectorPrimaryContrast(:,pp)] = FindDesiredContrastTargetPrimaries(targetProjectorPrimaryContrastDir(:,pp), ...
         targetPrimaryHeadroom,targetProjectorPrimaryContrast,subprimaryBackgroundPrimaries(:,pp), ...
-        T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
+        T_cones,subprimaryCalObjs{pp},B_natural{pp},projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
     projectorPrimarySettings(:,pp) = PrimaryToSettings(subprimaryCalObjs{pp},projectorPrimaryPrimaries(:,pp));
 end
 
 %% How close are spectra to subspace defined by basis?
-theBgNaturalApproxSpd = B_natural*(B_natural(projectIndices,:)\subprimaryBackgroundSpd(projectIndices));
-isolatingNaturalApproxSpd1 = B_natural*(B_natural(projectIndices,:)\projectorPrimarySpd(projectIndices,1));
-isolatingNaturalApproxSpd2 = B_natural*(B_natural(projectIndices,:)\projectorPrimarySpd(projectIndices,2));
-isolatingNaturalApproxSpd3 = B_natural*(B_natural(projectIndices,:)\projectorPrimarySpd(projectIndices,3));
+isolatingNaturalApproxSpd1 = B_natural{1}*(B_natural{1}(projectIndices,:)\projectorPrimarySpd(projectIndices,1));
+isolatingNaturalApproxSpd2 = B_natural{2}*(B_natural{2}(projectIndices,:)\projectorPrimarySpd(projectIndices,2));
+isolatingNaturalApproxSpd3 = B_natural{3}*(B_natural{3}(projectIndices,:)\projectorPrimarySpd(projectIndices,3));
 
 % Plot of the primary spectra
 subplot(2,2,1); hold on
@@ -696,7 +731,7 @@ title('Check of consistency between projector primaries and projector primary sp
 projectorSettingsImage = theStandardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprinf('testImageData_%s',conditionName));
+    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
     save(testFilename,'S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
         'projectorPrimaryPrimaries','projectorPrimarySettings','projectorPrimarySpd',...
         'theDesiredContrastCheckCal', ...
