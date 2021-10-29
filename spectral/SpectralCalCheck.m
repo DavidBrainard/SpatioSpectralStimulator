@@ -3,14 +3,20 @@
 % Read in output of SpectralTestCal and make some measurements.
 % 
 % 10/19/2021  dhb,smo  Started on it
+% 10/28/2021  dhb      Add condition name and date to output
 
 %% Initialize.
 clear; close all;
 
+%% Which condition
+%
+% This is used to match up with parameters run in SpectralTestCal
+conditionName = 'LminusMSmooth';
+
 %% Load output of SpectralTestCal
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,'testImageData1');
+    testFilename = fullfile(testFiledir,sprinf('testImageData_%s',conditionName));
     theData = load(testFilename);
 end
 
@@ -282,7 +288,8 @@ title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 if (MEASURE)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,'testImageData1Check');
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimeStr));
         save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
     end
 end

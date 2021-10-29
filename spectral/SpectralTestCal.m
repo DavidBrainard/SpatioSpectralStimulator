@@ -8,7 +8,54 @@
 %% Clear
 clear; close all;
 
-%% Verbose
+%% Set key stimulus parameters
+%
+%
+% Condition Name
+conditionName = 'LminusMSmooth';
+switch (conditionName)
+    case 'LminusMSmooth'
+        % Background xy.
+        %
+        % Specify the chromaticity, but we'll chose the luminance based
+        % on the range available in the device.
+        targetBgxy = [0.3127 0.3290]';
+
+        % Target color direction and max contrasts.
+        %
+        % This is the basic desired modulation direction positive excursion. We go
+        % equally in positive and negative directions.  Make this unit vector
+        % length, as that is good convention for contrast.
+        targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
+
+        % Specify desired primary properties.
+        %
+        % These are the target contrasts for the three primaries. We want these to
+        % span a triangle around the line specified above. Here we define that
+        % triangle by hand.  May need a little fussing for other directions, and
+        % might be able to autocompute good choices.
+        targetProjectorPrimaryContrastDir(:,1) = [-1 1 0]'; targetProjectorPrimaryContrastDir(:,1) = targetProjectorPrimaryContrastDir(:,1)/norm(targetProjectorPrimaryContrastDir(:,1));
+        targetProjectorPrimaryContrastDir(:,2) = [1 -1 0.5]'; targetProjectorPrimaryContrastDir(:,2) = targetProjectorPrimaryContrastDir(:,2)/norm(targetProjectorPrimaryContrastDir(:,2));
+        targetProjectorPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
+
+        % Set parameters for getting desired target primaries.
+        targetProjectorPrimaryContrast = 0.05;
+        targetPrimaryHeadroom = 1.05;
+        primaryHeadroom = 0;
+        targetLambda = 3;
+
+        % We may not need the whole direction contrast excursion. Specify max
+        % contrast we want relative to that direction vector.
+        % The first number is
+        % the amount we want to use, the second has a little headroom so we don't
+        % run into numerical error at the edges. The second number is used when
+        % defining the three primaries, the first when computing desired weights on
+        % the primaries.
+        spatialGaborTargetContrast = 0.04;
+        plotAxisLimit = 100*spatialGaborTargetContrast;
+end
+
+% Verbose?
 %
 % Set to true to get more output
 VERBOSE = false;
@@ -47,7 +94,7 @@ end
 % This is from the subprimary calibration file.
 S = subprimaryCalObjs{1}.get('S');
 wls = SToWls(S);
-nSubprimaries = subprimaryCalObjs{1}.get('nDevices'); 
+nSubprimaries = subprimaryCalObjs{1}.get('nDevices');
 
 %% Cone fundamentals and XYZ CMFs.
 psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
@@ -339,7 +386,7 @@ SetGammaMethod(projectorCalObj,projectorGammaMethod);
 
 %% Set up desired background.
 %
-% We aim for the background that we said we wanted when we built the projector primaries. 
+% We aim for the background that we said we wanted when we built the projector primaries.
 desiredBgExcitations = projectorBackgroundScaleFactor*T_cones*sum(subprimaryBackgroundSpd,2);
 projectorBgSettings = SensorToSettings(projectorCalObj,desiredBgExcitations);
 projectorBgExcitations = SettingsToSensor(projectorCalObj,projectorBgSettings);
@@ -472,11 +519,11 @@ if (SLOWMETHODCHECK)
         thePointCloudSettingsGaborCal(:,ll) = allProjectorSettingsCal(:,minIndex);
     end
     toc
-    
+
     % Get contrasts we think we have obtained.
     thePointCloudExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
     thePointCloudContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,projectorBgExcitations);
-    
+
     % Plot of how well pixelwise point cloud method does in obtaining desired contrats
     figure; clf;
     plot(theDesiredContrastGaborCal(:),thePointCloudContrastGaborCal(:),'r+');
@@ -649,7 +696,7 @@ title('Check of consistency between projector primaries and projector primary sp
 projectorSettingsImage = theStandardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,'testImageData1');
+    testFilename = fullfile(testFiledir,sprinf('testImageData_%s',conditionName));
     save(testFilename,'S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
         'projectorPrimaryPrimaries','projectorPrimarySettings','projectorPrimarySpd',...
         'theDesiredContrastCheckCal', ...
