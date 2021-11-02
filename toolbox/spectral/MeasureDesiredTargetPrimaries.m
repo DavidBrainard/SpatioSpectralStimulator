@@ -58,17 +58,17 @@ arguments
 end
 
 %% Set the projector mode.
-if (options.measurementOption)
-    if (options.projectorMode)
-        commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
-        unix(commandNormal)
-        disp('Projector is set as Normal mode');
-    else
-        commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
-        unix(commandSteadyOn)
-        disp('Projector is set as Steady-on mode');
-    end
-end
+% if (options.measurementOption)
+%     if (options.projectorMode)
+%         commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
+%         unix(commandNormal)
+%         disp('Projector is set as Normal mode');
+%     else
+%         commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
+%         unix(commandSteadyOn)
+%         disp('Projector is set as Steady-on mode');
+%     end
+% end
 
 % Get number of discrete input levels for the device.
 % So, control values go from 0 to (subprimaryNInputLevels-1).
@@ -89,13 +89,10 @@ targetSpd = PrimaryToSpd(subPrimaryCalStructData,targetPrimaries);
 
 %% Set primary settings and measure it.
 if (options.measurementOption)
-    % Display plain screen on DLP using PTB.
-    OpenProjectorPlainScreen([1 1 1]);
-    
-    % Set projector input settings. This measures one primary at a time, so
+    % Set primary input settings. This measures one primary at a time, so
     % the other primaries are set to zero.
-    targetSubprimarySettings = zeros(options.nPrimaries,nSubprimaries);
-    targetSubprimarySettings(targetPrimaryNum,:) = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
+    targetSubprimarySettings = zeros(nSubprimaries,options.nPrimaries);
+    targetSubprimarySettings(:,targetPrimaryNum) = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
     SetSubprimarySettings(targetSubprimarySettings);
     
     % Measure it.
@@ -110,9 +107,6 @@ else
         fprintf('Measurement has been skipped!\n');
     end
 end
-
-% Close PTB screen.
-CloseProjectorScreen;
 
 % Plot the results.
 if (options.verbose)

@@ -60,7 +60,7 @@ if calStruct.describe.blankOtherScreen
     
     LoadIdentityClut(obj.slaveWindowPtr);
     Screen('Flip', obj.slaveWindowPtr);
-end  % blackOtherScreen
+end
 
 % white square for user to focus the spectro-radiometer
 %     targetSettings = [1 1 1];
