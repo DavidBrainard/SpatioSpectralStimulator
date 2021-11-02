@@ -40,6 +40,8 @@ arguments
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
 end
 
+% Convert to [0,1] to [0,255] here, using SettingsToIntegers().
+
 %% Set the color of plain screen on the projector.
 Screen('FillRect',window,theSettings,windowRect);
 Screen('Flip', window);
