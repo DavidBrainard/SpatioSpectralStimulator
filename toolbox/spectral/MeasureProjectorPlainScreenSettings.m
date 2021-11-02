@@ -1,7 +1,7 @@
-function [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSettings,S,options)
+function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect,options)
 % Measure the SPD over projector primary settings.
 %
-% Syntax: [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSettings,S)
+% Syntax: [[spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect)
 %
 % Description:
 %    This measures the SPD according to projector primary settings. In case
@@ -9,12 +9,13 @@ function [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSe
 %    advance before calling this function.
 %
 % Inputs:
-%    testProjectorSettings -      Projector input settings that reproduce
-%                                 the desired contrast.
+%    theSettings -                Projector input settings to measure for.
 %    S -                          Spectrum measurement range in wavelength.
+%    window -                     PTB window for opened screen.
+%    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
-%    testSpdMeasured -            Measurement results of the SPDs for the
+%    spdMeasured -                Measurement results of the SPDs for the
 %                                 contrast testing points.
 %
 % Optional key/value pairs:
@@ -29,7 +30,7 @@ function [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSe
 %                                 outside the lab and debugging the code.
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
-%
+
 % History:
 %    10/08/21  smo                Started on it
 %    10/14/21  smo                Made a working draft.
@@ -47,7 +48,7 @@ function [testSpdMeasured] = MeasureProjectorPlainScreenSettings(testProjectorSe
 
 %% Set parameters.
 arguments
-    testProjectorSettings
+    theSettings
     S
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
@@ -69,7 +70,7 @@ if (options.measurementOption)
 end
 
 % Number of contrast test points.
-nTestPoints = size(testProjectorSettings,2);
+nTestPoints = size(theSettings,2);
 
 %% Display the projector image and measure it.
 % Set projector setting for each test point on the gabor patch and measure it.
@@ -77,31 +78,28 @@ if (options.measurementOption)
     % Measure the test points.
     for tt = 1:nTestPoints
         % Set the projector settings and display it as a plane screen.
-        testProjectorDisplayColor = testProjectorSettings(:,tt); % Set projector color with contrast testing point.
-        OpenProjectorPlainScreen(testProjectorDisplayColor);
+        SetProjectorPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
+
         % Measure it.
-        testSpdMeasured(:,tt) = MeasureSPD('S',S);
+        spdMeasured(:,tt) = MeasureSPD('S',S);
         if (options.verbose)
             fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
 else
-    % Just print zero spectrums for both test and background
+    % Just record zero spectra for both test and background
     % when skipping the measurements.
-    testSpdMeasured = zeros(S(3),nTestPoints);
+    spdMeasured = zeros(S(3),nTestPoints);
     if (options.verbose)
         fprintf('           Measurement has been skipped \n');
     end
 end
 
-% Close PTB screen.
-CloseProjectorScreen;
-
 %% Plot the results.
 if (options.verbose)
     figure; hold on
-    wls = SToWls(S); % Spectrum range.
-    plot(wls,testSpdMeasured,'r-','LineWidth',2); % Test points Spd.
+    wls = SToWls(S);                          % Spectrum range.
+    plot(wls,spdMeasured,'r-','LineWidth',2); % Test points spds.
     title('Measured SPDs');
     xlabel('Wavelength (nm)')
     ylabel('Spectral Intensity');

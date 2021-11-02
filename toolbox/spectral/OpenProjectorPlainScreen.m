@@ -1,4 +1,4 @@
-function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
+function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options)
 % This displays a plain screen on the projector using Psychtoolbox.
 %
 % Syntax: [] = OpenProjectorPlainScreen(setProjectorDisplayColor)
@@ -9,15 +9,16 @@ function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
 %    measure the projector including calibration, additivity check, etc.
 %
 % Inputs:
-%    projectorDisplayColor -      Desired color to display on the
+%    initialSettings -            Desired color to display on the
 %                                 projector. This should be in format of
-%                                 3x1 matrix, and each column should be in
+%                                 3x1 matrix, and each entry should be in
 %                                 the range from 0 (black) to 1 (white).
-%                                 Each column respectively matches 
+%                                 Each row respectively matches 
 %                                 red, green, and blue channels.
 %
 % Outputs:
-%    N/A
+%    window -                     PTB window for opened screen.
+%    windowRect -                 Rect corresonding to window.
 %
 % Optional key/value pairs:
 %    'projectorToolboxPath' -     Path to the Vpixx control toolbox.  We
@@ -27,12 +28,15 @@ function [] = OpenProjectorPlainScreen(projectorDisplayColor,options)
 %                                 path.
 %    'verbose' -                  Boolean. Default true.  Controls the printout.
 %
+% See also: SetProjectorPlainScreenSettings,
+%     MeasureProjectorPlainScreenSettings, CloseProjectorScreen.
+
 % History:
 %    10/28/21  smo                Started on it
 
 %% Set parameters.
 arguments
-    projectorDisplayColor (3,1) {mustBeInRange(projectorDisplayColor,0,1,"inclusive")}
+    initialSettings (3,1) {mustBeInRange(initialSettings,0,1,"inclusive")}
     options.verbose (1,1) = true
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
 end
@@ -42,18 +46,13 @@ PsychDefaultSetup(2);
 screens = Screen('Screens');
 screenNumber = max(screens);
 
-% Set white as the default background. The screen will be flipped with the
+% Set white as the default background. The screen will be flipped to the
 % desired color with the following command.
 white = WhiteIndex(screenNumber);
 [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
 
-%% Set the color of plain screen on the projector.
-Screen('FillRect',window,projectorDisplayColor,windowRect);
-Screen('Flip', window);
-if (options.verbose)
-    fprintf('Projector primary is set to [%.2f, %.2f, %.2f] \n',projectorDisplayColor(1),projectorDisplayColor(2),projectorDisplayColor(3));
-end
-
+%% Set the settings
+SetProjectorPlainScreenSettings(initialSettings,window,windowRect,'verbose',options.verbose);
 
 %% Also make sure we can talk to the subprimaries.
 %
