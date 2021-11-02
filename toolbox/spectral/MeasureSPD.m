@@ -6,8 +6,8 @@ function [measuredSpd] = MeasureSPD(options)
 %
 % Description:
 %    This measures the spectral power distribution using the
-%    spectroradiometer. This code connects to PR670, and this function
-%    should be used whenever measurement is needed in SACC project.
+%    spectroradiometer. This function should be used whenever measurement
+%    is needed in SACC project.
 %
 % Inputs:
 %    N/A
@@ -27,36 +27,31 @@ function [measuredSpd] = MeasureSPD(options)
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
+%    'portNum' -                  Port number connected to the
+%                                 spectroradioment using the function
+%                                 CMCeckInit. Default to 5 (PR670).
 %    'verbose'           -        Boolean. Default true.  Controls plotting
 %                                 and printout.
 %
+% See also: 
+%    OpenRadiometer.
+
 % History:
-%    11/1/21  smo                 Started on it.
+%    11/01/21  smo                Started on it.
+%    11/02/21  smo                Separate the pre-measure part and
+%                                 measurement as separate functions.
 
 %% Set parameters.
 arguments
     options.S (1,3) = [380 2 201]
     options.measurementOption (1,1) = true
+    options.portNum (1,1) = 5
     options.verbose (1,1) = true
 end
 
-%% Connect to the spectroradiometer PR670.
-% Give read-and-write permission to the spectroradiometer.
-% This part is exclusivley when using the Linux box, and
-% the PR670 is connected to the device either 'ttyACM0' or 'ttyACM1',
-% so give permission to both here.
+%% Measure it.
 if (options.measurementOption)
-    commandConnectToPR670_1 = 'sudo chmod a+rw /dev/ttyACM0';
-    unix(commandConnectToPR670_1)
-    commandConnectToPR670_2 = 'sudo chmod a+rw /dev/ttyACM1';
-    unix(commandConnectToPR670_2)
-    
-    % Connect to spectroradiometer PR670.
-    portNumPR670 = 5;
-    CMCheckInit(portNumPR670);
-    
-    % Measure it.
-    measuredSpd = MeasSpd(options.S,portNumPR670,'all');
+    measuredSpd = MeasSpd(options.S, options.portNum, 'all');
     if (options.verbose)
         disp('Measurement complete!');
     end
@@ -66,5 +61,4 @@ else
         disp('Measurement has been skipped!');
     end
 end
-
 end
