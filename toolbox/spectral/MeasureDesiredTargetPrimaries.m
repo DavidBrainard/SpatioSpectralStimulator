@@ -22,7 +22,7 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 % Outputs:
 %    targetSpdMeasured -          Measured SPDs of the desired isolating
 %                                 target primaries.
-% 
+%
 % Optional key/value pairs:
 %    'projectorMode' -            Boolean (default true). Set the projector
 %                                 pulse mode either 'Normal' (true) or
@@ -33,8 +33,10 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
-%    'verbose'           -        Boolean. Default true.  Controls plotting
+%    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
+%    'nPrimaries -                The number of primaries in the displaying
+%                                 device.
 %
 % History:
 %    10/06/21  smo                Started on it
@@ -42,6 +44,7 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %                                 added a feature to skip the measurement part.
 %    10/19/21  smo                Added to save out the normalized spd results.
 %    10/20/21  smo                Discard the normalized spd outputs.
+%    11/02/21  smo                Clean it by deleting old features.
 
 %% Set parameters.
 arguments
@@ -51,37 +54,11 @@ arguments
     options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
     options.verbose (1,1) = true
+    options.nPrimaries (1,1) = 3
 end
 
-%% Initialize (connect to both display and measurement device).
-%
-% This part prepares for the measurements which includes connecting PC to the
-% projector, setting the projector display state (normal/steady-on modes),
-% and talking to the measurement device to ready to run (PR670).
-%
-% Measurement pre-preparations.
+%% Set the projector mode.
 if (options.measurementOption)
-    % Connect to the Vpixx projector.
-    isReady = Datapixx('open');
-    isReady = Datapixx('IsReady');
-    
-    % Add VPixx toolbox 'Datapixx' to the path.
-    toolboxDirectory = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx'; % This is where Linux box store the file.
-    addpath(genpath(toolboxDirectory));
-    
-    % Give read-and-write permission to the spectroradiometer.
-    % This part is exclusivley when using the Linux box, and
-    % the PR670 is connected to the device either 'ttyACM0' or 'ttyACM1',
-    % so give permission to both here.
-    commandConnectToPR670_1 = 'sudo chmod a+rw /dev/ttyACM0';
-    unix(commandConnectToPR670_1)
-    commandConnectToPR670_2 = 'sudo chmod a+rw /dev/ttyACM1';
-    unix(commandConnectToPR670_2)
-    
-    % Connect to spectroradiometer PR670.
-    CMCheckInit(5); % Number 5 is allocated to PR670
-    
-    % Set the projector mode.
     if (options.projectorMode)
         commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
         unix(commandNormal)
@@ -93,10 +70,7 @@ if (options.measurementOption)
     end
 end
 
-% Set the working range of subprimary channels (chanel 8 is not working at the moment).
-logicalToPhysical = [0:7 9:15];
-
-% Get number of discrete input levels for the device.  
+% Get number of discrete input levels for the device.
 % So, control values go from 0 to (subprimaryNInputLevels-1).
 subprimaryNInputLevels = size(subPrimaryCalStructData.get('gammaInput'),1);
 
@@ -104,7 +78,6 @@ subprimaryNInputLevels = size(subPrimaryCalStructData.get('gammaInput'),1);
 S = subPrimaryCalStructData.get('S');
 
 % Set primary and subprimary numbers.
-nPrimaries = 3;
 nSubprimaries = subPrimaryCalStructData.get('nDevices');
 if (targetPrimaryNum > 3) && (targetPrimaryNum < 1)
     error('Target primary number should be set within [1, 2, 3]')
@@ -119,27 +92,20 @@ if (options.measurementOption)
     % Display plain screen on DLP using PTB.
     OpenProjectorPlainScreen([1 1 1]);
     
-    % Set projector input settings.  These are gamma corrected but still
-    % live as real numbers on the interval [0,1], following the convention
-    % we use for other types of display.
-    targetSubprimarySettings = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
-    otherPrimaries = setdiff(1:nPrimaries,targetPrimaryNum);
-    otherPrimarySubprimarySettings = 0;
+    % Set projector input settings. This measures one primary at a time, so
+    % the other primaries are set to zero.
+    targetSubprimarySettings = zeros(options.nPrimaries,nSubprimaries);
+    targetSubprimarySettings(targetPrimaryNum,:) = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
+    SetSubprimarySettings(targetSubprimarySettings);
     
-    % Set projector current levels as the above settings.
-    for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', targetPrimaryNum-1, logicalToPhysical(ss), round(targetSubprimarySettings(ss)*(subprimaryNInputLevels-1)));   % Target primary
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), round(otherPrimarySubprimarySettings*(subprimaryNInputLevels-1))); % Other Primary 1
-        Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), round(otherPrimarySubprimarySettings*(subprimaryNInputLevels-1))); % Other Primary 2
-    end
-    
-    % Measurement.
-    targetSpdMeasured = MeasSpd(S,5,'all');
+    % Measure it.
+    targetSpdMeasured = MeasureSPD('S',S);
     if (options.verbose)
         fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
     end
 else
-    targetSpdMeasured = targetSpd; % Just put the same spd as desired for here.
+    % Save out the zero spectrum if the measurement is skipped.
+    targetSpdMeasured = zeros(S(3),1); 
     if (options.verbose)
         fprintf('Measurement has been skipped!\n');
     end
