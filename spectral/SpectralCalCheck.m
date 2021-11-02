@@ -107,11 +107,7 @@ if (MEASURE)
     isReady = Datapixx('IsReady');
     
     % Set the projector subprimaries here.
-    for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-        Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-        Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(theData.projectorPrimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
-    end
+    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels);
     
     %% Set the primaries in the calibration to the measured results.
     theData.projectorCalObj.set('P_device',meanPrimaryScaleFactor*isolatingSpdMeasured);
@@ -195,7 +191,7 @@ if (MEASURE)
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
     [thePointCloudSpdMeasured] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
-        S,T_cones,'projectorMode',true,'measurementOption',true,'verbose',true);
+        S,'projectorMode',true,'measurementOption',true,'verbose',true);
     % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
 
