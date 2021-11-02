@@ -19,9 +19,6 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 %                                 contrast testing points.
 %
 % Optional key/value pairs:
-%    'projectorMode' -            Boolean (default true). Set the projector
-%                                 pulse mode either 'Normal' (true) or
-%                                 'Steady-on' (false).
 %    'measurementOption' -        Boolean (default true). Set if you want
 %                                 to proceed the measurements. If you set
 %                                 'true', measurement will be included, and
@@ -50,7 +47,6 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 arguments
     theSettings
     S
-    options.projectorMode (1,1) = true
     options.measurementOption (1,1) = true
     options.verbose (1,1) = true
 end

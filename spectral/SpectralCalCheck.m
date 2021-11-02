@@ -27,11 +27,6 @@ end
 % Target Spds.
 targetPrimarySpd = theData.projectorCalObj.get('P_device');
 
-% In 'theData', following variables are available.
-% ['S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
-%        'projectorPrimaryPrimaries','projectorPrimarySettings','theDesiredContrastCheckCal', ...
-%        'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal']
-
 % Set some variables.
 S = theData.S;           % Range of the spectrum.
 wls = SToWls(S);         % Wavelength. 
@@ -48,6 +43,10 @@ T_cones = theData.T_cones;
 % was true.
 MEASURE = true;
 if (MEASURE)
+    % Open up projector
+    [window,windorRect] = OpenProjectorPlainScreen([1 1 1]');
+
+    % Measure
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
             theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',true);
@@ -100,14 +99,8 @@ end
 %
 % Add VPixx toolbox ('Datapixx') to path.
 if (MEASURE)
-    addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx'));
-    
-    % Connect to the projector.
-    isReady = Datapixx('open');
-    isReady = Datapixx('IsReady');
-    
     % Set the projector subprimaries here.
-    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels);
+    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
     
     %% Set the primaries in the calibration to the measured results.
     theData.projectorCalObj.set('P_device',meanPrimaryScaleFactor*isolatingSpdMeasured);
@@ -191,7 +184,7 @@ if (MEASURE)
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
     [thePointCloudSpdMeasured] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
-        S,'projectorMode',true,'measurementOption',true,'verbose',true);
+        S,window,windowRect,'measurementOption',true,'verbose',true);
     % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
 
@@ -280,8 +273,11 @@ else
 end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
-%% Save out the measurement data.
+%% Close projector and save out the measurement data.
 if (MEASURE)
+    % Close
+    CloseProjectorScreen;
+
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
