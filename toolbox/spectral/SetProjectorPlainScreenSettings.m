@@ -26,27 +26,39 @@ function [] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,opti
 %                                 already there.  This doesn't need to be
 %                                 right if the toolbox is already on the
 %                                 path.
-%    'verbose' -                  Boolean. Default true.  Controls the printout.
+%    'maximumValue' -             This number sets the maximum value
+%                                 for display input settings. Default to
+%                                 255. This would help to better control
+%                                 quantization displaying the colors on the
+%                                 projector.
+%    'verbose' -                  Boolean. Default true. Controls the printout.
 %
 % See also: OpenProjectorPlainScreen, CloseProjectorScreen.
 
 % History:
 %    10/28/21  smo                Started on it
+%    11/02/21  smo                Add the feature switching the display
+%                                 input range from [0,1] to [0,255]
 
 %% Set parameters.
 arguments
     theSettings (3,1) {mustBeInRange(projectorDisplayColor,0,1,"inclusive")}
-    options.verbose (1,1) = true
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
+    options.maximumValue (1,1) = 255
+    options.verbose (1,1) = true
 end
 
-% Convert to [0,1] to [0,255] here, using SettingsToIntegers().
+% Set the PTB display input range from [0,1] to [0,maximuValue]. Default [0,255].
+Screen('ColorRange',window,options.maximumValue);
+
+% Scale the settings to match up the working range.
+theSettingsScaled = round(options.maximumValue .* theSettings);
 
 %% Set the color of plain screen on the projector.
-Screen('FillRect',window,theSettings,windowRect);
+Screen('FillRect',window,theSettingsScaled,windowRect);
 Screen('Flip', window);
 if (options.verbose)
-    fprintf('Projector settings [%.2f, %.2f, %.2f] \n',theSettings(1),theSettings(2),theSettings(3));
+    fprintf('Projector settings [%.2f, %.2f, %.2f] \n',theSettingsScaled(1),theSettingsScaled(2),theSettingsScaled(3));
 end
 
 end
