@@ -1,8 +1,8 @@
-function [measuredSpd] = MeasureSPD(options)
+function [measuredSpd] = MeasureSpd(options)
 % Measure the SPD using the spectroradiometer.
 %
 % Syntax:
-%    [measuredSpd] = MeasureSPD()
+%    [measuredSpd] = MeasureSpd()
 %
 % Description:
 %    This measures the spectral power distribution using the
