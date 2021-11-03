@@ -28,7 +28,10 @@ end
 Screen('Preference', 'SkipSyncTests', 1);
 
 % Start PsychImaging.
-[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen;
+stereoMode = [];
+screenRect = [];
+pixelSize = 24;
+PsychImaging('PrepareConfiguration');
 
 % Set background settings.
 if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
@@ -36,21 +39,27 @@ if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
 else
     backgroundSettings = [1 1 1];    
 end
-    
-% Display background settings.
-SetProjectorPlainScreenSettings(backgroundSettings, obj.masterWindowPtr, obj.screenRect);
-% [obj.masterWindowPtr, obj.screenRect] = ...
-%     PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
-% LoadIdentityClut(obj.masterWindowPtr);
 
-% Blank option for the other display.
+
+%% WORKING ON THIS PART
+% Display background settings. (TO BE MODIFIED)
+[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen([1 1 1]);
+SetProjectorPlainScreenSettings(backgroundSettings, obj.masterWindowPtr, obj.screenRect);
+
+% (ORIGINAL CODE)
+[obj.masterWindowPtr, obj.screenRect] = ...
+    PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
+LoadIdentityClut(obj.masterWindowPtr);
+
+% Blank option for the other display. (TO BE MODIFIED)
 if calStruct.describe.blankOtherScreen
     [obj.slaveWindowPtr, ~] = ...
         SetProjectorPlainScreenSettings(calStruct.describe.blankSettings, obj.masterWindowPtr, obj.screenRect, 'screenNum', calStruct.describe.whichBlankScreen-1);
     LoadIdentityClut(obj.slaveWindowPtr);
     Screen('Flip', obj.slaveWindowPtr);
 end
-% 
+
+%  (ORIGINAL CODE)
 % if calStruct.describe.blankOtherScreen
 %     
 %     [obj.slaveWindowPtr, ~] = ...
@@ -60,6 +69,7 @@ end
 %     Screen('Flip', obj.slaveWindowPtr);
 % end
 
+%%
 % White square for user to focus the spectro-radiometer
 targetSettings = ones(1,obj.nSubprimaries);
 obj.updateBackgroundAndTarget(backgroundSettings, targetSettings, calStruct.describe.useBitsPP)
@@ -77,8 +87,7 @@ end
 % Set subprimary settings here. Projector target primary is turn at all
 % subprimary settings, while the other primaries are turned off.
 subprimaryInitialSettings = zeros(obj.nPrimaries,obj.nSubprimaries); % Base matrix for subprimary settings.
-subprimaryInitialCurrent = obj.nInputLevels-1; % Current value for each subprimary setting.
-subprimaryInitialSettings(obj.whichPrimary,:) = subprimaryInitialCurrent;
+subprimaryInitialSettings(obj.whichPrimary,:) = 1;
 SetSubprimarySettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
 
 % Wait for user

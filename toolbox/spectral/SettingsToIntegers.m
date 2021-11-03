@@ -1,7 +1,7 @@
-function integers = SettingsToIntegers(settings,nInputLevels)
+function [integers] = SettingsToIntegers(settings,options)
 % Quantize the passed [0,1] settings values to integer values
 
-% Syntax: integers = SettingsToIntegers(settings,nInputLevels)
+% Syntax: [integers] = SettingsToIntegers(settings)
 %
 % Description:
 %    Take 0 to 1 real numbers and quantize to integer input values at the
@@ -13,8 +13,8 @@ function integers = SettingsToIntegers(settings,nInputLevels)
 %                                 applied entrywise.
 %
 % Outputs:
-%    integers -                  The converted settings.  Matrix as same
-%                                shape as the input settings.
+%    integers -                   The converted settings.  Matrix as same
+%                                 shape as the input settings.
 %
 % Optional key/value pairs:
 %    'nInputLevels' -             Number of subprimary input levels.
@@ -27,11 +27,14 @@ function integers = SettingsToIntegers(settings,nInputLevels)
 % History:
 %    10/29/21  smo                Started on it
 
+%% Set parameters.
 arguments
     settings
     options.nInputLevels (1,1) = 253
     options.verbose (1,1) = true
 end
 
-% Do the conversion
+%% Do the conversion
 integers = round(settings*(options.nInputLevels-1));
+
+end

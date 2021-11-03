@@ -25,8 +25,9 @@ delete(timerForWarmingup); % Timer ends.
 disp('        Close the Timer and the measurement will begin');
 
 % Then measure it.
-measurement = MeasureSPD;
-S = WlsToS(measurement);
+measurement = MeasureSpectroradiometer;
+spectralAxis = linspace(380,780,size(measurement,2)); % cf. spectralAxis = [380,382,...,780]
+S = WlsToS(spectralAxis);
 
 %     obj.radiometerObj.measure();
 %     measurement = obj.radiometerObj.measurement.energy;

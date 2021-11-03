@@ -46,7 +46,7 @@ arguments
     options.verbose (1,1) = true
 end
 
-% Set the projector mode.
+%% Set the projector mode.
 if (options.projectorMode)
     commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
     unix(commandNormal)
@@ -62,21 +62,22 @@ else
 end
 
 % Check consistency of passed settings
-[m,n] = size(targetSubprimarySettings);
-if (m ~= length(options.logicalToPhysical))
+[m,n] = size(subprimarySettings);
+if (n ~= length(options.logicalToPhysical))
     error('Number of subprimary settings passed does not match logicalToPhysical mapping');
 end
-if (n ~= options.nPrimaries)
+if (m ~= options.nPrimaries)
     error('Number of columns in subprimary settings does not match number of projector primaries');
 end
 
 % Convert subprimary settings to integers
-subprimaryIntegers = SettingsToIntegers(subprimarySettings,options.nInputLevels);
+subprimaryIntegers = SettingsToIntegers(subprimarySettings,'nInputLevels',options.nInputLevels);
 
 % Set projector current levels as the above settings.
-for ss = 1:nSubprimaries
-    for pp = 1:options.nPrimaries
-        Datapixx('SetPropixxHSLedCurrent', pp-1, options.logicalToPhysical(ss), subprimaryIntegers);
+nSubprimaries = size(subprimarySettings,2);
+for pp = 1:options.nPrimaries
+    for ss = 1:nSubprimaries
+        Datapixx('SetPropixxHSLedCurrent', pp-1, options.logicalToPhysical(ss), subprimaryIntegers(pp,ss));
     end
 end
 
