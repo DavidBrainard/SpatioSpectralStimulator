@@ -13,7 +13,7 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 %                                 projector. This should be in format of
 %                                 3x1 matrix, and each entry should be in
 %                                 the range from 0 (black) to 1 (white).
-%                                 Each row respectively matches 
+%                                 Each row respectively matches
 %                                 red, green, and blue channels.
 %
 % Outputs:
@@ -26,6 +26,7 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 %                                 already there.  This doesn't need to be
 %                                 right if the toolbox is already on the
 %                                 path.
+%    'screenNum' -                Set which screen to display.
 %    'verbose' -                  Boolean. Default true.  Controls the printout.
 %
 % See also: SetProjectorPlainScreenSettings,
@@ -33,18 +34,27 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 
 % History:
 %    10/28/21  smo                Started on it
+%    11/03/21  smo                Added the feature of selecting which
+%                                 screen to display.
 
 %% Set parameters.
 arguments
     initialSettings (3,1) {mustBeInRange(initialSettings,0,1,"inclusive")}
-    options.verbose (1,1) = true
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
+    options.screenNum (1,1)
+    options.verbose (1,1) = true
 end
 
-%% Set the default PTB setting. 
+%% Set the default PTB setting.
 PsychDefaultSetup(2);
 screens = Screen('Screens');
-screenNumber = max(screens);
+
+% Set which screen to display.
+if isempty(options.screenNum)
+    screenNumber = max(screens);
+else
+    screenNumber = options.screenNum;
+end
 
 % Set white as the default background. The screen will be flipped to the
 % desired color with the following command.

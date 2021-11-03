@@ -23,130 +23,73 @@ if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
     obj.logicalToPhysical = obj.options.calibratorTypeSpecificParamsStruct.logicalToPhysical;
 end
 
-% Specify stereo mode 10 for synchronized flips between left/right displays
-stereoMode = []; % 10;
-
-% Following for opening a full-screen window
-screenRect = [];
-
-% Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
-pixelSize = 24;
-
 % Disable syncing, we do not care for this kind of calibration (regular
 % single screen, not stereo, not Samsung)
 Screen('Preference', 'SkipSyncTests', 1);
 
-% Start PsychImaging
-PsychImaging('PrepareConfiguration');
+% Start PsychImaging.
+[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen;
 
-% Retrieve passed custom params
+% Set background settings.
 if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
-    % Background settings
     backgroundSettings = obj.options.calibratorTypeSpecificParamsStruct.DLPbackgroundSettings;
 else
     backgroundSettings = [1 1 1];    
 end
     
-% Open master display (screen to be calibrated)
-[obj.masterWindowPtr, obj.screenRect] = ...
-    PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
-LoadIdentityClut(obj.masterWindowPtr);
+% Display background settings.
+SetProjectorPlainScreenSettings(backgroundSettings, obj.masterWindowPtr, obj.screenRect);
+% [obj.masterWindowPtr, obj.screenRect] = ...
+%     PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
+% LoadIdentityClut(obj.masterWindowPtr);
 
-% Blank other screen.
+% Blank option for the other display.
 if calStruct.describe.blankOtherScreen
-    
     [obj.slaveWindowPtr, ~] = ...
-        PsychImaging('OpenWindow', calStruct.describe.whichBlankScreen-1, 255*calStruct.describe.blankSettings, [], pixelSize, [], stereoMode);
-    
+        SetProjectorPlainScreenSettings(calStruct.describe.blankSettings, obj.masterWindowPtr, obj.screenRect, 'screenNum', calStruct.describe.whichBlankScreen-1);
     LoadIdentityClut(obj.slaveWindowPtr);
     Screen('Flip', obj.slaveWindowPtr);
 end
+% 
+% if calStruct.describe.blankOtherScreen
+%     
+%     [obj.slaveWindowPtr, ~] = ...
+%         PsychImaging('OpenWindow', calStruct.describe.whichBlankScreen-1, 255*calStruct.describe.blankSettings, [], pixelSize, [], stereoMode);
+%     
+%     LoadIdentityClut(obj.slaveWindowPtr);
+%     Screen('Flip', obj.slaveWindowPtr);
+% end
 
-% white square for user to focus the spectro-radiometer
-%     targetSettings = [1 1 1];
-targetSettings = ones(1,obj.nSubprimaries); % Setting for SACC Subprimary calibration (Semin)
-
+% White square for user to focus the spectro-radiometer
+targetSettings = ones(1,obj.nSubprimaries);
 obj.updateBackgroundAndTarget(backgroundSettings, targetSettings, calStruct.describe.useBitsPP)
 
-% Connect to the projector
-isReady = Datapixx('open');
-isReady = Datapixx('IsReady');
-
-% Set the initial state as both primary and sub-primary current=0
-for j=1:obj.nPrimaries % Primary(1-3)
-    for i=1:obj.nSubprimaries % Sub-primary(0-nSubprimaries)
-        Datapixx('SetPropixxHSLedCurrent', j-1, obj.logicalToPhysical(i), 0);
-    end
-end
-
-% Put here any code required to initialize the subprimaries.
+% Check if the number of subprimaris matches.
 if (length(obj.logicalToPhysical) ~= obj.nSubprimaries)
     error('Mismatch in number of subprimaries specificaiton and logical to physical array');
 end
-current_on=obj.nInputLevels;
-current_off=0;
-switch (obj.whichPrimary)
-    case 1
-        % Turn off subprimaries for primaries 2 and 3, turn on all
-        % subprimaries for primary 1.
-        
-        for i=1:obj.nSubprimaries % Sub-primary
-            Datapixx('SetPropixxHSLedCurrent', 0, obj.logicalToPhysical(i), current_on); % Primary 1
-            Datapixx('SetPropixxHSLedCurrent', 1, obj.logicalToPhysical(i), current_off); % Primary 2
-            Datapixx('SetPropixxHSLedCurrent', 2, obj.logicalToPhysical(i), current_off); % Primary 3
-        end
-        
-    case 2
-        % Turn off subprimaries for primaries 1 and 3, turn on all
-        % subprimaries for primary 2.
-        for i=1:obj.nSubprimaries % Sub-primary
-            Datapixx('SetPropixxHSLedCurrent', 0, obj.logicalToPhysical(i), current_off); % Primary 1
-            Datapixx('SetPropixxHSLedCurrent', 1, obj.logicalToPhysical(i), current_on); % Primary 2
-            Datapixx('SetPropixxHSLedCurrent', 2, obj.logicalToPhysical(i), current_off); % Primary 3
-        end
-        
-    case 3
-        % Turn off subprimaries for primaries 1 and 2, turn on all
-        % subprimaries for primary 3.
-        for i=1:obj.nSubprimaries % Sub-primary
-            Datapixx('SetPropixxHSLedCurrent', 0, obj.logicalToPhysical(i), current_off); % Primary 1
-            Datapixx('SetPropixxHSLedCurrent', 1, obj.logicalToPhysical(i), current_off); % Primary 2
-            Datapixx('SetPropixxHSLedCurrent', 2, obj.logicalToPhysical(i), current_on); % Primary 3
-        end
-        
-    otherwise
-        error('SACC display has only three primaries');
+
+% Check the number of primary to calibrate.
+if (obj.whichPrimary > obj.nPrimaries) 
+    error('SACC display has only three primaries');
 end
 
-% Decide whether LEDs should be in "normal" mode or "steady" mode
-if (obj.normalMode)
-    % Put LEDs in normal mode
-    commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; 
-    unix(commandNormal)
-else
-    % Put LEDs in steady mode   
-    commandSteady = 'vputil rw 0x1c8 0x7 -q quit'; 
-    unix(commandSteady)
-end
-
-% When doing calibration with the SpectroCAL, turn the laser on
-if strcmp(class(obj.radiometerObj), 'SpectroCALdev')
-    obj.radiometerObj.switchLaserState(1);
-end
+% Set subprimary settings here. Projector target primary is turn at all
+% subprimary settings, while the other primaries are turned off.
+subprimaryInitialSettings = zeros(obj.nPrimaries,obj.nSubprimaries); % Base matrix for subprimary settings.
+subprimaryInitialCurrent = obj.nInputLevels-1; % Current value for each subprimary setting.
+subprimaryInitialSettings(obj.whichPrimary,:) = subprimaryInitialCurrent;
+SetSubprimarySettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
 
 % Wait for user
 if (userPrompt)
     fprintf('\nHit enter when ready ...');
     FlushEvents;
     GetChar;
-    if strcmp(class(obj.radiometerObj), 'SpectroCALdev')
-        obj.radiometerObj.switchLaserState(0);
-    end
     fprintf('\n\n-------------------------------------------\n');
     fprintf('\nPausing for %d seconds ...', calStruct.describe.leaveRoomTime);
     WaitSecs(calStruct.describe.leaveRoomTime);
     fprintf(' done\n');
     fprintf('\n-------------------------------------------\n\n');
 end
-
 end
