@@ -52,7 +52,8 @@ end
 %% Measure it.
 if (options.measurementOption)
     measuredSpd = MeasSpd(options.S, options.portNum, 'all');
-    if (options.verbose)
+  
+if (options.verbose)
         disp('Measurement complete!');
     end
 else

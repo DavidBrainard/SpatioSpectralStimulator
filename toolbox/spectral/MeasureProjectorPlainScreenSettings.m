@@ -47,6 +47,8 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 arguments
     theSettings
     S
+    window (1,1)
+    windowRect (1,4)
     options.measurementOption (1,1) = true
     options.verbose (1,1) = true
 end

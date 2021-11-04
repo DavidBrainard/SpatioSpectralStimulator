@@ -11,7 +11,7 @@ clear; close all;
 %% Which condition
 %
 % This is used to match up with parameters run in SpectralTestCal
-conditionName = 'LminusMSmooth';
+conditionName = 'ConeIsolating';
 
 %% Load output of SpectralTestCal
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -44,8 +44,9 @@ T_cones = theData.T_cones;
 MEASURE = true;
 if (MEASURE)
     % Open up projector
-    [window,windorRect] = OpenProjectorPlainScreen([1 1 1]');
-
+    [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
+    OpenRadiometer;
+    
     % Measure
     for pp = 1:nPrimaries
         isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
