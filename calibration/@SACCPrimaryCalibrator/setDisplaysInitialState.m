@@ -28,10 +28,10 @@ end
 Screen('Preference', 'SkipSyncTests', 1);
 
 % Start PsychImaging.
-stereoMode = [];
-screenRect = [];
-pixelSize = 24;
-PsychImaging('PrepareConfiguration');
+% stereoMode = [];
+% screenRect = [];
+% pixelSize = 24;
+% PsychImaging('PrepareConfiguration');
 
 % Set background settings.
 if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
@@ -40,22 +40,21 @@ else
     backgroundSettings = [1 1 1];    
 end
 
-
 %% WORKING ON THIS PART
-% Display background settings. (TO BE MODIFIED)
-[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen([1 1 1]);
-SetProjectorPlainScreenSettings(backgroundSettings, obj.masterWindowPtr, obj.screenRect);
-
-% (ORIGINAL CODE)
-[obj.masterWindowPtr, obj.screenRect] = ...
-    PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
+% Display background settings. (NEW)
+[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen(backgroundSettings,'screenNum',calStruct.describe.whichScreen-1);
 LoadIdentityClut(obj.masterWindowPtr);
 
-% Blank option for the other display. (TO BE MODIFIED)
+% (ORIGINAL CODE)
+% [obj.masterWindowPtr, obj.screenRect] = ...
+%     PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*backgroundSettings, screenRect, pixelSize, [], stereoMode);
+% LoadIdentityClut(obj.masterWindowPtr);
+
+% Blank option for the other display. (NEW)
 if calStruct.describe.blankOtherScreen
     [obj.slaveWindowPtr, ~] = ...
-        SetProjectorPlainScreenSettings(calStruct.describe.blankSettings, obj.masterWindowPtr, obj.screenRect, 'screenNum', calStruct.describe.whichBlankScreen-1);
-    LoadIdentityClut(obj.slaveWindowPtr);
+        OpenProjectorPlainScreen(calStruct.describe.blankSettings,'screenNum',calStruct.describe.whichBlankScreen-1);  
+         LoadIdentityClut(obj.slaveWindowPtr);
     Screen('Flip', obj.slaveWindowPtr);
 end
 

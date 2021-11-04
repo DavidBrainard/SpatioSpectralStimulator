@@ -96,7 +96,7 @@ if (options.measurementOption)
     SetSubprimarySettings(targetSubprimarySettings);
     
     % Measure it.
-    targetSpdMeasured = MeasureSPD('S',S);
+    targetSpdMeasured = MeasureSpectroradiometer('S',S);
     if (options.verbose)
         fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
     end

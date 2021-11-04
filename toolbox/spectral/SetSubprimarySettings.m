@@ -63,10 +63,10 @@ end
 
 % Check consistency of passed settings
 [m,n] = size(subprimarySettings);
-if (n ~= length(options.logicalToPhysical))
+if (m ~= length(options.logicalToPhysical))
     error('Number of subprimary settings passed does not match logicalToPhysical mapping');
 end
-if (m ~= options.nPrimaries)
+if (n ~= options.nPrimaries)
     error('Number of columns in subprimary settings does not match number of projector primaries');
 end
 

@@ -77,7 +77,7 @@ if (options.measurementOption)
         SetProjectorPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
 
         % Measure it.
-        spdMeasured(:,tt) = MeasureSPD('S',S);
+        spdMeasured(:,tt) = MeasureSpectroradiometer('S',S);
         if (options.verbose)
             fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
