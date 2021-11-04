@@ -42,8 +42,9 @@ function [] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,opti
 
 %% Set parameters.
 arguments
-    theSettings (3,1) {mustBeInRange(projectorDisplayColor,0,1,"inclusive")}
-    options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
+    theSettings (3,1) {mustBeInRange(theSettings,0,1,"inclusive")}
+    window (1,1)
+    windowRect (1,4)
     options.maximumValue (1,1) = 255
     options.verbose (1,1) = true
 end
@@ -54,11 +55,16 @@ Screen('ColorRange',window,options.maximumValue);
 % Scale the settings to match up the working range.
 theSettingsScaled = round(options.maximumValue .* theSettings);
 
+% Check if the integer settings are within the right range.
+if any(theSettingsScaled > options.maximumValue)
+   error('The integer settings are in the wrong range!');
+end
+
 %% Set the color of plain screen on the projector.
 Screen('FillRect',window,theSettingsScaled,windowRect);
 Screen('Flip', window);
 if (options.verbose)
-    fprintf('Projector settings [%.2f, %.2f, %.2f] \n',theSettingsScaled(1),theSettingsScaled(2),theSettingsScaled(3));
+    fprintf('Projector settings [%.0f, %.0f, %.0f] \n',theSettingsScaled(1),theSettingsScaled(2),theSettingsScaled(3));
 end
 
 end

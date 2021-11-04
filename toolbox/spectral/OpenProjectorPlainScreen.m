@@ -41,7 +41,7 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 arguments
     initialSettings (3,1) {mustBeInRange(initialSettings,0,1,"inclusive")}
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
-    options.screenNum (1,1) = true
+    options.screenNum (1,1)
     options.verbose (1,1) = true
 end
 
@@ -50,7 +50,7 @@ PsychDefaultSetup(2);
 screens = Screen('Screens');
 
 % Set which screen to display.
-if (options.screenNum == [])
+if (~isfield(options,'screenNum'))
     screenNumber = max(screens); % Default.
 else
     screenNumber = options.screenNum;
