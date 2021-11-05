@@ -24,20 +24,23 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 %                                 target primaries.
 %
 % Optional key/value pairs:
-%    'projectorMode' -            Boolean (default true). Set the projector
-%                                 pulse mode either 'Normal' (true) or
-%                                 'Steady-on' (false).
 %    'measurementOption' -        Boolean (default true). Set if you want
 %                                 to proceed the measurements. If you set
 %                                 'true', measurement will be included, and
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
-%    'verbose' -                  Boolean. Default true.  Controls plotting
-%                                 and printout.
+%    'projectorMode' -            Boolean (default true). Set the projector
+%                                 pulse mode either to be 'Normal' (true) or
+%                                 'Steady-on' (false).
 %    'nPrimaries -                The number of primaries in the displaying
 %                                 device.
+%    'verbose' -                  Boolean. Default true.  Controls plotting
+%                                 and printout.
 %
+% See also:
+%    SetSubprimarySettings.
+
 % History:
 %    10/06/21  smo                Started on it
 %    10/07/21  smo                Makes it working for a single primary and
@@ -48,29 +51,16 @@ function [targetSpdMeasured] = MeasureDesiredTargetPrimaries(targetPrimaries,sub
 
 %% Set parameters.
 arguments
-    targetPrimaries
+    targetPrimaries {mustBeInRange(targetPrimaries,0,1,"inclusive")}
     subPrimaryCalStructData
-    targetPrimaryNum
-    options.projectorMode (1,1) = true
+    targetPrimaryNum (1,1)
     options.measurementOption (1,1) = true
-    options.verbose (1,1) = true
+    options.projectorMode (1,1) = true
     options.nPrimaries (1,1) = 3
+    options.verbose (1,1) = true
 end
 
-%% Set the projector mode.
-% if (options.measurementOption)
-%     if (options.projectorMode)
-%         commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
-%         unix(commandNormal)
-%         disp('Projector is set as Normal mode');
-%     else
-%         commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
-%         unix(commandSteadyOn)
-%         disp('Projector is set as Steady-on mode');
-%     end
-% end
-
-% Get number of discrete input levels for the device.
+%% Get number of discrete input levels for the device.
 % So, control values go from 0 to (subprimaryNInputLevels-1).
 subprimaryNInputLevels = size(subPrimaryCalStructData.get('gammaInput'),1);
 
@@ -93,9 +83,14 @@ if (options.measurementOption)
     % the other primaries are set to zero.
     targetSubprimarySettings = zeros(nSubprimaries,options.nPrimaries);
     targetSubprimarySettings(:,targetPrimaryNum) = PrimaryToSettings(subPrimaryCalStructData,targetPrimaries);
-    SetSubprimarySettings(targetSubprimarySettings);
+    SetSubprimarySettings(targetSubprimarySettings,'projectorMode',options.projectorMode);
     
     % Measure it.
+    if (options.verbose)
+        for ss = 1:nSubprimaries
+            fprintf('Subprimary settings %2.0f - %.2f\n',ss,targetSubprimarySettings(ss));
+        end
+    end
     targetSpdMeasured = MeasureSpectroradiometer('S',S);
     if (options.verbose)
         fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);

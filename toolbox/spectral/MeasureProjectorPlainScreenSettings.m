@@ -25,9 +25,14 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
-% 
+%    'projectorMode' -            Boolean (default true). Set the projector
+%                                 pulse mode either to be 'Normal' (true) or
+%                                 'Steady-on' (false).
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
+%
+% See also:
+%    SetProjectorPlainScreenSettings.
 
 % History:
 %    10/08/21  smo                Started on it
@@ -46,8 +51,8 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 
 %% Set parameters.
 arguments
-    theSettings
-    S
+    theSettings {mustBeInRange(theSettings,0,1,"inclusive")}
+    S (1,3)
     window (1,1)
     windowRect (1,4)
     options.measurementOption (1,1) = true
