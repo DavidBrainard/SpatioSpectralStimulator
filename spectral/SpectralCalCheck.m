@@ -278,6 +278,7 @@ title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 if (MEASURE)
     % Close
     CloseProjectorScreen;
+    CloseSpectroradiometer;
 
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
