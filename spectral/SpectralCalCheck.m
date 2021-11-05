@@ -11,7 +11,7 @@ clear; close all;
 %% Which condition
 %
 % This is used to match up with parameters run in SpectralTestCal
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 
 %% Load output of SpectralTestCal
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))

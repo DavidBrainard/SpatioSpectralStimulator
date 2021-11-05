@@ -69,7 +69,7 @@ S = subPrimaryCalStructData.get('S');
 
 % Set primary and subprimary numbers.
 nSubprimaries = subPrimaryCalStructData.get('nDevices');
-if (targetPrimaryNum > 3) && (targetPrimaryNum < 1)
+if (targetPrimaryNum > 3) || (targetPrimaryNum < 1)
     error('Target primary number should be set within [1, 2, 3]')
 end
 
