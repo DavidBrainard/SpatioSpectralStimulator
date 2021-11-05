@@ -180,7 +180,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
         'nSubprimaries', 15, ...                                    % Number of subprimaries
         'logicalToPhysical', [0:7 9:15], ...                        % Mapping of logical subprimary number to physical LED to write
-        'LEDWarmupDurationSeconds', 5 ...                           % Time in seconds to delay before each measurement for warming up the device    
+        'LEDWarmupDurationSeconds', 3 ...                           % Time in seconds to delay before each measurement for warming up the device    
     );
 
     % Specify the @Calibrator's optional params using a CalibratorOptions object
@@ -197,10 +197,10 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'fgColor',                          zeros(1,displayPrimariesNum), ... %color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         5, ...                          % number of repeated measurements for averaging
-        'nMeas',                            10, ...                          % samples along gamma curve
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
+        'nMeas',                            5, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
-        'boxSize',                          600, ...                        % size of calibration stimulus in pixels (it was 150 / Semin)
+        'boxSize',                          600, ...                        % size of calibration stimulus in pixels
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
         'boxOffsetY',                       0, ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
         'skipLinearityTest',                true, ...
