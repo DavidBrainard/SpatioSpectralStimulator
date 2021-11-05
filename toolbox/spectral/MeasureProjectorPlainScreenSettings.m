@@ -25,6 +25,7 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
+% 
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
 
@@ -50,6 +51,7 @@ arguments
     window (1,1)
     windowRect (1,4)
     options.measurementOption (1,1) = true
+    options.projectorMode (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -81,7 +83,7 @@ if (options.measurementOption)
         % Measure it.
         spdMeasured(:,tt) = MeasureSpectroradiometer('S',S);
         if (options.verbose)
-            fprintf('           Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
+            fprintf('Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
 else
@@ -89,7 +91,7 @@ else
     % when skipping the measurements.
     spdMeasured = zeros(S(3),nTestPoints);
     if (options.verbose)
-        fprintf('           Measurement has been skipped \n');
+        fprintf('Measurement has been skipped \n');
     end
 end
 

@@ -43,7 +43,7 @@ T_cones = theData.T_cones;
 % was true.
 MEASURE = true;
 if (MEASURE)
-    % Open up projector
+    % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
     OpenRadiometer;
     
@@ -282,7 +282,7 @@ if (MEASURE)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimeStr));
+        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
     end
 end
