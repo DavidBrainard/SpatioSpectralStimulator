@@ -24,6 +24,11 @@ CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 P_device = projectorCalObj.get('P_device');
 nPrimaries = size(P_device,2);
 
+%% Refit gamma
+gammaMethod = 'identity';
+projectorCalObj.set('gamma.fitType',gammaMethod);
+CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
+
 %% Set projector gamma method
 %
 % If we set to 0, there is no quantization and the result is excellent.
@@ -43,17 +48,23 @@ finePrimaries = finePrimariesValues(ones(nPrimaries,1),:);
 fineSettings = PrimaryToSettings(projectorCalObj,finePrimaries);
 for ii = 1:size(fineSettings,2)
     if (any(fineSettings(:,ii) ~= fineSettings(1,ii)))
-        %error('Oops');
+        error('Settings ');
     end
 end
 
 % Quick plot of what comes back for first primary channel.
 % Look at expanded view in the plot
-figure; clf; hold on
+figure; clf;
+subplot(1,2,1); hold on
 plot(finePrimariesValues,fineSettings(1,:),'r+','MarkerSize',8);
 xlabel('Primary Value');
 ylabel('Setting Value');
 axis('square'); xlim([0 0.1]); ylim([0 0.1]);
+subplot(1,2,2); hold on
+plot(finePrimariesValues,fineSettings(1,:),'r+','MarkerSize',8);
+xlabel('Primary Value');
+ylabel('Setting Value');
+axis('square'); xlim([0.9 1]); ylim([0.9 1]);
 
 % Check number of unique settings and what they are
 expectedSettings = linspace(0,1,projectorNInputLevels);
@@ -66,5 +77,19 @@ for pp = 1:nPrimaries
     if (any(uniqueSettingsValues(pp,:) ~= expectedSettings))
         error('Unique settings are not as expected');
     end
+end
+
+% Convert to integers
+uniqueIntegerValues = SettingsToIntegers(uniqueSettingsValues,'nInputLevels',projectorNInputLevels);
+temp1 = 0:(projectorNInputLevels-1);
+temp2 = uniqueIntegerValues-temp1(ones(nPrimaries,1),:);
+if (any(temp2(:) ~= 0))
+    error('Conversion to integers not working as expected');
+end
+
+% Convert back to settings
+settingsCheck = IntegersToSettings(uniqueIntegerValues,'nInputLevels',projectorNInputLevels);
+if (max(abs(settingsCheck(:)-uniqueSettingsValues(:))) > 0)
+    error('Cannot get settings back from integers');
 end
 
