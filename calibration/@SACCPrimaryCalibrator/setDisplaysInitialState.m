@@ -34,11 +34,7 @@ Screen('Preference', 'SkipSyncTests', 1);
 % PsychImaging('PrepareConfiguration');
 
 % Set background settings.
-if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
-    backgroundSettings = obj.options.calibratorTypeSpecificParamsStruct.DLPbackgroundSettings;
-else
-    backgroundSettings = [1 1 1];    
-end
+backgroundSettings = [1 1 1];    
 
 %% WORKING ON THIS PART
 % Display background settings. (NEW)
@@ -85,8 +81,8 @@ end
 
 % Set subprimary settings here. Projector target primary is turn at all
 % subprimary settings, while the other primaries are turned off.
-subprimaryInitialSettings = zeros(obj.nPrimaries,obj.nSubprimaries); % Base matrix for subprimary settings.
-subprimaryInitialSettings(obj.whichPrimary,:) = 1;
+subprimaryInitialSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings.
+subprimaryInitialSettings(:,obj.whichPrimary) = 1;
 SetSubprimarySettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
 
 % Wait for user

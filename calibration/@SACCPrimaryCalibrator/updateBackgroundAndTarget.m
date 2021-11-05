@@ -34,9 +34,9 @@ try
     allPrimaries = [1:1:obj.nPrimaries];
     otherPrimaries = setdiff(allPrimaries,obj.whichPrimary);
     
-    subprimarySettings = zeros(obj.nPrimaries,obj.nSubprimaries); % Base matrix for the subprimary settings.
-    subprimarySettings(obj.whichPrimary,:) = targetSettings; % Target primary setting.
-    subprimarySettings(otherPrimaries,:)   = obj.arbitraryBlack; % Other primaries settings. 
+    subprimarySettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for the subprimary settings.
+    subprimarySettings(:,obj.whichPrimary) = targetSettings'; % Target primary setting.
+    subprimarySettings(:,otherPrimaries) = obj.arbitraryBlack; % Other primaries settings. 
     
     SetSubprimarySettings(subprimarySettings);
     

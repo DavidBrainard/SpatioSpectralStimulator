@@ -8,11 +8,11 @@ end
 % Normal mode, and some reasonable R, G, and B subprimary values.
 %
 % Make a matrix for setting up the subprimary settings.
-subprimaryClosingSettings = zeros(obj.nPrimaries,obj.nSubprimaries); % Base matrix for subprimary settings. 
+subprimaryClosingSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings. 
 idxSubprimaryTurnOnDefault = [13 14 15 0; 1 5 6 7; 1 2 3 0]; % Default settings when turning on the projector (0 is for matching size of the matrix).
 for pp = 1:obj.nPrimaries
-    for ii = 1:idxSubprimaryTurnOnDefault
-        subprimaryClosingSettings(pp,ii) = 1;
+    for ii = 1:size(idxSubprimaryTurnOnDefault,2)
+        subprimaryClosingSettings(idxSubprimaryTurnOnDefault(pp,ii),pp) = 1;
     end
 end
 
