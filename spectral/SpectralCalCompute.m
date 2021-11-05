@@ -164,9 +164,11 @@ projectorNInputLevels = 256;
 subprimaryCalNames = {'SACCPrimary1' 'SACCPrimary2' 'SACCPrimary3'};
 subprimaryNInputLevels = 253;
 
-%% Load projector calibration.
+%% Load projector calibration and refit its gamma
 projectorCal = LoadCalFile(projectorCalName);
 projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
+gammaMethod = 'identity';
+projectorCalObj.set('gamma.fitType',gammaMethod);
 CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 
 %% Load subprimary calibrations.
@@ -512,16 +514,21 @@ theStandardPredictedContrastGaborCal = ExcitationsToContrast(theStandardPredicte
 % slow but conceptually simple and fast enough to be feasible.
 tic;
 fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+
+% Compute all possible settings as integers.  
+allProjectorIntegersCal = zeros(3,projectorNInputLevels^3);
 idx = 1;
 for ii = 0:(projectorNInputLevels-1)
     for jj = 0:(projectorNInputLevels-1)
         for kk = 0:(projectorNInputLevels-1)
-            allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+            allProjectorIntegersCal(:,idx) = [ii jj kk]';
             idx = idx+1;
         end
     end
 end
+
+% Convert integers to 0-1 reals, quantized
+allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLevels',projectorNInputLevels);
 
 % Get LMS excitations for each triplet of projector settings, and build a
 % point cloud object from these.
