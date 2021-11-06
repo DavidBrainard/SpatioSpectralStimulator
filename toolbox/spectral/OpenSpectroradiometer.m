@@ -1,8 +1,8 @@
-function [] = OpenRadiometer(options)
+function [] = OpenSpectroradiometer(options)
 % This makes the radiometer ready to use.
 %
 % Syntax:
-%    [] = OpenRadiometer()
+%    [] = OpenSpectroradiometer()
 %
 % Description:
 %    This makes the radiometer ready to use. It connects to PR670

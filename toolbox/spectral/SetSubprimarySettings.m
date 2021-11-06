@@ -74,10 +74,10 @@ end
 subprimaryIntegers = SettingsToIntegers(subprimarySettings,'nInputLevels',options.nInputLevels);
 
 % Set projector current levels as the above settings.
-nSubprimaries = size(subprimarySettings,2);
+nSubprimaries = size(subprimarySettings,1);
 for pp = 1:options.nPrimaries
     for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', pp-1, options.logicalToPhysical(ss), subprimaryIntegers(pp,ss));
+        Datapixx('SetPropixxHSLedCurrent', pp-1, options.logicalToPhysical(ss), subprimaryIntegers(ss,pp));
     end
 end
 
