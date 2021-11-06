@@ -45,7 +45,7 @@ MEASURE = true;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
-    OpenRadiometer;
+    OpenSpectroradiometer;
     
     % Measure
     for pp = 1:nPrimaries
