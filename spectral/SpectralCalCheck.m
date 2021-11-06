@@ -226,7 +226,7 @@ end
 %
 % We use the fact that the background settings are in the first column of 
 % theData.thePointCloudSettingsCheckCal.
-whichToAnalyze = 'scaled';
+whichToAnalyze = 'raw';
 switch (whichToAnalyze)
     case 'raw'
         testExcitations = T_cones * thePointCloudSpdMeasured;
