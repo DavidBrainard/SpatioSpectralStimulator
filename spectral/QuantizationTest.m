@@ -87,6 +87,17 @@ if (any(temp2(:) ~= 0))
     error('Conversion to integers not working as expected');
 end
 
+% If this conversion is all as expected, we shouldn't really have to round
+% when we compute integers.  Let's check.
+uniqueIntegerValuesNoRound = uniqueSettingsValues*(projectorNInputLevels-1);
+roundCheck = max(abs(uniqueIntegerValuesNoRound(:)-round(uniqueIntegerValuesNoRound(:))));
+if (roundCheck > 1e-10)
+    error('Settings are not quantized the way we think they should be (first check)');
+end
+if (max(abs(uniqueIntegerValuesNoRound(:)-uniqueIntegerValues(:))) > 1e-10)
+    error('Settings are not quantized the way we think they should be (second check)');
+end
+    
 % Convert back to settings
 settingsCheck = IntegersToSettings(uniqueIntegerValues,'nInputLevels',projectorNInputLevels);
 if (max(abs(settingsCheck(:)-uniqueSettingsValues(:))) > 0)
