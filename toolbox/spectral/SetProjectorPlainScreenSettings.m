@@ -1,4 +1,4 @@
-function [] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,options)
+function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,options)
 % This displays a plain screen on the projector using Psychtoolbox.
 %
 % Syntax: [] = SetProjectorPlainScreenSettings(theSettings)
@@ -18,7 +18,8 @@ function [] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,opti
 %    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
-%    N/A
+%    theIntegers -                Integer settings matching the desired
+%                                 maximum value.
 %
 % Optional key/value pairs:
 %    'projectorToolboxPath' -     Path to the Vpixx control toolbox.  We

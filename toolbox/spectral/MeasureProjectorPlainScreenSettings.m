@@ -1,4 +1,4 @@
-function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect,options)
+function [spdMeasured,theIntegers] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect,options)
 % Measure the SPD over projector primary settings.
 %
 % Syntax: [[spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect)
@@ -17,6 +17,9 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 % Outputs:
 %    spdMeasured -                Measurement results of the SPDs for the
 %                                 contrast testing points.
+%    theIntegers -                Projector input settings scaled in
+%                                 integers matching with desired maximum
+%                                 value.
 %
 % Optional key/value pairs:
 %    'measurementOption' -        Boolean (default true). Set if you want
@@ -65,12 +68,14 @@ if (options.measurementOption)
     % Measure the test points.
     for tt = 1:nTestPoints
         % Set the projector settings and display it as a plane screen.
-        SetProjectorPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
+        % Also, save out the interger settings values here. We may want to
+        % check if we did quantization well.
+        theIntegers(:,tt) = SetProjectorPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
 
         % Measure it.
         spdMeasured(:,tt) = MeasureSpectroradiometer('S',S);
         if (options.verbose)
-            fprintf('Measurement complete! - Test Point (%d/%d) \n',tt,nTestPoints);
+            fprintf('Measurement in progress - Test Point (%d/%d) \n',tt,nTestPoints);
         end
     end
 else

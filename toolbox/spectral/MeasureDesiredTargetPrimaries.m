@@ -88,12 +88,12 @@ if (options.measurementOption)
     % Measure it.
     if (options.verbose)
         for ss = 1:nSubprimaries
-            fprintf('Subprimary settings %2.0f - %.2f\n',ss,targetSubprimarySettings(ss));
+            fprintf('Subprimary settings %2.0f - %.2f\n',ss,targetSubprimarySettings(ss,targetPrimaryNum));
         end
     end
     targetSpdMeasured = MeasureSpectroradiometer('S',S);
     if (options.verbose)
-        fprintf('Measurement complete! - Primary %d\n',targetPrimaryNum);
+        fprintf('Measurement in progress - Primary %d\n',targetPrimaryNum);
     end
 else
     % Save out the zero spectrum if the measurement is skipped.

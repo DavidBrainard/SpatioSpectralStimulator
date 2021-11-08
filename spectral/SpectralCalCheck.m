@@ -12,7 +12,7 @@ clear; close all;
 %
 % This is used to match up with parameters run in SpectralCalCompute
 % ['LminusMSmooth' 'ConeIsolating']
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -42,7 +42,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = false;
+MEASURE = true;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -191,8 +191,9 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    thePointCloudSpdMeasured = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
+    [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',true);
+    
 end
 
 %% Make plot of measured versus desired spds.
@@ -291,7 +292,7 @@ if (MEASURE)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
+        save(testFilename,'isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
         save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName)); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
     end
 end
