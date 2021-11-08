@@ -338,7 +338,8 @@ projectorBackgroundScaleFactor = 0.5;
 % Make a loop for getting background for all primaries.
 % Passing true for key 'Scale' causes these to be scaled reasonably
 % relative to gamut, which is why we can set the target luminance
-% arbitrarily to 1 just above.
+% arbitrarily to 1 just above. The scale factor determines where in the
+% approximate subprimary gamut we aim the background at.
 for pp = 1:nPrimaries
     [subprimaryBackgroundPrimaries(:,pp),subprimaryBackgroundSpd(:,pp),subprimaryBackgroundXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
         B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
@@ -365,9 +366,16 @@ for pp = 1:nPrimaries
     end
 
     % Get isolating primaries.
-    [projectorPrimaryPrimaries(:,pp),projectorPrimaryPrimariesQuantized(:,pp),projectorPrimarySpd(:,pp),projectorPrimaryContrast(:,pp)] = FindDesiredContrastTargetPrimaries(targetProjectorPrimaryContrastDir(:,pp), ...
+    [projectorPrimaryPrimaries(:,pp),projectorPrimaryPrimariesQuantized(:,pp),projectorPrimarySpd(:,pp),projectorPrimaryContrast(:,pp),projectorPrimaryModulationPrimaries(:,pp)] ... 
+        = FindDesiredContrastTargetPrimaries(targetProjectorPrimaryContrastDir(:,pp), ...
         targetPrimaryHeadroom,targetProjectorPrimaryContrast,subprimaryBackgroundPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural{pp},projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
+    
+    % We can wonder about how close to gamut our primaries are.  Compute
+    % that here.
+    primaryGamutScaleFactor(pp) = MaximizeGamutContrast(projectorPrimaryModulationPrimaries(:,pp),subprimaryBackgroundPrimaries(:,pp));
+    
+    % Find the subprimary settings that correspond to the desired primaries
     projectorPrimarySettings(:,pp) = PrimaryToSettings(subprimaryCalObjs{pp},projectorPrimaryPrimaries(:,pp));
 end
 
