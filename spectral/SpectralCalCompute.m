@@ -8,6 +8,11 @@
 %% Clear
 clear; close all;
 
+% Verbose?
+%
+% Set to true to get more output
+VERBOSE = false;
+
 % Set wavelength support.
 %
 % This needs to match what's in the calibration files, but
@@ -19,7 +24,7 @@ S = [380 2 201];
 %
 %
 % Condition Name
-conditionName = 'LminusMSmooth';
+conditionName = 'ConeIsolating';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -46,7 +51,7 @@ switch (conditionName)
         targetProjectorPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetProjectorPrimaryContrast = 0.05;
+        targetProjectorPrimaryContrasts = [0.05 0.05 0.05];
         targetPrimaryHeadroom = 1.05;
         primaryHeadroom = 0;
         targetLambda = 3;
@@ -107,9 +112,9 @@ switch (conditionName)
         targetProjectorPrimaryContrastDir(:,3) = [0 0 1]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetProjectorPrimaryContrast = 0.05;
-        targetPrimaryHeadroom = 1.05;
-        primaryHeadroom = 0;
+        targetProjectorPrimaryContrasts = [0.04 0.04 0.04];
+        targetPrimaryHeadroom = 1;
+        primaryHeadroom = 0.01;
         targetLambda = 3;
 
         % We may not need the whole direction contrast excursion. Specify max
@@ -144,11 +149,6 @@ switch (conditionName)
         B_natural{3} = B_naturalRaw;
 
 end
-
-% Verbose?
-%
-% Set to true to get more output
-VERBOSE = false;
 
 %% Define calibration filenames/params.
 %
@@ -368,12 +368,13 @@ for pp = 1:nPrimaries
     % Get isolating primaries.
     [projectorPrimaryPrimaries(:,pp),projectorPrimaryPrimariesQuantized(:,pp),projectorPrimarySpd(:,pp),projectorPrimaryContrast(:,pp),projectorPrimaryModulationPrimaries(:,pp)] ... 
         = FindDesiredContrastTargetPrimaries(targetProjectorPrimaryContrastDir(:,pp), ...
-        targetPrimaryHeadroom,targetProjectorPrimaryContrast,subprimaryBackgroundPrimaries(:,pp), ...
+        targetPrimaryHeadroom,targetProjectorPrimaryContrasts(pp),subprimaryBackgroundPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural{pp},projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
     
     % We can wonder about how close to gamut our primaries are.  Compute
     % that here.
     primaryGamutScaleFactor(pp) = MaximizeGamutContrast(projectorPrimaryModulationPrimaries(:,pp),subprimaryBackgroundPrimaries(:,pp));
+    fprintf('\tPrimary %d, gamut scale factor is %0.3f\n',pp,primaryGamutScaleFactor(pp));
     
     % Find the subprimary settings that correspond to the desired primaries
     projectorPrimarySettings(:,pp) = PrimaryToSettings(subprimaryCalObjs{pp},projectorPrimaryPrimaries(:,pp));
@@ -444,7 +445,6 @@ xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
 title('Check that we obtrain desired background excitations');
 fprintf('Projector settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
     projectorBgSettings(1),projectorBgSettings(2),projectorBgSettings(3));
-
 
 %% Make monochrome Gabor patch in range -1 to 1.
 %
