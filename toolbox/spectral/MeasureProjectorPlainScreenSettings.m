@@ -25,9 +25,6 @@ function [spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,windo
 %                                 'false' will skip the measurement. This
 %                                 will be useful if you run the code
 %                                 outside the lab and debugging the code.
-%    'projectorMode' -            Boolean (default true). Set the projector
-%                                 pulse mode either to be 'Normal' (true) or
-%                                 'Steady-on' (false).
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
 %
@@ -56,25 +53,10 @@ arguments
     window (1,1)
     windowRect (1,4)
     options.measurementOption (1,1) = true
-    options.projectorMode (1,1) = true
     options.verbose (1,1) = true
 end
 
-%% Set the projector mode.
-%
-if (options.measurementOption)
-    if (options.projectorMode)
-        commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
-        unix(commandNormal)
-        disp('Projector is set as Normal mode');
-    else
-        commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
-        unix(commandSteadyOn)
-        disp('Projector is set as Steady-on mode');
-    end
-end
-
-% Number of contrast test points.
+%% Number of contrast test points.
 nTestPoints = size(theSettings,2);
 
 %% Display the projector image and measure it.

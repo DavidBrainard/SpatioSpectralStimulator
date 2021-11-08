@@ -27,10 +27,14 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 %                                 right if the toolbox is already on the
 %                                 path.
 %    'screenNum' -                Set which screen to display.
+%    'projectorMode' -            Boolean (default true). Set the projector
+%                                 pulse mode either to be 'Normal' (true) or
+%                                 'Steady-on' (false).
 %    'verbose' -                  Boolean. Default true.  Controls the printout.
 %
-% See also: SetProjectorPlainScreenSettings,
-%     MeasureProjectorPlainScreenSettings, CloseProjectorScreen.
+% See also: 
+%    SetProjectorPlainScreenSettings, MeasureProjectorPlainScreenSettings,
+%    CloseProjectorScreen.
 
 % History:
 %    10/28/21  smo                Started on it
@@ -42,6 +46,7 @@ arguments
     initialSettings (3,1) {mustBeInRange(initialSettings,0,1,"inclusive")}
     options.projectorToolboxPath = '/home/colorlab/Documents/MATLAB/toolboxes/VPixx';
     options.screenNum (1,1)
+    options.projectorMode (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -77,7 +82,7 @@ if (isempty(isThere))
     end
 end
 
-% Connect to the Vpixx projector.
+%% Connect to the Vpixx projector.
 isReady = Datapixx('open');
 if (~isReady)
     error('Datapixx call returns error');
@@ -85,6 +90,18 @@ end
 isReady = Datapixx('IsReady');
 if (~isReady)
     error('Datapixx call returns error');
+end
+
+% Set the projector mode to start. Projector mode can be only controlled
+% here or when setting subprimary settings in 'SetSubprimarySettings'.
+if (options.projectorMode)
+    commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
+    unix(commandNormal)
+    disp('Projector is set as Normal mode');
+else
+    commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
+    unix(commandSteadyOn)
+    disp('Projector is set as Steady-on mode');
 end
 
 end
