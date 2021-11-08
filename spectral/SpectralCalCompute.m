@@ -112,7 +112,7 @@ switch (conditionName)
         targetProjectorPrimaryContrastDir(:,3) = [0 0 1]'; targetProjectorPrimaryContrastDir(:,3) = targetProjectorPrimaryContrastDir(:,3)/norm(targetProjectorPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetProjectorPrimaryContrasts = [0.04 0.04 0.04];
+        targetProjectorPrimaryContrasts = [0.03 0.03 0.03];
         targetPrimaryHeadroom = 1;
         primaryHeadroom = 0.01;
         targetLambda = 3;
@@ -604,6 +604,9 @@ for ll = 1:size(uniqueDesiredContrastGaborCal,2)
 end
 theUniqueQuantizedSettingsGaborCal = theUniqueQuantizedSettingsGaborCal(:,uniqueIC);
 toc
+
+% Print out min/max of settings
+fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(theUniqueQuantizedSettingsGaborCal(:)), max(theUniqueQuantizedSettingsGaborCal(:)));
 
 % Get contrasts we think we have obtianed
 theUniqueQuantizedExcitationsGaborCal = SettingsToSensor(projectorCalObj,theUniqueQuantizedSettingsGaborCal);
