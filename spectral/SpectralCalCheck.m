@@ -13,7 +13,7 @@ clear; close all;
 % This is used to match up with parameters run in SpectralTestCal
 conditionName = 'LminusMSmooth';
 
-%% Load output of SpectralTestCal
+%% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
@@ -41,7 +41,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = true;
+MEASURE = false;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -55,8 +55,10 @@ if (MEASURE)
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,'testImageData1Check');
-        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+        testFiledate = fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName));
+        load(testFiledate,'dayTimestr'); % Load the measurement date in string file.
+        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); % Load the data.
     else
         error('No file to load');
     end
@@ -282,11 +284,12 @@ if (MEASURE)
     % Close
     CloseProjectorScreen;
     CloseSpectroradiometer;
-
+    
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts');
+        save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
+        save('testImageDataCheck_%s_dayTimestr',conditionName); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
     end
 end
