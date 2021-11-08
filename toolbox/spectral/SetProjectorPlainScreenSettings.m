@@ -53,18 +53,18 @@ end
 Screen('ColorRange',window,options.maximumValue);
 
 % Scale the settings to match up the working range.
-theSettingsScaled = round(options.maximumValue .* theSettings);
+theIntegers = SettingsToIntegers(theSettings,'nInputLevels',options.maximumValue+1);
 
 % Check if the integer settings are within the right range.
-if any(theSettingsScaled > options.maximumValue)
+if any(theIntegers > options.maximumValue)
    error('The integer settings are in the wrong range!');
 end
 
 %% Set the color of plain screen on the projector.
-Screen('FillRect',window,theSettingsScaled,windowRect);
+Screen('FillRect',window,theIntegers,windowRect);
 Screen('Flip', window);
 if (options.verbose)
-    fprintf('Projector settings [%.0f, %.0f, %.0f] \n',theSettingsScaled(1),theSettingsScaled(2),theSettingsScaled(3));
+    fprintf('Projector settings [%.0f, %.0f, %.0f] \n',theIntegers(1),theIntegers(2),theIntegers(3));
 end
 
 end
