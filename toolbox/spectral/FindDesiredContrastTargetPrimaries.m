@@ -1,4 +1,4 @@
-function [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingContrast] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
+function [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingContrast,isolatingModulationPrimaries] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast,targetPrimaryHeadroom,targetContrastReMax,bgPrimaries, ...
     T_cones,subprimaryCalstructData,B_natural,projectIndices,primaryHeadroom,targetLambda,options)
 % Find the desired target primaries so that the three primaries can produce
 % desired LMS contrast.
@@ -62,6 +62,8 @@ function [isolatingPrimaries,isolatingPrimariesQuantized,isolatingSpd,isolatingC
 %                                 reproduce. This is also calculated
 %                                 based on the quantized isolating
 %                                 primaries.
+%    isolatingModulationPrimaries - The differential primaries that head in
+%                                 the desired direction.
 %
 % Optional key/value pairs:
 %    'ExtraAmbientSpd' -          Vector specifying extra ambient light spd
