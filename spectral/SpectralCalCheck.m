@@ -126,16 +126,19 @@ if (MEASURE)
         % Build point cloud
         tic;
         fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-        allProjectorSettingsCal = zeros(3,projectorNInputLevels^3);
+        allProjectorIntegersCal = zeros(3,projectorNInputLevels^3);
         idx = 1;
         for ii = 0:(projectorNInputLevels-1)
             for jj = 0:(projectorNInputLevels-1)
                 for kk = 0:(projectorNInputLevels-1)
-                    allProjectorSettingsCal(:,idx) = [ii jj kk]'/projectorNInputLevels;
+                    allProjectorIntegersCal(:,idx) = [ii jj kk]';
                     idx = idx+1;
                 end
             end
         end
+        
+        % Convert integers to 0-1 reals, quantized
+        allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLevels',projectorNInputLevels);
 
         % Get LMS excitations for each triplet of projector settings, and build a
         % point cloud object from these.
@@ -151,10 +154,11 @@ if (MEASURE)
         %% Generate some settings values corresponding to known contrasts % (THIS PART MAY BE GOING TO BE IN A FUNCTION LATER ON - SEMIN)
         %
         % The reason for this is to measure and check these.  This logic follows
-        % how we handled an actual gabor image above.
+        % how we handled an actual gabor image above. The quantization to
+        % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
         rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
-        rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-        theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
+        rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+        theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastCheckCal;
         theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
         
         % For each check calibration find the settings that
@@ -178,15 +182,14 @@ if (MEASURE)
       
     end
     
-    %% Measure contrasts of the settings we computed in SpectralTestCal - SEE IF WE CAN WRITE A MEAUSURE SETTINGS ROUTINE THAT DOESN'T NEED CAL FILE OR T_CONES
+    %% Measure contrasts of the settings we computed in SpectralTestCal
     %
     % Measure the contrast points.  We've already got the settings so all we
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    [thePointCloudSpdMeasured] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
+    thePointCloudSpdMeasured = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',true);
-    % thePointCloudSpdMeasured = MeasureSpdFromProjectorSettings(theData.thePointCloudSettingsCheckCal);
 end
 
 %% Make plot of meeasured versus desired spds.
