@@ -194,44 +194,45 @@ if (MEASURE)
         S,window,windowRect,'measurementOption',true,'verbose',true);
 end
 
-%% Make plot of meeasured versus desired spds.
+%% Make plot of measured versus desired spds.
 %
 % The desired spds are in theData.thePointCloudSpdCheckCal
+%
+% Choose to use either raw or scaled measurement spectra.
+whichToAnalyze = 'raw';
+switch (whichToAnalyze)
+    case 'raw'
+        thePointCloudSpd = thePointCloudSpdMeasured;
+    case 'scaled'
+        for tt = 1:nTestPoints
+            % Find scale factor to best bring into alignment with target
+            scaleSpdToTargetFactor(tt) = thePointCloudSpdMeasured(:,tt)\theData.thePointCloudSpdCheckCal(:,pp);
+            thePointCloudSpd(:,tt) = scaleSpdToTargetFactor(tt) * thePointCloudSpdMeasured(:,tt);
+        end
+    otherwise
+        error('Unknown analyze type specified');
+end
 
-% Raw spds
-figure; 
+% Plot it.
+figure;
 for tt = 1:nTestPoints
-    subplot(2,round(nTestPoints/2),tt); hold on; 
-    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-') % Target spectra
-    plot(wls,thePointCloudSpdMeasured(:,tt),'r--'); % Measured spectra
+    subplot(round(nTestPoints/2),2,tt); hold on;
+    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
+    plot(wls,thePointCloudSpd(:,tt),'r-','LineWidth',2); % Measured spectra
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
-    title('Raw Spds')
-end
-
-% Scale measured spds to target and then plot
-for tt = 1:nTestPoints
-    % Find scale factor to best bring into alignment with target
-    scaleSpdToTargetFactor(tt) = thePointCloudSpdMeasured(:,tt)\theData.thePointCloudSpdCheckCal(:,pp);
-    thePointCloudSpdMeasuredScaled(:,tt) = scaleSpdToTargetFactor(tt)*thePointCloudSpdMeasured(:,tt);
-end
-figure; 
-for tt = 1:nTestPoints
-    subplot(2,round(nTestPoints/2),tt); hold on; 
-    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-') % Target spectra
-    plot(wls,thePointCloudSpdMeasuredScaled(:,tt),'r--'); % Measured spectra
-    xlabel('Wavelength (nm)')
-    ylabel('Spectral power distribution')
-    legend('Target','Measured')
-    title('Normalized Spds')
+    title(sprintf('Test %d %s \n',tt,whichToAnalyze),'fontsize',16)
+    % Set graph position and size.
+    figureSize = 1000;
+    figurePosition = [1200 300 figureSize figureSize];
+    set(gcf,'position',figurePosition)
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
 % We use the fact that the background settings are in the first column of 
 % theData.thePointCloudSettingsCheckCal.
-whichToAnalyze = 'raw';
 switch (whichToAnalyze)
     case 'raw'
         testExcitations = T_cones * thePointCloudSpdMeasured;
