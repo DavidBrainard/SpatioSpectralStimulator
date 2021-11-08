@@ -10,8 +10,9 @@ clear; close all;
 
 %% Which condition
 %
-% This is used to match up with parameters run in SpectralTestCal
-conditionName = 'LminusMSmooth';
+% This is used to match up with parameters run in SpectralCalCompute
+% ['LminusMSmooth' 'ConeIsolating']
+conditionName = 'ConeIsolating';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -95,7 +96,7 @@ for pp = 1:nPrimaries
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
     legend('Target','Measured');
-    title('Comparison of raw measured and desired spds');
+    title('Comparison of scaled measured and desired spds');
 end
 
 %% Set each primary to the settings we loaded in and measure - NEED TO MODIFY TO USE TbTb
@@ -291,6 +292,6 @@ if (MEASURE)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
-        save('testImageDataCheck_%s_dayTimestr',conditionName); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
+        save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName)); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
     end
 end
