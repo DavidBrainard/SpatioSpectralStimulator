@@ -19,7 +19,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-09_15-46-45';
+dayTimestr = '2021-11-09_18-03-37';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
@@ -33,7 +33,7 @@ end
 %
 % Target Spds.  The check here just verifies that we are consistent between
 % current compute code and this measurement.
-targetPrimarySpd = theData.targetPrimarySpd;
+targetPrimarySpd = theCheckData.targetPrimarySpd;
 targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
 if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
     error('Strange change in target spd');
