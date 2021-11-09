@@ -275,12 +275,6 @@ else
 end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
-%% Check that we have not altered targetPrimarySpd
-targetPrimarySpdCheck = theData.projectorCalObj.get('P_device');
-if (any(targetPrimarySpd(:) ~= targetPrimarySpdCheck(:)))
-    error('Stranger and stranger');
-end
-
 %% Close projector and save out the measurement data.
 if (MEASURE)
     % Close
