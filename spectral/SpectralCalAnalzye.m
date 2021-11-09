@@ -33,12 +33,12 @@ end
 %
 % Target Spds.  The check here just verifies that we are consistent between
 % current compute code and this measurement.
-% targetPrimarySpd = theData.targetPrimarySpd;
-% targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
-% if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
-%     error('Strange change in target spd');
-% end
-targetPrimarySpd = theComputeData.projectorCalObj.get('P_device');
+targetPrimarySpd = theData.targetPrimarySpd;
+targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
+if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
+    error('Strange change in target spd');
+end
+%targetPrimarySpd = theComputeData.projectorCalObj.get('P_device');
 
 % Set some variables.
 S = theData.S;                                                  % Range of the spectrum.
