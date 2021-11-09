@@ -100,12 +100,13 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
+projectorCalObj = theData.projectorCalObj;
 if (MEASURE)
     % Set the projector subprimaries here.
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
     
     %% Set the primaries in the calibration to the measured results.
-    theData.projectorCalObj.set('P_device',isolatingSpdMeasured);
+    projectorCalObj.set('P_device',isolatingSpdMeasured);
     
     %% Optional recompute of target settings
     %
@@ -139,7 +140,7 @@ if (MEASURE)
 
         % Get LMS excitations for each triplet of projector settings, and build a
         % point cloud object from these.
-        allProjectorExcitations = SettingsToSensor(theData.projectorCalObj,allProjectorSettingsCal);
+        allProjectorExcitations = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
         allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,projectorBgExcitations);
         allSensorPtCloud = pointCloud(allProjectorContrast');
         
@@ -167,15 +168,15 @@ if (MEASURE)
         % measurement, first settings), we should approximate the cone contrasts in
         % theDesiredContrastCheckCal.
         fprintf('Point cloud exhaustive method, finding settings\n')
-        theData.thePointCloudSettingsCheckCal = zeros(3,size(theDesiredContrastCheckCal,2));
+        thePointCloudSettingsCheckCal = zeros(3,size(theDesiredContrastCheckCal,2));
         for ll = 1:size(theDesiredContrastCheckCal,2)
             minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
-            theData.thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
+            thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
         end
-        theData.thePointCloudPrimariesCheckCal = SettingsToPrimary(theData.projectorCalObj,theData.thePointCloudSettingsCheckCal);
-        theData.thePointCloudSpdCheckCal = PrimaryToSpd(theData.projectorCalObj,theData.thePointCloudPrimariesCheckCal);
-        theData.thePointCloudExcitationsCheckCal = SettingsToSensor(theData.projectorCalObj,theData.thePointCloudSettingsCheckCal);
-        theData.thePointCloudContrastCheckCal = ExcitationsToContrast(theData.thePointCloudExcitationsCheckCal,projectorBgExcitations);
+        thePointCloudPrimariesCheckCal = SettingsToPrimary(projectorCalObj,thePointCloudSettingsCheckCal);
+        thePointCloudSpdCheckCal = PrimaryToSpd(projectorCalObj,thePointCloudPrimariesCheckCal);
+        thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
+        thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
       
     end
     
@@ -185,14 +186,14 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(theData.thePointCloudSettingsCheckCal,...
+    [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',true);
     
 end
 
 %% Make plot of measured versus desired spds.
 %
-% The desired spds are in theData.thePointCloudSpdCheckCal
+% The desired spds are in thePointCloudSpdCheckCal
 %
 % Choose to use either raw or scaled measurement spectra.
 whichToAnalyze = 'raw';
@@ -202,7 +203,7 @@ switch (whichToAnalyze)
     case 'scaled'
         for tt = 1:nTestPoints
             % Find scale factor to best bring into alignment with target
-            scaleSpdToTargetFactor(tt) = thePointCloudSpdMeasured(:,tt)\theData.thePointCloudSpdCheckCal(:,pp);
+            scaleSpdToTargetFactor(tt) = thePointCloudSpdMeasured(:,tt)\thePointCloudSpdCheckCal(:,pp);
             thePointCloudSpd(:,tt) = scaleSpdToTargetFactor(tt) * thePointCloudSpdMeasured(:,tt);
         end
     otherwise
@@ -210,25 +211,24 @@ switch (whichToAnalyze)
 end
 
 % Plot it.
-figure;
+figure; clf;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize];
+set(gcf,'position',figurePosition);
 for tt = 1:nTestPoints
     subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
+    plot(wls,thePointCloudSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
     plot(wls,thePointCloudSpd(:,tt),'r-','LineWidth',2); % Measured spectra
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
-    title(sprintf('Test %d %s \n',tt,whichToAnalyze),'fontsize',16)
-    % Set graph position and size.
-    figureSize = 1000;
-    figurePosition = [1200 300 figureSize figureSize];
-    set(gcf,'position',figurePosition)
+    title(sprintf('Test %d %s',tt,whichToAnalyze),'fontsize',16)
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
 % We use the fact that the background settings are in the first column of 
-% theData.thePointCloudSettingsCheckCal.
+%thePointCloudSettingsCheckCal.
 switch (whichToAnalyze)
     case 'raw'
         testExcitations = T_cones * thePointCloudSpdMeasured;
@@ -243,7 +243,7 @@ testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 % Add the target contrasts to be compared in the following graph.
 addTargetContrast = true;
 if (addTargetContrast)
-    targetExcitations = T_cones * theData.thePointCloudSpdCheckCal;
+    targetExcitations = T_cones * thePointCloudSpdCheckCal;
     targetBgExcitations = targetExcitations(:,1);
     targetContrasts = (targetExcitations - targetBgExcitations) ./ targetBgExcitations;
 else
@@ -251,15 +251,13 @@ end
 
 % Plot measured versus desired contrasts
 figure; hold on;
-% Measured contrasts.
-plot(theData.thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(theData.thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(theData.thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
-% Target contrasts.
+plot(thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
 if (addTargetContrast)
-    plot(theData.thePointCloudContrastCheckCal(1,:),targetContrasts(1,:),'ro','MarkerSize',19);   % L - target
-    plot(theData.thePointCloudContrastCheckCal(2,:),targetContrasts(2,:),'go','MarkerSize',16);   % M - target
-    plot(theData.thePointCloudContrastCheckCal(3,:),targetContrasts(3,:),'bo','MarkerSize',14);   % S - target
+    plot(thePointCloudContrastCheckCal(1,:),targetContrasts(1,:),'ro','MarkerSize',19);   % L - target
+    plot(thePointCloudContrastCheckCal(2,:),targetContrasts(2,:),'go','MarkerSize',16);   % M - target
+    plot(thePointCloudContrastCheckCal(3,:),targetContrasts(3,:),'bo','MarkerSize',14);   % S - target
 end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
@@ -282,11 +280,14 @@ if (MEASURE)
     CloseProjectorScreen;
     CloseSpectroradiometer;
     
+    % Save data, and also a file that contains the most recent dayTimestr,
+    % so that we can automatically load in the most recent output.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'theData','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
-        save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName)); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
+        save(testFilename,'theData','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
+            'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal'); 
+        save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName),'dayTimestr'); 
     end
 end

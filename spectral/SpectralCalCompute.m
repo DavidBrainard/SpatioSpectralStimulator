@@ -24,7 +24,7 @@ S = [380 2 201];
 %
 %
 % Condition Name
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -755,7 +755,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         'projectorPrimaryPrimaries','projectorPrimarySettings','projectorPrimarySpd',...
         'theDesiredContrastCheckCal', ...
         'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal', ...
-        'nQuantizeLevels','projectorNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast';
+        'nQuantizeLevels','projectorNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end
 
 
