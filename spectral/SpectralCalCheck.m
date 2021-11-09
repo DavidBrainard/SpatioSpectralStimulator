@@ -12,7 +12,7 @@ clear; close all;
 %
 % This is used to match up with parameters run in SpectralCalCompute
 % ['LminusMSmooth' 'ConeIsolating']
-conditionName = 'LminusMSmooth';
+conditionName = 'ConeIsolating';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -189,6 +189,10 @@ if (MEASURE)
     [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',true);
     
+else
+    % When skipping the measurement, just call it from theData.
+    thePointCloudSpdCheckCal = theData.thePointCloudSpdCheckCal;
+    thePointCloudContrastCheckCal = theData.thePointCloudContrastCheckCal;
 end
 
 %% Make plot of measured versus desired spds.
