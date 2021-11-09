@@ -42,7 +42,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = false;
+MEASURE = true;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -116,7 +116,7 @@ if (MEASURE)
     RECOMPUTE = true;
     if (RECOMPUTE)
         % Parameters.
-        nQuantizeLevels = 2^theDatanQuantizeBits;
+        nQuantizeLevels = theData.nQuantizeLevels;
 
         % Figure out desired background excitations
         projectorBgExcitations = T_cones * theData.thePointCloudSpdCheckCal(:,1);
