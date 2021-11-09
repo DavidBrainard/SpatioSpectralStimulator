@@ -119,8 +119,15 @@ if (MEASURE)
         % Parameters.
         nQuantizeLevels = theData.nQuantizeLevels;
 
-        % Figure out desired background excitations
-        projectorBgExcitations = T_cones * theData.thePointCloudSpdCheckCal(:,1);
+        % Figure out desired background excitations. The actual background
+        % won't be what we computed originally, because the primary spectra
+        % aren't the same as their nominal values.  Here we recompute what
+        % the background will be when we set the projector to the
+        % background settings.  That then lets us compute contrast relative
+        % to the background we're going to get. We want to do this from the
+        % settings, so that the background isn't mucked up by quantization.
+        projectorBgSpd = PrimaryToSpd(projectorCalObj,SettingsToPrimary(projectorCalObj,theData.thePointCloudSettingsCheckCal(:,1)));
+        projectorBgExcitations = T_cones * projectorBgSpd;
         
         % Build point cloud
         tic;
