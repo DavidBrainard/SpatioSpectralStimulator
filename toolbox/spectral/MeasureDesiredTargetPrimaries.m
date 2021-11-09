@@ -106,11 +106,11 @@ end
 % Plot the results.
 if (options.verbose)
     figure; hold on;
-    plot(SToWls(S),targetSpd,'k-','LineWidth',3); % Target Spd.
-    plot(SToWls(S),targetSpdMeasured,'r-','LineWidth',2); % Measured raw spd.
+    plot(SToWls(S),targetSpd,'k-','LineWidth',3); 
+    plot(SToWls(S),targetSpdMeasured,'r-','LineWidth',2); 
     xlabel('Wavelength (nm)');
     ylabel('Spectral power');
-    legend('Target','Measurement_Raw','Meausurement_Norm');
+    legend('Target','Measurement');
     title(sprintf('Primary %d',targetPrimaryNum));
 end
 end
