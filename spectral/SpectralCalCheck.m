@@ -274,6 +274,12 @@ else
 end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
+%% Check that we have not altered targetPrimarySpd
+targetPrimarySpdCheck = theData.projectorCalObj.get('P_device');
+if (any(targetPrimarySpd(:) ~= targetPrimarySpdCheck(:)))
+    error('Stranger and stranger');
+end
+
 %% Close projector and save out the measurement data.
 if (MEASURE)
     % Close
@@ -286,8 +292,8 @@ if (MEASURE)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'theData','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
+        save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal'); 
-        save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName),'dayTimestr'); 
+        save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName),'dayTimestr')); 
     end
 end

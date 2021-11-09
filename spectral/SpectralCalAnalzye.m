@@ -16,7 +16,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-09_14-50-46';
+dayTimestr = '2021-11-09_15-18-02';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
@@ -28,13 +28,22 @@ end
 
 %% Set up some variables that we need
 %
-% This just needs to measure.
-%
-% Target Spds.
+% Target Spds.  The check here just verifies that we are consistent between
+% current compute code and this measurement.
 targetPrimarySpd = theData.projectorCalObj.get('P_device');
 targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
-if (any(targetPrimarySpd ~= targetPrimarySpdCompute))
+if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
     error('Strange change in target spd');
+end
+figure; clf; hold on
+for pp = 1:nPrimaries
+    subplot(nPrimaries,1,pp); hold on;
+    plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',4)
+    plot(wls,targetPrimarySpdCompute(:,pp),'r','LineWidth',3);
+    legend('Target From Check','Target From Compute');
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power distribution');
+    title('Comparison of raw measured and desired spds');
 end
 
 % Set some variables.
@@ -59,9 +68,13 @@ for pp = 1:nPrimaries
     if (max(abs(checkTargetPrimaries(:,pp)-theData.projectorPrimaryPrimaries(:,pp))) > 0.005)
         error('Cannot reconstruct target primary values from target primary settings to quantization tolerance');
     end
+    checkTargetSettings(:,pp) = PrimariesToSettings(theData.subprimaryCalObjs{pp},theData.projectorPrimaryPrimaries(:,pp));
+    if (any(theData.projectorPrimarySettings(:,pp) ~= checkTargetSettings(:,pp)))
+        error('Cannot reconstruct target primary settings from calibraion and primary values');
+    end
     checkTargetPrimarySpd(:,pp) = PrimaryToSpd(theData.subprimaryCalObjs{pp},checkTargetPrimaries(:,pp));
-    if (max(abs(targetPrimarySpd(:,pp)-checkTargetPrimarySpd(:,pp))))
-        %error('Cannot reconstruct target primary spd from calibraion and primary values');
+    if (any(targetPrimarySpd(:,pp) ~= checkTargetPrimarySpd(:,pp)))
+        error('Cannot reconstruct target primary spd from calibraion and primary values');
     end
 
     subplot(nPrimaries,1,pp); hold on;
