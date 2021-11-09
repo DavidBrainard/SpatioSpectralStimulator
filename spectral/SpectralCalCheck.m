@@ -100,7 +100,7 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
-projectorCalObj = theData.projectorCalObj;
+projectorCalObj = theData.projectorCalObj.copy;
 if (MEASURE)
     % Set the projector subprimaries here.
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
@@ -294,6 +294,6 @@ if (MEASURE)
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal'); 
-        save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName),'dayTimestr')); 
+        save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName)),'dayTimestr'); 
     end
 end

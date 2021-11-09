@@ -16,7 +16,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-09_15-18-02';
+dayTimestr = '2021-11-09_15-46-45';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
@@ -33,14 +33,15 @@ end
 targetPrimarySpd = theData.projectorCalObj.get('P_device');
 targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
 if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
-    error('Strange change in target spd');
+    %error('Strange change in target spd');
 end
 figure; clf; hold on
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
     plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',4)
     plot(wls,targetPrimarySpdCompute(:,pp),'r','LineWidth',3);
-    legend('Target From Check','Target From Compute');
+    plot(wls,theCheckData.targetPrimarySpd(:,pp),'g','LineWidth',2);
+    legend('Target From Check Cal','Target From Compute Cal','Target Saved');
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
     title('Comparison of raw measured and desired spds');
@@ -118,7 +119,7 @@ end
 % We should be able to obtain these as a linear combination
 % of the primaries.
 thePointCloudSpd = theCheckData.thePointCloudSpdMeasured;
-figure;
+figure; clf;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize];
 set(gcf,'position',figurePosition);
@@ -138,4 +139,15 @@ end
 
 % Here we will compare the primaries we get from regression above to those
 % we wanted, and see how we do.
-
+figure; clf;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize];
+set(gcf,'position',figurePosition);
+% for pp = 1:nPrimaries
+%     subplot(1,nPrimaries,pp); hold on;
+%     plot(regressPointCloudPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
+%     xlim([0,1]); ylim([0,1]); axis('square');
+%     title('Regression versus desired primary values')
+%     xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
+% 
+% end
