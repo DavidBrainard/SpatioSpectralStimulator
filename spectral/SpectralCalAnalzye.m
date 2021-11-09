@@ -4,6 +4,9 @@
 % History:
 %    11/09/21  dhb  Wrote it.
 
+%% Clear
+clear; close all;
+
 %% Load output of SpectralCalCompute.
 % 
 % We can remove this now that we are saving testData from SpectralCalCheck,
@@ -30,22 +33,12 @@ end
 %
 % Target Spds.  The check here just verifies that we are consistent between
 % current compute code and this measurement.
-targetPrimarySpd = theData.projectorCalObj.get('P_device');
-targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
-if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
-    %error('Strange change in target spd');
-end
-figure; clf; hold on
-for pp = 1:nPrimaries
-    subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',4)
-    plot(wls,targetPrimarySpdCompute(:,pp),'r','LineWidth',3);
-    plot(wls,theCheckData.targetPrimarySpd(:,pp),'g','LineWidth',2);
-    legend('Target From Check Cal','Target From Compute Cal','Target Saved');
-    xlabel('Wavelength (nm)');
-    ylabel('Spectral power distribution');
-    title('Comparison of raw measured and desired spds');
-end
+% targetPrimarySpd = theData.targetPrimarySpd;
+% targetPrimarySpdCompute = theComputeData.projectorCalObj.get('P_device');
+% if (any(targetPrimarySpd(:) ~= targetPrimarySpdCompute(:)))
+%     error('Strange change in target spd');
+% end
+targetPrimarySpd = theComputeData.projectorCalObj.get('P_device');
 
 % Set some variables.
 S = theData.S;                                                  % Range of the spectrum.
@@ -69,7 +62,7 @@ for pp = 1:nPrimaries
     if (max(abs(checkTargetPrimaries(:,pp)-theData.projectorPrimaryPrimaries(:,pp))) > 0.005)
         error('Cannot reconstruct target primary values from target primary settings to quantization tolerance');
     end
-    checkTargetSettings(:,pp) = PrimariesToSettings(theData.subprimaryCalObjs{pp},theData.projectorPrimaryPrimaries(:,pp));
+    checkTargetSettings(:,pp) = PrimaryToSettings(theData.subprimaryCalObjs{pp},theData.projectorPrimaryPrimaries(:,pp));
     if (any(theData.projectorPrimarySettings(:,pp) ~= checkTargetSettings(:,pp)))
         error('Cannot reconstruct target primary settings from calibraion and primary values');
     end
@@ -81,7 +74,7 @@ for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
     plot(wls,targetPrimarySpd(:,pp),'k','LineWidth',4)
     plot(wls,theCheckData.isolatingSpdMeasured(:,pp),'r','LineWidth',3);
-    plot(wls,checkTargetPrimarySpd(:,pp),'g','LineWidth',2);
+    plot(wls,checkTargetPrimarySpd(:,pp),'g','LineWidth',1);
     legend('Target','Measured','Target Check');
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
@@ -99,19 +92,19 @@ for pp = 1:nPrimaries
     if (any(P_ambient{pp}(:) ~= 0))
         error('Need to handle non-zero ambient');
     end
-    regressPointCloudPrimaries(:,pp) = P_device{pp}\theCheckData.isolatingSpdMeasured(:,pp);
+    regressTargetPrimaries(:,pp) = P_device{pp}\theCheckData.isolatingSpdMeasured(:,pp);
 
     figure(primaryValueFig);
     subplot(1,nPrimaries,pp); hold on;
-    plot(checkTargetPrimaries(:,pp),regressPointCloudPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
+    plot(checkTargetPrimaries(:,pp),regressTargetPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
     xlim([0,1]); ylim([0,1]); axis('square');
     title('Regression versus desired primary values')
     xlabel('Desired Primary'); ylabel('Regression on Measured Primary');
 
     figure(primarySpdFig);
     subplot(nPrimaries,1,pp); hold on;
-    plot(wls,P_device{pp}*regressPointCloudPrimaries(:,pp),'g','LineWidth',2);
-    legend('Target','Measured','Regress');
+    plot(wls,P_device{pp}*regressTargetPrimaries(:,pp),'b','LineWidth',1);
+    legend('Target','Measured','Target Check','Regress');
 end
 
 %% Make plot of measured versus desired spds.
@@ -141,13 +134,13 @@ end
 % we wanted, and see how we do.
 figure; clf;
 figureSize = 1000;
-figurePosition = [1200 300 figureSize figureSize];
+figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
-% for pp = 1:nPrimaries
-%     subplot(1,nPrimaries,pp); hold on;
-%     plot(regressPointCloudPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
-%     xlim([0,1]); ylim([0,1]); axis('square');
-%     title('Regression versus desired primary values')
-%     xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
-% 
-% end
+for pp = 1:nPrimaries
+    subplot(1,nPrimaries,pp); hold on;
+    plot(theCheckData.thePointCloudPrimariesCheckCal(pp,:),regressPointCloudPrimaries(pp,:),'ro','MarkerSize',12,'MarkerFaceColor','r');
+    plot([0 1],[0 1],'k');
+    xlim([0,1]); ylim([0,1]); axis('square');
+    title('Regression versus desired primary values')
+    xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
+end

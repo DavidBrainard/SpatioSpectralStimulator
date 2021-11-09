@@ -100,7 +100,8 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
-projectorCalObj = theData.projectorCalObj.copy;
+projectorCalObj = theData.projectorCalObj;
+theData = rmfield(theData,'projectorCalObj');
 if (MEASURE)
     % Set the projector subprimaries here.
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
