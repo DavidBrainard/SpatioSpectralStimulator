@@ -42,7 +42,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = true;
+MEASURE = false;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -228,15 +228,11 @@ end
 %% Compute cone contrasts for each spectrum relative to the background
 %
 % We use the fact that the background settings are in the first column of 
-%thePointCloudSettingsCheckCal.
-switch (whichToAnalyze)
-    case 'raw'
-        testExcitations = T_cones * thePointCloudSpdMeasured;
-    case 'scaled'
-        testExcitations = T_cones * thePointCloudSpdMeasuredScaled;
-    otherwise
-        error('Unknown analyze type specified');
-end
+%
+% theData.thePointCloudSettingsCheckCal.
+% 'thePointClousdSpd' will be either raw or scaled spectra based on the
+% above 'whichToAnalyze' option.
+testExcitations = T_cones * thePointCloudSpd;
 bgExcitations = testExcitations(:,1);
 testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 
