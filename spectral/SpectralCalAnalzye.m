@@ -117,5 +117,6 @@ for tt = 1:nTestPoints
     title(sprintf('Test %d raw',tt),'fontsize',16)
 end
 
-% Get primaries to compare regression primaries to
-thePointCloudPrimariesCheckCal = SettingsToPrimary(theData.projectorCalObj,)
+% Here we will compare the primaries we get from regression above to those
+% we wanted, and see how we do.
+
