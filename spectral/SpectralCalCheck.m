@@ -99,15 +99,13 @@ for pp = 1:nPrimaries
     title('Comparison of scaled measured and desired spds');
 end
 
-%% Set each primary to the settings we loaded in and measure - NEED TO MODIFY TO USE TbTb
-%
-% Add VPixx toolbox ('Datapixx') to path.
+%% Set each primary to the settings we loaded in and measure
 if (MEASURE)
     % Set the projector subprimaries here.
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
     
     %% Set the primaries in the calibration to the measured results.
-    theData.projectorCalObj.set('P_device',meanPrimaryScaleFactor*isolatingSpdMeasured);
+    theData.projectorCalObj.set('P_device',isolatingSpdMeasured);
     
     %% Optional recompute of target settings
     %
@@ -116,12 +114,8 @@ if (MEASURE)
     % nominal ones we used in SpectralTestCal.  Here is where that happens
     RECOMPUTE = true;
     if (RECOMPUTE)
-        % Parameters.  Should save these in SpectralTestCal and use here.
-        nQuantizeBits = 14;
-        nQuantizeLevels = 2^nQuantizeBits;
-        projectorNInputLevels = 256;
-        targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
-        spatialGaborTargetContrast = 0.04;
+        % Parameters.
+        nQuantizeLevels = 2^theDatanQuantizeBits;
 
         % Figure out desired background excitations
         projectorBgExcitations = T_cones * theData.thePointCloudSpdCheckCal(:,1);
@@ -129,11 +123,11 @@ if (MEASURE)
         % Build point cloud
         tic;
         fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-        allProjectorIntegersCal = zeros(3,projectorNInputLevels^3);
+        allProjectorIntegersCal = zeros(3,theData.projectorNInputLevels^3);
         idx = 1;
-        for ii = 0:(projectorNInputLevels-1)
-            for jj = 0:(projectorNInputLevels-1)
-                for kk = 0:(projectorNInputLevels-1)
+        for ii = 0:(theData.projectorNInputLevels-1)
+            for jj = 0:(theData.projectorNInputLevels-1)
+                for kk = 0:(theData.projectorNInputLevels-1)
                     allProjectorIntegersCal(:,idx) = [ii jj kk]';
                     idx = idx+1;
                 end
@@ -141,7 +135,7 @@ if (MEASURE)
         end
         
         % Convert integers to 0-1 reals, quantized
-        allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLevels',projectorNInputLevels);
+        allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLevels',theData.projectorNInputLevels);
 
         % Get LMS excitations for each triplet of projector settings, and build a
         % point cloud object from these.
@@ -161,7 +155,7 @@ if (MEASURE)
         % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
         rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
         rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-        theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastCheckCal;
+        theDesiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
         theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
         
         % For each check calibration find the settings that
@@ -292,7 +286,7 @@ if (MEASURE)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
+        save(testFilename,'theData','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts'); % Save out the data.
         save(sprintf('testImageDataCheck_%s_dayTimestr',conditionName)); % Save out the meausrement date in string too. This will be used to load the data file with the name running this code without measurement.
     end
 end
