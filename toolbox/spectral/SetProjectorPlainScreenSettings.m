@@ -1,7 +1,7 @@
 function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,options)
 % This displays a plain screen on the projector using Psychtoolbox.
 %
-% Syntax: [] = SetProjectorPlainScreenSettings(theSettings)
+% Syntax: [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,windowRect)
 %
 % Description:
 %    This updates the settings for the projector when it is in plain screen
@@ -27,9 +27,9 @@ function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,wind
 %                                 already there.  This doesn't need to be
 %                                 right if the toolbox is already on the
 %                                 path.
-%    'maximumValue' -             This number sets the maximum value
+%    'nInputLevels' -             This number controls the maximum value
 %                                 for display input settings. Default to
-%                                 255. This would help to better control
+%                                 256. This would help to better control
 %                                 quantization displaying the colors on the
 %                                 projector.
 %    'verbose' -                  Boolean. Default true. Controls the printout.
@@ -37,27 +37,30 @@ function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,wind
 % See also: OpenProjectorPlainScreen, CloseProjectorScreen.
 
 % History:
-%    10/28/21  smo                Started on it
+%    10/28/21  smo                Started on it.
 %    11/02/21  smo                Add the feature switching the display
-%                                 input range from [0,1] to [0,255]
+%                                 input range from [0,1] to [0,255].
+%    11/09/21  smo                Color range is now controlled based on
+%                                 the nInputLevels to match up our
+%                                 convention.
 
 %% Set parameters.
 arguments
     theSettings (3,1) {mustBeInRange(theSettings,0,1,"inclusive")}
     window (1,1)
     windowRect (1,4)
-    options.maximumValue (1,1) = 255
+    options.nInputLevels (1,1) = 256
     options.verbose (1,1) = true
 end
 
-% Set the PTB display input range from [0,1] to [0,maximuValue]. Default [0,255].
-Screen('ColorRange',window,options.maximumValue);
+% Set the PTB display input range from [0,1] to [0,nInputLevels-1]. Default [0,255].
+Screen('ColorRange',window,options.nInputLevels-1);
 
 % Scale the settings to match up the working range.
-theIntegers = SettingsToIntegers(theSettings,'nInputLevels',options.maximumValue+1);
+theIntegers = SettingsToIntegers(theSettings,'nInputLevels',options.nInputLevels);
 
 % Check if the integer settings are within the right range.
-if any(theIntegers > options.maximumValue)
+if any(theIntegers > options.nInputLevels-1)
    error('The integer settings are in the wrong range!');
 end
 
