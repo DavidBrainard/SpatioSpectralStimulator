@@ -147,7 +147,7 @@ end
 
 %% Plot measured versus desired contrasts
 contrastFig = figure; hold on;
-igureSize = 1000;
+figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 
