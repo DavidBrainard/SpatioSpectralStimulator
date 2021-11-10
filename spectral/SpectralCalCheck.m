@@ -42,7 +42,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = true;
+MEASURE = false;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -59,7 +59,7 @@ else
         testFiledate = fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName));
         load(testFiledate,'dayTimestr'); 
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); 
+        load(testFilename); 
     else
         error('No file to load');
     end
@@ -100,9 +100,10 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
-projectorCalObj = theData.projectorCalObj;
-theData = rmfield(theData,'projectorCalObj');
 if (MEASURE)
+    projectorCalObj = theData.projectorCalObj;
+    theData = rmfield(theData,'projectorCalObj');
+
     % Set the projector subprimaries here.
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
     
@@ -196,11 +197,7 @@ if (MEASURE)
     % spd.
     [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',true);
-    
-else
-    % When skipping the measurement, just call it from theData.
-    thePointCloudSpdCheckCal = theData.thePointCloudSpdCheckCal;
-    thePointCloudContrastCheckCal = theData.thePointCloudContrastCheckCal;
+   
 end
 
 %% Make plot of measured versus desired spds.
