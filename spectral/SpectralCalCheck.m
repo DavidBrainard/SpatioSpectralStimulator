@@ -57,9 +57,9 @@ else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFiledate = fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName));
-        load(testFiledate,'dayTimestr'); % Load the measurement date in string file.
+        load(testFiledate,'dayTimestr'); 
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); % Load the data.
+        load(testFilename,'isolatingSpdMeasured','thePointCloudSpdMeasured','testContrasts'); 
     else
         error('No file to load');
     end
@@ -157,7 +157,7 @@ if (MEASURE)
         findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
         toc
         
-        %% Generate some settings values corresponding to known contrasts % (THIS PART MAY BE GOING TO BE IN A FUNCTION LATER ON - SEMIN)
+        %% Generate some settings values corresponding to known contrasts
         %
         % The reason for this is to measure and check these.  This logic follows
         % how we handled an actual gabor image above. The quantization to
@@ -248,12 +248,13 @@ testExcitations = T_cones * thePointCloudSpd;
 bgExcitations = testExcitations(:,1);
 testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
 
-% Add the target contrasts to be compared in the following graph.
-addTargetContrast = true;
-if (addTargetContrast)
-    targetExcitations = T_cones * thePointCloudSpdCheckCal;
-    targetBgExcitations = targetExcitations(:,1);
-    targetContrasts = (targetExcitations - targetBgExcitations) ./ targetBgExcitations;
+% Add the nominal contrasts to be compared in the following graph. These
+% should be all lined up on the 45-degree line in the following graph.
+addNominalContrast = true;
+if (addNominalContrast)
+    nominalExcitations = T_cones * thePointCloudSpdCheckCal;
+    nominalBgExcitations = nominalExcitations(:,1);
+    nominalContrasts = (nominalExcitations - nominalBgExcitations) ./ nominalBgExcitations;
 else
 end
 
@@ -262,10 +263,10 @@ figure; hold on;
 plot(thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
 plot(thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
 plot(thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
-if (addTargetContrast)
-    plot(thePointCloudContrastCheckCal(1,:),targetContrasts(1,:),'ro','MarkerSize',19);   % L - target
-    plot(thePointCloudContrastCheckCal(2,:),targetContrasts(2,:),'go','MarkerSize',16);   % M - target
-    plot(thePointCloudContrastCheckCal(3,:),targetContrasts(3,:),'bo','MarkerSize',14);   % S - target
+if (addNominalContrast)
+    plot(thePointCloudContrastCheckCal(1,:),nominalContrasts(1,:),'ro','MarkerSize',19);   % L - target
+    plot(thePointCloudContrastCheckCal(2,:),nominalContrasts(2,:),'go','MarkerSize',16);   % M - target
+    plot(thePointCloudContrastCheckCal(3,:),nominalContrasts(3,:),'bo','MarkerSize',14);   % S - target
 end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
@@ -275,10 +276,10 @@ ylim([-axisLim axisLim]);
 axis('square');
 line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
 grid on;
-if (addTargetContrast)
-    legend('L-Test','M-Test','S-Test','L-Target','M-Target','S-Target','location','southeast');
+if (addNominalContrast)
+    legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
 else
-    legend('L','M','S','location','southeast');
+    legend('L-measured','M-measured','S-measured','location','southeast');
 end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
