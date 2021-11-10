@@ -98,7 +98,8 @@ for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
     plot(checkTargetPrimaries(:,pp),regressTargetPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
     xlim([0,1]); ylim([0,1]); axis('square');
-    title('Regression versus desired primary values')
+    plot([0 1],[0 1],'k');
+    title('Regression versus desired subprimary values')
     xlabel('Desired Primary'); ylabel('Regression on Measured Primary');
 
     figure(primarySpdFig);
@@ -144,3 +145,35 @@ for pp = 1:nPrimaries
     title('Regression versus desired primary values')
     xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
 end
+
+%% Plot measured versus desired contrasts
+contrastFig = figure; hold on;
+igureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize/3];
+set(gcf,'position',figurePosition);
+
+targetExcitations = T_cones * theCheckData.thePointCloudSpdCheckCal;
+targetBgExcitations = targetExcitations(:,1);
+targetContrasts = (targetExcitations - targetBgExcitations) ./ targetBgExcitations;
+axisLim = 0.05;
+theColors = ['r' 'g' 'b'];
+for pp = 1:nPrimaries
+    subplot(1,nPrimaries,pp); hold on;
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.testContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),targetContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),targetContrasts(pp,1),'ko','MarkerSize',18);
+
+
+    plot([0 1],[0 1],'k');
+    xlabel('Desired contrast');
+    ylabel('Measured contrast');
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    xlabel('Desired contrast');
+    ylabel('Measured contrast');
+    legend({'Measured','Nominal'});
+    title(sprintf('Cone class %d',pp));
+end
+
