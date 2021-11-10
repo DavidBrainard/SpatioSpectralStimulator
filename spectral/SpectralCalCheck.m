@@ -104,7 +104,6 @@ if (MEASURE)
 
     % Set the projector subprimaries here. 
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
-
     
     %% Set the primaries in the calibration to the measured results.
     %
