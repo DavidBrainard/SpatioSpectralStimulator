@@ -56,9 +56,7 @@ if (MEASURE)
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFiledate = fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName));
-        load(testFiledate,'dayTimestr'); 
-        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+        testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',0);
         load(testFilename); 
     else
         error('No file to load');
@@ -299,7 +297,6 @@ if (MEASURE)
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal', ...
-            'projectorBgSpd','projectorBgExcitations','targetExcitations','targetBgExcitations','targetContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
-        save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName)),'dayTimestr'); 
+            'projectorBgSpd','projectorBgExcitations','nominalExcitations','nominalBgExcitations','nominalContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
     end
 end

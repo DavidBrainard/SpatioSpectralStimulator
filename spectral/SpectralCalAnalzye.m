@@ -19,10 +19,9 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-10_14-17-21';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+    testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',0);
     theCheckData = load(testFilename);
     theData = theCheckData.theData;
 else
@@ -146,8 +145,8 @@ for pp = 1:nPrimaries
     xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
 end
 
-%% Plot expected (based on calibration versus desired contrasts
-expectedContrastFig = figure; hold on;
+%% Plot measured versus desired contrasts
+contrastFig = figure; hold on;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
@@ -159,40 +158,10 @@ axisLim = 0.05;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.thePointCloudContrastCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.thePointCloudContrastCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),nominalContrasts(pp,1),'ko','MarkerSize',18);
-
-    plot([-1 1],[-1 1],'k');
-    xlabel('Desired contrast');
-    ylabel('Expected contrast');
-    xlim([-axisLim axisLim]);
-    ylim([-axisLim axisLim]);
-    axis('square');
-    xlabel('Desired contrast');
-    ylabel('Measured contrast');
-    legend({'Expected','Nominal'},'location','southeast');
-    title(sprintf('Cone class %d',pp));
-end
-
-%% Plot measured versus desired contrasts
-measuredContrastFig = figure; hold on;
-igureSize = 1000;
-figurePosition = [1200 300 figureSize figureSize/3];
-set(gcf,'position',figurePosition);
-
-nominalExcitations = T_cones * theCheckData.thePointCloudSpdCheckCal;
-nominalBgExcitations = nominalExcitations(:,1);
-nominalContrasts = (nominalExcitations - nominalBgExcitations) ./ nominalBgExcitations;
-axisLim = 0.05;
-theColors = ['r' 'g' 'b'];
-for pp = 1:nPrimaries
-    subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.testContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),nominalContrasts(pp,1),'ko','MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.testContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),nominalContrasts(pp,1),'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');
