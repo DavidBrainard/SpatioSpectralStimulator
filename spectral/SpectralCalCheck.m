@@ -104,11 +104,16 @@ if (MEASURE)
     projectorCalObj = theData.projectorCalObj;
     theData = rmfield(theData,'projectorCalObj');
 
-    % Set the projector subprimaries here.
+    % Set the projector subprimaries here. 
     SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
+
     
     %% Set the primaries in the calibration to the measured results.
+    %
+    % It's important to also set the sensor color space, because the
+    % transform between sensor/primaries is cached when we set it.
     projectorCalObj.set('P_device',isolatingSpdMeasured);
+    SetSensorColorSpace(projectorCalObj,T_cones,S);
     
     %% Optional recompute of target settings
     %
