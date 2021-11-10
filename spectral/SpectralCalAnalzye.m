@@ -19,7 +19,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-09_18-03-37';
+dayTimestr = '2021-11-10_10-27-01';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
@@ -164,8 +164,7 @@ for pp = 1:nPrimaries
     plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
     plot(theCheckData.thePointCloudContrastCheckCal(pp,1),targetContrasts(pp,1),'ko','MarkerSize',18);
 
-
-    plot([0 1],[0 1],'k');
+    plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');
     ylabel('Measured contrast');
     xlim([-axisLim axisLim]);
@@ -173,7 +172,6 @@ for pp = 1:nPrimaries
     axis('square');
     xlabel('Desired contrast');
     ylabel('Measured contrast');
-    legend({'Measured','Nominal'});
+    legend({'Measured','Nominal'},'location','southeast');
     title(sprintf('Cone class %d',pp));
 end
-
