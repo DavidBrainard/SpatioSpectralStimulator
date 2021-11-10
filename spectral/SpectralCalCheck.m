@@ -295,7 +295,8 @@ if (MEASURE)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
-            'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal'); 
+            'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal', ...
+            'projectorBgSpd','projectorBgExcitations','targetExcitations','targetBgExcitations','targetContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
         save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName)),'dayTimestr'); 
     end
 end
