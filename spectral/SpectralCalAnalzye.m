@@ -19,10 +19,9 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 
 %% Load output of SpectralCalCheck
-dayTimestr = '2021-11-10_10-27-01';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+    testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',0);
     theCheckData = load(testFilename);
     theData = theCheckData.theData;
 else
