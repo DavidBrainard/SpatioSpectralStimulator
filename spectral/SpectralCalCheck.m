@@ -42,7 +42,7 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = false;
+MEASURE = true;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -294,7 +294,7 @@ if (MEASURE)
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal', ...
-            'projectorBgSpd','projectorBgExcitations','targetExcitations','targetBgExcitations','targetContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
+            'projectorBgSpd','projectorBgExcitations','nominalExcitations','nominalBgExcitations','nominalContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
         save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName)),'dayTimestr'); 
     end
 end
