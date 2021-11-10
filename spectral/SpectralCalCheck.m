@@ -293,6 +293,5 @@ if (MEASURE)
         save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal', ...
             'projectorBgSpd','projectorBgExcitations','nominalExcitations','nominalBgExcitations','nominalContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
-        save(fullfile(testFiledir,sprintf('testImageDataCheck_%s_dayTimestr',conditionName)),'dayTimestr'); 
     end
 end
