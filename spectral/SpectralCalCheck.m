@@ -288,8 +288,8 @@ if (MEASURE)
     CloseProjectorScreen;
     CloseSpectroradiometer;
     
-    % Save data, and also a file that contains the most recent dayTimestr,
-    % so that we can automatically load in the most recent output.
+    % Save data with the name containing dayTimestr, so that we can
+    % automatically load in the most recent output.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
