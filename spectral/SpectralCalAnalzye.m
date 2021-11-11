@@ -151,17 +151,14 @@ figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 
-nominalExcitations = T_cones * theCheckData.thePointCloudSpdCheckCal;
-nominalBgExcitations = nominalExcitations(:,1);
-nominalContrasts = (nominalExcitations - nominalBgExcitations) ./ nominalBgExcitations;
 axisLim = 0.05;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
     plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.testContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
     plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),nominalContrasts(pp,1),'ko','MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.nominalContrasts(pp,1),'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');
