@@ -245,7 +245,7 @@ end
 % above 'whichToAnalyze' option.
 testExcitations = T_cones * thePointCloudSpd;
 bgExcitations = testExcitations(:,1);
-testContrasts = (testExcitations - bgExcitations) ./ bgExcitations;
+testContrasts = ExcitationToContrast(testExcitations,bgExcitations);
 
 % Add the nominal contrasts to be compared in the following graph. These
 % should be all lined up on the 45-degree line in the following graph.
@@ -253,7 +253,7 @@ addNominalContrast = true;
 if (addNominalContrast)
     nominalExcitations = T_cones * thePointCloudSpdCheckCal;
     nominalBgExcitations = nominalExcitations(:,1);
-    nominalContrasts = (nominalExcitations - nominalBgExcitations) ./ nominalBgExcitations;
+    nominalContrasts = ExcitationToContrast(nominalExcitations,nominalBgExcitations);
 else
 end
 
