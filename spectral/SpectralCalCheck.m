@@ -238,34 +238,34 @@ end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
-% We use the fact that the background settings are in the first column of 
+% We use the fact that the background settings are in the first column of
 %
 % theData.thePointCloudSettingsCheckCal.
 % 'thePointClousdSpd' will be either raw or scaled spectra based on the
 % above 'whichToAnalyze' option.
-testExcitations = T_cones * thePointCloudSpd;
-bgExcitations = testExcitations(:,1);
-testContrasts = ExcitationToContrast(testExcitations,bgExcitations);
+thePointCloudExcitationsMeasured = T_cones * thePointCloudSpd;
+thePointCloudBgExcitationsMeasured = thePointCloudExcitationsMeasured(:,1);
+thePointCloudContrastMeasured = ExcitationToContrast(thePointCloudExcitationsMeasured,thePointCloudBgExcitationsMeasured);
 
 % Add the nominal contrasts to be compared in the following graph. These
 % should be all lined up on the 45-degree line in the following graph.
 addNominalContrast = true;
 if (addNominalContrast)
-    nominalExcitations = T_cones * thePointCloudSpdCheckCal;
-    nominalBgExcitations = nominalExcitations(:,1);
-    nominalContrasts = ExcitationToContrast(nominalExcitations,nominalBgExcitations);
+    thePointCloudExcitationsNominal = T_cones * thePointCloudSpdCheckCal;
+    thePointCloudBgExcitationsNominal = thePointCloudExcitationsNominal(:,1);
+    thePointCloudContrastNominal = ExcitationToContrast(thePointCloudExcitationsNominal,thePointCloudBgExcitationsNominal);
 else
 end
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(thePointCloudContrastCheckCal(1,:),testContrasts(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(thePointCloudContrastCheckCal(2,:),testContrasts(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(thePointCloudContrastCheckCal(3,:),testContrasts(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrastMeasured(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrastMeasured(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrastMeasured(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
 if (addNominalContrast)
-    plot(thePointCloudContrastCheckCal(1,:),nominalContrasts(1,:),'ro','MarkerSize',19);   % L - target
-    plot(thePointCloudContrastCheckCal(2,:),nominalContrasts(2,:),'go','MarkerSize',16);   % M - target
-    plot(thePointCloudContrastCheckCal(3,:),nominalContrasts(3,:),'bo','MarkerSize',14);   % S - target
+    plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+    plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+    plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
 end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
@@ -294,8 +294,10 @@ if (MEASURE)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
-        save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','thePointCloudSettingsIntegers','thePointCloudSpdMeasured','testContrasts','projectorCalObj', ...
+        save(testFilename,'theData','targetPrimarySpd','isolatingSpdMeasured','projectorCalObj', ...
+            'projectorBgSpd','projectorBgExcitations','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal', ...
             'thePointCloudSettingsCheckCal','thePointCloudPrimariesCheckCal','thePointCloudSpdCheckCal','thePointCloudExcitationsCheckCal','thePointCloudContrastCheckCal', ...
-            'projectorBgSpd','projectorBgExcitations','nominalExcitations','nominalBgExcitations','nominalContrasts','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal'); 
+            'thePointCloudSettingsIntegers','thePointCloudSpdMeasured','thePointCloudContrastMeasured', ...
+            'thePointCloudExcitationsNominal','thePointCloudBgExcitationsNominal','thePointCloudContrastNominal');
     end
 end

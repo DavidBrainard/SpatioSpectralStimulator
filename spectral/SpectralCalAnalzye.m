@@ -155,10 +155,10 @@ axisLim = 0.05;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.testContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.nominalContrasts(pp,:),[theColors(pp) 'o'],'MarkerSize',18);
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.testContrasts(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.nominalContrasts(pp,1),'ko','MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.thePointCloudContrastMeasured(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.thePointCloudContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.thePointCloudContrastMeasured(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.thePointCloudContrastNominal(pp,1), 'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');
