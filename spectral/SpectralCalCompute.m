@@ -24,7 +24,7 @@ S = [380 2 201];
 %
 %
 % Condition Name
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
