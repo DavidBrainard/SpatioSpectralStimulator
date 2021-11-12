@@ -4,6 +4,7 @@
 % 
 % 10/19/2021  dhb,smo  Started on it
 % 10/28/2021  dhb      Add condition name and date to output
+% 11/12/2021  dhb      Moving to warmup and measure with steady subprimaries.
 
 %% Initialize.
 clear; close all;
@@ -68,10 +69,11 @@ if (MEASURE)
         % Old way. Remove once debugged.
         % isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
         %     theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',verbose);
-        theProjectorSettings = zeros(nPrimaries,1);
-        theProjectorSettings(pp) = 1;
-        isolatingSpdMeasured(:,pp) = MeasureProjectorPlainScreenSettings(theProjectorSettings,...
+        theProjectorOnePrimarySettings = zeros(nPrimaries,1);
+        theProjectorOnePrimarySettings(pp) = 1;
+        isolatingSpdMeasured(:,pp) = MeasureProjectorPlainScreenSettings(theProjectorOnePrimarySettings,...
             S,window,windowRect,'measurementOption',true,'verbose',verbose);
+        clear theProjectorOnePrimarySettings
         
     end
 else
