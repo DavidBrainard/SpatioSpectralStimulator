@@ -10,14 +10,15 @@
 clear; close all;
 
 %% Parameters
-warmupTimeMinutes = 10;
+warmupTimeMinutes = 0;
 verbose = true;
+MEASURE = true;
 
 %% Which condition
 %
 % This is used to match up with parameters run in SpectralCalCompute
 % ['LminusMSmooth' 'ConeIsolating']
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -47,7 +48,6 @@ T_cones = theData.T_cones;
 %
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
-MEASURE = true;
 if (MEASURE)
     % Open up projector and radiometer.
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
@@ -64,15 +64,12 @@ if (MEASURE)
         fprintf('done.  Measuring.\n');
     end
     
-    % Measure
+    % Measure.
     for pp = 1:nPrimaries
-        % Old way. Remove once debugged.
-        % isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-        %     theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',verbose);
         theProjectorOnePrimarySettings = zeros(nPrimaries,1);
         theProjectorOnePrimarySettings(pp) = 1;
         isolatingSpdMeasured(:,pp) = MeasureProjectorPlainScreenSettings(theProjectorOnePrimarySettings,...
-            S,window,windowRect,'measurementOption',true,'verbose',verbose);
+                                     S,window,windowRect,'measurementOption',true,'verbose',verbose);
         clear theProjectorOnePrimarySettings
         
     end
@@ -124,11 +121,7 @@ end
 if (MEASURE)
     projectorCalObj = theData.projectorCalObj;
     theData = rmfield(theData,'projectorCalObj');
-
-    % Set the projector subprimaries here. Now done above.  Remove once
-    % debugged.
-    % SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
-    
+   
     %% Set the primaries in the calibration to the measured results.
     %
     % It's important to also set the sensor color space, because the
@@ -282,7 +275,7 @@ end
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(theDesiredContrastCheckCalCal(1,:),thePointCloudContrastMeasured(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(theDesiredContrastCheckCal(1,:),thePointCloudContrastMeasured(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
 plot(theDesiredContrastCheckCal(2,:),thePointCloudContrastMeasured(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
 plot(theDesiredContrastCheckCal(3,:),thePointCloudContrastMeasured(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
 if (addNominalContrast)
