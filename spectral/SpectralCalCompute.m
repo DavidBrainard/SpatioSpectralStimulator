@@ -3,12 +3,14 @@
 % Explore spectral fits with swubprimaries, this
 % version using the calibration structures.
 %
-% 4/22/2020  Started on it
+
+% History:
+%    4/22/2020  Started on it
 
 %% Clear
 clear; close all;
 
-% Verbose?
+%% Verbose?
 %
 % Set to true to get more output
 VERBOSE = false;
