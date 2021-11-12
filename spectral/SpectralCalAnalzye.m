@@ -111,7 +111,7 @@ end
 %
 % We should be able to obtain these as a linear combination
 % of the primaries.
-thePointCloudSpd = theCheckData.thePointCloudSpdMeasured;
+plotRegress = false;
 figure; clf;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize];
@@ -120,15 +120,39 @@ for tt = 1:nTestPoints
     % Find linear combination of measured primaries to produce test
     regressPointCloudPrimaries(:,tt) = theCheckData.isolatingSpdMeasured\theCheckData.thePointCloudSpdMeasured(:,tt);
     regressPointCloudSpd(:,tt) = theCheckData.isolatingSpdMeasured*regressPointCloudPrimaries(:,tt);
+    
     subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(wls,theData.thePointCloudSpdCheckCal(:,tt),'k-','LineWidth',4) % Target spectra
-    plot(wls,theCheckData.thePointCloudSpdMeasured(:,tt),'r-','LineWidth',3); % Measured spectra
-    plot(wls,regressPointCloudSpd(:,tt),'g-','LineWidth',2); % Measured spectra
-    xlabel('Wavelength (nm)')
-    ylabel('Spectral power distribution')
-    legend('Target','Measured','Regress')
-    title(sprintf('Test %d raw',tt),'fontsize',16)
+    plot(wls,theCheckData.thePointCloudSpdCheckCal(:,tt),'k-','LineWidth',4)  % Target spectra
+    plot(wls,theCheckData.thePointCloudSpdMeasured(:,tt),'r-','LineWidth',2); % Measured spectra
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power distribution');
+    title(sprintf('Test %d raw',tt),'fontsize',16);
+    if (plotRegress)
+        plot(wls,regressPointCloudSpd(:,tt),'g-','LineWidth',1);              % Regression fit
+        legend('Target','Measured','Regress');
+    else
+        legend('Target','Measured');
+    end
 end
+
+% Another way of comparing measured and nominal spectra
+thePointCloudSpdScatter = theCheckData.thePointCloudSpdMeasured;
+figure; clf;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize];
+set(gcf,'position',figurePosition);
+spdLim = 2.5e-3;
+for tt = 1:nTestPoints
+    scaleFactor(tt) = theCheckData.thePointCloudSpdCheckCal(:,tt)\theCheckData.thePointCloudSpdMeasured(:,tt);
+    subplot(round(nTestPoints/2),2,tt); hold on;
+    plot(theCheckData.thePointCloudSpdCheckCal(:,tt),theCheckData.thePointCloudSpdMeasured(:,tt),'r+');
+    xlabel('Nominal Spd');
+    ylabel('Measured Spd');
+    xlim([0 spdLim]); ylim([0 spdLim]);
+    axis('square');
+    title(sprintf('Test %d raw, factor %0.3f',tt,scaleFactor(tt)),'fontsize',12)
+end
+
 
 % Here we will compare the primaries we get from regression above to those
 % we wanted, and see how we do.
@@ -145,6 +169,21 @@ for pp = 1:nPrimaries
     xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
 end
 
+%% Explicitly compute some contrasts
+analyzePointCloudExcitationsMeasured = T_cones * theCheckData.thePointCloudSpdMeasured;
+analyzePointCloudBgExcitationsMeasured = analyzePointCloudExcitationsMeasured(:,1);
+analyzePointCloudContrastMeasured = ExcitationToContrast(analyzePointCloudExcitationsMeasured,analyzePointCloudBgExcitationsMeasured);
+if (any(analyzePointCloudContrastMeasured(:) ~= theCheckData.thePointCloudContrastMeasured(:)))
+    error('Cannot get same measured contrasts in two different places');
+end
+
+analyzePointCloudExcitationsNominal = T_cones * theCheckData.thePointCloudSpdCheckCal;
+analyzePointCloudBgExcitationsNominal = analyzePointCloudExcitationsNominal(:,1);
+analyzePointCloudContrastNominal = ExcitationToContrast(analyzePointCloudExcitationsNominal,analyzePointCloudBgExcitationsNominal);
+if (any(analyzePointCloudContrastNominal(:) ~= theCheckData.thePointCloudContrastNominal(:)))
+    error('Cannot get same nominalcontrasts in two different places');
+end
+
 %% Plot measured versus desired contrasts
 contrastFig = figure; hold on;
 figureSize = 1000;
@@ -155,10 +194,10 @@ axisLim = 0.05;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.thePointCloudContrastMeasured(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,:),theCheckData.thePointCloudContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.thePointCloudContrastMeasured(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.thePointCloudContrastCheckCal(pp,1),theCheckData.thePointCloudContrastNominal(pp,1), 'ko','MarkerSize',18);
+    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.thePointCloudContrastMeasured(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.thePointCloudContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.thePointCloudContrastMeasured(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.thePointCloudContrastNominal(pp,1), 'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');
