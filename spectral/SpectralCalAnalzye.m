@@ -1,10 +1,12 @@
+% SpectralAnalyze
+%
 % Read and analyze output of SpectralCalCheck
 %
 
 % History:
 %    11/09/21  dhb  Wrote it.
 
-%% Clear
+%% Initialize.
 clear; close all;
 
 %% Load output of SpectralCalCompute.

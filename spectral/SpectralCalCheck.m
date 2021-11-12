@@ -2,9 +2,11 @@
 %
 % Read in output of SpectralTestCal and make some measurements.
 % 
-% 10/19/2021  dhb,smo  Started on it
-% 10/28/2021  dhb      Add condition name and date to output
-% 11/12/2021  dhb      Moving to warmup and measure with steady subprimaries.
+
+% History:
+%    10/19/2021  dhb,smo  Started on it
+%    10/28/2021  dhb      Add condition name and date to output
+%    11/12/2021  dhb      Moving to warmup and measure with steady subprimaries.
 
 %% Initialize.
 clear; close all;
