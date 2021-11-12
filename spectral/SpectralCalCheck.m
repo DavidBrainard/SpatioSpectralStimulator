@@ -238,9 +238,8 @@ end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
-% We use the fact that the background settings are in the first column of
+% We use the fact that the background settings are in the first column.
 %
-% theData.thePointCloudSettingsCheckCal.
 % 'thePointClousdSpd' will be either raw or scaled spectra based on the
 % above 'whichToAnalyze' option.
 thePointCloudExcitationsMeasured = T_cones * thePointCloudSpd;
@@ -259,13 +258,13 @@ end
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrastMeasured(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrastMeasured(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrastMeasured(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+plot(theDesiredContrastCheckCalCal(1,:),thePointCloudContrastMeasured(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(theDesiredContrastCheckCal(2,:),thePointCloudContrastMeasured(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(theDesiredContrastCheckCal(3,:),thePointCloudContrastMeasured(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
 if (addNominalContrast)
-    plot(thePointCloudContrastCheckCal(1,:),thePointCloudContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
-    plot(thePointCloudContrastCheckCal(2,:),thePointCloudContrastNominal(2,:),'go','MarkerSize',16);   % M - target
-    plot(thePointCloudContrastCheckCal(3,:),thePointCloudContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+    plot(theDesiredContrastCheckCal(1,:),thePointCloudContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+    plot(theDesiredContrastCheckCal(2,:),thePointCloudContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+    plot(theDesiredContrastCheckCal(3,:),thePointCloudContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
 end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
