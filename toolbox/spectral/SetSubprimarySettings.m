@@ -46,21 +46,6 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Set the projector mode.
-if (options.projectorMode)
-    commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
-    unix(commandNormal)
-    if (options.verbose)
-        disp('Projector is set as Normal mode');
-    end
-else
-    commandSteadyOn = 'vputil rw 0x1c8 0x7 -q quit'; % Steady-on mode
-    unix(commandSteadyOn)
-    if (options.verbose)
-        disp('Projector is set as Steady-on mode');
-    end
-end
-
 % Check consistency of passed settings
 [m,n] = size(subprimarySettings);
 if (m ~= length(options.logicalToPhysical))
