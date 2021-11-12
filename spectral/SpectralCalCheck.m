@@ -8,6 +8,10 @@
 %% Initialize.
 clear; close all;
 
+%% Parameters
+warmupTimeMinutes = 10;
+verbose = true;
+
 %% Which condition
 %
 % This is used to match up with parameters run in SpectralCalCompute
@@ -48,10 +52,27 @@ if (MEASURE)
     [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
     OpenSpectroradiometer;
     
+    % Set subprimaries to desired value and wait for them to warm up to
+    % steady state.
+    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true); 
+    if (verbose)
+        fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
+    end
+    pause(60*warmupTimeMinutes);
+    if (verbose)
+        fprintf('done.  Measuring.\n');
+    end
+    
     % Measure
     for pp = 1:nPrimaries
-        isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
-            theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',true);
+        % Old way. Remove once debugged.
+        % isolatingSpdMeasured(:,pp) = MeasureDesiredTargetPrimaries(theData.projectorPrimaryPrimaries(:,pp), ...
+        %     theData.subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',true,'verbose',verbose);
+        theProjectorSettings = zeros(nPrimaries,1);
+        theProjectorSettings(pp) = 1;
+        isolatingSpdMeasured(:,pp) = MeasureProjectorPlainScreenSettings(theProjectorSettings,...
+            S,window,windowRect,'measurementOption',true,'verbose',verbose);
+        
     end
 else
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -102,8 +123,9 @@ if (MEASURE)
     projectorCalObj = theData.projectorCalObj;
     theData = rmfield(theData,'projectorCalObj');
 
-    % Set the projector subprimaries here. 
-    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
+    % Set the projector subprimaries here. Now done above.  Remove once
+    % debugged.
+    % SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true);
     
     %% Set the primaries in the calibration to the measured results.
     %
@@ -198,7 +220,7 @@ if (MEASURE)
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
     [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(thePointCloudSettingsCheckCal,...
-        S,window,windowRect,'measurementOption',true,'verbose',true);
+        S,window,windowRect,'measurementOption',true,'verbose',verbose);
    
 end
 
