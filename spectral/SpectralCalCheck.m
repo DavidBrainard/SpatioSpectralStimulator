@@ -17,7 +17,7 @@ verbose = true;
 %
 % This is used to match up with parameters run in SpectralCalCompute
 % ['LminusMSmooth' 'ConeIsolating']
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))

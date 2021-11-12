@@ -11,7 +11,7 @@ clear; close all;
 % 
 % We can remove this now that we are saving testData from SpectralCalCheck,
 % after next round of measurement.
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
