@@ -27,7 +27,7 @@ end
 %% Close PTB screen.
 sca;
 if (options.verbose)
-    disp('             Projector screen has been closed')
+    disp('             Projector screen has been closed');
 end
 
 end
