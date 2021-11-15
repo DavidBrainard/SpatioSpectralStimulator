@@ -57,7 +57,7 @@ if (MEASURE)
     
     % Set subprimaries to desired value and wait for them to warm up to
     % steady state.
-    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels,'projectorMode',true); 
+    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels); 
     if (verbose)
         fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
     end
