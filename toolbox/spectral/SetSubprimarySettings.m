@@ -27,14 +27,16 @@ function [] = SetSubprimarySettings(subprimarySettings,options)
 %                                 Default is 253.
 %    'nPrimaries' -               Number of projector primaries. Typicall 3
 %                                 but you never know.
-%    'projectorMode' -            Boolean (default true). Set the projector
-%                                 pulse mode either to be 'Normal' (true) or
-%                                 'Steady-on' (false).
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
-%
+
 % History:
 %    10/28/21  smo                Started on it
+%    11/12/21  dhb,smo            Deleted the feature controlling the
+%                                 projector mode. It is now controlled
+%                                 when opening the projector screen
+%                                 (OpenProjectorPlainScreen), and a
+%                                 separate function for it will be added.
 
 %% Set parameters.
 arguments
@@ -42,7 +44,6 @@ arguments
     options.logicalToPhysical = [0:7 9:15]
     options.nInputLevels (1,1) = 253
     options.nPrimaries (1,1) = 3
-    options.projectorMode (1,1) = true
     options.verbose (1,1) = true
 end
 
