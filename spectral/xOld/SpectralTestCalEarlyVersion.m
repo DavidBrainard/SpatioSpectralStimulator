@@ -24,8 +24,8 @@ subprimaryNInputLevels = 253;
 
 %% Load projector calibration.
 projectorCal = LoadCalFile(projectorCalName);
-projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
-CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
+screenCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
+CalibrateFitGamma(screenCalObj, projectorNInputLevels);
 
 %% Load subprimary calibrations.
 nPrimaries = 3;
@@ -284,7 +284,7 @@ end
 %
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [isolatingSpdMeasured(pp,:)] = MeasureChannelPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
+    [targetScreenSpdMeasured(pp,:)] = MeasureChannelPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
 end
 
 %% How close are spectra to subspace defined by basis?
@@ -337,8 +337,8 @@ title('Primary 3');
 % subprimary calculations above.  Need to reset
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-projectorCalObj.set('P_device',isolatingSpd');
-SetSensorColorSpace(projectorCalObj,T_cones,S)
+screenCalObj.set('P_device',isolatingSpd');
+SetSensorColorSpace(screenCalObj,T_cones,S)
 
 %% Create lookup table that maps [-1,1] to desired LMS contrast at a very fine scale.
 fprintf('Making fine contrast to LMS lookup table\n');
@@ -346,8 +346,8 @@ bgLMS = T_cones * sum(obtainedBgSpd,2);
 fineContrastLevels = linspace(-1,1,nFineLevels);
 fineDesiredContrast = targetContrastReMax*targetLMSContrast*fineContrastLevels;
 fineDesiredLMS = ContrastToExcitation(fineDesiredContrast,bgLMS);
-finePrimaries = PrimaryToGamut(projectorCalObj,SensorToPrimary(projectorCalObj,fineDesiredLMS));
-finePredictedLMS = PrimaryToSensor(projectorCalObj,finePrimaries);
+finePrimaries = PrimaryToGamut(screenCalObj,SensorToPrimary(screenCalObj,fineDesiredLMS));
+finePredictedLMS = PrimaryToSensor(screenCalObj,finePrimaries);
 
 % This is an older looped way of doing the above, which does not use
 % the calbration infrastructure.  Delete when satisifed that the
@@ -508,7 +508,7 @@ ylabel('LMS Cone Contrast (%)');
 ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Measure LMS contrast on the gabor patch image. (THIS PART HAS BEEN ADDED - SEMIN)
-[targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,projectorCalObj,obtainedBgSpd,T_cones, ...
+[targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,screenCalObj,obtainedBgSpd,T_cones, ...
     subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true,'measurementOption',false,'verbose',true);
 
 %% DAVID - Add plot of primaries.

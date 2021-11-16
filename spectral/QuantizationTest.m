@@ -19,15 +19,15 @@ projectorNInputLevels = 256;
 
 %% Load projector calibration.
 projectorCal = LoadCalFile(projectorCalName);
-projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
-CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
-P_device = projectorCalObj.get('P_device');
+screenCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
+CalibrateFitGamma(screenCalObj, projectorNInputLevels);
+P_device = screenCalObj.get('P_device');
 nPrimaries = size(P_device,2);
 
 %% Refit gamma
 gammaMethod = 'identity';
-projectorCalObj.set('gamma.fitType',gammaMethod);
-CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
+screenCalObj.set('gamma.fitType',gammaMethod);
+CalibrateFitGamma(screenCalObj, projectorNInputLevels);
 
 %% Set projector gamma method
 %
@@ -38,14 +38,14 @@ CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
 %
 % The point cloud method below reduces this problem.
 projectorGammaMethod = 2;
-SetGammaMethod(projectorCalObj,projectorGammaMethod);
+SetGammaMethod(screenCalObj,projectorGammaMethod);
 
 %% Set up finely spaced primary values and convert to settings.
 %
 % Find out what settings values come back
 finePrimariesValues = linspace(0,1,2^16);
 finePrimaries = finePrimariesValues(ones(nPrimaries,1),:);
-fineSettings = PrimaryToSettings(projectorCalObj,finePrimaries);
+fineSettings = PrimaryToSettings(screenCalObj,finePrimaries);
 for ii = 1:size(fineSettings,2)
     if (any(fineSettings(:,ii) ~= fineSettings(1,ii)))
         error('Settings ');

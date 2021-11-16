@@ -168,10 +168,10 @@ subprimaryNInputLevels = 253;
 
 %% Load projector calibration and refit its gamma
 projectorCal = LoadCalFile(projectorCalName);
-projectorCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
+screenCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
 gammaMethod = 'identity';
-projectorCalObj.set('gamma.fitType',gammaMethod);
-CalibrateFitGamma(projectorCalObj, projectorNInputLevels);
+screenCalObj.set('gamma.fitType',gammaMethod);
+CalibrateFitGamma(screenCalObj, projectorNInputLevels);
 
 %% Load subprimary calibrations.
 nPrimaries = 3;
@@ -418,8 +418,8 @@ title('Primary 3');
 % subprimary calculations above.  Need to reset
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-projectorCalObj.set('P_device',projectorPrimarySpd);
-SetSensorColorSpace(projectorCalObj,T_cones,S);
+screenCalObj.set('P_device',projectorPrimarySpd);
+SetSensorColorSpace(screenCalObj,T_cones,S);
 
 %% Set projector gamma method
 %
@@ -430,19 +430,19 @@ SetSensorColorSpace(projectorCalObj,T_cones,S);
 %
 % The point cloud method below reduces this problem.
 projectorGammaMethod = 2;
-SetGammaMethod(projectorCalObj,projectorGammaMethod);
+SetGammaMethod(screenCalObj,projectorGammaMethod);
 
 %% Set up desired background.
 %
 % We aim for the background that we said we wanted when we built the projector primaries.
 desiredBgExcitations = projectorBackgroundScaleFactor*T_cones*sum(subprimaryBackgroundSpd,2);
-projectorBgSettings = SensorToSettings(projectorCalObj,desiredBgExcitations);
-projectorBgExcitations = SettingsToSensor(projectorCalObj,projectorBgSettings);
+projectorBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
+screenBgExcitations = SettingsToSensor(screenCalObj,projectorBgSettings);
 figure; clf; hold on;
-plot(desiredBgExcitations,projectorBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
 axis('square');
-xlim([min([desiredBgExcitations ; projectorBgExcitations]),max([desiredBgExcitations ; projectorBgExcitations])]);
-ylim([min([desiredBgExcitations ; projectorBgExcitations]),max([desiredBgExcitations ; projectorBgExcitations])]);
+xlim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
+ylim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
 xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
 title('Check that we obtrain desired background excitations');
 fprintf('Projector settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
@@ -491,20 +491,20 @@ title('Effect of contrast quantization');
 theDesiredContrastGaborCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
 
 % Convert cone contrast to excitations
-theDesiredExcitationsGaborCal = ContrastToExcitation(theDesiredContrastGaborCal,projectorBgExcitations);
+theDesiredExcitationsGaborCal = ContrastToExcitation(theDesiredContrastGaborCal,screenBgExcitations);
 
 % Get primaries using standard calibration code, and desired spd without
 % quantizing.
-theStandardPrimariesGaborCal = SensorToPrimary(projectorCalObj,theDesiredExcitationsGaborCal);
-theDesiredSpdGaborCal = PrimaryToSpd(projectorCalObj,theStandardPrimariesGaborCal);
+theStandardPrimariesGaborCal = SensorToPrimary(screenCalObj,theDesiredExcitationsGaborCal);
+theDesiredSpdGaborCal = PrimaryToSpd(screenCalObj,theStandardPrimariesGaborCal);
 
 % Gamma correct and quantize (if gamma method set to 2 above; with gamma
 % method set to zero there is no quantization).  Then convert back from
 % the gamma corrected settings.
-theStandardSettingsGaborCal = PrimaryToSettings(projectorCalObj,theStandardPrimariesGaborCal);
-theStandardPredictedPrimariesGaborCal = SettingsToPrimary(projectorCalObj,theStandardSettingsGaborCal);
-theStandardPredictedExcitationsGaborCal = PrimaryToSensor(projectorCalObj,theStandardPredictedPrimariesGaborCal);
-theStandardPredictedContrastGaborCal = ExcitationsToContrast(theStandardPredictedExcitationsGaborCal,projectorBgExcitations);
+theStandardSettingsGaborCal = PrimaryToSettings(screenCalObj,theStandardPrimariesGaborCal);
+theStandardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,theStandardSettingsGaborCal);
+theStandardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,theStandardPredictedPrimariesGaborCal);
+theStandardPredictedContrastGaborCal = ExcitationsToContrast(theStandardPredictedExcitationsGaborCal,screenBgExcitations);
 
 %% Set up point cloud of contrasts for all possible settings
 %
@@ -542,8 +542,8 @@ allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLeve
 
 % Get LMS excitations for each triplet of projector settings, and build a
 % point cloud object from these.
-allProjectorExcitations = SettingsToSensor(projectorCalObj,allProjectorSettingsCal);
-allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,projectorBgExcitations);
+allProjectorExcitations = SettingsToSensor(screenCalObj,allProjectorSettingsCal);
+allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,screenBgExcitations);
 allSensorPtCloud = pointCloud(allProjectorContrast');
 
 % Force point cloud setup by finding one nearest neighbor. This is slow,
@@ -573,8 +573,8 @@ if (SLOWMETHODCHECK)
     toc
 
     % Get contrasts we think we have obtained.
-    thePointCloudExcitationsGaborCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsGaborCal);
-    thePointCloudContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,projectorBgExcitations);
+    thePointCloudExcitationsGaborCal = SettingsToSensor(screenCalObj,thePointCloudSettingsGaborCal);
+    thePointCloudContrastGaborCal = ExcitationsToContrast(thePointCloudExcitationsGaborCal,screenBgExcitations);
 
     % Plot of how well pixelwise point cloud method does in obtaining desired contrats
     figure; clf;
@@ -611,8 +611,8 @@ toc
 fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(theUniqueQuantizedSettingsGaborCal(:)), max(theUniqueQuantizedSettingsGaborCal(:)));
 
 % Get contrasts we think we have obtianed
-theUniqueQuantizedExcitationsGaborCal = SettingsToSensor(projectorCalObj,theUniqueQuantizedSettingsGaborCal);
-theUniqueQuantizedContrastGaborCal = ExcitationsToContrast(theUniqueQuantizedExcitationsGaborCal,projectorBgExcitations);
+theUniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,theUniqueQuantizedSettingsGaborCal);
+theUniqueQuantizedContrastGaborCal = ExcitationsToContrast(theUniqueQuantizedExcitationsGaborCal,screenBgExcitations);
 
 % Plot of how well point cloud method does in obtaining desired contrats
 figure; clf;
@@ -699,28 +699,28 @@ ylim([-plotAxisLimit plotAxisLimit]);
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 theDesiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastCheckCal;
-theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,projectorBgExcitations);
+theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,screenBgExcitations);
 
 % For each check calibration find the settings that
 % come as close as possible to producing the desired excitations.
 %
 % If we measure for a uniform field the spectra corresopnding to each of
-% the settings in the columns of thePointCloudSettingsCheckCal, then
+% the settings in the columns of thePtCldScreenSettingsCheckCall, then
 % compute the cone contrasts with respect to the backgound (0 contrast
 % measurement, first settings), we should approximate the cone contrasts in
 % theDesiredContrastCheckCal.
 fprintf('Point cloud exhaustive method, finding settings\n')
-thePointCloudSettingsCheckCal = zeros(3,size(theDesiredContrastCheckCal,2));
+thePtCldScreenSettingsCheckCall = zeros(3,size(theDesiredContrastCheckCal,2));
 for ll = 1:size(theDesiredContrastCheckCal,2)
     minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
-    thePointCloudSettingsCheckCal(:,ll) = allProjectorSettingsCal(:,minIndex);
+    thePtCldScreenSettingsCheckCall(:,ll) = allProjectorSettingsCal(:,minIndex);
 end
-thePointCloudPrimariesCheckCal = SettingsToPrimary(projectorCalObj,thePointCloudSettingsCheckCal);
-thePointCloudSpdCheckCal = PrimaryToSpd(projectorCalObj,thePointCloudPrimariesCheckCal);
-thePointCloudExcitationsCheckCal = SettingsToSensor(projectorCalObj,thePointCloudSettingsCheckCal);
-thePointCloudContrastCheckCal = ExcitationsToContrast(thePointCloudExcitationsCheckCal,projectorBgExcitations);
+thePtCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,thePtCldScreenSettingsCheckCall);
+thePtCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,thePtCldScreenPrimariesCheckCal);
+thePtCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,thePtCldScreenSettingsCheckCall);
+thePtCldScreenContrastCheckCal = ExcitationsToContrast(thePtCldScreenExcitationsCheckCal,screenBgExcitations);
 figure; clf; hold on;
-plot(theDesiredContrastCheckCal(:),thePointCloudContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
+plot(theDesiredContrastCheckCal(:),thePtCldScreenContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
 xlim([0 plotAxisLimit/100]); ylim([0 plotAxisLimit/100]); axis('square');
 xlabel('Desired'); ylabel('Obtained');
 title('Check of desired versus obtained check contrasts');
@@ -728,12 +728,12 @@ title('Check of desired versus obtained check contrasts');
 % Check that we can recover the settings from the spectral power
 % distributions, etc.  This won't necessarily work perfectly, but should be
 % OK.
-for tt = 1:size(thePointCloudSettingsCheckCal,2)
-    thePointCloudPrimariesFromSpdCheckCal(:,tt) = SpdToPrimary(projectorCalObj,thePointCloudSpdCheckCal(:,tt),'lambda',0);
-    thePointCloudSettingsFromSpdCheckCal(:,tt) = PrimaryToSettings(projectorCalObj,thePointCloudSettingsCheckCal(:,tt));
+for tt = 1:size(thePtCldScreenSettingsCheckCall,2)
+    thePointCloudPrimariesFromSpdCheckCal(:,tt) = SpdToPrimary(screenCalObj,thePtCldScreenSpdCheckCal(:,tt),'lambda',0);
+    thePointCloudSettingsFromSpdCheckCal(:,tt) = PrimaryToSettings(screenCalObj,thePtCldScreenSettingsCheckCall(:,tt));
 end
 figure; clf; hold on
-plot(thePointCloudSettingsCheckCal(:),thePointCloudSettingsFromSpdCheckCal(:),'+','MarkerSize',12);
+plot(thePtCldScreenSettingsCheckCall(:),thePointCloudSettingsFromSpdCheckCal(:),'+','MarkerSize',12);
 xlim([0 1]); ylim([0 1]);
 xlabel('Computed primaries'); ylabel('Check primaries from spd'); axis('square');
 
@@ -753,10 +753,10 @@ projectorSettingsImage = theStandardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
-    save(testFilename,'S','T_cones','projectorCalObj','subprimaryCalObjs','projectorSettingsImage', ...
+    save(testFilename,'S','T_cones','screenCalObj','subprimaryCalObjs','projectorSettingsImage', ...
         'projectorPrimaryPrimaries','projectorPrimarySettings','projectorPrimarySpd',...
         'theDesiredContrastCheckCal', ...
-        'thePointCloudSettingsCheckCal','thePointCloudContrastCheckCal','thePointCloudSpdCheckCal', ...
+        'thePtCldScreenSettingsCheckCall','thePtCldScreenContrastCheckCal','thePtCldScreenSpdCheckCal', ...
         'nQuantizeLevels','projectorNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end
 
