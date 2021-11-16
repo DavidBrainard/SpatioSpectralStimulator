@@ -248,7 +248,7 @@ targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
 
 % Make a loop for getting background primaries for all primaries.
 for pp = 1:nPrimaries
-    [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindDesiredBackgroundPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
+    [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
         B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
 end
 
@@ -273,7 +273,7 @@ for pp = 1:nPrimaries
         extraAmbientSpd = extraAmbientSpd + obtainedBgSpd(:,otherPrimaries(oo));
     end
     % Get isolating primaries.
-    [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindDesiredContrastTargetPrimaries(targetMaxLMSContrast(:,pp), ...
+    [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindChannelPrimaries(targetMaxLMSContrast(:,pp), ...
         targetPrimaryHeadroom,targetContrastReMax,bgPrimaries(:,pp), ...
         T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
@@ -284,7 +284,7 @@ end
 %
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [isolatingSpdMeasured(pp,:)] = MeasureDesiredTargetPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
+    [isolatingSpdMeasured(pp,:)] = MeasureChannelPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
 end
 
 %% How close are spectra to subspace defined by basis?

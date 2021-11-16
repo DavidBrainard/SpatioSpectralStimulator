@@ -1,7 +1,7 @@
-function [spdMeasured,theIntegers] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect,options)
+function [spdMeasured,theIntegers] = MeasurePlainScreenSettings(theSettings,S,window,windowRect,options)
 % Measure the SPD over projector primary settings.
 %
-% Syntax: [[spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect)
+% Syntax: [[spdMeasured] = MeasurePlainScreenSettings(theSettings,S,window,windowRect)
 %
 % Description:
 %    This measures the SPD according to projector primary settings. In case
@@ -32,7 +32,7 @@ function [spdMeasured,theIntegers] = MeasureProjectorPlainScreenSettings(theSett
 %                                 and printout.
 %
 % See also:
-%    SetProjectorPlainScreenSettings.
+%    SetPlainScreenSettings.
 
 % History:
 %    10/08/21  smo                Started on it
@@ -70,7 +70,7 @@ if (options.measurementOption)
         % Set the projector settings and display it as a plane screen.
         % Also, save out the interger settings values here. We may want to
         % check if we did quantization well.
-        theIntegers(:,tt) = SetProjectorPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
+        theIntegers(:,tt) = SetPlainScreenSettings(theSettings(:,tt),window,windowRect,'verbose',options.verbose); 
 
         % Measure it.
         spdMeasured(:,tt) = MeasureSpectroradiometer('S',S);

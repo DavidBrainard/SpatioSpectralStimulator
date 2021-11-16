@@ -1,7 +1,7 @@
-function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options)
+function [window, windowRect] = OpenPlainScreen(initialSettings,options)
 % This displays a plain screen on the projector using Psychtoolbox.
 %
-% Syntax: [] = OpenProjectorPlainScreen(setProjectorDisplayColor)
+% Syntax: [] = OpenPlainScreen(setProjectorDisplayColor)
 %
 % Description:
 %    This displays a plain screen with a desired color on the projector
@@ -33,8 +33,8 @@ function [window, windowRect] = OpenProjectorPlainScreen(initialSettings,options
 %    'verbose' -                  Boolean. Default true.  Controls the printout.
 %
 % See also: 
-%    SetProjectorPlainScreenSettings, MeasureProjectorPlainScreenSettings,
-%    CloseProjectorScreen.
+%    SetPlainScreenSettings, MeasurePlainScreenSettings,
+%    CloseScreen.
 
 % History:
 %    10/28/21  smo                Started on it
@@ -67,7 +67,7 @@ white = WhiteIndex(screenNumber);
 [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
 
 %% Set the settings
-SetProjectorPlainScreenSettings(initialSettings,window,windowRect,'verbose',options.verbose);
+SetPlainScreenSettings(initialSettings,window,windowRect,'verbose',options.verbose);
 
 %% Also make sure we can talk to the subprimaries.
 %
@@ -93,7 +93,7 @@ if (~isReady)
 end
 
 % Set the projector mode to start. Projector mode can be only controlled
-% here or when setting subprimary settings in 'SetSubprimarySettings'.
+% here or when setting subprimary settings in 'SetChannelSettings'.
 if (options.projectorMode)
     commandNormal = 'vputil rw 0x1c8 0x0 -q quit'; % Normal mode (Default)
     unix(commandNormal)

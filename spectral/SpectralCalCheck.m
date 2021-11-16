@@ -52,12 +52,12 @@ T_cones = theData.T_cones;
 % was true.
 if (MEASURE)
     % Open up projector and radiometer.
-    [window,windowRect] = OpenProjectorPlainScreen([1 1 1]');
+    [window,windowRect] = OpenPlainScreen([1 1 1]');
     OpenSpectroradiometer;
     
     % Set subprimaries to desired value and wait for them to warm up to
     % steady state.
-    SetSubprimarySettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels); 
+    SetChannelSettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels); 
     if (verbose)
         fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
     end
@@ -70,7 +70,7 @@ if (MEASURE)
     for pp = 1:nPrimaries
         theProjectorOnePrimarySettings = zeros(nPrimaries,1);
         theProjectorOnePrimarySettings(pp) = 1;
-        isolatingSpdMeasured(:,pp) = MeasureProjectorPlainScreenSettings(theProjectorOnePrimarySettings,...
+        isolatingSpdMeasured(:,pp) = MeasurePlainScreenSettings(theProjectorOnePrimarySettings,...
                                      S,window,windowRect,'measurementOption',true,'verbose',verbose);
         clear theProjectorOnePrimarySettings
         
@@ -216,7 +216,7 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in thePointCloudSettingsCheckCal and measure the corresponding
     % spd.
-    [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasureProjectorPlainScreenSettings(thePointCloudSettingsCheckCal,...
+    [thePointCloudSpdMeasured, thePointCloudSettingsIntegers] = MeasurePlainScreenSettings(thePointCloudSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',verbose);
    
 end
@@ -303,7 +303,7 @@ title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 %% Close projector and save out the measurement data.
 if (MEASURE)
     % Close
-    CloseProjectorScreen;
+    CloseScreen;
     CloseSpectroradiometer;
     
     % Save data with the name containing dayTimestr, so that we can

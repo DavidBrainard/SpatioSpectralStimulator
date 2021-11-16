@@ -38,7 +38,7 @@ try
     subprimarySettings(:,obj.whichPrimary) = targetSettings'; % Target primary setting.
     subprimarySettings(:,otherPrimaries) = obj.arbitraryBlack; % Other primaries settings. 
     
-    SetSubprimarySettings(subprimarySettings);
+    SetChannelSettings(subprimarySettings);
     
 catch err
     sca;

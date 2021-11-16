@@ -1,6 +1,6 @@
 function [] = CloseSpectroradiometer(options)
 % This closes the spectroradiometer after finishing the measurements.
-% Syntax: [[spdMeasured] = MeasureProjectorPlainScreenSettings(theSettings,S,window,windowRect)
+% Syntax: [[spdMeasured] = MeasurePlainScreenSettings(theSettings,S,window,windowRect)
 %
 % Description:
 %    This simply disconnects your spectroradiometer. This should be used

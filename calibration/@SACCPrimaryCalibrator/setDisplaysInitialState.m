@@ -38,7 +38,7 @@ backgroundSettings = [1 1 1];
 
 %% WORKING ON THIS PART
 % Display background settings. (NEW)
-[obj.masterWindowPtr, obj.screenRect] = OpenProjectorPlainScreen(backgroundSettings,'screenNum',calStruct.describe.whichScreen-1);
+[obj.masterWindowPtr, obj.screenRect] = OpenPlainScreen(backgroundSettings,'screenNum',calStruct.describe.whichScreen-1);
 LoadIdentityClut(obj.masterWindowPtr);
 
 % (ORIGINAL CODE)
@@ -49,7 +49,7 @@ LoadIdentityClut(obj.masterWindowPtr);
 % Blank option for the other display. (NEW)
 if calStruct.describe.blankOtherScreen
     [obj.slaveWindowPtr, ~] = ...
-        OpenProjectorPlainScreen(calStruct.describe.blankSettings,'screenNum',calStruct.describe.whichBlankScreen-1);  
+        OpenPlainScreen(calStruct.describe.blankSettings,'screenNum',calStruct.describe.whichBlankScreen-1);  
          LoadIdentityClut(obj.slaveWindowPtr);
     Screen('Flip', obj.slaveWindowPtr);
 end
@@ -83,7 +83,7 @@ end
 % subprimary settings, while the other primaries are turned off.
 subprimaryInitialSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings.
 subprimaryInitialSettings(:,obj.whichPrimary) = 1;
-SetSubprimarySettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
+SetChannelSettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
 
 % Wait for user
 if (userPrompt)

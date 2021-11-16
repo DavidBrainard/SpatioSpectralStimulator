@@ -1,7 +1,7 @@
-function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,windowRect,options)
+function [theIntegers] = SetPlainScreenSettings(theSettings,window,windowRect,options)
 % This displays a plain screen on the projector using Psychtoolbox.
 %
-% Syntax: [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,windowRect)
+% Syntax: [theIntegers] = SetPlainScreenSettings(theSettings,window,windowRect)
 %
 % Description:
 %    This updates the settings for the projector when it is in plain screen
@@ -34,7 +34,7 @@ function [theIntegers] = SetProjectorPlainScreenSettings(theSettings,window,wind
 %                                 projector.
 %    'verbose' -                  Boolean. Default true. Controls the printout.
 %
-% See also: OpenProjectorPlainScreen, CloseProjectorScreen.
+% See also: OpenPlainScreen, CloseScreen.
 
 % History:
 %    10/28/21  smo                Started on it.

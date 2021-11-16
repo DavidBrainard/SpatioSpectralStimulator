@@ -1,12 +1,12 @@
-function [] = SetProjectorMode(options)
+function [] = SetScreenMode(options)
 % Set the projector either Normal or Steady-on mode.
 %
-% Syntax: [] = SetProjectorMode()
+% Syntax: [] = SetScreenMode()
 %
 % Description:
 %    This sets the projector either Normal or Steady-on mode. Projector
 %    mode is basically set when opening the projector screen
-%    (OpenProjectorPlainScreen), but you can use this function in case you
+%    (OpenPlainScreen), but you can use this function in case you
 %    want to set the projector mode in the middle of the code.
 %
 % Inputs:

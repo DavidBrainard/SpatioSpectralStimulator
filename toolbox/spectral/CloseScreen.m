@@ -1,12 +1,12 @@
-function [] = CloseProjectorScreen(options)
+function [] = CloseScreen(options)
 % This closes the projector PTB screen.
 %
-% Syntax: [] = CloseProjectorScreen()
+% Syntax: [] = CloseScreen()
 %
 % Description:
 %    This closes the PTB projector screen. This should be used wherever after 
 %    the projector is used to display colors, so this is used as a pair with    
-%    the function 'OpenProjectorPlainScreen'.  
+%    the function 'OpenPlainScreen'.  
 %
 % Inputs:
 %    N/A

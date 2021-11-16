@@ -17,9 +17,9 @@ for pp = 1:obj.nPrimaries
 end
 
 % Set subprimary settings here.
-SetSubprimarySettings(subprimaryClosingSettings,'projectorMode',true);
+SetChannelSettings(subprimaryClosingSettings,'projectorMode',true);
 
 % Close everything.
-CloseProjectorScreen;
+CloseScreen;
 
 end
