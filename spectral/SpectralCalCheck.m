@@ -151,33 +151,8 @@ if (MEASURE)
         screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCall(:,1)));
         screenBgExcitations = T_cones * screenBgSpd;
         
-        % Build point cloud
-        tic;
-        fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-        allScreenIntegersCal = zeros(3,theData.screenNInputLevels^3);
-        idx = 1;
-        for ii = 0:(theData.screenNInputLevels-1)
-            for jj = 0:(theData.screenNInputLevels-1)
-                for kk = 0:(theData.screenNInputLevels-1)
-                    allScreenIntegersCal(:,idx) = [ii jj kk]';
-                    idx = idx+1;
-                end
-            end
-        end
-        
-        % Convert integers to 0-1 reals, quantized
-        allScreenSettingsCal = IntegersToSettings(allScreenIntegersCal,'nInputLevels',theData.screenNInputLevels);
-
-        % Get LMS excitations for each triplet of screen settings, and build a
-        % point cloud object from these.
-        allScreenExcitations = SettingsToSensor(screenCalObj,allScreenSettingsCal);
-        allScreenContrast = ExcitationsToContrast(allScreenExcitations,screenBgExcitations);
-        allSensorPtCloud = pointCloud(allScreenContrast');
-        
-        % Force point cloud setup by finding one nearest neighbor. This is slow,
-        % but once it is done subsequent calls are considerably faster.
-        findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
-        toc
+        % Set up point cloud for finding best settings
+        [constrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
         
         %% Generate some settings values corresponding to known contrasts
         %
@@ -198,16 +173,11 @@ if (MEASURE)
         % measurement, first settings), we should approximate the cone contrasts in
         % desiredContrastCheckCal.
         fprintf('Point cloud exhaustive method, finding settings\n')
-        ptCldScreenSettingsCheckCall = zeros(3,size(desiredContrastCheckCal,2));
-        for ll = 1:size(desiredContrastCheckCal,2)
-            minIndex = findNearestNeighbors(allSensorPtCloud,desiredContrastCheckCal(:,ll)',1);
-            ptCldScreenSettingsCheckCall(:,ll) = allScreenSettingsCal(:,minIndex);
-        end
-        ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCall);
+        ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,desiredContrastCheckCal,ptCldSettingsCal);
+        ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
         ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
-        ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCall);
+        ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
         ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
-      
     end
     
     %% Measure contrasts of the settings we computed in SpectralTestCal
@@ -216,7 +186,7 @@ if (MEASURE)
     % need to do is loop through and set a uniform field to each of the
     % settings in ptCldScreenSettingsCheckCall and measure the corresponding
     % spd.
-    [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCall,...
+    [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',verbose);
    
 end
@@ -314,7 +284,7 @@ if (MEASURE)
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
             'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
-            'ptCldScreenSettingsCheckCall','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
+            'ptCldScreenSettingsCheckCal','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
             'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
             'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal');
     end

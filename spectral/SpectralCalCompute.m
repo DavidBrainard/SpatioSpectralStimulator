@@ -507,49 +507,7 @@ standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPred
 standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 
 %% Set up point cloud of contrasts for all possible settings
-%
-% The method above is subject to imperfect quantization because each primary is
-% quantized individually. Here we'll quantize jointly across the three
-% primaries, using an exhaustive search process.  Amazingly, it is feasible
-% to search all possible quantized settings for each image pixel, and choose
-% the settings that best approximate the desired LMS excitations at that pixel.
-%
-% Compute an array with all possible triplets of screen settings,
-% quantized on the interval [0,1].
-%
-% This method takes all possible screen settings and creates a
-% point cloud of the corresponding cone contrasts. It then finds
-% the settings that come as close as possible to producing the
-% desired cone contrast at each point in the image. It's a little
-% slow but conceptually simple and fast enough to be feasible.
-tic;
-fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-
-% Compute all possible settings as integers.  
-allScreenIntegersCal = zeros(3,screenNInputLevels^3);
-idx = 1;
-for ii = 0:(screenNInputLevels-1)
-    for jj = 0:(screenNInputLevels-1)
-        for kk = 0:(screenNInputLevels-1)
-            allScreenIntegersCal(:,idx) = [ii jj kk]';
-            idx = idx+1;
-        end
-    end
-end
-
-% Convert integers to 0-1 reals, quantized
-allScreenSettingsCal = IntegersToSettings(allScreenIntegersCal,'nInputLevels',screenNInputLevels);
-
-% Get LMS excitations for each triplet of screen settings, and build a
-% point cloud object from these.
-allScreenExcitations = SettingsToSensor(screenCalObj,allScreenSettingsCal);
-allScreenContrast = ExcitationsToContrast(allScreenExcitations,screenBgExcitations);
-allSensorPtCloud = pointCloud(allScreenContrast');
-
-% Force point cloud setup by finding one nearest neighbor. This is slow,
-% but once it is done subsequent calls are considerably faster.
-findNearestNeighbors(allSensorPtCloud,[0 0 0],1);
-toc
+[contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
 
 %% Find settings by exhaustive search of point cloud for each pixel
 %
@@ -567,8 +525,8 @@ if (SLOWMETHODCHECK)
         if (rem(ll,printIter) == 0)
             fprintf('Finding settings for iteration %d of %d\n',ll,size(desiredContrastGaborCal,2));
         end
-        minIndex = findNearestNeighbors(allSensorPtCloud,desiredContrastGaborCal(:,ll)',1);
-        ptCldSettingsGaborCal(:,ll) = allScreenSettingsCal(:,minIndex);
+        minIndex = findNearestNeighbors(contrastPtCld,desiredContrastGaborCal(:,ll)',1);
+        ptCldSettingsGaborCal(:,ll) = ptCldSettingsCal(:,minIndex);
     end
     toc
 
@@ -585,27 +543,8 @@ if (SLOWMETHODCHECK)
     title('Pixelwise point cloud image method');
 end
 
-%% Get image settings, fast way
-%
-% Only look up each unique cone contrast once, and then fill into the
-% settings image. Slick!
-%
-% Find the unique cone contrasts in the image
-tic;
-fprintf('Point cloud unique contrast method, finding image settings\n')
-[uniqueDesiredContrastGaborCal,~,uniqueIC] = unique(desiredContrastGaborCal','rows','stable');
-uniqueDesiredContrastGaborCal = uniqueDesiredContrastGaborCal';
-
-% For each unique contrast, find the right settings and then plug into
-% output image.
-uniqueQuantizedSettingsGaborCal = zeros(3,size(desiredContrastGaborCal,2));
-minIndex = zeros(1,size(desiredContrastGaborCal,2));
-for ll = 1:size(uniqueDesiredContrastGaborCal,2)
-    minIndex = findNearestNeighbors(allSensorPtCloud,uniqueDesiredContrastGaborCal(:,ll)',1);
-    uniqueQuantizedSettingsGaborCal(:,ll) = allScreenSettingsCal(:,minIndex);
-end
-uniqueQuantizedSettingsGaborCal = uniqueQuantizedSettingsGaborCal(:,uniqueIC);
-toc
+%% Get image from point cloud, in cal format
+uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(contrastPtCld,desiredContrastGaborCal,ptCldSettingsCal);
 
 % Print out min/max of settings
 fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
@@ -709,15 +648,10 @@ desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screen
 % compute the cone contrasts with respect to the backgound (0 contrast
 % measurement, first settings), we should approximate the cone contrasts in
 % desiredContrastCheckCal.
-fprintf('Point cloud exhaustive method, finding settings\n')
-ptCldScreenSettingsCheckCall = zeros(3,size(desiredContrastCheckCal,2));
-for ll = 1:size(desiredContrastCheckCal,2)
-    minIndex = findNearestNeighbors(allSensorPtCloud,desiredContrastCheckCal(:,ll)',1);
-    ptCldScreenSettingsCheckCall(:,ll) = allScreenSettingsCal(:,minIndex);
-end
-ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCall);
+ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,desiredContrastCheckCal,ptCldSettingsCal);
+ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
-ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCall);
+ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
 figure; clf; hold on;
 plot(desiredContrastCheckCal(:),ptCldScreenContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
@@ -728,12 +662,12 @@ title('Check of desired versus obtained check contrasts');
 % Check that we can recover the settings from the spectral power
 % distributions, etc.  This won't necessarily work perfectly, but should be
 % OK.
-for tt = 1:size(ptCldScreenSettingsCheckCall,2)
+for tt = 1:size(ptCldScreenSettingsCheckCal,2)
     ptCldPrimariesFromSpdCheckCal(:,tt) = SpdToPrimary(screenCalObj,ptCldScreenSpdCheckCal(:,tt),'lambda',0);
-    ptCldSettingsFromSpdCheckCal(:,tt) = PrimaryToSettings(screenCalObj,ptCldScreenSettingsCheckCall(:,tt));
+    ptCldSettingsFromSpdCheckCal(:,tt) = PrimaryToSettings(screenCalObj,ptCldScreenSettingsCheckCal(:,tt));
 end
 figure; clf; hold on
-plot(ptCldScreenSettingsCheckCall(:),ptCldSettingsFromSpdCheckCal(:),'+','MarkerSize',12);
+plot(ptCldScreenSettingsCheckCal(:),ptCldSettingsFromSpdCheckCal(:),'+','MarkerSize',12);
 xlim([0 1]); ylim([0 1]);
 xlabel('Computed primaries'); ylabel('Check primaries from spd'); axis('square');
 
@@ -756,7 +690,7 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
         'desiredContrastCheckCal', ...
-        'ptCldScreenSettingsCheckCall','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
+        'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
         'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end
 
