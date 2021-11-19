@@ -40,10 +40,10 @@ targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;           % Range of the spectrum.
 wls = SToWls(S);         % Wavelength. 
 nPrimaries = 3;          % Number of primaries.
-nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices');% Number of subprimaries.
-subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
+nChannels = theData.channelCalObjs{1}.get('nDevices');% Number of subprimaries.
+channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:7 9:15];
-nTestPoints = size(theData.thePtCldScreenContrastCheckCal,2);
+nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
 % Loop and measure all primaries.
@@ -51,13 +51,13 @@ T_cones = theData.T_cones;
 % IF MEASURE is false, load in the data from a previous run where MEASURE
 % was true.
 if (MEASURE)
-    % Open up projector and radiometer.
+    % Open up screen and radiometer.
     [window,windowRect] = OpenPlainScreen([1 1 1]');
     OpenSpectroradiometer;
     
     % Set subprimaries to desired value and wait for them to warm up to
     % steady state.
-    SetChannelSettings(theData.projectorPrimarySettings,'nInputLevels',subprimaryNInputLevels); 
+    SetChannelSettings(theData.screenPrimarySettings,'nInputLevels',channelNInputLevels); 
     if (verbose)
         fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
     end
@@ -68,11 +68,11 @@ if (MEASURE)
     
     % Measure.
     for pp = 1:nPrimaries
-        theProjectorOnePrimarySettings = zeros(nPrimaries,1);
-        theProjectorOnePrimarySettings(pp) = 1;
-        targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theProjectorOnePrimarySettings,...
+        theScreenOnePrimarySettings = zeros(nPrimaries,1);
+        theScreenOnePrimarySettings(pp) = 1;
+        targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
                                      S,window,windowRect,'measurementOption',true,'verbose',verbose);
-        clear theProjectorOnePrimarySettings
+        clear theScreenOnePrimarySettings
         
     end
 else
@@ -144,35 +144,35 @@ if (MEASURE)
         % Figure out desired background excitations. The actual background
         % won't be what we computed originally, because the primary spectra
         % aren't the same as their nominal values.  Here we recompute what
-        % the background will be when we set the projector to the
+        % the background will be when we set the screen to the
         % background settings.  That then lets us compute contrast relative
         % to the background we're going to get. We want to do this from the
         % settings, so that the background isn't mucked up by quantization.
-        screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.thePtCldScreenSettingsCheckCall(:,1)));
+        screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCall(:,1)));
         screenBgExcitations = T_cones * screenBgSpd;
         
         % Build point cloud
         tic;
         fprintf('Point cloud exhaustive method, setting up cone contrast cloud, this takes a while\n')
-        allProjectorIntegersCal = zeros(3,theData.projectorNInputLevels^3);
+        allScreenIntegersCal = zeros(3,theData.screenNInputLevels^3);
         idx = 1;
-        for ii = 0:(theData.projectorNInputLevels-1)
-            for jj = 0:(theData.projectorNInputLevels-1)
-                for kk = 0:(theData.projectorNInputLevels-1)
-                    allProjectorIntegersCal(:,idx) = [ii jj kk]';
+        for ii = 0:(theData.screenNInputLevels-1)
+            for jj = 0:(theData.screenNInputLevels-1)
+                for kk = 0:(theData.screenNInputLevels-1)
+                    allScreenIntegersCal(:,idx) = [ii jj kk]';
                     idx = idx+1;
                 end
             end
         end
         
         % Convert integers to 0-1 reals, quantized
-        allProjectorSettingsCal = IntegersToSettings(allProjectorIntegersCal,'nInputLevels',theData.projectorNInputLevels);
+        allScreenSettingsCal = IntegersToSettings(allScreenIntegersCal,'nInputLevels',theData.screenNInputLevels);
 
-        % Get LMS excitations for each triplet of projector settings, and build a
+        % Get LMS excitations for each triplet of screen settings, and build a
         % point cloud object from these.
-        allProjectorExcitations = SettingsToSensor(screenCalObj,allProjectorSettingsCal);
-        allProjectorContrast = ExcitationsToContrast(allProjectorExcitations,screenBgExcitations);
-        allSensorPtCloud = pointCloud(allProjectorContrast');
+        allScreenExcitations = SettingsToSensor(screenCalObj,allScreenSettingsCal);
+        allScreenContrast = ExcitationsToContrast(allScreenExcitations,screenBgExcitations);
+        allSensorPtCloud = pointCloud(allScreenContrast');
         
         % Force point cloud setup by finding one nearest neighbor. This is slow,
         % but once it is done subsequent calls are considerably faster.
@@ -186,27 +186,27 @@ if (MEASURE)
         % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
         rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
         rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-        theDesiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
-        theDesiredExcitationsCheckCal = ContrastToExcitation(theDesiredContrastCheckCal,screenBgExcitations);
+        desiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
+        desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
         
         % For each check calibration find the settings that
         % come as close as possible to producing the desired excitations.
         %
         % If we measure for a uniform field the spectra corresopnding to each of
-        % the settings in the columns of thePtCldScreenSettingsCheckCall, then
+        % the settings in the columns of ptCldScreenSettingsCheckCall, then
         % compute the cone contrasts with respect to the backgound (0 contrast
         % measurement, first settings), we should approximate the cone contrasts in
-        % theDesiredContrastCheckCal.
+        % desiredContrastCheckCal.
         fprintf('Point cloud exhaustive method, finding settings\n')
-        thePtCldScreenSettingsCheckCall = zeros(3,size(theDesiredContrastCheckCal,2));
-        for ll = 1:size(theDesiredContrastCheckCal,2)
-            minIndex = findNearestNeighbors(allSensorPtCloud,theDesiredContrastCheckCal(:,ll)',1);
-            thePtCldScreenSettingsCheckCall(:,ll) = allProjectorSettingsCal(:,minIndex);
+        ptCldScreenSettingsCheckCall = zeros(3,size(desiredContrastCheckCal,2));
+        for ll = 1:size(desiredContrastCheckCal,2)
+            minIndex = findNearestNeighbors(allSensorPtCloud,desiredContrastCheckCal(:,ll)',1);
+            ptCldScreenSettingsCheckCall(:,ll) = allScreenSettingsCal(:,minIndex);
         end
-        thePtCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,thePtCldScreenSettingsCheckCall);
-        thePtCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,thePtCldScreenPrimariesCheckCal);
-        thePtCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,thePtCldScreenSettingsCheckCall);
-        thePtCldScreenContrastCheckCal = ExcitationsToContrast(thePtCldScreenExcitationsCheckCal,screenBgExcitations);
+        ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCall);
+        ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
+        ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCall);
+        ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
       
     end
     
@@ -214,27 +214,27 @@ if (MEASURE)
     %
     % Measure the contrast points.  We've already got the settings so all we
     % need to do is loop through and set a uniform field to each of the
-    % settings in thePtCldScreenSettingsCheckCall and measure the corresponding
+    % settings in ptCldScreenSettingsCheckCall and measure the corresponding
     % spd.
-    [thePtCldScreenSpdMeasuredCheckCal, thePtCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(thePtCldScreenSettingsCheckCall,...
+    [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCall,...
         S,window,windowRect,'measurementOption',true,'verbose',verbose);
    
 end
 
 %% Make plot of measured versus desired spds.
 %
-% The desired spds are in thePtCldScreenSpdCheckCal
+% The desired spds are in ptCldScreenSpdCheckCal
 %
 % Choose to use either raw or scaled measurement spectra.
 whichToAnalyze = 'raw';
 switch (whichToAnalyze)
     case 'raw'
-        thePointCloudSpd = thePtCldScreenSpdMeasuredCheckCal;
+        ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
     case 'scaled'
         for tt = 1:nTestPoints
             % Find scale factor to best bring into alignment with target
-            scaleSpdToTargetFactor(tt) = thePtCldScreenSpdMeasuredCheckCal(:,tt)\thePtCldScreenSpdCheckCal(:,pp);
-            thePointCloudSpd(:,tt) = scaleSpdToTargetFactor(tt) * thePtCldScreenSpdMeasuredCheckCal(:,tt);
+            scaleSpdToTargetFactor(tt) = ptCldScreenSpdMeasuredCheckCal(:,tt)\ptCldScreenSpdCheckCal(:,pp);
+            ptCldSpd(:,tt) = scaleSpdToTargetFactor(tt) * ptCldScreenSpdMeasuredCheckCal(:,tt);
         end
     otherwise
         error('Unknown analyze type specified');
@@ -247,8 +247,8 @@ figurePosition = [1200 300 figureSize figureSize];
 set(gcf,'position',figurePosition);
 for tt = 1:nTestPoints
     subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(wls,thePtCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
-    plot(wls,thePointCloudSpd(:,tt),'r-','LineWidth',2); % Measured spectra
+    plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
+    plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
     legend('Target','Measured')
@@ -261,29 +261,29 @@ end
 %
 % 'thePointClousdSpd' will be either raw or scaled spectra based on the
 % above 'whichToAnalyze' option.
-thePointCloudExcitationsMeasured = T_cones * thePointCloudSpd;
-thePointCloudBgExcitationsMeasured = thePointCloudExcitationsMeasured(:,1);
-thePtCldScreenContrastMeasuredCheckCal = ExcitationToContrast(thePointCloudExcitationsMeasured,thePointCloudBgExcitationsMeasured);
+ptCldExcitationsMeasured = T_cones * ptCldSpd;
+ptCldBgExcitationsMeasured = ptCldExcitationsMeasured(:,1);
+ptCldScreenContrastMeasuredCheckCal = ExcitationToContrast(ptCldExcitationsMeasured,ptCldBgExcitationsMeasured);
 
 % Add the nominal contrasts to be compared in the following graph. These
 % should be all lined up on the 45-degree line in the following graph.
 addNominalContrast = true;
 if (addNominalContrast)
-    thePointCloudExcitationsNominal = T_cones * thePtCldScreenSpdCheckCal;
-    thePointCloudBgExcitationsNominal = thePointCloudExcitationsNominal(:,1);
-    thePointCloudContrastNominal = ExcitationToContrast(thePointCloudExcitationsNominal,thePointCloudBgExcitationsNominal);
+    ptCldExcitationsNominal = T_cones * ptCldScreenSpdCheckCal;
+    ptCldBgExcitationsNominal = ptCldExcitationsNominal(:,1);
+    ptCldContrastNominal = ExcitationToContrast(ptCldExcitationsNominal,ptCldBgExcitationsNominal);
 else
 end
 
 % Plot measured versus desired contrasts
 figure; hold on;
-plot(theDesiredContrastCheckCal(1,:),thePtCldScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(theDesiredContrastCheckCal(2,:),thePtCldScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(theDesiredContrastCheckCal(3,:),thePtCldScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+plot(desiredContrastCheckCal(1,:),ptCldScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(desiredContrastCheckCal(2,:),ptCldScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(desiredContrastCheckCal(3,:),ptCldScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
 if (addNominalContrast)
-    plot(theDesiredContrastCheckCal(1,:),thePointCloudContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
-    plot(theDesiredContrastCheckCal(2,:),thePointCloudContrastNominal(2,:),'go','MarkerSize',16);   % M - target
-    plot(theDesiredContrastCheckCal(3,:),thePointCloudContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+    plot(desiredContrastCheckCal(1,:),ptCldContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+    plot(desiredContrastCheckCal(2,:),ptCldContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+    plot(desiredContrastCheckCal(3,:),ptCldContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
 end
 xlabel('Desired contrast');
 ylabel('Measured contrast');
@@ -300,7 +300,7 @@ else
 end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
-%% Close projector and save out the measurement data.
+%% Close screen and save out the measurement data.
 if (MEASURE)
     % Close
     CloseScreen;
@@ -313,9 +313,9 @@ if (MEASURE)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
-            'screenBgSpd','screenBgExcitations','theDesiredContrastCheckCal','theDesiredExcitationsCheckCal', ...
-            'thePtCldScreenSettingsCheckCall','thePtCldScreenPrimariesCheckCal','thePtCldScreenSpdCheckCal','thePtCldScreenExcitationsCheckCal','thePtCldScreenContrastCheckCal', ...
-            'thePtCldScreenSettingsIntegersCheckCal','thePtCldScreenSpdMeasuredCheckCal','thePtCldScreenContrastMeasuredCheckCal', ...
-            'thePointCloudExcitationsNominal','thePointCloudBgExcitationsNominal','thePointCloudContrastNominal');
+            'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
+            'ptCldScreenSettingsCheckCall','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
+            'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
+            'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal');
     end
 end

@@ -45,10 +45,10 @@ end
 S = theData.S;                                                  % Range of the spectrum.
 wls = SToWls(S);                                                % Wavelength. 
 nPrimaries = size(targetScreenSpd,2);                          % Number of primaries.
-nSubprimaries = theData.subprimaryCalObjs{1}.get('nDevices');   % Number of subprimaries.
-subprimaryNInputLevels = size(theData.subprimaryCalObjs{1}.get('gammaInput'),1);
+nChannels = theData.channelCalObjs{1}.get('nDevices');   % Number of subprimaries.
+channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:7 9:15];
-nTestPoints = size(theData.thePtCldScreenContrastCheckCal,2);
+nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
 %% Look at measured primaries
@@ -59,15 +59,15 @@ T_cones = theData.T_cones;
 % Plot the spd results.
 primarySpdFig = figure; clf; 
 for pp = 1:nPrimaries
-    checkTargetPrimaries(:,pp) = SettingsToPrimary(theData.subprimaryCalObjs{pp},theData.projectorPrimarySettings(:,pp));
-    if (max(abs(checkTargetPrimaries(:,pp)-theData.projectorPrimaryPrimaries(:,pp))) > 0.005)
+    checkTargetPrimaries(:,pp) = SettingsToPrimary(theData.channelCalObjs{pp},theData.screenPrimarySettings(:,pp));
+    if (max(abs(checkTargetPrimaries(:,pp)-theData.screenPrimaryPrimaries(:,pp))) > 0.005)
         error('Cannot reconstruct target primary values from target primary settings to quantization tolerance');
     end
-    checkTargetSettings(:,pp) = PrimaryToSettings(theData.subprimaryCalObjs{pp},theData.projectorPrimaryPrimaries(:,pp));
-    if (any(theData.projectorPrimarySettings(:,pp) ~= checkTargetSettings(:,pp)))
+    checkTargetSettings(:,pp) = PrimaryToSettings(theData.channelCalObjs{pp},theData.screenPrimaryPrimaries(:,pp));
+    if (any(theData.screenPrimarySettings(:,pp) ~= checkTargetSettings(:,pp)))
         error('Cannot reconstruct target primary settings from calibraion and primary values');
     end
-    checktargetScreenSpd(:,pp) = PrimaryToSpd(theData.subprimaryCalObjs{pp},checkTargetPrimaries(:,pp));
+    checktargetScreenSpd(:,pp) = PrimaryToSpd(theData.channelCalObjs{pp},checkTargetPrimaries(:,pp));
     if (any(targetScreenSpd(:,pp) ~= checktargetScreenSpd(:,pp)))
         error('Cannot reconstruct target primary spd from calibraion and primary values');
     end
@@ -82,14 +82,14 @@ for pp = 1:nPrimaries
     title('Comparison of raw measured and desired spds');
 end
 
-%% Use regression to express measured primaries in terms of subprimary calibration
+%% Use regression to express measured primaries in terms of channel calibration
 primaryValueFig = figure; clf; 
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 for pp = 1:nPrimaries
-    P_device{pp} = theData.subprimaryCalObjs{pp}.get('P_device');
-    P_ambient{pp} = theData.subprimaryCalObjs{pp}.get('P_ambient');
+    P_device{pp} = theData.channelCalObjs{pp}.get('P_device');
+    P_ambient{pp} = theData.channelCalObjs{pp}.get('P_ambient');
     if (any(P_ambient{pp}(:) ~= 0))
         error('Need to handle non-zero ambient');
     end
@@ -100,7 +100,7 @@ for pp = 1:nPrimaries
     plot(checkTargetPrimaries(:,pp),regressTargetPrimaries(:,pp),'ro','MarkerSize',12,'MarkerFaceColor','r');
     xlim([0,1]); ylim([0,1]); axis('square');
     plot([0 1],[0 1],'k');
-    title('Regression versus desired subprimary values')
+    title('Regression versus desired channel values')
     xlabel('Desired Primary'); ylabel('Regression on Measured Primary');
 
     figure(primarySpdFig);
@@ -120,12 +120,12 @@ figurePosition = [1200 300 figureSize figureSize];
 set(gcf,'position',figurePosition);
 for tt = 1:nTestPoints
     % Find linear combination of measured primaries to produce test
-    regressPointCloudPrimaries(:,tt) = theCheckData.targetScreenSpdMeasured\theCheckData.thePtCldScreenSpdMeasuredCheckCal(:,tt);
+    regressPointCloudPrimaries(:,tt) = theCheckData.targetScreenSpdMeasured\theCheckData.ptCldScreenSpdMeasuredCheckCal(:,tt);
     regressPointCloudSpd(:,tt) = theCheckData.targetScreenSpdMeasured*regressPointCloudPrimaries(:,tt);
     
     subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(wls,theCheckData.thePtCldScreenSpdCheckCal(:,tt),'k-','LineWidth',4)  % Target spectra
-    plot(wls,theCheckData.thePtCldScreenSpdMeasuredCheckCal(:,tt),'r-','LineWidth',2); % Measured spectra
+    plot(wls,theCheckData.ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',4)  % Target spectra
+    plot(wls,theCheckData.ptCldScreenSpdMeasuredCheckCal(:,tt),'r-','LineWidth',2); % Measured spectra
     xlabel('Wavelength (nm)');
     ylabel('Spectral power distribution');
     title(sprintf('Test %d raw',tt),'fontsize',16);
@@ -138,16 +138,16 @@ for tt = 1:nTestPoints
 end
 
 % Another way of comparing measured and nominal spectra
-thePointCloudSpdScatter = theCheckData.thePtCldScreenSpdMeasuredCheckCal;
+ptCldSpdScatter = theCheckData.ptCldScreenSpdMeasuredCheckCal;
 figure; clf;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize];
 set(gcf,'position',figurePosition);
 spdLim = 2.5e-3;
 for tt = 1:nTestPoints
-    scaleFactor(tt) = theCheckData.thePtCldScreenSpdCheckCal(:,tt)\theCheckData.thePtCldScreenSpdMeasuredCheckCal(:,tt);
+    scaleFactor(tt) = theCheckData.ptCldScreenSpdCheckCal(:,tt)\theCheckData.ptCldScreenSpdMeasuredCheckCal(:,tt);
     subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(theCheckData.thePtCldScreenSpdCheckCal(:,tt),theCheckData.thePtCldScreenSpdMeasuredCheckCal(:,tt),'r+');
+    plot(theCheckData.ptCldScreenSpdCheckCal(:,tt),theCheckData.ptCldScreenSpdMeasuredCheckCal(:,tt),'r+');
     xlabel('Nominal Spd');
     ylabel('Measured Spd');
     xlim([0 spdLim]); ylim([0 spdLim]);
@@ -164,25 +164,25 @@ figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.thePtCldScreenPrimariesCheckCal(pp,:),regressPointCloudPrimaries(pp,:),'ro','MarkerSize',12,'MarkerFaceColor','r');
+    plot(theCheckData.ptCldScreenPrimariesCheckCal(pp,:),regressPointCloudPrimaries(pp,:),'ro','MarkerSize',12,'MarkerFaceColor','r');
     plot([0 1],[0 1],'k');
     xlim([0,1]); ylim([0,1]); axis('square');
     title('Regression versus desired primary values')
-    xlabel('Desired Projector Primary'); ylabel('Regression on Measured Projector Primary');
+    xlabel('Desired Screen Primary'); ylabel('Regression on Measured Screen Primary');
 end
 
 %% Explicitly compute some contrasts
-analyzePointCloudExcitationsMeasured = T_cones * theCheckData.thePtCldScreenSpdMeasuredCheckCal;
+analyzePointCloudExcitationsMeasured = T_cones * theCheckData.ptCldScreenSpdMeasuredCheckCal;
 analyzePointCloudBgExcitationsMeasured = analyzePointCloudExcitationsMeasured(:,1);
 analyzePointCloudContrastMeasured = ExcitationToContrast(analyzePointCloudExcitationsMeasured,analyzePointCloudBgExcitationsMeasured);
-if (any(analyzePointCloudContrastMeasured(:) ~= theCheckData.thePtCldScreenContrastMeasuredCheckCal(:)))
+if (any(analyzePointCloudContrastMeasured(:) ~= theCheckData.ptCldScreenContrastMeasuredCheckCal(:)))
     error('Cannot get same measured contrasts in two different places');
 end
 
-analyzePointCloudExcitationsNominal = T_cones * theCheckData.thePtCldScreenSpdCheckCal;
+analyzePointCloudExcitationsNominal = T_cones * theCheckData.ptCldScreenSpdCheckCal;
 analyzePointCloudBgExcitationsNominal = analyzePointCloudExcitationsNominal(:,1);
 analyzePointCloudContrastNominal = ExcitationToContrast(analyzePointCloudExcitationsNominal,analyzePointCloudBgExcitationsNominal);
-if (any(analyzePointCloudContrastNominal(:) ~= theCheckData.thePointCloudContrastNominal(:)))
+if (any(analyzePointCloudContrastNominal(:) ~= theCheckData.ptCldContrastNominal(:)))
     error('Cannot get same nominalcontrasts in two different places');
 end
 
@@ -196,10 +196,10 @@ axisLim = 0.05;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.thePtCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.theDesiredContrastCheckCal(pp,:),theCheckData.thePointCloudContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.thePtCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.theDesiredContrastCheckCal(pp,1),theCheckData.thePointCloudContrastNominal(pp,1), 'ko','MarkerSize',18);
+    plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
+    plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldContrastNominal(pp,1), 'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
     xlabel('Desired contrast');

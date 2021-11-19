@@ -1,4 +1,4 @@
-% SACC_SubprimaryAdditivityCheck
+% SACC_ChannelAdditivityCheck
 %
 % This compares the SPDs between randomly generated spectrum and the sum of
 % its single spectrum to check a projecotr additivity.
@@ -33,11 +33,11 @@ nInputLevels = 253;
 nPrimaries = 3;
 nTest = size(fw_rand,2); % Num of test spectra
 subPrimaryWorkingRange = [1:8,10:16];
-nSubprimaries = size(subPrimaryWorkingRange,2);
+nChannels = size(subPrimaryWorkingRange,2);
 
-% Delete the not working subprimary channel.
+% Delete the not working channel channel.
 
-% Set subprimary working range for single spectrum and spectrum input for
+% Set channel working range for single spectrum and spectrum input for
 % random spectra.
 if (dataType)
     % Single spectrum
@@ -46,11 +46,11 @@ if (dataType)
     spectrumInput = SpectrumInput(:,subPrimaryWorkingRange);
 else
     % Single spectrum
-    subPrimaryWorkingRangeAcrossPrimary = [subPrimaryWorkingRange, subPrimaryWorkingRange+(nSubprimaries+1), subPrimaryWorkingRange+((nSubprimaries+1)*2)];
+    subPrimaryWorkingRangeAcrossPrimary = [subPrimaryWorkingRange, subPrimaryWorkingRange+(nChannels+1), subPrimaryWorkingRange+((nChannels+1)*2)];
     fw_single = fw_single(:,subPrimaryWorkingRangeAcrossPrimary);
-    fw_singles{1} = fw_single(:,1:nSubprimaries); % Primary 1
-    fw_singles{2} = fw_single(:,1+nSubprimaries:2*nSubprimaries); % Primary 2
-    fw_singles{3} = fw_single(:,1+2*nSubprimaries:3*nSubprimaries); % Primary 3
+    fw_singles{1} = fw_single(:,1:nChannels); % Primary 1
+    fw_singles{2} = fw_single(:,1+nChannels:2*nChannels); % Primary 2
+    fw_singles{3} = fw_single(:,1+2*nChannels:3*nChannels); % Primary 3
     % Spectrum Input
     for pp = 1:nPrimaries
         spectrumInput{pp} = SpectrumInput{pp}(:,subPrimaryWorkingRange);
@@ -78,14 +78,14 @@ end
 
 %% Calculate the sum of single spectra.
 fw_blank = zeros(S(3),1);
-fw_blanks = zeros(S(3),nSubprimaries);
+fw_blanks = zeros(S(3),nChannels);
 
 if (dataType) % within primary
-    % Find index which subprimary is turn-on per each test spectrum.
+    % Find index which channel is turn-on per each test spectrum.
     idxSpectrumInput = logical(spectrumInput == (nInputLevels-1));
     % Set the spectrum here.
     for tt = 1:nTest
-        for ss = 1:nSubprimaries
+        for ss = 1:nChannels
             if idxSpectrumInput(tt,ss) == 0
                 fw_randTemp(:,ss) = fw_blank;
             elseif idxSpectrumInput(tt,ss) == 1
@@ -97,7 +97,7 @@ if (dataType) % within primary
     end
     
 else (dataType) % across primary
-    % Find index which subprimary is turn-on per each test spectrum.
+    % Find index which channel is turn-on per each test spectrum.
     for pp = 1:nPrimaries
         idxSpectrumInput{pp} = logical(spectrumInput{pp} == (nInputLevels-1));
     end
@@ -106,7 +106,7 @@ else (dataType) % across primary
     % Set the spectrum here.
     for tt = 1:nTest
         for pp = 1:nPrimaries
-            for ss = 1:nSubprimaries
+            for ss = 1:nChannels
                 if idxSpectrumInput{pp}(tt,ss) == 0
                     fw_randTemp{pp}(:,ss) = fw_blank;
                 elseif idxSpectrumInput{pp}(tt,ss) == 1

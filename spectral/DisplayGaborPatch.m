@@ -2,7 +2,7 @@
 % This code is to display Gabor patch for SACC project
 
 % It is useful when your computer cannot configure the target display (LED
-% projector in SACC project)
+% screen in SACC project)
 
 % This code can be used regardless of the configuration state as it uses
 % Psychtoolbox
@@ -15,7 +15,7 @@ clear all;
 %% Load the Gabor patch image
 % Read the gaborPatch generated from 'SpectralTestcal.m'
 gaborPatch = load('testImageData1.mat'); % Load the Gabor patch image
-gaborPatchImage = gaborPatch.projectorSettingsImage; % Read the image data from the struct
+gaborPatchImage = gaborPatch.screenSettingsImage; % Read the image data from the struct
 gaborPatchImage = im2uint8(gaborPatchImage); % Convert the format of the image from 'double' to 'uin8'
 
 %% PTB pre-setup

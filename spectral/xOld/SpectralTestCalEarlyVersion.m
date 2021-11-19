@@ -10,48 +10,48 @@ clear; close all;
 
 %% Define calibration filenames/params.
 %
-% This is a standard calibration file for the DLP projector,
+% This is a standard calibration file for the DLP screen,
 % with the subprimaries set to something.  As we'll see below,
 % we're going to rewrite those.
-projectorCalName = 'SACC';
-projectorNInputLevels = 256;
+screenCalName = 'SACC';
+screenNInputLevels = 256;
 
 % These are the calibration files for each of the primaries, which
 % then entails measuring the spectra of all the subprimaries for that
 % primary.
-subprimaryCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
-subprimaryNInputLevels = 253;
+channelCalNames = {'SACCPrimary1' 'SACCPrimary1' 'SACCPrimary1'};
+channelNInputLevels = 253;
 
-%% Load projector calibration.
-projectorCal = LoadCalFile(projectorCalName);
-screenCalObj = ObjectToHandleCalOrCalStruct(projectorCal);
-CalibrateFitGamma(screenCalObj, projectorNInputLevels);
+%% Load screen calibration.
+screenCal = LoadCalFile(screenCalName);
+screenCalObj = ObjectToHandleCalOrCalStruct(screenCal);
+CalibrateFitGamma(screenCalObj, screenNInputLevels);
 
-%% Load subprimary calibrations.
+%% Load channel calibrations.
 nPrimaries = 3;
-subprimaryCals = cell(nPrimaries ,1);
-subprimaryCalObjs = cell(nPrimaries ,1);
-for cc = 1:length(subprimaryCalNames)
-    subprimaryCals{cc} = LoadCalFile(subprimaryCalNames{cc});
+channelCals = cell(nPrimaries ,1);
+channelCalObjs = cell(nPrimaries ,1);
+for cc = 1:length(channelCalNames)
+    channelCals{cc} = LoadCalFile(channelCalNames{cc});
 
-    subprimaryCalObjs{cc} = ObjectToHandleCalOrCalStruct(subprimaryCals{cc});
-    CalibrateFitGamma(subprimaryCalObjs{cc}, subprimaryNInputLevels);
+    channelCalObjs{cc} = ObjectToHandleCalOrCalStruct(channelCals{cc});
+    CalibrateFitGamma(channelCalObjs{cc}, channelNInputLevels);
 end
 
 %% Get out some data to work with.
 %
-% This is from the subprimary calibration file.
-S = subprimaryCalObjs{1}.get('S');
+% This is from the channel calibration file.
+S = channelCalObjs{1}.get('S');
 wls = SToWls(S);
-ambientSpd = subprimaryCalObjs{1}.get('P_ambient');
+ambientSpd = channelCalObjs{1}.get('P_ambient');
 if (isempty(ambientSpd))
-    subprimaryCalObjs{1}.P_ambient = zeros(size(wls));
+    channelCalObjs{1}.P_ambient = zeros(size(wls));
 end
-P_device = subprimaryCalObjs{1}.get('P_device');
-gammaInput = subprimaryCalObjs{1}.get('gammaInput');
-gammaTable = subprimaryCalObjs{1}.get('gammaTable');
-gammaMeasurements = subprimaryCals{1}.rawData.gammaCurveMeanMeasurements;
-[nSubprimaries,nMeas,~] = size(gammaMeasurements);
+P_device = channelCalObjs{1}.get('P_device');
+gammaInput = channelCalObjs{1}.get('gammaInput');
+gammaTable = channelCalObjs{1}.get('gammaTable');
+gammaMeasurements = channelCals{1}.rawData.gammaCurveMeanMeasurements;
+[nChannels,nMeas,~] = size(gammaMeasurements);
 
 %% Cone fundamentals and XYZ CMFs.
 psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
@@ -59,14 +59,14 @@ T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
 T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
-%% Let's look at little at the subprimary calibration.
+%% Let's look at little at the channel calibration.
 %
 % Eventually this will be handled by the analyze program,
 % when it is generalized for more than three primaries.  But
 % we are impatient people so we will hack something up here.
-PLOT_SUBPRIMARYINVARIANCE = false;
-if (PLOT_SUBPRIMARYINVARIANCE)
-    for pp = 1:nSubprimaries
+PLOT_CHANNELINVARIANCE = false;
+if (PLOT_CHANNELINVARIANCE)
+    for pp = 1:nChannels
         maxSpd = squeeze(gammaMeasurements(pp,end,:));
         figure;
         subplot(1,2,1); hold on;
@@ -85,28 +85,28 @@ if (PLOT_SUBPRIMARYINVARIANCE)
     end
 end
 
-%% Plot subprimary gamma functions.
-PLOT_SUBPRIMARYGAMMA = false;
-if (PLOT_SUBPRIMARYGAMMA)
-    for pp = 1:nSubprimaries
+%% Plot channel gamma functions.
+PLOT_CHANNELGAMMA = false;
+if (PLOT_CHANNELGAMMA)
+    for pp = 1:nChannels
         figure; hold on;
-        plot(subprimaryCals{1}.rawData.gammaInput,subprimaryCals{1}.rawData.gammaTable(:,pp),'ko','MarkerSize',12,'MarkerFaceColor','k');
+        plot(channelCals{1}.rawData.gammaInput,channelCals{1}.rawData.gammaTable(:,pp),'ko','MarkerSize',12,'MarkerFaceColor','k');
         plot(gammaInput,gammaTable(:,pp),'k','LineWidth',2);
     end 
 end
 
 %% Plot x,y if desired.
-PLOT_SUBPRIMARYCHROMATICITY = false;
-if (PLOT_SUBPRIMARYCHROMATICITY)
+PLOT_CHANNELCHROMATICITY = false;
+if (PLOT_CHANNELCHROMATICITY)
     figure; hold on;
-    for pp = 1:nSubprimaries
+    for pp = 1:nChannels
         for mm = 1:nMeas
             % XYZ calculation for each measurement
             spd_temp = squeeze(gammaMeasurements(pp,mm,:));      
             XYZ_temp = T_xyz*spd_temp; 
             xyY_temp = XYZToxyY(XYZ_temp);
             
-            plot(xyY_temp(1,:),xyY_temp(2,:),'r.','Markersize',10); % Coordinates of the subprimary
+            plot(xyY_temp(1,:),xyY_temp(2,:),'r.','Markersize',10); % Coordinates of the channel
             xlabel('CIE x');
             ylabel('CIE y');
         end
@@ -175,14 +175,14 @@ nFineLevels = 2^fineBits;
 %
 % This is useful for scaling things reasonably - we start with half of the
 % available range of the primaries.
-halfOnSubprimaries = 0.5*ones(nSubprimaries,1);
-halfOnSpd = PrimaryToSpd(subprimaryCalObjs{1},halfOnSubprimaries);
+halfOnChannels = 0.5*ones(nChannels,1);
+halfOnSpd = PrimaryToSpd(channelCalObjs{1},halfOnChannels);
 
 %% Make sure gamma correction behaves well with unquantized conversion.
-SetGammaMethod(subprimaryCalObjs{1},0);
-halfOnSettings = PrimaryToSettings(subprimaryCalObjs{1},halfOnSubprimaries);
-halfOnPrimariesChk = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettings);
-if (max(abs(halfOnSubprimaries-halfOnPrimariesChk)) > 1e-8)
+SetGammaMethod(channelCalObjs{1},0);
+halfOnSettings = PrimaryToSettings(channelCalObjs{1},halfOnChannels);
+halfOnPrimariesChk = SettingsToPrimary(channelCalObjs{1},halfOnSettings);
+if (max(abs(halfOnChannels-halfOnPrimariesChk)) > 1e-8)
     error('Gamma self-inversion not sufficiently precise');
 end
 
@@ -191,17 +191,17 @@ end
 % Comment in the line that refits the gamma to see
 % effects of extreme quantization below
 %
-% CalibrateFitGamma(subprimaryCalObjs{1},10);
-SetGammaMethod(subprimaryCalObjs{1},2);
-SetGammaMethod(subprimaryCalObjs{2},2);
-SetGammaMethod(subprimaryCalObjs{3},2);
+% CalibrateFitGamma(channelCalObjs{1},10);
+SetGammaMethod(channelCalObjs{1},2);
+SetGammaMethod(channelCalObjs{2},2);
+SetGammaMethod(channelCalObjs{3},2);
 
 %% Use extant machinery to get primaries from spectrum.
 %
 % This isn't used in our calculations.  Any difference in the
 % two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair.  
-halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
-halfOnSpdChk = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk);
+halfOnPrimariesChk = SpdToPrimary(channelCalObjs{1},halfOnSpd);
+halfOnSpdChk = PrimaryToSpd(channelCalObjs{1},halfOnPrimariesChk);
 figure; hold on;
 plot(wls,halfOnSpd,'r','LineWidth',3);
 plot(wls,halfOnSpdChk,'k','LineWidth',1);
@@ -210,10 +210,10 @@ plot(wls,halfOnSpdChk,'k','LineWidth',1);
 %
 % It's very small at the nominal 252 levels of the subprimaries, but will
 % increase if you refit the gamma functios to a small number of levels.
-halfOnPrimariesChk = SpdToPrimary(subprimaryCalObjs{1},halfOnSpd);
-halfOnSettingsChk = PrimaryToSettings(subprimaryCalObjs{1},halfOnPrimariesChk);
-halfOnPrimariesChk1 = SettingsToPrimary(subprimaryCalObjs{1},halfOnSettingsChk);
-halfOnSpdChk1 = PrimaryToSpd(subprimaryCalObjs{1},halfOnPrimariesChk1);
+halfOnPrimariesChk = SpdToPrimary(channelCalObjs{1},halfOnSpd);
+halfOnSettingsChk = PrimaryToSettings(channelCalObjs{1},halfOnPrimariesChk);
+halfOnPrimariesChk1 = SettingsToPrimary(channelCalObjs{1},halfOnSettingsChk);
+halfOnSpdChk1 = PrimaryToSpd(channelCalObjs{1},halfOnPrimariesChk1);
 plot(wls,halfOnSpdChk1,'g','LineWidth',1);
 
 %% Set up basis to try to keep spectra close to.
@@ -248,7 +248,7 @@ targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
 
 % Make a loop for getting background primaries for all primaries.
 for pp = 1:nPrimaries
-    [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,subprimaryCalObjs{pp}, ...
+    [bgPrimaries(:,pp),obtainedBgSpd(:,pp),obtainedBgXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
         B_natural,projectIndices,primaryHeadRoom,targetLambda,'Scale',true,'Verbose',true);
 end
 
@@ -275,7 +275,7 @@ for pp = 1:nPrimaries
     % Get isolating primaries.
     [isolatingPrimaries(:,pp),isolatingPrimariesQuantized(:,pp),isolatingSpd(pp,:),isolatingContrast(pp,:)] = FindChannelPrimaries(targetMaxLMSContrast(:,pp), ...
         targetPrimaryHeadroom,targetContrastReMax,bgPrimaries(:,pp), ...
-        T_cones,subprimaryCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
+        T_cones,channelCalObjs{pp},B_natural,projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
 end
 
 
@@ -284,7 +284,7 @@ end
 %
 % Make a loop for measuring all primaries.
 for pp = 1:nPrimaries
-    [targetScreenSpdMeasured(pp,:)] = MeasureChannelPrimaries(isolatingPrimaries(:,pp),subprimaryNInputLevels,subprimaryCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
+    [targetScreenSpdMeasured(pp,:)] = MeasureChannelPrimaries(isolatingPrimaries(:,pp),channelNInputLevels,channelCalObjs{pp},pp,'projectorMode',true,'measurementOption',false,'verbose',false);
 end
 
 %% How close are spectra to subspace defined by basis?
@@ -331,10 +331,10 @@ xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 %ylim([0 2]);
 
-%% Set the projector primaries
+%% Set the screen primaries
 %
 % We want these to match those we set up with the
-% subprimary calculations above.  Need to reset
+% channel calculations above.  Need to reset
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
 screenCalObj.set('P_device',isolatingSpd');
@@ -377,17 +377,17 @@ end
 %% DHB got to here in his quest to understand and update this code
 % Do this at quantized levels
 fprintf('Making display quantized primary lookup table\n');
-quantizedIntegerLevels = 1:projectorNInputLevels;
-quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(projectorNInputLevels-1))-1;
-quantizedLMSContrast = zeros(3,projectorNInputLevels);
-quantizedLMS = zeros(3,projectorNInputLevels);
-minIndices = zeros(1,projectorNInputLevels);
-predictedQuantizedLMS = zeros(3,projectorNInputLevels);
-quantizedDisplayPrimaries = zeros(3,projectorNInputLevels);
+quantizedIntegerLevels = 1:screenNInputLevels;
+quantizedContrastLevels = (2*(quantizedIntegerLevels-1)/(screenNInputLevels-1))-1;
+quantizedLMSContrast = zeros(3,screenNInputLevels);
+quantizedLMS = zeros(3,screenNInputLevels);
+minIndices = zeros(1,screenNInputLevels);
+predictedQuantizedLMS = zeros(3,screenNInputLevels);
+quantizedDisplayPrimaries = zeros(3,screenNInputLevels);
 
 % Set up point cloud for fast finding of nearest neighbors
 finePtCloud = pointCloud(finePredictedLMS');
-for ll = 1:projectorNInputLevels
+for ll = 1:screenNInputLevels
     quantizedLMSContrast(:,ll) = quantizedContrastLevels(ll)*targetContrastReMax*targetLMSContrast;
     quantizedLMS(:,ll) = ContrastToExcitation(quantizedLMSContrast(:,ll),bgLMS);
     
@@ -408,7 +408,7 @@ gaussianWindow = gaussianWindow/max(gaussianWindow(:));
 rawMonochromeGaborImage = imageModulationContrast*rawMonochromeSineImage.*gaussianWindow;
 
 % Quantized for display bit depth
-displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,projectorNInputLevels);
+displayIntegerMonochromeGaborImage = PrimariesToIntegerPrimaries((rawMonochromeGaborImage+1)/2,screenNInputLevels);
 displayIntegerMonochromeGaborCal = ImageToCalFormat(displayIntegerMonochromeGaborImage);
 
 % Quantized for fine bit depth
@@ -458,7 +458,7 @@ quantizedSRGBImage = uint8(CalFormatToImage(quantizedSRGBCal,imageN,imageN));
 % Show the SRGB image
 figure; imshow(quantizedSRGBImage)
 
-%% Now compute projector image.
+%% Now compute screen image.
 %
 % First step is to make a DLP calibration file that has as primaries
 % the three spds we've computed above.
@@ -469,25 +469,25 @@ figure; imshow(quantizedSRGBImage)
 % to produce mixtures of these primaries.  Here we tell the calibration
 % object for the DLP that it has these desired primaries.
 P_device = isolatingSpd';
-projectorCal.processedData.P_device = P_device;
+screenCal.processedData.P_device = P_device;
 
 % Initialze the calibration structure
-projectorCal = SetGammaMethod(projectorCal,2);
+screenCal = SetGammaMethod(screenCal,2);
 
-% Convert excitations image to projector settings
-[projectorSettingsCal,outOfGamutIndex] = SensorToSettings(projectorCal,quantizedFineLMSGaborCal);
+% Convert excitations image to screen settings
+[screenSettingsCal,outOfGamutIndex] = SensorToSettings(screenCal,quantizedFineLMSGaborCal);
 if (any(outOfGamutIndex))
     error('Oops: Some pixels out of gamut');
 end
-projectorSettingsImage = CalFormatToImage(projectorSettingsCal,imageN,imageN);
+screenSettingsImage = CalFormatToImage(screenSettingsCal,imageN,imageN);
 figure; clf;
-imshow(projectorSettingsImage)
+imshow(screenSettingsImage)
 
 % Show this image on the DLP, and it should look more or less like
 % the sRGB image we display below.
 testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
 testFilename = fullfile(testFiledir,'testImageData1');
-save(testFilename,'projectorSettingsImage','isolatingPrimaries');
+save(testFilename,'screenSettingsImage','isolatingPrimaries');
 
 %% Plot slice through LMS contrast image.
 figure; hold on
@@ -509,7 +509,7 @@ ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Measure LMS contrast on the gabor patch image. (THIS PART HAS BEEN ADDED - SEMIN)
 [targetLMSContrastMeasured] = MeasureLMSContrastGaborPatch(quantizedContrastImage,isolatingPrimaries,screenCalObj,obtainedBgSpd,T_cones, ...
-    subprimaryNInputLevels,subprimaryCalObjs,'projectorMode',true,'measurementOption',false,'verbose',true);
+    channelNInputLevels,channelCalObjs,'projectorMode',true,'measurementOption',false,'verbose',true);
 
 %% DAVID - Add plot of primaries.
 

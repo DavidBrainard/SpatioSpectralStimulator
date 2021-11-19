@@ -1,6 +1,6 @@
 % RepeatMeasureSPD
 % 
-% This measures the SPD of the desired projector setting with repeatitions.
+% This measures the SPD of the desired screen setting with repeatitions.
 %
 % 10/22/2021 smo Strated on it.
 %
@@ -16,20 +16,20 @@ end
 
 %% Set parameters.
 logicalToPhysical = [0:7 9:15];
-subprimaryNInputLevels = 253;
-nSubprimaries = 15;
+channelNInputLevels = 253;
+nChannels = 15;
 nPrimaries = 3;
 S = theData.S;
 wls = SToWls(S);
 
-%% Set projector and measurement device ready.
+%% Set screen and measurement device ready.
 addpath(genpath('/home/colorlab/Documents/MATLAB/toolboxes/VPixx'));
     
-% Connect to the projector.
+% Connect to the screen.
 isReady = Datapixx('open');
 isReady = Datapixx('IsReady');
 
-% Set projector state.
+% Set screen state.
 command_primaries = 'vputil rw 0x1c8 0x0 -q quit'; % Set to 'Normal mode'
 unix(command_primaries)
 
@@ -41,13 +41,13 @@ unix(command_PR670)
 CMCheckInit(5); 
 
 %% Set the desired spd to measure.
-targetSpd = PrimaryToSpd(theData.subprimaryCalObjs{1},theData.projectorPrimaryPrimaries(:,1));
-targetSubprimarySettings = zeros(nSubprimaries,nPrimaries);
+targetSpd = PrimaryToSpd(theData.channelCalObjs{1},theData.screenPrimaryPrimaries(:,1));
+targetChannelSettings = zeros(nChannels,nPrimaries);
 for pp = 1:3
-    targetSubprimarySettings(:,pp) = PrimaryToSettings(theData.subprimaryCalObjs{pp},theData.projectorPrimaryPrimaries(:,pp));
+    targetChannelSettings(:,pp) = PrimaryToSettings(theData.channelCalObjs{pp},theData.screenPrimaryPrimaries(:,pp));
 end
 
-% % Check the current projector currents levels
+% % Check the current screen currents levels
 % for j=1:3; % PrimaryColor (0-2)
 %     for i=1:16; % SubColor (0-15)
 %     currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
@@ -67,17 +67,17 @@ nMeas = 50; % Number of repetition for the measurements.
 %     white = WhiteIndex(screenNumber);
 %     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
 % 
-%     % Set the projector subprimaries here. All zero for start.
-% for ss = 1:nSubprimaries
+%     % Set the screen subprimaries here. All zero for start.
+% for ss = 1:nChannels
 %     Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), 0); % Primary 1
 %     Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), 0); % Primary 2
 %     Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), 0); % Primary 3
 % end   
-%     % Set the projector subprimaries here.
-% for ss = 1:nSubprimaries
-%     Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(targetSubprimarySettings(ss,1)*(subprimaryNInputLevels-1))); % Primary 1
-%     Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(targetSubprimarySettings(ss,2)*(subprimaryNInputLevels-1))); % Primary 2
-%     Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(targetSubprimarySettings(ss,3)*(subprimaryNInputLevels-1))); % Primary 3
+%     % Set the screen subprimaries here.
+% for ss = 1:nChannels
+%     Datapixx('SetPropixxHSLedCurrent', 0, logicalToPhysical(ss), round(targetChannelSettings(ss,1)*(channelNInputLevels-1))); % Primary 1
+%     Datapixx('SetPropixxHSLedCurrent', 1, logicalToPhysical(ss), round(targetChannelSettings(ss,2)*(channelNInputLevels-1))); % Primary 2
+%     Datapixx('SetPropixxHSLedCurrent', 2, logicalToPhysical(ss), round(targetChannelSettings(ss,3)*(channelNInputLevels-1))); % Primary 3
 % end
 %     spdMeasured(:,i) = MeasSpd(S,5,'all');
 %     fprintf('           Measurement complete! - (%d/%d)\n',i,nMeas);
@@ -96,14 +96,14 @@ for mm = 1:nMeas
   
         otherPrimaries = setdiff(1:nPrimaries,pp);
     
-    % Set projector current levels as the above settings.
-    for ss = 1:nSubprimaries
-        Datapixx('SetPropixxHSLedCurrent', pp-1, logicalToPhysical(ss), round(targetSubprimarySettings(ss,pp)*(subprimaryNInputLevels-1)));   % Target primary
+    % Set screen current levels as the above settings.
+    for ss = 1:nChannels
+        Datapixx('SetPropixxHSLedCurrent', pp-1, logicalToPhysical(ss), round(targetChannelSettings(ss,pp)*(channelNInputLevels-1)));   % Target primary
         Datapixx('SetPropixxHSLedCurrent', otherPrimaries(1)-1, logicalToPhysical(ss), 0); % Other Primary 1
         Datapixx('SetPropixxHSLedCurrent', otherPrimaries(2)-1, logicalToPhysical(ss), 0); % Other Primary 2
     end
     
-    % Check the current projector currents levels
+    % Check the current screen currents levels
     for j=1:3; % PrimaryColor (0-2)
         for i=1:16; % SubColor (0-15)
         currents(j,i) = Datapixx('GetPropixxHSLedCurrent',j-1,i-1);
