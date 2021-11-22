@@ -148,11 +148,11 @@ if (MEASURE)
         % background settings.  That then lets us compute contrast relative
         % to the background we're going to get. We want to do this from the
         % settings, so that the background isn't mucked up by quantization.
-        screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCall(:,1)));
+        screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCal(:,1)));
         screenBgExcitations = T_cones * screenBgSpd;
         
         % Set up point cloud for finding best settings
-        [constrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
+        [contrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
         
         %% Generate some settings values corresponding to known contrasts
         %
