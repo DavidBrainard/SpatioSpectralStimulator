@@ -83,7 +83,7 @@ end
 % subprimary settings, while the other primaries are turned off.
 subprimaryInitialSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings.
 subprimaryInitialSettings(:,obj.whichPrimary) = 1;
-SetChannelSettings(subprimaryInitialSettings,'projectorMode',obj.normalMode);
+SetChannelSettings(subprimaryInitialSettings);
 
 % Wait for user
 if (userPrompt)
