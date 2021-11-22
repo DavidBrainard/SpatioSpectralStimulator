@@ -5,7 +5,7 @@
 %
 
 % History:
-%    4/22/2020  Started on it
+%    04/22/2020  Started on it.
 
 %% Clear
 clear; close all;
@@ -24,9 +24,8 @@ S = [380 2 201];
 
 %% Set key stimulus parameters
 %
-%
-% Condition Name
-conditionName = 'LminusMSmooth';
+% Condition Name.
+conditionName = 'ConeIsolating';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -149,7 +148,6 @@ switch (conditionName)
         B_natural{1} = B_naturalRaw;
         B_natural{2} = B_naturalRaw;
         B_natural{3} = B_naturalRaw;
-
 end
 
 %% Define calibration filenames/params.
@@ -354,7 +352,7 @@ fprintf('Background primary min: %0.2f, max: %0.2f, mean: %0.2f\n', ...
 
 %% Find primaries with desired LMS contrast.
 %
-% Get isolating primaries for all primaries.
+% Get isolating primaries for all screen primaries.
 for pp = 1:nScreenPrimaries
     % The ambient with respect to which we compute contrast is from all
     % three primaries, which we handle via the extraAmbientSpd key-value
@@ -367,7 +365,7 @@ for pp = 1:nScreenPrimaries
         extraAmbientSpd = extraAmbientSpd + channelBackgroundSpd(:,otherPrimaries(oo));
     end
 
-    % Get isolating primaries.
+    % Get isolating screen primaries.
     [screenPrimaryPrimaries(:,pp),screenPrimaryPrimariesQuantized(:,pp),screenPrimarySpd(:,pp),screenPrimaryContrast(:,pp),screenPrimaryModulationPrimaries(:,pp)] ... 
         = FindChannelPrimaries(targetScreenPrimaryContrastDir(:,pp), ...
         targetPrimaryHeadroom,targetScreenPrimaryContrasts(pp),channelBackgroundPrimaries(:,pp), ...
@@ -378,7 +376,8 @@ for pp = 1:nScreenPrimaries
     primaryGamutScaleFactor(pp) = MaximizeGamutContrast(screenPrimaryModulationPrimaries(:,pp),channelBackgroundPrimaries(:,pp));
     fprintf('\tPrimary %d, gamut scale factor is %0.3f\n',pp,primaryGamutScaleFactor(pp));
     
-    % Find the channel settings that correspond to the desired primaries
+    % Find the channel settings that correspond to the desired screen
+    % primaries.
     screenPrimarySettings(:,pp) = PrimaryToSettings(channelCalObjs{pp},screenPrimaryPrimaries(:,pp));
 end
 
@@ -387,7 +386,7 @@ isolatingNaturalApproxSpd1 = B_natural{1}*(B_natural{1}(projectIndices,:)\screen
 isolatingNaturalApproxSpd2 = B_natural{2}*(B_natural{2}(projectIndices,:)\screenPrimarySpd(projectIndices,2));
 isolatingNaturalApproxSpd3 = B_natural{3}*(B_natural{3}(projectIndices,:)\screenPrimarySpd(projectIndices,3));
 
-% Plot of the primary spectra
+% Plot of the screen primary spectra.
 subplot(2,2,1); hold on
 plot(wls,screenPrimarySpd(:,1),'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
@@ -412,7 +411,7 @@ plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWi
 xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
 title('Primary 3');
 
-%% Set the screen primaries
+%% Set the screen primaries.
 %
 % We want these to match those we set up with the
 % channel calculations above.  Need to reset
@@ -421,7 +420,7 @@ title('Primary 3');
 screenCalObj.set('P_device',screenPrimarySpd);
 SetSensorColorSpace(screenCalObj,T_cones,S);
 
-%% Set screen gamma method
+%% Set screen gamma method.
 %
 % If we set to 0, there is no quantization and the result is excellent.
 % If we set to 2, this is quantized at 256 levels and the result is more
@@ -464,7 +463,7 @@ rawMonochromeUnquantizedContrastGaborImage = rawMonochromeSineImage.*gaussianWin
 % there is just one row since it is a monochrome image at this point.
 rawMonochromeUnquantizedContrastGaborCal = ImageToCalFormat(rawMonochromeUnquantizedContrastGaborImage);
 
-%% Quantize the contrast image to a (large) fixed number of levels
+%% Quantize the contrast image to a (large) fixed number of levels.
 %
 % This allows us to speed up the image conversion without any meaningful
 % loss of precision. If you don't like it, increase number of quantization
@@ -473,7 +472,7 @@ nQuantizeBits = 14;
 nQuantizeLevels = 2^nQuantizeBits;
 rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastGaborCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 
-% Plot of how well point cloud method does in obtaining desired contrats
+% Plot of how well point cloud method does in obtaining desired contrats.
 figure; clf;
 plot(rawMonochromeUnquantizedContrastGaborCal(:),rawMonochromeContrastGaborCal(:),'r+');
 axis('square');
@@ -482,7 +481,7 @@ xlabel('Unquantized Gabor contrasts');
 ylabel('Quantized Gabor contrasts');
 title('Effect of contrast quantization');
 
-%% Get cone contrast/excitation gabor image
+%% Get cone contrast/excitation gabor image.
 %
 % Scale target cone contrast vector at max excursion by contrast modulation
 % at each pixel.  This is done by a single matrix multiply plus a lead
@@ -693,5 +692,3 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
         'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end
-
-

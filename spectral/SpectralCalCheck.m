@@ -4,8 +4,8 @@
 % 
 
 % History:
-%    10/19/2021  dhb,smo  Started on it
-%    10/28/2021  dhb      Add condition name and date to output
+%    10/19/2021  dhb,smo  Started on it.
+%    10/28/2021  dhb      Add condition name and date to output.
 %    11/12/2021  dhb      Moving to warmup and measure with steady subprimaries.
 
 %% Initialize.
@@ -18,9 +18,9 @@ MEASURE = true;
 
 %% Which condition
 %
-% This is used to match up with parameters run in SpectralCalCompute
-% ['LminusMSmooth' 'ConeIsolating']
-conditionName = 'LminusMSmooth';
+% This is used to match up with parameters run in SpectralCalCompute.
+% Choose one either 'LminusMSmooth' or 'ConeIsolating'.
+conditionName = 'ConeIsolating';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -71,8 +71,8 @@ if (MEASURE)
         theScreenOnePrimarySettings = zeros(nPrimaries,1);
         theScreenOnePrimarySettings(pp) = 1;
         targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
-                                     S,window,windowRect,'measurementOption',true,'verbose',verbose);
-        clear theScreenOnePrimarySettings
+                                        S,window,windowRect,'measurementOption',true,'verbose',verbose);
+        clear theScreenOnePrimarySettings;
         
     end
 else
