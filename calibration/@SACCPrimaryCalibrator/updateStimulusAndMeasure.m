@@ -14,12 +14,11 @@ obj.updateBackgroundAndTarget(bgSettings, targetSettings, useBitsPP);
 
 % Make a delay before the measurement for warming-up the device
 timeToDelay = obj.options.calibratorTypeSpecificParamsStruct.LEDWarmupDurationSeconds;
-fprintf('        Timer will count %2.1f seconds for warming up \n\n',timeToDelay);
+fprintf('Timer will count %2.1f seconds for warming up \n\n',timeToDelay);
 for tt = 1:timeToDelay
-    disp('.'); 
     pause(1); % Display a dot per each second to see if the timer is working.
 end
-disp('        Close the timer and the measurement will begin!');
+disp('Close the timer and the measurement will begin!');
 
 % Then measure it. (THIS PART SHOULD BE MODIFIED LATER)
 measurement = MeasureSpectroradiometer('measurementOption',true);
