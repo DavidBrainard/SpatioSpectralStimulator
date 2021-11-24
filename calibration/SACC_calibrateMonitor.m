@@ -59,7 +59,7 @@ function SACC_calibrateMonitor
 
     
     % Generate the Radiometer object, here a PR650obj.
-    radiometerOBJ = generateRadiometerObject(calibrationConfig);
+    radiometerOBJ = generateRadiometerObject();
     
     % Generate the calibrator object
     calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, mfilename);
@@ -230,40 +230,9 @@ function calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ
 end
 
 
-function radiometerOBJ = generateRadiometerObject(calibrationConfig)
-
-    if (strcmp(calibrationConfig, 'debugMode'))
-        % Dummy radiometer - measurements will be all zeros
-        radiometerOBJ = PR670dev('emulateHardware',  true);
-        fprintf('Will employ a dummy PR670dev radiometer (all measurements will be zeros).\n');
-        return;
-    end
-    
-    
-    % List of available @Radiometer objects
-    radiometerTypes = {'PR650dev', 'PR670dev', 'SpectroCALdev'};
-    radiometersNum  = numel(radiometerTypes);
-    
-    % Ask the user to select a calibrator type
-    fprintf('\n\n Available radiometer types:\n');
-    for k = 1:radiometersNum
-        fprintf('\t[%3d]. %s\n', k, radiometerTypes{k});
-    end
-    defaultRadiometerIndex = 1;
-    radiometerIndex = input(sprintf('\tSelect a radiometer type (1-%d) [%d]: ', radiometersNum, defaultRadiometerIndex));
-    if isempty(radiometerIndex) || (radiometerIndex < 1) || (radiometerIndex > radiometersNum)
-        radiometerIndex = defaultRadiometerIndex;
-    end
-    fprintf('\n\t-------------------------\n');
-    selectedRadiometerType = radiometerTypes{radiometerIndex};
-    fprintf('Will employ an %s radiometer object [%d].\n', selectedRadiometerType, radiometerIndex);
-    
-    if (strcmp(selectedRadiometerType, 'PR650dev'))
-        radiometerOBJ = PR650dev(...
-            'verbosity',        1, ...                  % 1 -> minimum verbosity
-            'devicePortString', '/dev/cu.KeySerial1');  % PR650 port string
-
-    elseif (strcmp(selectedRadiometerType, 'PR670dev'))
+% Set radiometerOBJ here. This is not a function anymore for SACC project
+% as we will use PR670 only.
+function radiometerOBJ = generateRadiometerObject()
         radiometerOBJ = PR670dev(...
             'verbosity',        1, ...       % 1 -> minimum verbosity
             'devicePortString', [] ...       % empty -> automatic port detection
@@ -283,11 +252,7 @@ function radiometerOBJ = generateRadiometerObject(calibrationConfig)
             'apertureSize',     desiredApertureSize, ...
             'exposureTime',     desiredExposureTime ...
         );
-    elseif (strcmp(selectedRadiometerType, 'SpectroCALdev'))
-        radiometerOBJ = SpectroCALdev();
     end
-    
-end
 
 % Function to select and instantiate a particular calibrator type
 % Currently either MGL-based or PTB-3 based.
