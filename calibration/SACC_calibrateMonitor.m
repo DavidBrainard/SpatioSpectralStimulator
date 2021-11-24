@@ -1,13 +1,18 @@
-% Executive script for object-oriented-based monitor calibration.
+% SACC_calibrateMonitor
 %
-% 3/27/2014  npc   Wrote it.
-% 8/05/2014  npc   Added option to conduct PsychImaging - based calibration
-% 3/02/2015  npc   Re-organized script so that settings and options are set in 
-%                  a single function.
-% 8/30/2016  JAR   Added calibration configuration for the InVivo Sensa Vue
-%                  Flat panel monitor located at the Stellar Chance 3T Magnet.
-% 10/18/2017 npc   Reset Radiometer before crashing
-% 12/12/2017 ana   Added eye tracker LCD case
+% Executive script for object-oriented-based monitor calibration.
+
+% History:
+%    03/27/2014  npc   Wrote it.
+%    08/05/2014  npc   Added option to conduct PsychImaging - based calibration
+%    03/02/2015  npc   Re-organized script so that settings and options are set in 
+%                      a single function.
+%    08/30/2016  jar   Added calibration configuration for the InVivo Sensa Vue
+%                      Flat panel monitor located at the Stellar Chance 3T Magnet.
+%    10/18/2017  npc   Reset Radiometer before crashing
+%    12/12/2017  ana   Added eye tracker LCD case
+%    11/24/2021  smo   Delete the RadiometerOBJ and substitue it with SACC
+%                      measurement codes. It works faster and fine.
 
 function SACC_calibrateMonitor
     
@@ -57,15 +62,11 @@ function SACC_calibrateMonitor
         [displaySettings, calibratorOptions] = configFunctionHandle(runtimeParams);
     end
 
-    
-    % Generate the Radiometer object, here a PR650obj.
-%     radiometerOBJ = generateRadiometerObject();
+    % Open the spectroradiometer.
     OpenSpectroradiometer;
 
     % Generate the calibrator object
     calibratorOBJ = generateCalibratorObject(displaySettings, mfilename);
-    
-%     calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, mfilename);
     
     % Set the calibrator options
     calibratorOBJ.options = calibratorOptions;
@@ -94,8 +95,7 @@ function SACC_calibrateMonitor
         % Shutdown DBLab_Calibrator
         calibratorOBJ.shutDown();
         
-        % Shutdown DBLab_Radiometer object
-%         radiometerOBJ.shutDown();
+        % Shutdown spectroradiometer.
           CloseSpectroradiometer;
           
     catch err
@@ -105,9 +105,8 @@ function SACC_calibrateMonitor
             calibratorOBJ.shutDown();
         end
         
-        % Shutdown DBLab_Radiometer object
+        % Shutdown spectroradiometer.
         CloseSpectroradiometer;
-%         radiometerOBJ.shutDown();
 
         rethrow(err)
     end % end try/catch
@@ -216,74 +215,31 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
 end
 
 % Function to generate the calibrator object.
+%
 % Users should not modify this function unless they know what they are doing.
-
+%
+% This function has been updated to exclude the radiometerOBJ to substitue
+% it with SACC measurement functions.
 function calibratorOBJ = generateCalibratorObject(displaySettings, execScriptFileName)
-% function calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, execScriptFileName)
     % set init params
     calibratorInitParams = displaySettings;
-    
-%     % add radiometerOBJ
-%     calibratorInitParams{numel(calibratorInitParams)+1} = 'radiometerObj';
-%     calibratorInitParams{numel(calibratorInitParams)+1} = radiometerOBJ;
-     
+
     % add executive script name
     calibratorInitParams{numel(calibratorInitParams)+1} ='executiveScriptName';
     calibratorInitParams{numel(calibratorInitParams)+1} = execScriptFileName;
         
     % Select and instantiate the calibrator object
     calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams);
-%     calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, radiometerOBJ);
-
 end
 
-% function calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, execScriptFileName)
-% 
-%     % set init params
-%     calibratorInitParams = displaySettings;
-%     
-%     % add radiometerOBJ
-%     calibratorInitParams{numel(calibratorInitParams)+1} = 'radiometerObj';
-%     calibratorInitParams{numel(calibratorInitParams)+1} = radiometerOBJ;
-%     
-%     % add executive script name
-%     calibratorInitParams{numel(calibratorInitParams)+1} ='executiveScriptName';
-%     calibratorInitParams{numel(calibratorInitParams)+1} = execScriptFileName;
-%         
-%     % Select and instantiate the calibrator object
-%     calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, radiometerOBJ);
-% end
-
-
-% Set radiometerOBJ here. This is not a function anymore for SACC project
-% as we will use PR670 only.
-% function radiometerOBJ = generateRadiometerObject()
-%         radiometerOBJ = PR670dev(...
-%             'verbosity',        1, ...       % 1 -> minimum verbosity
-%             'devicePortString', [] ...       % empty -> automatic port detection
-%             );
-%         
-%         % Specify extra properties
-%         desiredSyncMode = 'OFF';
-%         desiredCyclesToAverage = 1;
-%         desiredSensitivityMode = 'STANDARD';
-%         desiredApertureSize = '1 DEG';
-%         desiredExposureTime =  'ADAPTIVE';  % 'ADAPTIVE' or range [1-6000 msec] or [1-30000 msec]
-%         
-%         radiometerOBJ.setOptions(...
-%         	'syncMode',         desiredSyncMode, ...
-%             'cyclesToAverage',  desiredCyclesToAverage, ...
-%             'sensitivityMode',  desiredSensitivityMode, ...
-%             'apertureSize',     desiredApertureSize, ...
-%             'exposureTime',     desiredExposureTime ...
-%         );
-%     end
-
 % Function to select and instantiate a particular calibrator type
+%
 % Users should not modify this function unless they know what they are doing.
+% 
+% In this function, radiometerOBJ has been also deleted and we use SACC
+% measure function instead.
 function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams)
-    % function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, radiometerOBJ)
-    
+
     % List of available @Calibrator objects
     calibratorTypes = {'MGL-based', 'PsychImaging-based (8-bit)' 'SACCPrimary'};
     calibratorsNum  = numel(calibratorTypes);
@@ -319,7 +275,6 @@ function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams)
     catch err
         % Shutdown the radiometer
         CloseSpectroradiometer;
-        %         radiometerOBJ.shutDown();
         
         % Shutdown DBLab_Radiometer object  
         if (~isempty(calibratorOBJ))
