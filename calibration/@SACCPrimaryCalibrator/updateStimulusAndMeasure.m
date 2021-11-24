@@ -14,7 +14,7 @@ obj.updateBackgroundAndTarget(bgSettings, targetSettings, useBitsPP);
 
 % Make a delay before the measurement for warming-up the device
 timeToDelay = obj.options.calibratorTypeSpecificParamsStruct.LEDWarmupDurationSeconds;
-fprintf('Timer will count %2.1f seconds for warming up \n\n',timeToDelay);
+fprintf('Timer will count %2.1f seconds for warming up \n',timeToDelay);
 for tt = 1:timeToDelay
     pause(1); % Display a dot per each second to see if the timer is working.
 end
