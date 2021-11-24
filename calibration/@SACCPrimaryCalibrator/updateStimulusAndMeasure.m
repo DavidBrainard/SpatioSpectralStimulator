@@ -1,5 +1,9 @@
-% Method to update the stimulus and conduct a single radiometric measurement by
-% calling the corresponding method of the attached @Radiometer object.
+% Method to update the stimulus and conduct a single radiometric measurement.
+%
+% History:
+%   11/24/2021 smo  Now measurement uses SACC measurement function instead
+%                   of radiometerOBJ.
+
 function [measurement, S] = updateStimulusAndMeasure(obj, bgSettings, targetSettings, useBitsPP)
 
 % Display current subprimary settings.
@@ -20,14 +24,10 @@ for tt = 1:timeToDelay
 end
 disp('Close the timer and the measurement will begin!');
 
-% Then measure it. (THIS PART SHOULD BE MODIFIED LATER)
+% Then measure it.
+%
+% The Spectrum range part should be substituted as a function.
 measurement = MeasureSpectroradiometer('measurementOption',true);
-% spectralAxis = linspace(380,780,size(measurement,1))'; % cf. spectralAxis = [380,382,...,780]
-% S = WlsToS(spectralAxis);
 S = [380 2 201];
 
-% (ORIGINAL CODE)
-%     obj.radiometerObj.measure();
-%     measurement = obj.radiometerObj.measurement.energy;
-%     S = WlsToS(obj.radiometerObj.measurement.spectralAxis(:))
 end
