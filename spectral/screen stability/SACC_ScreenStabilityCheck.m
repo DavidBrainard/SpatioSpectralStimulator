@@ -114,7 +114,7 @@ CloseSpectroradiometer;
 if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
     dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-    testFilename = fullfile(testFiledir,sprintf('additivityCheck_%s',dayTimestr));
+    testFilename = fullfile(testFiledir,sprintf('stabilityCheck_%s',dayTimestr));
     save(testFilename,'allSpdMeasured','XYZ','xyY','colorGamut', ...
                       'measurementTime','S');
 end
