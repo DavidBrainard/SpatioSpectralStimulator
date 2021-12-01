@@ -35,11 +35,14 @@ function [] = SetChannelSettings(theSettings,options)
 %                                 when opening the projector screen
 %                                 (OpenPlainScreen), and a
 %                                 separate function for it will be added.
+%    12/01/21  smo                Now logicalToPhysical becomes [0:15] as
+%                                 our new projector has 16 independent
+%                                 working channels.
 
 %% Set parameters.
 arguments
     theSettings
-    options.logicalToPhysical = [0:7 9:15]
+    options.logicalToPhysical = [0:15]
     options.nInputLevels (1,1) = 253
     options.nPrimaries (1,1) = 3
     options.verbose (1,1) = true
