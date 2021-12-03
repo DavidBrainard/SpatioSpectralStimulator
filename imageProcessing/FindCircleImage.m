@@ -41,7 +41,7 @@ end
 
 %% Load an image and find circles.
 if (~MEASURE)
-    testFileName = 'Screen';
+    testFileName = 'Position2';
 end
 imageOriginal = imread(append(testFileName,'.tiff'),'tif');
 [Ypixel Xpixel] = size(imageOriginal);
@@ -69,7 +69,7 @@ searchEdgeThreshold = 0.04;
 % Find circles and mark on the image.
 [centers, radii] = imfindcircles(imageFiltered, [minSizeCircleDiameter maxSizeCircleDiameter]/2, ...
                                 'ObjectPolarity','dark','Sensitivity',searchSensitivity,'EdgeThreshold',searchEdgeThreshold);
-h = viscircles(centers,radii);
+hOriginal = viscircles(centers,radii);
     
 % Find the circles with desired sizes at certain positions. We will set the
 % position very narrow to sort out the circles at the center of the image.
@@ -88,12 +88,37 @@ idxTarget_YPixel = find(centers(:,2) > Ypixel*minRange_YPixel & centers(:,2) < Y
 
 idxTarget = intersect(idxTarget_XPixel,idxTarget_YPixel);  
 radiiTarget = radii(idxTarget);
-centersTarget = centers(idxTarget,:);
-hTarget = viscircles(centersTarget,radiiTarget);
+centerTargetPixel = centers(idxTarget,:);
+hTarget = viscircles(centerTargetPixel,radiiTarget);
     
 % Find the coordinates of the centered point here.
-centeredPosition = [centersTarget(1)/Xpixel centersTarget(2)/Ypixel];
+centerCoords = [centerTargetPixel(1)/Xpixel centerTargetPixel(2)/Ypixel];
 
 % Add centered point coordinates on the image.
-addOnTextImage = num2str(round(centeredPosition,4));
-text(centersTarget(1),centersTarget(2),addOnTextImage,'HorizontalAlignment','left','color','r');
+addOnTextCenterCoordinates = num2str(round(centerCoords,4));
+addOnTextCenterPixels = num2str(round(centerTargetPixel));
+
+text(centerTargetPixel(1),centerTargetPixel(2),addOnTextCenterCoordinates,'HorizontalAlignment','left','color','r');
+text(centerTargetPixel(1),centerTargetPixel(2),addOnTextCenterPixels,'HorizontalAlignment','right','color','b');
+
+%% Draw multiple center on one image.
+ALLCENTEROVERLAP = true;
+if (ALLCENTEROVERLAP)
+    figure; 
+    testFileNameBackground = 'Position1';
+    imageBackground = imread(append(testFileNameBackground,'.tiff'),'tif');
+    imshow(imageBackground);
+    hold on; 
+    
+    % Set centered coordinates in pixels of each position. Just read from the above.
+    % It is in centerTargetPixel.
+    centerPixelPosition1 = [1544 1027];
+    centerPixelPosition2 = [1544 1025];
+    centerPixelScreen = [1546 1026];
+    
+    plot(centerPixelPosition1(1),centerPixelPosition1(2),'r.');
+    plot(centerPixelPosition2(1),centerPixelPosition2(2),'r*');
+    plot(centerPixelScreen(1),centerPixelScreen(2),'g.');
+    legend('LCPA1 - Position1', 'LCPA1 - Position2', 'Screen');
+    title('Centered points comparison');
+end
