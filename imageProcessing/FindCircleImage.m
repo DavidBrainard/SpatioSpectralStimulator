@@ -7,6 +7,10 @@
 %    12/03/21 smo   Pulled out this part and made it as a separate code.
 %                   (See also SetCameraCenterPoint.m)
 
+
+%% Initialize.
+clear all; close all;
+
 %% Capture a new image if you want.
 % 
 % You can use this code either newly measuring the image or simply read the
@@ -37,7 +41,7 @@ end
 
 %% Load an image and find circles.
 if (~MEASURE)
-    testFileName = 'Position1';
+    testFileName = 'Screen';
 end
 imageOriginal = imread(append(testFileName,'.tiff'),'tif');
 [Ypixel Xpixel] = size(imageOriginal);
@@ -54,14 +58,17 @@ imageFiltered = imfilter(imageOriginal,ones(5)/25);
 
 % Set searching parameters. Usually change the min and max size of the
 % circles.
-minSizeCircle = 10;
-maxSizeCircle = 20;
-searchSensitivity = 0.92;
-searchEdgeThreshold = 0.05;
+% 
+% Note that the function 'imfindcircles' with small raidus value (less than
+% or equal to 5, so diameter 10) would be limited in its accuracy.
+minSizeCircleDiameter = 10;
+maxSizeCircleDiameter = 40;
+searchSensitivity = 0.95;
+searchEdgeThreshold = 0.04;
 
 % Find circles and mark on the image.
-[centers, radii] = imfindcircles(imageFiltered, [minSizeCircle maxSizeCircle]/2, ...
-                                 'ObjectPolarity','dark','Sensitivity',searchSensitivity,'EdgeThreshold',searchEdgeThreshold);
+[centers, radii] = imfindcircles(imageFiltered, [minSizeCircleDiameter maxSizeCircleDiameter]/2, ...
+                                'ObjectPolarity','dark','Sensitivity',searchSensitivity,'EdgeThreshold',searchEdgeThreshold);
 h = viscircles(centers,radii);
     
 % Find the circles with desired sizes at certain positions. We will set the
@@ -71,10 +78,10 @@ imshow(imageFiltered);
 title('Image with targeted points'); 
 
 % Limit the range for inclduing the circles on the image.
-minRange_XPixel = 0.485;
-maxRange_XPixel = 0.515;
-minRange_YPixel = 0.485;
-maxRange_YPixel = 0.515;
+minRange_XPixel = 0.495;
+maxRange_XPixel = 0.505;
+minRange_YPixel = 0.495;
+maxRange_YPixel = 0.505;
     
 idxTarget_XPixel = find(centers(:,1) > Xpixel*minRange_XPixel & centers(:,1) < Xpixel*maxRange_XPixel); 
 idxTarget_YPixel = find(centers(:,2) > Ypixel*minRange_YPixel & centers(:,2) < Ypixel*maxRange_YPixel);
@@ -89,4 +96,4 @@ centeredPosition = [centersTarget(1)/Xpixel centersTarget(2)/Ypixel];
 
 % Add centered point coordinates on the image.
 addOnTextImage = num2str(round(centeredPosition,4));
-text(centersTarget(1),centersTarget(2),addOnTextImage,'HorizontalAlignment','left','color','r')
+text(centersTarget(1),centersTarget(2),addOnTextImage,'HorizontalAlignment','left','color','r');
