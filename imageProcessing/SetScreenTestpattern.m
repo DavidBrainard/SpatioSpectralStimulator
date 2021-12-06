@@ -1,11 +1,13 @@
-%% Initialize
-% tbUse('BrainardLabBase')
+% SetScreenTestpattern
+% 
+% 
 
-%% Clear the workspace and the screen
+%% Start over.
 sca;
 close all;
 clear all;
 
+%% 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
 
@@ -72,33 +74,33 @@ Screen('BlendFunction', window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 %% Draw cicle of oval shape
 
-% % Take a center of the screen
-% [xCenter, yCenter] = RectCenter(windowRect);
-% size_circle = 700;
-% baseRect = [0 0 size_circle size_circle];
-% maxDiameter = max(baseRect) * 1.01;% For Ovals we set a miximum dcodeiameter up to which it is perfect for
-% centeredRect = CenterRectOnPointd(baseRect, xCenter, yCenter); % Center the rectangle on the centre of the screen
-% rectColor = [0 0 1];
-% Screen('FillOval', window, rectColor, centeredRect, maxDiameter);
-% 
-% % Get an displayed image
-% % imageArray=Screen('GetImage',window);
-% % imwrite(imageArray,'X_image.jpg');
-% 
-% % Flip to the screen. This command basically draws all of our previous
-% % commands onto the screen. For help see: Screen Flip?
-% Screen('Flip', window);
-% 
-% % Now we have drawn to the screen we wait for a keyboard button press (any
-% % key) to terminate the demo. For help see: help KbStrokeWaitonitor to a DisplayPort?
-% 
-% KbStrokeWait;
-% 
-% % Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
-% % all features related to PTB. Note: we leave the variables in the
-% % workspace so you can have a look at them if you want.
-% % For help see: help sca
-% sca;
+% Take a center of the screen
+[xCenter, yCenter] = RectCenter(windowRect);
+size_circle = 200;
+baseRect = [0 0 size_circle size_circle];
+maxDiameter = max(baseRect) * 1.01;% For Ovals we set a miximum dcodeiameter up to which it is perfect for
+centeredRect = CenterRectOnPointd(baseRect, xCenter, yCenter); % Center the rectangle on the centre of the screen
+rectColor = [0 0 0];
+Screen('FillOval', window, rectColor, centeredRect, maxDiameter);
+
+% Get an displayed image
+% imageArray=Screen('GetImage',window);
+% imwrite(imageArray,'X_image.jpg');
+
+% Flip to the screen. This command basically draws all of our previous
+% commands onto the screen. For help see: Screen Flip?
+Screen('Flip', window);
+
+% Now we have drawn to the screen we wait for a keyboard button press (any
+% key) to terminate the demo. For help see: help KbStrokeWaitonitor to a DisplayPort?
+
+KbStrokeWait;
+
+% Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
+% all features related to PTB. Note: we leave the variables in the
+% workspace so you can have a look at them if you want.
+% For help see: help sca
+sca;
 
 %% Draw contrast pattern (either vertical or horizontal)
 
