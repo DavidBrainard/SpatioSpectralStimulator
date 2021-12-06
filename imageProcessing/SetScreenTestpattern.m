@@ -12,9 +12,22 @@ close all;
 clear all;
 
 %% Initialize.
-[window, windowRect] = OpenPlainScreen([1 1 1]);
+%
+% Open the screen.
+initialScreenSettings = [1 1 1];
+[window, windowRect] = OpenPlainScreen(initialScreenSettings);
 screenXpixels = windowRect(3);
 screenYpixels = windowRect(4);
+
+% Set the channel settings.
+nPrimaries = 3;
+nChannels = 16;
+
+channelSettings = ones(nChannels, nPrimaries);
+channelIntensity = 0.1;
+channelSettings = channelIntensity * channelSettings;
+
+SetChannelSettings(channelSettings);
 
 %% Set which type of screen to display here.
 % 
@@ -24,13 +37,12 @@ ScreenPatternType = 'SingleLine';
 switch ScreenPatternType
      case 'Circle'
         [xCenter, yCenter] = RectCenter(windowRect);
-        size_circle = 200;
-        baseRect = [0 0 size_circle size_circle];
+        sizeCirclePixel = 200;
+        baseRect = [0 0 sizeCirclePixel sizeCirclePixel];
         maxDiameter = max(baseRect) * 1.01;% For Ovals we set a miximum dcodeiameter up to which it is perfect for
         centeredRect = CenterRectOnPointd(baseRect, xCenter, yCenter); % Center the rectangle on the centre of the screen
         rectColor = [0 0 0];
         Screen('FillOval', window, rectColor, centeredRect, maxDiameter);
-
         Screen('Flip', window);
 
     case 'Contrast'
@@ -44,7 +56,7 @@ switch ScreenPatternType
 
         % Set stripe pattern.    
         switch whichSideBar
-            case 'vertical'
+            case 'horizontal'
             baseRect = [0 0 screenXpixels barWidthPixel]; 
             for i=1:1000
                 centeredRect_R = CenterRectOnPointd(baseRect, xCenter, yCenter+barWidthPixel*2*i);
@@ -53,8 +65,7 @@ switch ScreenPatternType
                 Screen('FillRect', window, rectColor, centeredRect_L);
             end
             
-        % Horizontal pattern.
-            case 'horizontal'
+            case 'vertical'
             baseRect = [0 0 barWidthPixel screenYpixels];       
             for i=1:1000
                 centeredRect_R = CenterRectOnPointd(baseRect, xCenter+barWidthPixel*2*i, yCenter);
@@ -67,25 +78,26 @@ switch ScreenPatternType
         Screen('Flip', window);
 
     case 'SingleLine'
-        [xCenter, yCenter] = RectCenter(windowRect);
-        rectColor = [0 0 0];     
-
         % Set the barwidth and directions.
-        rectColor = [0 0 0];
-        barWidthPixel = 5; 
-        whichSideBar = 'vertical'; 
+        lineColor = [0 0 0];
+        barWidthPixel = 1; 
+        whichSideBar = 'horizontal'; 
         
         switch whichSideBar
-            case 'vertical'
-            baseRect = [0 0 barWidthPixel screenYpixels];
-            centeredRect = CenterRectOnPointd(baseRect, xCenter-barWidthPixel/2, yCenter);
-            Screen('FillRect', window, rectColor, centeredRect); % Fill in black for the area
+            case 'horizontal'
+            fromX = 0;
+            fromY = 0.5 * screenYpixels;
+            toX = screenXpixels;
+            toY = 0.5 * screenYpixels;
+            Screen('DrawLine',window,lineColor,fromX,fromY,toX,toY,barWidthPixel);
             Screen('Flip', window);
 
-            case 'horizontal'
-            baseRect = [0 0 screenXpixels barWidthPixel];
-            centeredRect = CenterRectOnPointd(baseRect, xCenter-barWidthPixel/2, yCenter);
-            Screen('FillRect', window, rectColor, centeredRect); % Fill in black for the area
+            case 'vertical'
+            fromX = 0.5 * screenXpixels;
+            fromY = 0;
+            toX = 0.5 * screenXpixels;
+            toY = screenYpixels;
+            Screen('DrawLine',window,lineColor,fromX,fromY,toX,toY,barWidthPixel);       
             Screen('Flip', window);
         end
         
