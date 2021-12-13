@@ -7,6 +7,9 @@
 %    11/24/2021 smo   Pulled out this part from the old code. It has been
 %                     cleaned up using our SACC measurement functions.
 
+%% Initialize.
+clear; close all;
+
 %% Set parameters here.
 % 
 % This code basically measures the spectrum of the plain screen
@@ -14,19 +17,21 @@
 
 % Set measurement time length and interval. The time is set in minute unit,
 % which will be converted into second unit later in this code.
-totalMeasurementTime_min = 0.2;
-timeDelayBeforeMeasurement_min = 0.1;
-timeDelayBeforeMeasurement_sec = timeDelayBeforeMeasurement_min * 60;
+totalMeasurementTime_min = 60;
+timeDelayBeforeEachMeasurement_min = 0.1;
+
+timeDelayBeforeMeasurement_sec = timeDelayBeforeEachMeasurement_min * 60;
 
 % Measurement range.
 S = [380 2 201];
 
 % Verbose.
-verbose = true;
+PlotTheResults = true;
 
 %% Make a bit of time delay before the measurement starts. 
 % You can go out before it's done.
 timeDelayGoOut_sec = 3;
+fprintf('You have %d seconds to go out the room!',timeDelayGoOut_sec);
 for tt = 1:timeDelayGoOut_sec
      pause(1) % Pause for 1 seconds (unit)
 end
@@ -36,7 +41,13 @@ end
 % Open the plain screen. Simply set it as white here. It won't change
 % during the whole measurements.
 screenSettings = [1 1 1];
-OpenPlainScreen(screenSettings,'projectorMode',true,'verbose',verbose);
+OpenPlainScreen(screenSettings,'projectorMode',true,'verbose',PlotTheResults);
+
+% Set channel settings.
+nChannels = 16;
+nPrimaries = 3;
+channelSettings = ones(nChannels,nPrimaries);
+SetChannelSettings(channelSettings);
 
 % Connect to the spectroradiometer. We will use PR670 here.
 OpenSpectroradiometer;
@@ -47,7 +58,7 @@ OpenSpectroradiometer;
 % time and time delay interval which were set from the above.
 %
 % +1 is the measurement at the cold state which is right after the screen turned on.
-nMeasurments = (totalMeasurementTime_min / timeDelayBeforeMeasurement_min) + 1; 
+nMeasurments = (totalMeasurementTime_min / timeDelayBeforeEachMeasurement_min) + 1; 
 allSpdMeasured = zeros(S(3),nMeasurments);
 
 % Measure it.
@@ -70,7 +81,7 @@ load T_xyzJuddVos;
 T_xyz = SplineCmf(S_xyzJuddVos, 683*T_xyzJuddVos, S);
 
 % Calculate XYZ values.
-XYZ = 683 * T_xyz * allSpdMeasured;
+XYZ = T_xyz * allSpdMeasured;
 xyY = XYZToxyY(XYZ);
 
 % Calculate color gamut too.
@@ -78,7 +89,7 @@ colorGamut = XYZToxyY(T_xyz);
 colorGamut(:,end+1) = colorGamut(:,1);
 
 %% Plot the data.
-if (verbose)
+if (PlotTheResults)
    % Spds.
    figure; clf;
    plot(allSpdMeasured);
@@ -116,6 +127,6 @@ if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
     testFilename = fullfile(testFiledir,sprintf('stabilityCheck_%s',dayTimestr));
     save(testFilename,'allSpdMeasured','XYZ','xyY','colorGamut', ...
-                      'measurementTime','S');
+                      'totalMeasurementTime_min','timeDelayBeforeEachMeasurement_min','S');
 end
  
