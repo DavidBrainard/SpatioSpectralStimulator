@@ -146,8 +146,8 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
         'fgColor',                          [0.3962 0.3787 0.4039], ...     % color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         2, ...                          % number of repeated measurements for averaging
-        'nMeas',                            4, ...                          % samples along gamma curve
+        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels 
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
@@ -164,7 +164,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
     % Specify the @Calibrator's initialization params. 
     % Users should tailor these according to their hardware specs. 
     % These can be set once only, at the time the @Calibrator object is instantiated.
-    displayPrimariesNum = 15;
+    displayPrimariesNum = 16;
     displaySettings = { ...
         'screenToCalibrate',        2, ...                          % which display to calibrate. main screen = 1, second display = 2
         'desiredScreenSizePixel',   [1920 1080], ...                % pixels along the width and height of the display to be calibrated
@@ -182,8 +182,8 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'nInputLevels', 253, ...                                    % Number of input levels
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
-        'nSubprimaries', 15, ...                                    % Number of subprimaries
-        'logicalToPhysical', [0:7 9:15], ...                        % Mapping of logical subprimary number to physical LED to write
+        'nSubprimaries', 16, ...                                    % Number of subprimaries
+        'logicalToPhysical', [0:15], ...                        % Mapping of logical subprimary number to physical LED to write
         'LEDWarmupDurationSeconds', 0 ...                           % Time in seconds to delay before each measurement for warming up the device    
     );
 
@@ -201,8 +201,8 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'fgColor',                          zeros(1,displayPrimariesNum), ... %color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         1, ...                          % number of repeated measurements for averaging
-        'nMeas',                            5, ...                          % samples along gamma curve
+        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         

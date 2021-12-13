@@ -36,10 +36,10 @@ classdef SACCPrimaryCalibrator < Calibrator
         origLUT;
         
         % logical to physical mapping
-        logicalToPhysical = [0:7 9:15];
+        logicalToPhysical = [0:15];
         
         % number of subprimaries
-        nSubprimaries = 15;
+        nSubprimaries = 16;
         
         % number of projector primaries
         nPrimaries = 3;
