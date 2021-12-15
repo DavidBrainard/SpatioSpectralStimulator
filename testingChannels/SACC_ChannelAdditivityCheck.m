@@ -2,42 +2,30 @@
 %
 % This compares the SPDs between randomly generated spectrum and the sum of
 % its single spectrum to check a projecotr additivity.
-%
-% 10/27/2021 smo   Clean it and makes it more readable.
+
+% History:
+%    10/27/21 smo   Clean it and makes it more readable.
+%    12/15/21 smo   Add measurement part. It used to contain only read
+%                   the data and plot it.
 
 %% Initialize.
 clear; close all;
 
-%% 
-
-
-
-%% Load measurement data.
-% This is not an elaborate way to read the data, but here it does in this
-% way... This part should be updated later.
-% One '.mat' file matches a set of spectra.
-% To load different file, you need to change the name in 'dataName' and
-% 'dataChar' to match the name of the files.
-dataName = 'Dataset9)';
-dataChar = '(AcrossPrimary)_black10_normal';
-load(append(dataName,'Spectrum_single',dataChar,'.mat')); % fw_single
-load(append(dataName,'Spectrum_black',dataChar,'.mat')); % fw_blk
-load(append(dataName,'Spectrum_white',dataChar,'.mat')); % fw_white
-load(append(dataName,'SpectrumInput',dataChar,'.mat')); % SpectrumInput
-load(append(dataName,'Spectrum_rand',dataChar,'.mat')) % fw_rand
-
-% Set dataType either within or across primary measurement data.
-% dataType = true (within primary) / false (across primary)
-dataType = false;
-
-% Set parameters.
-S = [380 2 201];
-wls = SToWls(S);
+%% Set parameters.
+S=[380 2 201];
 nInputLevels = 253;
 nPrimaries = 3;
-nTest = size(fw_rand,2); % Num of test spectra
-subPrimaryWorkingRange = [1:8,10:16];
-nChannels = size(subPrimaryWorkingRange,2);
+nChannels = 16;
+
+% Set test type either 'within' or 'across' screen primary. 
+TESTTYPE = 'within';
+
+%% Open the screen and connect spectroradiometer.
+OpenSpectroradiometer;
+OpenPlainScreen([1 1 1]);
+logicalToPhysical = [0:15];
+
+%% Load measurement data.
 
 % Delete the not working channel channel.
 
@@ -45,19 +33,19 @@ nChannels = size(subPrimaryWorkingRange,2);
 % random spectra.
 if (dataType)
     % Single spectrum
-    fw_single = fw_single(:,subPrimaryWorkingRange);
+    fw_single = fw_single(:,logicalToPhysical);
     % Spectrum input
-    spectrumInput = SpectrumInput(:,subPrimaryWorkingRange);
+    spectrumInput = SpectrumInput(:,logicalToPhysical);
 else
     % Single spectrum
-    subPrimaryWorkingRangeAcrossPrimary = [subPrimaryWorkingRange, subPrimaryWorkingRange+(nChannels+1), subPrimaryWorkingRange+((nChannels+1)*2)];
+    subPrimaryWorkingRangeAcrossPrimary = [logicalToPhysical, logicalToPhysical+(nChannels+1), logicalToPhysical+((nChannels+1)*2)];
     fw_single = fw_single(:,subPrimaryWorkingRangeAcrossPrimary);
     fw_singles{1} = fw_single(:,1:nChannels); % Primary 1
     fw_singles{2} = fw_single(:,1+nChannels:2*nChannels); % Primary 2
     fw_singles{3} = fw_single(:,1+2*nChannels:3*nChannels); % Primary 3
     % Spectrum Input
     for pp = 1:nPrimaries
-        spectrumInput{pp} = SpectrumInput{pp}(:,subPrimaryWorkingRange);
+        spectrumInput{pp} = SpectrumInput{pp}(:,logicalToPhysical);
     end
 end
 
