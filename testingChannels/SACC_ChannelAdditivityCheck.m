@@ -11,47 +11,63 @@
 %% Initialize.
 clear; close all;
 
-%% Set parameters.
+%% Set parameters here.
 S=[380 2 201];
 nInputLevels = 253;
 nPrimaries = 3;
 nChannels = 16;
+channelIntensity = [0.5 1];
+arbitraryBlack = 0.05;
+nTestSamples = 20;
 
-% Set test type either 'within' or 'across' screen primary. 
-TESTTYPE = 'within';
-
-%% Open the screen and connect spectroradiometer.
+%% Open the screen and connect spectroradiometer. 
+%
+% We will fix the screen as white and only change the channel settings for
+% checking the additivity.
 OpenSpectroradiometer;
 OpenPlainScreen([1 1 1]);
-logicalToPhysical = [0:15];
 
-%% Load measurement data.
-
-% Delete the not working channel channel.
-
-% Set channel working range for single spectrum and spectrum input for
-% random spectra.
-if (dataType)
-    % Single spectrum
-    fw_single = fw_single(:,logicalToPhysical);
-    % Spectrum input
-    spectrumInput = SpectrumInput(:,logicalToPhysical);
-else
-    % Single spectrum
-    subPrimaryWorkingRangeAcrossPrimary = [logicalToPhysical, logicalToPhysical+(nChannels+1), logicalToPhysical+((nChannels+1)*2)];
-    fw_single = fw_single(:,subPrimaryWorkingRangeAcrossPrimary);
-    fw_singles{1} = fw_single(:,1:nChannels); % Primary 1
-    fw_singles{2} = fw_single(:,1+nChannels:2*nChannels); % Primary 2
-    fw_singles{3} = fw_single(:,1+2*nChannels:3*nChannels); % Primary 3
-    % Spectrum Input
+%% Measure single spectra.
+%
+% For acorss screen primary.
+for ii = 1:length(channelIntensity)
     for pp = 1:nPrimaries
-        spectrumInput{pp} = SpectrumInput{pp}(:,logicalToPhysical);
+        % Set other screen primaries.
+        otherPrimaries = setdiff([1:1:nPrimaries],pp);
+        
+        % Set channel settings for black. This will be used for black
+        % corrections.
+        channelSettingsBlack = zeros(nChannels,nPrimaries);
+        channelSettingsBlack(:,otherPrimaries) = arbitraryBlack;
+        
+        % Measurement.
+        fw_single_black(:,pp) = MeasureSpectroradiometer;
+        
+        for cc = 1:nChannels
+            % Set target channel setting and the others as arbitrary black.
+            % We will correct the black later on.
+            channelSettingsSingle = zeros(nChannels,nPrimaries);
+            channelSettingsSingle(cc,pp) = channelIntensity(ii);
+            channelSettingsSingle(:,otherPrimaries) = arbitraryBlack;
+            
+            % Set channel settings.
+            SetChannelSettings(channelSettingsSingle);
+            
+            % Measurement.
+            fw_single_within(ii,pp,cc) = MeasureSpectroradiometer;
+        end
+        
+        % Black correction here.
+        fw_single_within(ii,pp,:) = fw_single_within(ii,pp,:) - fw_single_black(:,pp);
     end
 end
 
+% For within screen primary.
+
+
 %% Black correction.
 % Single spectrum.
-if (dataType)
+if (TESTTYPE)
     fw_singleTemp = fw_single - fw_blk;
     fw_singles = max(fw_singleTemp,0);
 else
@@ -72,7 +88,7 @@ end
 fw_blank = zeros(S(3),1);
 fw_blanks = zeros(S(3),nChannels);
 
-if (dataType) % within primary
+if (TESTTYPE) % within primary
     % Find index which channel is turn-on per each test spectrum.
     idxSpectrumInput = logical(spectrumInput == (nInputLevels-1));
     % Set the spectrum here.
@@ -88,12 +104,12 @@ if (dataType) % within primary
         fw_randSum(:,tt) = fw_randSumTemp;
     end
     
-else (dataType) % across primary
+else (TESTTYPE) % across primary
     % Find index which channel is turn-on per each test spectrum.
     for pp = 1:nPrimaries
         idxSpectrumInput{pp} = logical(spectrumInput{pp} == (nInputLevels-1));
     end
- 
+    
     fw_randTemp = cell(1,nPrimaries);
     % Set the spectrum here.
     for tt = 1:nTest
