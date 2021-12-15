@@ -146,7 +146,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
         'fgColor',                          [0.3962 0.3787 0.4039], ...     % color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
         'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels 
@@ -183,7 +183,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
         'nSubprimaries', 16, ...                                    % Number of subprimaries
-        'logicalToPhysical', [0:15], ...                        % Mapping of logical subprimary number to physical LED to write
+        'logicalToPhysical', [0:15], ...                            % Mapping of logical subprimary number to physical LED to write
         'LEDWarmupDurationSeconds', 0 ...                           % Time in seconds to delay before each measurement for warming up the device    
     );
 
@@ -201,7 +201,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'fgColor',                          zeros(1,displayPrimariesNum), ... %color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
         'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels
@@ -266,7 +266,7 @@ function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams)
             calibratorOBJ = MGLcalibrator(calibratorInitParams);
             
         elseif strcmp(selectedCalibratorType, 'PsychImaging-based (8-bit)')
-            calibratorOBJ = PsychImagingCalibrator(calibratorInitParams);
+            calibratorOBJ = SACCPsychImagingCalibrator(calibratorInitParams);
 
         elseif strcmp(selectedCalibratorType, 'SACCPrimary')
             calibratorOBJ = SACCPrimaryCalibrator(calibratorInitParams);
