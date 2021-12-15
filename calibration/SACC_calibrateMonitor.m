@@ -13,6 +13,10 @@
 %    12/12/2017  ana   Added eye tracker LCD case
 %    11/24/2021  smo   Delete the RadiometerOBJ and substitue it with SACC
 %                      measurement codes. It works faster and fine.
+%    12/15/2021  smo   Copied the object @PsychImagingCalibrator from BLTB
+%                      and changed the name as @SACCPsychImagingCalibrator.
+%                      This is for using our SACC functions (cf.
+%                      measurement) in all calibrations. 
 
 function SACC_calibrateMonitor
     
@@ -151,7 +155,10 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels 
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
-        'boxOffsetY',                       0 ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'boxOffsetY',                       0, ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'skipLinearityTest',                true, ...
+        'skipAmbientLightMeasurement',      true, ...
+        'skipBackgroundDependenceTest',     true ...
     );
 end
 

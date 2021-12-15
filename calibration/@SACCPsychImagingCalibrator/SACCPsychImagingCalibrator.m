@@ -3,7 +3,7 @@
 % 8/05/2014  npc   Wrote it.
 %
 
-classdef PsychImagingCalibrator < Calibrator  
+classdef SACCPsychImagingCalibrator < Calibrator  
     % Public properties (specific to the @PsychImagingCalibrator class) 
     properties
 
@@ -31,7 +31,7 @@ classdef PsychImagingCalibrator < Calibrator
     % Public methods
     methods
         % Constructor
-        function obj = PsychImagingCalibrator(varargin)  
+        function obj = SACCPsychImagingCalibrator(varargin)  
             % Call the super-class constructor.
             obj = obj@Calibrator(varargin{:});
             
