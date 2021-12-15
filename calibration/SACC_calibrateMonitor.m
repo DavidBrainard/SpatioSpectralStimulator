@@ -13,6 +13,10 @@
 %    12/12/2017  ana   Added eye tracker LCD case
 %    11/24/2021  smo   Delete the RadiometerOBJ and substitue it with SACC
 %                      measurement codes. It works faster and fine.
+%    12/15/2021  smo   Copied the object @PsychImagingCalibrator from BLTB
+%                      and changed the name as @SACCPsychImagingCalibrator.
+%                      This is for using our SACC functions (cf.
+%                      measurement) in all calibrations. 
 
 function SACC_calibrateMonitor
     
@@ -146,12 +150,15 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
         'fgColor',                          [0.3962 0.3787 0.4039], ...     % color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
         'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels 
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
-        'boxOffsetY',                       0 ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'boxOffsetY',                       0, ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'skipLinearityTest',                true, ...
+        'skipAmbientLightMeasurement',      true, ...
+        'skipBackgroundDependenceTest',     true ...
     );
 end
 
@@ -183,7 +190,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
         'nSubprimaries', 16, ...                                    % Number of subprimaries
-        'logicalToPhysical', [0:15], ...                        % Mapping of logical subprimary number to physical LED to write
+        'logicalToPhysical', [0:15], ...                            % Mapping of logical subprimary number to physical LED to write
         'LEDWarmupDurationSeconds', 0 ...                           % Time in seconds to delay before each measurement for warming up the device    
     );
 
@@ -201,7 +208,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'fgColor',                          zeros(1,displayPrimariesNum), ... %color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         3, ...                          % number of repeated measurements for averaging
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
         'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels
@@ -266,7 +273,7 @@ function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams)
             calibratorOBJ = MGLcalibrator(calibratorInitParams);
             
         elseif strcmp(selectedCalibratorType, 'PsychImaging-based (8-bit)')
-            calibratorOBJ = PsychImagingCalibrator(calibratorInitParams);
+            calibratorOBJ = SACCPsychImagingCalibrator(calibratorInitParams);
 
         elseif strcmp(selectedCalibratorType, 'SACCPrimary')
             calibratorOBJ = SACCPrimaryCalibrator(calibratorInitParams);
