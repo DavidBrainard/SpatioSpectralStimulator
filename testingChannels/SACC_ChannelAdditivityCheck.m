@@ -1,7 +1,8 @@
 % SACC_ChannelAdditivityCheck
 %
 % This compares the SPDs between randomly generated spectrum and the sum of
-% its single spectrum to check a projecotr additivity.
+% its single spectrum to check a projector additivity both within and
+% across screen primary.
 
 % History:
 %    10/27/21 smo   Clean it and makes it more readable.
@@ -12,79 +13,56 @@
 clear; close all;
 
 %% Set parameters here.
-S=[380 2 201];
+S = [380 2 201];
 nInputLevels = 253;
 nPrimaries = 3;
 nChannels = 16;
 channelIntensity = [0.5 1];
 arbitraryBlack = 0.05;
 nTestSamples = 20;
+nTestSamplePeaks = 3;
 
-%% Open the screen and connect spectroradiometer. 
+%% Open the screen and connect spectroradiometer.
 %
 % We will fix the screen as white and only change the channel settings for
 % checking the additivity.
 OpenSpectroradiometer;
 OpenPlainScreen([1 1 1]);
 
-%% Measure single spectra.
+%% Within Primary.
 %
-% For acorss screen primary.
-for ii = 1:length(channelIntensity)
-    for pp = 1:nPrimaries
-        % Set other screen primaries.
-        otherPrimaries = setdiff([1:1:nPrimaries],pp);
-        
-        % Set channel settings for black. This will be used for black
-        % corrections.
-        channelSettingsBlack = zeros(nChannels,nPrimaries);
-        channelSettingsBlack(:,otherPrimaries) = arbitraryBlack;
-        
-        % Measurement.
-        fw_single_black(:,pp) = MeasureSpectroradiometer;
-        
-        for cc = 1:nChannels
-            % Set target channel setting and the others as arbitrary black.
-            % We will correct the black later on.
-            channelSettingsSingle = zeros(nChannels,nPrimaries);
-            channelSettingsSingle(cc,pp) = channelIntensity(ii);
-            channelSettingsSingle(:,otherPrimaries) = arbitraryBlack;
-            
-            % Set channel settings.
-            SetChannelSettings(channelSettingsSingle);
-            
-            % Measurement.
-            fw_single_within(ii,pp,cc) = MeasureSpectroradiometer;
-        end
-        
-        % Black correction here.
-        fw_single_within(ii,pp,:) = fw_single_within(ii,pp,:) - fw_single_black(:,pp);
-    end
-end
+% Measure black.
+channelSettingsBlack = ones(nChannels,nPrimaries) * arbitraryBlack;
+SetChannelSettings(channelSettingsBlack);
+darkAmbient = MeasureSpectroradiometer;
 
 % For within screen primary.
-
-
-%% Black correction.
-% Single spectrum.
-if (TESTTYPE)
-    fw_singleTemp = fw_single - fw_blk;
-    fw_singles = max(fw_singleTemp,0);
-else
-    for pp = 1:nPrimaries
-        fw_singlesTemp{pp} = fw_singles{pp} - fw_blk;
-        fw_singles{pp} = max(fw_singlesTemp{pp},0);
+for ii = 1:length(channelIntensity)
+    for cc = 1:nChannels
+        % Single channel measurement.
+        channelSettingsSingle = ones(nChannels,nPrimaries) .* arbitraryBlack;
+        channelSettingsSingle(cc,:) = channelIntensity(ii);
+        SetChannelSettings(channelSettingsSingle);
+        
+        % Measure it.
+        fw_single_within(ii,cc,:) = MeasureSpectroradiometer;
+        
+        % Black correction here.
+        fw_single_within(ii,cc,:) = fw_single_within(ii,cc,:) - darkAmbient;
     end
 end
 
-% Random spectrum.
-for tt = 1:nTest
-    fw_randTemp = fw_rand(:,tt)-fw_blk;
-    fw_randTemp = max(fw_randTemp,0);
-    fw_rands(:,tt) = fw_randTemp;
+%% Generate and measure test random spectrum.
+%
+% For within screen primary
+for tt = 1:nTestSamplePeaks
+    for cc = 1:nChannels
+        idxTestSample(cc,nTestSamplePeaks) = randsample([0 channelIntensity],1);
+    end
 end
 
-%% Calculate the sum of single spectra.
+A(randi(numel(A)));
+%% Calculate and measure the sum of single spectra.
 fw_blank = zeros(S(3),1);
 fw_blanks = zeros(S(3),nChannels);
 
@@ -127,7 +105,15 @@ else (TESTTYPE) % across primary
     end
 end
 
-%% Plot the spectrum.
+
+
+
+
+
+
+
+%% Plot it. 
+% Plot the spectrum.
 figure;
 for tt = 1:nTest
     subplot(4,nTest/4,tt); hold on;
@@ -178,3 +164,36 @@ xlim([0 1]);
 ylim([0 1]);
 title('Comparison between measured and sum result on the x,y chromaticity')
 legend('Measurement','Sum result');
+
+
+
+
+
+
+
+
+
+%% Across Primary
+% For acorss screen primary.
+for ii = 1:length(channelIntensity)
+    for pp = 1:nPrimaries
+        for cc = 1:nChannels
+            % Set target channel setting and the others as arbitrary black.
+            % We will correct the black later on.
+            channelSettingsSingle = ones(nChannels,nPrimaries) * arbitraryBlack;
+            channelSettingsSingle(cc,pp) = channelIntensity(ii);
+            SetChannelSettings(channelSettingsSingle);
+            
+            % Measure it.
+            fw_single_across(ii,pp,cc,:) = MeasureSpectroradiometer;
+            
+            % Black correction here.
+            fw_single_across(ii,pp,cc,:) = fw_single_across(ii,pp,cc,:) - darkAmbient;
+        end
+    end
+end
+
+
+
+
+
