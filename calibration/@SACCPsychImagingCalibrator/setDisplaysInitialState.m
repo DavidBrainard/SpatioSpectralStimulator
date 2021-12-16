@@ -12,6 +12,14 @@ function setDisplaysInitialState(obj, userPrompt)
         error('Support for bitsPP has not been implemented in @PsychImagingCalibrator !');
     end % if (calStruct.config.useBitsPP)
     
+    % Retrieve passed custom params
+    if (~isempty(obj.options.calibratorTypeSpecificParamsStruct))
+        % SACC Subprimary calibration settings
+        obj.nSubprimaries = obj.options.calibratorTypeSpecificParamsStruct.nSubprimaries;
+        obj.nPrimaries = obj.options.calibratorTypeSpecificParamsStruct.nPrimaries;
+        obj.normalMode = obj.options.calibratorTypeSpecificParamsStruct.normalMode;
+        obj.logicalToPhysical = obj.options.calibratorTypeSpecificParamsStruct.logicalToPhysical;
+    end
     
     % Specify stereo mode 10 for synchronized flips between left/right displays
     stereoMode = []; % 10; 
@@ -22,40 +30,38 @@ function setDisplaysInitialState(obj, userPrompt)
     % Specify pixelSize (30 for 10-bit color, 24 for 8-bit color)
     pixelSize = 24;
     
-    
-    % Disable syncing, we do not care for this kind of calibration (regular
-    % single screen, not stereo, not Samsung)
-    Screen('Preference', 'SkipSyncTests', 1);
-    
-    % Conserve VideoRam (this is crucial for M1-based Macs)
-    Screen('Preference','ConserveVRAM',16384);
-    
-    % Start PsychImaging
-    PsychImaging('PrepareConfiguration');
-    
-    % Open master display (screen to be calibrated)
-    [obj.masterWindowPtr, obj.screenRect] = ...
-        PsychImaging('OpenWindow', calStruct.describe.whichScreen-1, 255*calStruct.describe.bgColor, screenRect, pixelSize, [], stereoMode);
+    % Set background settings.
+    backgroundSettings = [1 1 1];    
+
+    %% Display background settings.
+    [obj.masterWindowPtr, obj.screenRect] = OpenPlainScreen(backgroundSettings,'screenNum',calStruct.describe.whichScreen-1);
     LoadIdentityClut(obj.masterWindowPtr);
     
-    % Blank other screen. 
+    % Blank option for the other display.
     if calStruct.describe.blankOtherScreen
-        
-        [obj.slaveWindowPtr, ~] = ...
-            PsychImaging('OpenWindow', calStruct.describe.whichBlankScreen-1, 255*calStruct.describe.blankSettings, [], pixelSize, [], stereoMode);
-        
-        LoadIdentityClut(obj.slaveWindowPtr);
-        Screen('Flip', obj.slaveWindowPtr);    
-    end  % blackOtherScreen
-    
+    [obj.slaveWindowPtr, ~] = ...
+        OpenPlainScreen(calStruct.describe.blankSettings,'screenNum',calStruct.describe.whichBlankScreen-1);  
+         LoadIdentityClut(obj.slaveWindowPtr);
+    Screen('Flip', obj.slaveWindowPtr);
+    end
+   
     % white square for user to focus the spectro-radiometer
     targetSettings = [1 1 1];
     obj.updateBackgroundAndTarget(calStruct.describe.bgColor, targetSettings, calStruct.describe.useBitsPP)    
- 
-    % When doing calibration with the SpectroCAL, turn the laser on
-    if strcmp(class(obj.radiometerObj), 'SpectroCALdev')
-       obj.radiometerObj.switchLaserState(1); 
+    
+    % Set channel settings here. Just turn all channels on.
+%     initialChannelSettings = ones(obj.nSubprimaries,obj.nPrimaries); 
+%     SetChannelSettings(initialChannelSettings);
+    
+    % Set channel settings here. Just fair channel settings for each screen primary.
+    initialChannelSettings = zeros(obj.nSubprimaries,obj.nPrimaries); 
+    idxChannelTurnOn = [13 14 15 ; 5 6 7; 1 2 3]; 
+    for pp = 1:obj.nPrimaries
+        for ii = 1:size(idxChannelTurnOn,2)
+            initialChannelSettings(idxChannelTurnOn(pp,ii),pp) = 1;
+        end
     end
+    SetChannelSettings(initialChannelSettings);
     
     % Wait for user
     if (userPrompt)

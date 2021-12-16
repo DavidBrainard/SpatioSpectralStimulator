@@ -25,6 +25,19 @@ classdef SACCPsychImagingCalibrator < Calibrator
         
         % the original LUT (to be restored upon termination)
         origLUT;
+        
+        % normalMode. True if LEDs should be in normal mode.  False
+        % otherwise.
+        normalMode = true;
+        
+        % logical to physical mapping
+        logicalToPhysical = [0:15];
+        
+        % number of subprimaries
+        nSubprimaries = 16;
+        
+        % number of projector primaries
+        nPrimaries = 3;
     end
     
     
