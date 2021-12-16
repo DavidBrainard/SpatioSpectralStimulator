@@ -47,7 +47,7 @@ wls = SToWls(S);                                                % Wavelength.
 nPrimaries = size(targetScreenSpd,2);                          % Number of primaries.
 nChannels = theData.channelCalObjs{1}.get('nDevices');   % Number of subprimaries.
 channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
-logicalToPhysical = [0:7 9:15];
+logicalToPhysical = [0:15];
 nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
