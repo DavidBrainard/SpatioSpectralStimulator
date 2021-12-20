@@ -8,146 +8,117 @@
 %    10/27/21 smo   Clean it and makes it more readable.
 %    12/15/21 smo   Add measurement part. It used to contain only read
 %                   the data and plot it.
+%    12/20/21 smo   Make it clearer and simpler.
 
 %% Initialize.
 clear; close all;
 
 %% Set parameters here.
+%
+% This part would stay the same.
 S = [380 2 201];
+wls = SToWls(S);
 nInputLevels = 253;
 nPrimaries = 3;
 nChannels = 16;
-channelIntensity = [0.5 1];
+
+% This part can be changable.
+channelIntensity = 1;
 arbitraryBlack = 0.05;
 nTestSamples = 20;
 nTestSamplePeaks = 3;
 
-%% Open the screen and connect spectroradiometer.
-%
-% We will fix the screen as white and only change the channel settings for
-% checking the additivity.
-OpenSpectroradiometer;
-OpenPlainScreen([1 1 1]);
+% Set the test type (within or across screen primary or both).
+WITHINSCREENPRIMARY = true;
+ACROSSSCREENPRIMARY = true;
 
-%% Within Primary.
+%% Open the screen and connect spectroradiometer.
+OpenPlainScreen([1 1 1]);
+OpenSpectroradiometer;
+
+%% Measure single spectrum.
 %
-% Measure black.
+% Within primary
+%
+% Measure the ambient setting (black).
 channelSettingsBlack = ones(nChannels,nPrimaries) * arbitraryBlack;
 SetChannelSettings(channelSettingsBlack);
 darkAmbient = MeasureSpectroradiometer;
 
 % For within screen primary.
-for ii = 1:length(channelIntensity)
-    for cc = 1:nChannels
-        % Single channel measurement.
-        channelSettingsSingle = ones(nChannels,nPrimaries) .* arbitraryBlack;
-        channelSettingsSingle(cc,:) = channelIntensity(ii);
-        SetChannelSettings(channelSettingsSingle);
-        
-        % Measure it.
-        fw_single_within(ii,cc,:) = MeasureSpectroradiometer;
-        
-        % Black correction here.
-        fw_single_within(ii,cc,:) = fw_single_within(ii,cc,:) - darkAmbient;
-    end
+for cc = 1:nChannels
+    % Single channel measurement.
+    channelSettingsSingle = ones(nChannels,nPrimaries) .* arbitraryBlack;
+    channelSettingsSingle(cc,:) = channelIntensity;
+    SetChannelSettings(channelSettingsSingle);
+    
+    % Measure it.
+    spdSingleWithinScreenPrimary(:,cc) = MeasureSpectroradiometer;
+    
+    % Black correction here.
+    spdSingleWithinScreenPrimary(:,cc) = spdSingleWithinScreenPrimary(:,cc) - darkAmbient;
 end
 
 %% Generate and measure test random spectrum.
 %
 % For within screen primary
-for tt = 1:nTestSamplePeaks
-    for cc = 1:nChannels
-        idxTestSample(cc,nTestSamplePeaks) = randsample([0 channelIntensity],1);
-    end
+%
+% Make index for creating random spectrum.
+for ii = 1:nTestSamples
+    % Randomize the channels to turn on.
+    idxTestSamplePeaks(:,ii) = randsample([1:1:nChannels],nTestSamplePeaks);
 end
 
-A(randi(numel(A)));
-%% Calculate and measure the sum of single spectra.
-fw_blank = zeros(S(3),1);
-fw_blanks = zeros(S(3),nChannels);
-
-if (TESTTYPE) % within primary
-    % Find index which channel is turn-on per each test spectrum.
-    idxSpectrumInput = logical(spectrumInput == (nInputLevels-1));
-    % Set the spectrum here.
-    for tt = 1:nTest
-        for ss = 1:nChannels
-            if idxSpectrumInput(tt,ss) == 0
-                fw_randTemp(:,ss) = fw_blank;
-            elseif idxSpectrumInput(tt,ss) == 1
-                fw_randTemp(:,ss) = fw_singles(:,ss);
-            end
-        end
-        fw_randSumTemp = sum(fw_randTemp,2);
-        fw_randSum(:,tt) = fw_randSumTemp;
+% Measure it. 
+for ii = 1:nTestSamples
+    for pp = 1:nTestSamplePeaks
+        channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
+        channelSettingsTestSample(idxTestSamplePeaks(pp,ii)) = channelIntensity;
     end
-    
-else (TESTTYPE) % across primary
-    % Find index which channel is turn-on per each test spectrum.
-    for pp = 1:nPrimaries
-        idxSpectrumInput{pp} = logical(spectrumInput{pp} == (nInputLevels-1));
-    end
-    
-    fw_randTemp = cell(1,nPrimaries);
-    % Set the spectrum here.
-    for tt = 1:nTest
-        for pp = 1:nPrimaries
-            for ss = 1:nChannels
-                if idxSpectrumInput{pp}(tt,ss) == 0
-                    fw_randTemp{pp}(:,ss) = fw_blank;
-                elseif idxSpectrumInput{pp}(tt,ss) == 1
-                    fw_randTemp{pp}(:,ss) = fw_singles{pp}(:,ss);
-                end
-            end
-        end
-        fw_randSumTemp = sum(cell2mat(fw_randTemp),2);
-        fw_randSum(:,tt) = fw_randSumTemp;
-    end
+    SetChannelSettings(channelSettingsTestSample);
+    spdTestSample(:,ii) = MeasureSpectroradiometer;
 end
 
+% Calculate the sum of spectra matching the combinations of test samples.
+for ii = 1:nTestSamples
+    spdTestSampleSum(:,ii) = sum(spdSingleWithinScreenPrimary(idxTestSamplePeaks(:,ii)));
+end
 
+%% XYZ calculations.
+%
+% Load color matching function and match the spectrum range.
+load T_xyzJuddVos;
+T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
+% XYZ calculations.
+XYZTestSample = T_xyz * spdTestSample;
+XYZTestSampleSum = T_xyz * spdTestSampleSum;
+xyYTestSample = XYZToxyY(XYZTestSample);
+xyYTestSampleSum = XYZToxyY(XYZTestSampleSum);
 
-
-
-
+% Set spectral locus.
+spectralLocus = XYZToxyY(T_xyz);
+spectralLocus(:,end+1) = spectralLocus(:,1);
 
 %% Plot it. 
-% Plot the spectrum.
 figure;
-for tt = 1:nTest
-    subplot(4,nTest/4,tt); hold on;
-    plot(wls,fw_rands(:,tt),'k','LineWidth',3)
-    plot(wls,fw_randSum(:,tt),'r-','LineWidth',2)
+for tt = 1:nTestSamples
+    subplot(4,nTestSamples/4,tt); hold on;
+    plot(wls,spdTestSample(:,tt),'k','LineWidth',3)
+    plot(wls,spdTestSampleSum(:,tt),'r-','LineWidth',2)
     title(append('Test',num2str(tt)));
-    ylim([0 max(max([fw_rand fw_randSum]))]);
+    ylim([0 max(max([spdTestSample spdTestSampleSum]))]);
 end
 xlabel('Wavelength (nm)')
 ylabel('Spectral irradiance')
 legend('Measurement','Sum result','location','northeast')
 title('Comparison of the SPDs between measured and sum result')
 
-%% Compare xy Chromaticity and luminance levels.
-% Load color matching function and match the spectrum range.
-load T_xyzJuddVos;
-T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
-
-% XYZ calculations.
-XYZ_rands = T_xyz * fw_rands;
-XYZ_randSum = T_xyz * fw_randSum;
-xyY_rands = XYZToxyY(XYZ_rands);
-xyY_randSum = XYZToxyY(XYZ_randSum);
-
-% Set color gamut.
-colorgamut = XYZToxyY(T_xyz);
-colorgamut(:,end+1)=colorgamut(:,1);
-
 % Plot it.
-% Luminance
 figure; hold on;
-testPoints = linspace(1,nTest,nTest);
-plot(testPoints,xyY_rands(3,:),'k.','markersize',13);
-plot(testPoints,xyY_randSum(3,:),'r+','markersize',12,'linewidth',1);
+numTestSamples = linspace(1,nTest,nTest);
+plot(numTestSamples,xyYTestSample(3,:),'k.','markersize',13);
+plot(numTestSamples,xyYTestSampleSum(3,:),'r+','markersize',12,'linewidth',1);
 xlabel('Test point')
 ylabel('Luminance (cd/m2)')
 title('Luminance level comparison between measurement and sum result')
@@ -155,9 +126,9 @@ legend('Measurement','Sum result','location','southeast');
 
 % CIE (x,y) chromaticity
 figure; hold on;
-plot(xyY_rands(1,:),xyY_rands(2,:),'k.','markersize',13);
-plot(xyY_randSum(1,:),xyY_randSum(2,:),'r+','markersize',12,'linewidth',1);
-plot(colorgamut(1,:),colorgamut(2,:),'k-');
+plot(xyYTestSample(1,:),xyYTestSample(2,:),'k.','markersize',13);
+plot(xyYTestSampleSum(1,:),xyYTestSampleSum(2,:),'r+','markersize',12,'linewidth',1);
+plot(spectralLocus(1,:),spectralLocus(2,:),'k-');
 xlabel('CIE x')
 ylabel('CIE y')
 xlim([0 1]);
@@ -165,35 +136,65 @@ ylim([0 1]);
 title('Comparison between measured and sum result on the x,y chromaticity')
 legend('Measurement','Sum result');
 
-
-
-
-
-
-
-
-
-%% Across Primary
+%% From here it tests across screen primary.
+%% Measure single spectrum.
+%
 % For acorss screen primary.
-for ii = 1:length(channelIntensity)
-    for pp = 1:nPrimaries
-        for cc = 1:nChannels
-            % Set target channel setting and the others as arbitrary black.
-            % We will correct the black later on.
-            channelSettingsSingle = ones(nChannels,nPrimaries) * arbitraryBlack;
-            channelSettingsSingle(cc,pp) = channelIntensity(ii);
-            SetChannelSettings(channelSettingsSingle);
-            
-            % Measure it.
-            fw_single_across(ii,pp,cc,:) = MeasureSpectroradiometer;
-            
-            % Black correction here.
-            fw_single_across(ii,pp,cc,:) = fw_single_across(ii,pp,cc,:) - darkAmbient;
-        end
+for pp = 1:nPrimaries
+    for cc = 1:nChannels
+        % Set target channel setting and the others as arbitrary black.
+        % We will correct the black later on.
+        channelSettingsSingle = ones(nChannels,nPrimaries) * arbitraryBlack;
+        channelSettingsSingle(cc,pp) = channelIntensity;
+        SetChannelSettings(channelSettingsSingle);
+        
+        % Measure it.
+        spdSingleAcrossScreenPrimary(pp,cc,:) = MeasureSpectroradiometer;
+        
+        % Black correction here.
+        spdSingleAcrossScreenPrimary(pp,cc,:) = spdSingleAcrossScreenPrimary(pp,cc,:) - darkAmbient;
     end
 end
 
+%% Generate and measure test random spectrum.
+%
+% Make index for creating random spectrum.
+for ii = 1:nTestSamples
+    % Randomize the channels to turn on.
+    idxTestSamplePeaks(:,ii) = randsample([1:1:nChannels],nTestSamplePeaks);
+end
 
+% Measure it. 
+for ii = 1:nTestSamples
+    channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
+    
+    % Set the peak here.
+    for ss = 1:nPrimaries
+        channelSettingsTestSample(idxTestSamplePeaks(pp,ii),ss) = channelIntensity;
+    end
+    
+    SetChannelSettings(channelSettingsTestSample);
+    spdTestSample(:,ii) = MeasureSpectroradiometer;
+end
 
+% Calculate the sum of spectra matching the combinations of test samples.
+for ii = 1:nTestSamples
+    for ss = 1:nPrimaries
+        spdTestSampleSumTemp = spdSingleAcrossScreenPrimary(ss, idxTestSamplePeaks(ss,ii), :);
+        spdTestSampleSum(:,ii) = sum(spdTestSampleSumTemp);
+    end
+end
 
+%% Save the data.
+%
+% Close the screen and projector.
+CloseScreen;
+CloseSpectroradiometer;
 
+% Save data with the name containing dayTimestr.
+if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
+    dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+    testFilename = fullfile(testFiledir,sprintf('additivityCheck_%s',dayTimestr));
+    save(testFilename,'S');
+end
