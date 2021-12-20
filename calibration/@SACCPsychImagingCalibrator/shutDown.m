@@ -4,6 +4,7 @@ function obj = shutDown(obj)
         fprintf('In PsychImaging.shutDown() method\n');
     end
 
-    % Close everything. Here we should also reset the PTB verbosity
-    sca;
+    % Close everything.
+    CloseSpectroradiometer;
+    CloseScreen;
 end

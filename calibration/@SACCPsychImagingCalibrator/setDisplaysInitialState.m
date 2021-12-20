@@ -50,18 +50,18 @@ function setDisplaysInitialState(obj, userPrompt)
     obj.updateBackgroundAndTarget(calStruct.describe.bgColor, targetSettings, calStruct.describe.useBitsPP)    
     
     % Set channel settings here. Just turn all channels on.
-%     initialChannelSettings = ones(obj.nSubprimaries,obj.nPrimaries); 
-%     SetChannelSettings(initialChannelSettings);
+    initialChannelSettings = ones(obj.nSubprimaries,obj.nPrimaries); 
+    SetChannelSettings(initialChannelSettings);
     
     % Set channel settings here. Just fair channel settings for each screen primary.
-    initialChannelSettings = zeros(obj.nSubprimaries,obj.nPrimaries); 
-    idxChannelTurnOn = [13 14 15 ; 5 6 7; 1 2 3]; 
-    for pp = 1:obj.nPrimaries
-        for ii = 1:size(idxChannelTurnOn,2)
-            initialChannelSettings(idxChannelTurnOn(pp,ii),pp) = 1;
-        end
-    end
-    SetChannelSettings(initialChannelSettings);
+%     initialChannelSettings = zeros(obj.nSubprimaries,obj.nPrimaries); 
+%     idxChannelTurnOn = [11 12 13 15 16 ; 5 7 8 9 10 ; 1 1 2 3 4]; 
+%     for pp = 1:obj.nPrimaries
+%         for ii = 1:size(idxChannelTurnOn,2)
+%             initialChannelSettings(idxChannelTurnOn(pp,ii),pp) = 1;
+%         end
+%     end
+%     SetChannelSettings(initialChannelSettings);
     
     % Wait for user
     if (userPrompt)
