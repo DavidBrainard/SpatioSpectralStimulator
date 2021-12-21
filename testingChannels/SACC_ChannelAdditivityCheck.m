@@ -154,6 +154,12 @@ end
 
 %% XYZ calculations.
 %
+% Before calculation of XYZ, round any negative parts in the spectrum
+% because of the black correction.
+spdSingle(spdSingle < 0) = 0;
+spdTestSample(spdTestSample < 0) = 0; 
+spdTestSampleSum(spdTestSampleSum < 0) = 0;
+
 % Load color matching function and match the spectrum range.
 load T_xyzJuddVos;
 T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
@@ -172,7 +178,7 @@ spectralLocus(:,end+1) = spectralLocus(:,1);
 figure;
 for tt = 1:nTestSamples
     subplot(5,nTestSamples/5,tt); hold on;
-    plot(wls,spdTestSample(:,tt),'k','LineWidth',3)
+    plot(wls,spdTestSample(:,tt),'k-','LineWidth',3)
     plot(wls,spdTestSampleSum(:,tt),'r-','LineWidth',2)
     title(append('Test',num2str(tt)));
     ylim([0 max(max([spdTestSample spdTestSampleSum]))]);
