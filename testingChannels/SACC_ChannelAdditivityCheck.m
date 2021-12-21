@@ -31,17 +31,23 @@ nTestSamplePeaks = 3;
 % Set the test type ('within' or 'across' screen primary).
 TESTTYPE = 'within';
 
-%% Open the screen and connect spectroradiometer.
+%% Open the screen and connect to spectroradiometer.
 %
 % The DLP screen will be controlled as white plain screen.
 OpenPlainScreen([1 1 1]);
 OpenSpectroradiometer;
 
-% Measure an dark ambient setting for black correction.
+%% Measure an dark ambient setting for black correction.
 channelSettingsBlack = ones(nChannels,nPrimaries) * arbitraryBlack;
 SetChannelSettings(channelSettingsBlack);
 darkAmbient = MeasureSpectroradiometer;
 
+%% Further measurement happens from here.
+%
+% Set the TESTTYPE either 'within' or 'across' from the above.
+% Both tests have the same routine which starts from measuring a single
+% spectrum, then generate random spectrum to compare it with the sum of
+% single spectra.
 switch TESTTYPE
     case 'within'
         %% Measure single spectrum.
@@ -165,7 +171,7 @@ title('Comparison of the SPDs between measured and sum result')
 
 % Luminance.
 figure; hold on;
-numTestSamples = linspace(1,nTest,nTest);
+numTestSamples = linspace(1,nTestSamples,nTestSamples);
 plot(numTestSamples,xyYTestSample(3,:),'k.','markersize',13);
 plot(numTestSamples,xyYTestSampleSum(3,:),'r+','markersize',12,'linewidth',1);
 xlabel('Test point')
