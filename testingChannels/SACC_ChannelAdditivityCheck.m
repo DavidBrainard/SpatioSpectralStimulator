@@ -11,7 +11,7 @@
 %    12/20/21 smo   Make it clearer and simpler.
 
 %% Initialize.
-clear; close all;
+clear all; close all;
 
 %% Set parameters here.
 %
@@ -22,14 +22,17 @@ nInputLevels = 253;
 nPrimaries = 3;
 nChannels = 16;
 
-% This part can be changable.
+% This part can be changable. 
+% The number of peaks on each test sample (nTestSamplePeaks) can be changed
+% only for within primary test for now. It should be set as 3 when you test
+% across primary matching the number of screen primaries.
 channelIntensity = 1;
 arbitraryBlack = 0.05;
 nTestSamples = 20;
 nTestSamplePeaks = 3;
 
 % Set the test type ('within' or 'across' screen primary).
-TESTTYPE = 'within';
+TESTTYPE = 'across';
 
 %% Open the screen and connect to spectroradiometer.
 %
@@ -41,6 +44,7 @@ OpenSpectroradiometer;
 channelSettingsBlack = ones(nChannels,nPrimaries) * arbitraryBlack;
 SetChannelSettings(channelSettingsBlack);
 darkAmbient = MeasureSpectroradiometer;
+disp('Dark ambient measurement complete!');
 
 %% Further measurement happens from here.
 %
@@ -74,35 +78,25 @@ switch TESTTYPE
         
         % Measure it.
         for ii = 1:nTestSamples
-            for pp = 1:nTestSamplePeaks
-                channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
-                channelSettingsTestSample(idxTestSamplePeaks(pp,ii)) = channelIntensity;
+            channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
+            for kk = 1:nTestSamplePeaks
+                channelSettingsTestSample(idxTestSamplePeaks(kk,ii),:) = channelIntensity;
             end
             SetChannelSettings(channelSettingsTestSample);
             spdTestSample(:,ii) = MeasureSpectroradiometer;
             fprintf('Test sample measurement complete! - (%d/%d)\n',ii,nTestSamples);
+            
+            % Black correction here.
+            spdTestSample(:,ii) = spdTestSample(:,ii) - darkAmbient;
         end
         
         % Calculate the sum of spectra matching the combinations of test samples.
         for ii = 1:nTestSamples
-            spdTestSampleSum(:,ii) = sum(spdSingle(idxTestSamplePeaks(:,ii)));
+            for pp = 1:nTestSamplePeaks
+                spdTestSampleSumTemp(:,pp) = spdSingle(:, idxTestSamplePeaks(pp,ii));   
+            end
+            spdTestSampleSum(:,ii) = sum(spdTestSampleSumTemp,2);
         end
-        
-        %% XYZ calculations.
-        %
-        % Load color matching function and match the spectrum range.
-        load T_xyzJuddVos;
-        T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
-        
-        % XYZ calculations.
-        XYZTestSample = T_xyz * spdTestSample;
-        XYZTestSampleSum = T_xyz * spdTestSampleSum;
-        xyYTestSample = XYZToxyY(XYZTestSample);
-        xyYTestSampleSum = XYZToxyY(XYZTestSampleSum);
-        
-        % Set spectral locus.
-        spectralLocus = XYZToxyY(T_xyz);
-        spectralLocus(:,end+1) = spectralLocus(:,1);
         
     case 'across'
         %% Measure single spectrum.
@@ -115,11 +109,11 @@ switch TESTTYPE
                 SetChannelSettings(channelSettingsSingle);
                 
                 % Measure it.
-                spdSingle(pp,cc,:) = MeasureSpectroradiometer;
+                spdSingleTemp = MeasureSpectroradiometer;
                 fprintf('Single channel measurement complete! - screen primary:%d / channel:(%d/%d)\n',pp,cc,nChannels);
                 
                 % Black correction here.
-                spdSingle(pp,cc,:) = spdSingle(pp,cc,:) - darkAmbient;
+                spdSingle(pp,cc,:) = spdSingleTemp - darkAmbient;
             end
         end
         
@@ -136,24 +130,43 @@ switch TESTTYPE
             channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
             
             % Set the peak here.
-            for ss = 1:nPrimaries
-                channelSettingsTestSample(idxTestSamplePeaks(pp,ii),ss) = channelIntensity;
+            for pp = 1:nPrimaries
+                channelSettingsTestSample(idxTestSamplePeaks(pp,ii),pp) = channelIntensity;
             end
             
             SetChannelSettings(channelSettingsTestSample);
             spdTestSample(:,ii) = MeasureSpectroradiometer;
             fprintf('Test sample measurement complete! - (%d/%d)\n',ii,nTestSamples);
+            
+            % Black correction here.
+            spdTestSample(:,ii) = spdTestSample(:,ii) - darkAmbient;
         end
         
         % Calculate the sum of spectra matching the combinations of test samples.
         for ii = 1:nTestSamples
-            for ss = 1:nPrimaries
-                spdTestSampleSumTemp = spdSingle(ss, idxTestSamplePeaks(ss,ii), :);
-                spdTestSampleSum(:,ii) = sum(spdTestSampleSumTemp);
+            for pp = 1:nPrimaries
+                spdTestSampleSumTemp(:,pp) = spdSingle(pp, idxTestSamplePeaks(pp,ii), :);
             end
+            spdTestSampleSum(:,ii) = sum(spdTestSampleSumTemp,2);
         end
     otherwise
 end
+
+%% XYZ calculations.
+%
+% Load color matching function and match the spectrum range.
+load T_xyzJuddVos;
+T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
+
+% XYZ calculations.
+XYZTestSample = T_xyz * spdTestSample;
+XYZTestSampleSum = T_xyz * spdTestSampleSum;
+xyYTestSample = XYZToxyY(XYZTestSample);
+xyYTestSampleSum = XYZToxyY(XYZTestSampleSum);
+
+% Set spectral locus.
+spectralLocus = XYZToxyY(T_xyz);
+spectralLocus(:,end+1) = spectralLocus(:,1);
 
 %% Plot it.
 figure;
@@ -202,5 +215,6 @@ if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
     dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
     testFilename = fullfile(testFiledir,sprintf('additivityCheck_%s_%s',TESTTYPE,dayTimestr));
-    save(testFilename,'spdSingle','spdTestSample','spdTestSampleSum','nTestSamples','nTestSamplePeaks','idxTestSamplePeaks','S');
+    save(testFilename,'spdSingle','spdTestSample','spdTestSampleSum','nTestSamples','nTestSamplePeaks',...
+                      'idxTestSamplePeaks','arbitraryBlack','channelIntensity','S');
 end
