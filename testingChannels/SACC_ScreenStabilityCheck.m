@@ -91,28 +91,29 @@ colorGamut(:,end+1) = colorGamut(:,1);
 %% Plot the data.
 if (PlotTheResults)
    % Spds.
-   figure; clf;
-   plot(allSpdMeasured);
-   xlabel('Wavelenth (nm)');
-   ylabel('Spectral power distribution');
-
+   figure; clf; hold on;
+   plot(SToWls(S),allSpdMeasured);
+   xlabel('Wavelenth (nm)','fontsize',15);
+   ylabel('Spectral power distribution','fontsize',15);
+   legend('Measurements');
+   
    % Luminance.
    figure; clf;
    subplot(1,2,1);
    measurementTime = linspace(0, totalMeasurementTime_min, nMeasurments);
-   plot(measurementTime, XYZ(3,:),'r*--');
-   xlabel('Measurement time (min)');
-   ylabel('Luminance (cd/m2)');
+   plot(measurementTime, XYZ(3,:),'r.','markersize',10);
+   xlabel('Measurement time (min)','fontsize',15);
+   ylabel('Luminance (cd/m2)','fontsize',15);
    ylim([max(XYZ(3,:))*0.8 max(XYZ(3,:))*1.2]);
    legend('Measurements');
    
    % xy coordiantes.
    subplot(1,2,2); hold on;
-   plot(xyY(1,:), xyY(2,:), 'r*');
+   plot(xyY(1,:), xyY(2,:), 'r.','markersize',10);
    plot(colorGamut(1,:),colorGamut(2,:),'k-');
-   xlabel('CIE x');
-   ylabel('CIE y');
-   legend('Measurements','Color Gamut');
+   xlabel('CIE x','fontsize',15);
+   ylabel('CIE y','fontsize',15);
+   legend('Measurements','Spectral locus');
 end
 
 %% Save the data.
