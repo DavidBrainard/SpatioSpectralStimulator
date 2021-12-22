@@ -115,7 +115,7 @@ switch (conditionName)
         % Set parameters for getting desired target primaries.
         targetScreenPrimaryContrasts = [0.03 0.03 0.03];
         targetPrimaryHeadroom = 1;
-        primaryHeadroom = 0.01;
+        primaryHeadroom = 0.0;
         targetLambda = 3;
 
         % We may not need the whole direction contrast excursion. Specify max
