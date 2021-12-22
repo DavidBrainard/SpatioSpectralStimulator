@@ -116,7 +116,7 @@ switch (conditionName)
         % Set parameters for getting desired target primaries.
         targetScreenPrimaryContrasts = [0.03 0.03 0.03];
         targetPrimaryHeadroom = 1;
-        primaryHeadroom = 0.01;
+        primaryHeadroom = 0.00;
         targetLambda = 3;
 
         % We may not need the whole direction contrast excursion. Specify max
@@ -421,9 +421,6 @@ title('Primary 3');
 screenCalObj.set('P_device',screenPrimarySpd);
 SetSensorColorSpace(screenCalObj,T_cones,S);
 
-%% Create ISETBio display from the calibration file
-screenDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalObj.cal);
-
 %% Set screen gamma method.
 %
 % If we set to 0, there is no quantization and the result is excellent.
@@ -434,6 +431,17 @@ screenDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', s
 % The point cloud method below reduces this problem.
 screenGammaMethod = 2;
 SetGammaMethod(screenCalObj,screenGammaMethod);
+
+%% Create ISETBio display from the calibration file
+screenCalStruct = screenCalObj.cal;
+screenCalStruct.describe.displayDescription.screenSizeMM = [508 285];
+screenCalStruct.describe.displayDescription.screenSizePixel = [1920 1080];
+extraCalData = ptb.ExtraCalData;
+extraCalData.distance = 2;
+screenDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
+
+%% Get calibration structure back out
+screenCalStructFromDisplay = ptb.GeneratePTBCalStructFromIsetbioDisplayObject(screenDisplayObject);
 
 %% Set up desired background.
 %
