@@ -7,7 +7,7 @@
 %    01/03/22 smo    Started on it.
 
 %% Initialize.
-clear all; close all;
+clear; close all;
 
 %% Set paratmeters.
 %
@@ -15,13 +15,15 @@ clear all; close all;
 % and just image will show up instead of displaying on PTB. It will be
 % helpful to check and debug.
 initialScreenSettings = [1 1 1];
-nTrials = 10;
+nTestImages = 2;
+nTrials = 3;
 
+VERBOSE = true;
 TURNONSCREEN = false;
 
 %% Open the screen.
-if(TURNONSCREEN)
-    OpenPlainScreen(initialScreenSettings);
+if (TURNONSCREEN)
+    OpenPlainScreen(initialScreenSettings,'verbose',VERBOSE);
 end
 
 %% Running trials.
@@ -45,40 +47,71 @@ image = theData.screenSettingsImage;
 %
 % Now it just displays an image, but this part will be substituted with a
 % separate function displaying the image using PTB later on.
-for tt = 1:nTrials
-    figure; clf;
-    imshow(image);
-    title(append('Trial ',num2str(tt)),'fontsize',15);
-    fprintf('Test image 1 - trial %d is displaying and waiting for the key is pressed... \n',tt);
-    
-    % Get a response either Yes or No.
-    %
-    % It can be also done by using 'ginput'. But, here we used the function
-    % waitforbuttonpresss.
-    %
-    % Following is the ASCII allocated number for the keyboards.
-    % 28 leftarrow
-    % 29 rightarrow
-    % 30 uparrow
-    % 31 downarrow
-    gettingResponse = waitforbuttonpress;
-    response(tt) = double(get(gcf,'CurrentCharacter'));
-    close;
-    fprintf('     Key input has been received! \n');
+for ii = 1:nTestImages
+    for tt = 1:nTrials
+        figure; clf;
+        imshow(image);
+        title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
+        if (VERBOSE)
+            fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
+        end
+        
+        % Get a response either Yes or No.
+        %
+        % It can be also done by using 'ginput'. But, here we used the function
+        % waitforbuttonpresss.
+        %
+        % Following is the ASCII allocated number for the keyboards.
+        %
+        % 28 leftarrow
+        % 29 rightarrow
+        % 30 uparrow
+        % 31 downarrow
+        leftArrow  = 28;
+        rightArrow = 29;
+        gettingResponse = waitforbuttonpress;
+        response(tt,ii) = double(get(gcf,'CurrentCharacter'));
+        close;
+        
+        if (VERBOSE)
+            fprintf('     Key input has been received! \n');
+        end
+    end
+    if(VERBOSE)
+        fprintf('Test image %d evalaution complete! \n',ii);
+    end
 end
 
-fprintf('Test image 1 evalaution complete! \n');
+%% Show the results.
+%
+% Convert the response into 0 / 1
+response(response == leftArrow)  = 0;
+response(response == rightArrow) = 1;
+
+for ii = 1:nTestImages
+    propCorrect(:,ii) = sum(response(:,ii)==1)/nTrials;
+end
+
+% Plot it.
+figure; clf;
+plot(linspace(1,nTestImages,nTestImages),propCorrect,'r.','markersize',15);
+xlabel('Test image','fontsize',15);
+ylabel('Proportion correct (%)','fontsize',15);
+xlim([0 nTestImages+1]);
+ylim([0 1]);
+
+% Show only integer value on x axis
+curTick = get(gca, 'xTick');
+xticks(unique(round(curTick)));
 
 %% Close.
-if(TURNONSCREEN)
+if (TURNONSCREEN)
     CloseScreen;
-end
-
-% Save the response data.
-%
-% We may want to change the folder later on. But, now it is set to the same
-% folder where the test image is stored.
-if(TURNONSCREEN)
+    
+    % Save the response data.
+    %
+    % We may want to change the folder later on. But, now it is set to the same
+    % folder where the test image is stored.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = fullfile(testFiledir,sprintf('expResponseData_%s',conditionName));
