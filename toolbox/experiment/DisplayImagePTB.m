@@ -1,26 +1,29 @@
 function [] = DisplayImagePTB(image,options)
-% DisplayImagePTB
+% This displays images on the screen using PTB.
 %
-% Syntax:
+% Syntax: [] = DisplayImagePTB(image)
 %
-% Description:
-%
-% This code is to display Gabor patch for SACC project. It is useful when
-% your computer cannot configure the target display (LED screen in SACC
-% project) This code can be used regardless of the configuration state as
-% it uses Psychtoolbox
-%
+% Description: 
+%    This is to display test images in the experiment for the SACC project
+%    using PTB. 
+%    
 % Inputs:
-%    integers -                   ddd
+%    image -                      Test images to display on the screen.
+%                                 This should be in a image format, not a
+%                                 cal format. For example, 512 x 512 x 3
+%                                 in double.
 %
 % Outputs:
-%    settings -                   ddd
+%    N/A
 %
 % Optional key/value pairs:
-%    'screenSettings' -           Set
+%    'screenSettings' -           Initial screen settings to initiate it.
+%                                 We eventually display the images, so this
+%                                 won't be visually seen unless the image
+%                                 fills up the whole window screen.
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
-%
+
 % History:
 %    01/06/21  smo                Started on it
 
@@ -31,30 +34,12 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Initialize
-OpenPlainScreen(options.screenSettings,'verbose',options.verbose);
+%% Open the screen.
+[window, windowRect] = OpenPlainScreen(options.screenSettings,'verbose',options.verbose);
 
-%% PTB pre-setup
-PsychDefaultSetup(2);
-
-screens = Screen('Screens');
-screenNumber = max(screens);
-
-white = WhiteIndex(screenNumber);
-black = BlackIndex(screenNumber);
-
-[window, windowRect] = PsychImaging('OpenWindow', screenNumber, white);
-[screenXpixels, screenYpixels] = Screen('WindowSize', window); % Read the resolution of the display
-
-%% Display a background as plain screen
-% Backgroundcolor can be set, but here it is set as the same size between
-% the background and the display window, so it will not be shown on the final result
-backgroundColor = [255 255 255]; % Range 0-255 (8 bits)
-[window, backgroundRect] = Screen('OpenWindow', screenNumber, backgroundColor, windowRect); % Size of the background = Size of the window
-
-%% Display the gabor patch as 'texture'
-gaborPatchImage_texture = Screen('MakeTexture', window, image); % Set the gaborPatchImage as 'texture' in PTB
-Screen('DrawTexture', window, gaborPatchImage_texture, [], backgroundRect);
+%% Display an image on the PTB screen.
+imageTexture = Screen('MakeTexture', window, image);
+Screen('DrawTexture', window, imageTexture, [], windowRect);
 Screen('Flip', window);
 
 end
