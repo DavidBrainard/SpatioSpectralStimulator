@@ -1,4 +1,4 @@
-function [] = DisplayImagePTB(image,options)
+function [] = DisplayImagePTB(image,window,windowRect,options)
 % This displays images on the screen using PTB.
 %
 % Syntax: [] = DisplayImagePTB(image)
@@ -12,15 +12,13 @@ function [] = DisplayImagePTB(image,options)
 %                                 This should be in a image format, not a
 %                                 cal format. For example, 512 x 512 x 3
 %                                 in double.
+%    window -                     PTB window for opened screen.
+%    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
 %    N/A
 %
 % Optional key/value pairs:
-%    'screenSettings' -           Initial screen settings to initiate it.
-%                                 We eventually display the images, so this
-%                                 won't be visually seen unless the image
-%                                 fills up the whole window screen.
 %    'verbose' -                  Boolean. Default true.  Controls plotting
 %                                 and printout.
 
@@ -29,13 +27,11 @@ function [] = DisplayImagePTB(image,options)
 
 %% Set parameters.
 arguments
-    image
-    options.screenSettings = [1 1 1]
+    image 
+    window (1,1)
+    windowRect (1,4)
     options.verbose (1,1) = true
 end
-
-%% Open the screen.
-[window, windowRect] = OpenPlainScreen(options.screenSettings,'verbose',options.verbose);
 
 %% Display an image on the PTB screen.
 imageTexture = Screen('MakeTexture', window, image);
