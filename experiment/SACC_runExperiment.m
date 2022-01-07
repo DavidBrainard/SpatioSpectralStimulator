@@ -43,6 +43,18 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
 end
 image = theData.screenSettingsImage;
 
+% Resize the image as desired here.
+imageMagnificationFactor = 1.5;
+image = imresize(image,imageMagnificationFactor);
+imageSize = size(image);
+imageXPixel = imageSize(1);
+imageYPixel = imageSize(2);
+
+% Get the display info here.
+screenSize = get(0,'screensize');
+screenXPixel = screenSize(3); 
+screenYPixel = screenSize(4);
+    
 % Display test image.
 %
 % Now it just displays an image, but this part will be substituted with a
@@ -50,8 +62,22 @@ image = theData.screenSettingsImage;
 for ii = 1:nTestImages
     for tt = 1:nTrials
         figure; clf;
-        imshow(image);
+        
+        % Set the position and the size of the test image.
+        imageFig = figure;
+        x = screenXPixel*0.2;
+        y = screenYPixel*0.2;
+        width = imageXPixel*2;
+        height = imageYPixel;
+        set(imageFig, 'Position', [x y width height])
+        
+        % Left side image.
+        subplot(1,2,1); imshow(image);
         title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
+        
+        % Right side image.
+        subplot(1,2,2); imshow(image);
+        
         if (VERBOSE)
             fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
         end
@@ -67,11 +93,9 @@ for ii = 1:nTestImages
         % 29 rightarrow
         % 30 uparrow
         % 31 downarrow
-        leftArrow  = 28;
-        rightArrow = 29;
         gettingResponse = waitforbuttonpress;
         response(tt,ii) = double(get(gcf,'CurrentCharacter'));
-        close;
+        close all;
         
         if (VERBOSE)
             fprintf('     Key input has been received! \n');
@@ -85,6 +109,8 @@ end
 %% Show the results.
 %
 % Convert the response into 0 / 1
+leftArrow  = 28;
+rightArrow = 29;
 response(response == leftArrow)  = 0;
 response(response == rightArrow) = 1;
 
