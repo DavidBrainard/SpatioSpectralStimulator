@@ -16,29 +16,29 @@ if (any(targetSettings < 0 | targetSettings > 1))
 end
 
 try
-    % Ingore the bgSettings, not meaningful for the subprimary
+    % Ingore the bgSettings, not meaningful for the channel
     % calibration.
     %
-    % Set the subprimaries of whichever primary we're using to the
+    % Set the channel of whichever primary we're using to the
     % values in targetSettings.
     %
-    % Set other two primaries to the arbitraryBlack setting, to get
+    % Set other two screen primaries to the arbitraryBlack setting, to get
     % ambient measurement out of the mud.
     
-    % Check the target primary is within the working range.
+    % Check the target screen primary is within the working range.
     if (obj.whichPrimary > obj.nPrimaries)
-        error('SACC display has only three primaries');
+        error('SACC display has only three screen primaries');
     end
     
     % Set the target subprimary settings here.
-    allPrimaries = [1:1:obj.nPrimaries];
-    otherPrimaries = setdiff(allPrimaries,obj.whichPrimary);
+    allScreenPrimaries = [1:1:obj.nPrimaries];
+    otherScreenPrimaries = setdiff(allScreenPrimaries,obj.whichPrimary);
     
-    subprimarySettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for the subprimary settings.
-    subprimarySettings(:,obj.whichPrimary) = targetSettings'; % Target primary setting.
-    subprimarySettings(:,otherPrimaries) = obj.arbitraryBlack; % Other primaries settings. 
+    channelSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for the subprimary settings.
+    channelSettings(:,obj.whichPrimary) = targetSettings'; % Target primary setting.
+    channelSettings(:,otherScreenPrimaries) = obj.arbitraryBlack; % Other primaries settings. 
     
-    SetChannelSettings(subprimarySettings);
+    SetChannelSettings(channelSettings);
     
 catch err
     sca;

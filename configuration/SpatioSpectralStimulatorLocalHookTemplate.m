@@ -53,6 +53,9 @@ setpref('BrainardLabToolbox','CalDataFolder',fullfile(baseDir,'SACC_materials','
 % Data dir
 setpref(projectName,'TestDataFolder',fullfile(baseDir,'SACC_datadev','TestData'));
 
+% Check data dir (This is for screen stability and channel additivity data)
+setpref(projectName,'CheckDataFolder',fullfile(baseDir,'SACC_materials','JandJProjector','CheckData'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.

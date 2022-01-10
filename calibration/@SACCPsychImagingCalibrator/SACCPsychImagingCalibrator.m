@@ -1,11 +1,10 @@
-% Subclass of @Calibrator based on PsychImaging-controlled (Psychtoolbox-3) graphics
-% and the subprimary control of the SACC display.
+% Subclass of @Calibrator based on PsychImaging-controlled (Psychtoolbox-3) graphics.
 %
-% 8/27/2021  dhb   Wrote it.
+% 8/05/2014  npc   Wrote it.
 %
 
-classdef SACCPrimaryCalibrator < Calibrator  
-    % Public properties (specific to the @SACCPrimaryCalibrator class) 
+classdef SACCPsychImagingCalibrator < Calibrator  
+    % Public properties (specific to the @PsychImagingCalibrator class) 
     properties
 
     end
@@ -23,17 +22,13 @@ classdef SACCPrimaryCalibrator < Calibrator
         
         % screenRect of screen to be calibrated
         screenRect;
-
-        % whichPrimary. This tells us which primary we are calibrating the
-        % subprimaries of.
-        whichPrimary = 1;
-
-        % normalMode. True if LEDs should be in normal mode.  False
-        % otherwise.
-        normalMode = true;
         
         % the original LUT (to be restored upon termination)
         origLUT;
+        
+        % normalMode. True if LEDs should be in normal mode.  False
+        % otherwise.
+        normalMode = true;
         
         % logical to physical mapping
         logicalToPhysical = [0:15];
@@ -43,25 +38,17 @@ classdef SACCPrimaryCalibrator < Calibrator
         
         % number of projector primaries
         nPrimaries = 3;
-        
-        % nInputLevels
-        nInputLevels = 253;
-        
-        % subprimary setting to determine black level for measurements.
-        arbitraryBlack = 0.05; % Range = 0-1
-        
     end
     
     
     % Public methods
     methods
         % Constructor
-        function obj = SACCPrimaryCalibrator(varargin)  
+        function obj = SACCPsychImagingCalibrator(varargin)  
             % Call the super-class constructor.
             obj = obj@Calibrator(varargin{:});
             
-            % Other properties
-            obj.graphicsEngine = 'SACCPrimary';
+            obj.graphicsEngine = 'PsychImaging';
             
             % Verify validity of screen params values
             obj.verifyScreenParamValues();

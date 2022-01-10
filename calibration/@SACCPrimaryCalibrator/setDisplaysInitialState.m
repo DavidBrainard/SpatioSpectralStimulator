@@ -81,9 +81,9 @@ end
 
 % Set subprimary settings here. Projector target primary is turn at all
 % subprimary settings, while the other primaries are turned off.
-subprimaryInitialSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings.
-subprimaryInitialSettings(:,obj.whichPrimary) = 1;
-SetChannelSettings(subprimaryInitialSettings);
+initialChannelSettings = zeros(obj.nSubprimaries,obj.nPrimaries); % Base matrix for subprimary settings.
+initialChannelSettings(:,obj.whichPrimary) = 1;
+SetChannelSettings(initialChannelSettings);
 
 % Wait for user
 if (userPrompt)

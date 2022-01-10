@@ -1,13 +1,22 @@
-% Executive script for object-oriented-based monitor calibration.
+% SACC_calibrateMonitor
 %
-% 3/27/2014  npc   Wrote it.
-% 8/05/2014  npc   Added option to conduct PsychImaging - based calibration
-% 3/02/2015  npc   Re-organized script so that settings and options are set in 
-%                  a single function.
-% 8/30/2016  JAR   Added calibration configuration for the InVivo Sensa Vue
-%                  Flat panel monitor located at the Stellar Chance 3T Magnet.
-% 10/18/2017 npc   Reset Radiometer before crashing
-% 12/12/2017 ana   Added eye tracker LCD case
+% Executive script for object-oriented-based monitor calibration.
+
+% History:
+%    03/27/2014  npc   Wrote it.
+%    08/05/2014  npc   Added option to conduct PsychImaging - based calibration
+%    03/02/2015  npc   Re-organized script so that settings and options are set in 
+%                      a single function.
+%    08/30/2016  jar   Added calibration configuration for the InVivo Sensa Vue
+%                      Flat panel monitor located at the Stellar Chance 3T Magnet.
+%    10/18/2017  npc   Reset Radiometer before crashing
+%    12/12/2017  ana   Added eye tracker LCD case
+%    11/24/2021  smo   Delete the RadiometerOBJ and substitue it with SACC
+%                      measurement codes. It works faster and fine.
+%    12/15/2021  smo   Copied the object @PsychImagingCalibrator from BLTB
+%                      and changed the name as @SACCPsychImagingCalibrator.
+%                      This is for using our SACC functions (cf.
+%                      measurement) in all calibrations. 
 
 function SACC_calibrateMonitor
     
@@ -57,12 +66,11 @@ function SACC_calibrateMonitor
         [displaySettings, calibratorOptions] = configFunctionHandle(runtimeParams);
     end
 
-    
-    % Generate the Radiometer object, here a PR650obj.
-    radiometerOBJ = generateRadiometerObject(calibrationConfig);
-    
+    % Open the spectroradiometer.
+    OpenSpectroradiometer;
+
     % Generate the calibrator object
-    calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, mfilename);
+    calibratorOBJ = generateCalibratorObject(displaySettings, mfilename);
     
     % Set the calibrator options
     calibratorOBJ.options = calibratorOptions;
@@ -91,9 +99,9 @@ function SACC_calibrateMonitor
         % Shutdown DBLab_Calibrator
         calibratorOBJ.shutDown();
         
-        % Shutdown DBLab_Radiometer object
-        radiometerOBJ.shutDown();
-    
+        % Shutdown spectroradiometer.
+          CloseSpectroradiometer;
+          
     catch err
         % Shutdown DBLab_Calibrator object  
         if (~isempty(calibratorOBJ))
@@ -101,8 +109,8 @@ function SACC_calibrateMonitor
             calibratorOBJ.shutDown();
         end
         
-        % Shutdown DBLab_Radiometer object
-        radiometerOBJ.shutDown();
+        % Shutdown spectroradiometer.
+        CloseSpectroradiometer;
 
         rethrow(err)
     end % end try/catch
@@ -142,12 +150,15 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
         'fgColor',                          [0.3962 0.3787 0.4039], ...     % color of the foreground
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
-        'nAverage',                         2, ...                          % number of repeated measurements for averaging
-        'nMeas',                            4, ...                          % samples along gamma curve
+        'nAverage',                         1, ...                          % number of repeated measurements for averaging
+        'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels 
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
-        'boxOffsetY',                       0 ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'boxOffsetY',                       0, ...                           % y-offset from center of screen (neg: upwards, pos: downwards)                      
+        'skipLinearityTest',                true, ...
+        'skipAmbientLightMeasurement',      true, ...
+        'skipBackgroundDependenceTest',     true ...
     );
 end
 
@@ -160,7 +171,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
     % Specify the @Calibrator's initialization params. 
     % Users should tailor these according to their hardware specs. 
     % These can be set once only, at the time the @Calibrator object is instantiated.
-    displayPrimariesNum = 15;
+    displayPrimariesNum = 16;
     displaySettings = { ...
         'screenToCalibrate',        2, ...                          % which display to calibrate. main screen = 1, second display = 2
         'desiredScreenSizePixel',   [1920 1080], ...                % pixels along the width and height of the display to be calibrated
@@ -178,9 +189,9 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'nInputLevels', 253, ...                                    % Number of input levels
         'normalMode', true, ...                                     % Normal mode (set to false for steady on mode)
         'arbitraryBlack', 0.05, ...                                 % Level to set other two primary's subprimaries to, when calibrating 
-        'nSubprimaries', 15, ...                                    % Number of subprimaries
-        'logicalToPhysical', [0:7 9:15], ...                        % Mapping of logical subprimary number to physical LED to write
-        'LEDWarmupDurationSeconds', 3 ...                           % Time in seconds to delay before each measurement for warming up the device    
+        'nSubprimaries', 16, ...                                    % Number of subprimaries
+        'logicalToPhysical', [0:15], ...                            % Mapping of logical subprimary number to physical LED to write
+        'LEDWarmupDurationSeconds', 0 ...                           % Time in seconds to delay before each measurement for warming up the device    
     );
 
     % Specify the @Calibrator's optional params using a CalibratorOptions object
@@ -198,7 +209,7 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
         'meterDistance',                    1.0, ...                        % distance between radiometer and screen in meters
         'leaveRoomTime',                    3, ...                          % seconds allowed to leave room
         'nAverage',                         1, ...                          % number of repeated measurements for averaging
-        'nMeas',                            5, ...                          % samples along gamma curve
+        'nMeas',                            10, ...                          % samples along gamma curve
         'nDevices',                         displayPrimariesNum, ...        % number of primaries
         'boxSize',                          600, ...                        % size of calibration stimulus in pixels
         'boxOffsetX',                       0, ...                          % x-offset from center of screen (neg: leftwards, pos:rightwards)         
@@ -211,88 +222,31 @@ function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrim
 end
 
 % Function to generate the calibrator object.
+%
 % Users should not modify this function unless they know what they are doing.
-function calibratorOBJ = generateCalibratorObject(displaySettings, radiometerOBJ, execScriptFileName)
-
+%
+% This function has been updated to exclude the radiometerOBJ to substitue
+% it with SACC measurement functions.
+function calibratorOBJ = generateCalibratorObject(displaySettings, execScriptFileName)
     % set init params
     calibratorInitParams = displaySettings;
-    
-    % add radiometerOBJ
-    calibratorInitParams{numel(calibratorInitParams)+1} = 'radiometerObj';
-    calibratorInitParams{numel(calibratorInitParams)+1} = radiometerOBJ;
-    
+
     % add executive script name
     calibratorInitParams{numel(calibratorInitParams)+1} ='executiveScriptName';
     calibratorInitParams{numel(calibratorInitParams)+1} = execScriptFileName;
         
     % Select and instantiate the calibrator object
-    calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, radiometerOBJ);
-end
-
-
-function radiometerOBJ = generateRadiometerObject(calibrationConfig)
-
-    if (strcmp(calibrationConfig, 'debugMode'))
-        % Dummy radiometer - measurements will be all zeros
-        radiometerOBJ = PR670dev('emulateHardware',  true);
-        fprintf('Will employ a dummy PR670dev radiometer (all measurements will be zeros).\n');
-        return;
-    end
-    
-    
-    % List of available @Radiometer objects
-    radiometerTypes = {'PR650dev', 'PR670dev', 'SpectroCALdev'};
-    radiometersNum  = numel(radiometerTypes);
-    
-    % Ask the user to select a calibrator type
-    fprintf('\n\n Available radiometer types:\n');
-    for k = 1:radiometersNum
-        fprintf('\t[%3d]. %s\n', k, radiometerTypes{k});
-    end
-    defaultRadiometerIndex = 1;
-    radiometerIndex = input(sprintf('\tSelect a radiometer type (1-%d) [%d]: ', radiometersNum, defaultRadiometerIndex));
-    if isempty(radiometerIndex) || (radiometerIndex < 1) || (radiometerIndex > radiometersNum)
-        radiometerIndex = defaultRadiometerIndex;
-    end
-    fprintf('\n\t-------------------------\n');
-    selectedRadiometerType = radiometerTypes{radiometerIndex};
-    fprintf('Will employ an %s radiometer object [%d].\n', selectedRadiometerType, radiometerIndex);
-    
-    if (strcmp(selectedRadiometerType, 'PR650dev'))
-        radiometerOBJ = PR650dev(...
-            'verbosity',        1, ...                  % 1 -> minimum verbosity
-            'devicePortString', '/dev/cu.KeySerial1');  % PR650 port string
-
-    elseif (strcmp(selectedRadiometerType, 'PR670dev'))
-        radiometerOBJ = PR670dev(...
-            'verbosity',        1, ...       % 1 -> minimum verbosity
-            'devicePortString', [] ...       % empty -> automatic port detection
-            );
-        
-        % Specify extra properties
-        desiredSyncMode = 'OFF';
-        desiredCyclesToAverage = 1;
-        desiredSensitivityMode = 'STANDARD';
-        desiredApertureSize = '1 DEG';
-        desiredExposureTime =  'ADAPTIVE';  % 'ADAPTIVE' or range [1-6000 msec] or [1-30000 msec]
-        
-        radiometerOBJ.setOptions(...
-        	'syncMode',         desiredSyncMode, ...
-            'cyclesToAverage',  desiredCyclesToAverage, ...
-            'sensitivityMode',  desiredSensitivityMode, ...
-            'apertureSize',     desiredApertureSize, ...
-            'exposureTime',     desiredExposureTime ...
-        );
-    elseif (strcmp(selectedRadiometerType, 'SpectroCALdev'))
-        radiometerOBJ = SpectroCALdev();
-    end
-    
+    calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams);
 end
 
 % Function to select and instantiate a particular calibrator type
-% Currently either MGL-based or PTB-3 based.
+%
 % Users should not modify this function unless they know what they are doing.
-function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, radiometerOBJ)
+% 
+% In this function, radiometerOBJ has been also deleted and we use SACC
+% measure function instead.
+function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams)
+
     % List of available @Calibrator objects
     calibratorTypes = {'MGL-based', 'PsychImaging-based (8-bit)' 'SACCPrimary'};
     calibratorsNum  = numel(calibratorTypes);
@@ -319,7 +273,7 @@ function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, ra
             calibratorOBJ = MGLcalibrator(calibratorInitParams);
             
         elseif strcmp(selectedCalibratorType, 'PsychImaging-based (8-bit)')
-            calibratorOBJ = PsychImagingCalibrator(calibratorInitParams);
+            calibratorOBJ = SACCPsychImagingCalibrator(calibratorInitParams);
 
         elseif strcmp(selectedCalibratorType, 'SACCPrimary')
             calibratorOBJ = SACCPrimaryCalibrator(calibratorInitParams);
@@ -327,7 +281,8 @@ function calibratorOBJ = selectAndInstantiateCalibrator(calibratorInitParams, ra
         
     catch err
         % Shutdown the radiometer
-        radiometerOBJ.shutDown();
+        CloseSpectroradiometer;
+        
         % Shutdown DBLab_Radiometer object  
         if (~isempty(calibratorOBJ))
             % Shutdown calibratorOBJ
