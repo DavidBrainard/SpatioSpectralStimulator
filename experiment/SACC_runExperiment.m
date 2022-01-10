@@ -5,6 +5,8 @@
 
 % History:
 %    01/03/22 smo    Started on it.
+%    01/10/22 smo    Both simulation and PTB versions working and added
+%                    beep sound when presenting the test image.
 
 %% Initialize.
 clear; close all;
@@ -20,7 +22,8 @@ nTrials = 3;
 timeDelayBtwImages = 1;
 
 VERBOSE = true;
-TURNONSCREEN = false;
+TURNONSCREEN = true;
+BEEPSOUND = false;
 
 %% Load the test images for the experiment.
 %
@@ -52,7 +55,10 @@ if (TURNONSCREEN)
         for tt = 1:nTrials
             % First Image.
             SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
-            MakeBeepSound;
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end
             
             % Make a time delay before displaying the other image of the
             % pair.
@@ -62,7 +68,10 @@ if (TURNONSCREEN)
             
             % Second Image.
             SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
-            MakeBeepSound;
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end 
             
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
@@ -123,8 +132,11 @@ if (~TURNONSCREEN)
             % Right side image.
             subplot(1,2,2); imshow(image);           
             
-            MakeBeepSound;
-        
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end 
+            
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
             end
