@@ -17,9 +17,10 @@ clear; close all;
 initialScreenSettings = [1 1 1];
 nTestImages = 2;
 nTrials = 3;
+timeDelayBtwImages = 1;
 
 VERBOSE = true;
-TURNONSCREEN = false;
+TURNONSCREEN = true;
 
 %% Load the test images for the experiment.
 %
@@ -44,21 +45,24 @@ image = theData.screenSettingsImage;
 % image on the projector using PTB.
 if (TURNONSCREEN)
     % Open the screen ready.
-    [winodw windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',VERBOSE);
+    [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',VERBOSE);
     
     % Display the test images here.
     for ii = 1:nTestImages
         for tt = 1:nTrials
             % First Image.
-            DisplayImagePTB(image, window, windowRect);
-            MakeBeepSound;
+            SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
+%             MakeBeepSound;
+            
+            % Make a time delay before displaying the other image of the
+            % pair.
+            for dd = 1:timeDelayBtwImages;
+                pause(1);
+            end
             
             % Second Image.
-            DisplayImagePTB(image, window, windowRect);
-            MakeBeepSound;
-            
-            % Add sound when presenting the test images
-            % PsychPortAudio
+            SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
+%             MakeBeepSound;
             
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
