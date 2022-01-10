@@ -20,7 +20,7 @@ nTrials = 3;
 timeDelayBtwImages = 1;
 
 VERBOSE = true;
-TURNONSCREEN = true;
+TURNONSCREEN = false;
 
 %% Load the test images for the experiment.
 %
@@ -52,7 +52,7 @@ if (TURNONSCREEN)
         for tt = 1:nTrials
             % First Image.
             SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
-%             MakeBeepSound;
+            MakeBeepSound;
             
             % Make a time delay before displaying the other image of the
             % pair.
@@ -62,7 +62,7 @@ if (TURNONSCREEN)
             
             % Second Image.
             SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
-%             MakeBeepSound;
+            MakeBeepSound;
             
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
@@ -107,7 +107,7 @@ if (~TURNONSCREEN)
     for ii = 1:nTestImages
         for tt = 1:nTrials
             figure; clf;
-            
+                        
             % Set the position and the size of the test image.
             imageFig = figure;
             x = screenXPixel*0.2;
@@ -121,8 +121,10 @@ if (~TURNONSCREEN)
             title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
             
             % Right side image.
-            subplot(1,2,2); imshow(image);
+            subplot(1,2,2); imshow(image);           
             
+            MakeBeepSound;
+        
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
             end
