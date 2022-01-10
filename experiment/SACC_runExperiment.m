@@ -51,9 +51,11 @@ if (TURNONSCREEN)
         for tt = 1:nTrials
             % First Image.
             DisplayImagePTB(image, window, windowRect);
+            MakeBeepSound;
             
             % Second Image.
             DisplayImagePTB(image, window, windowRect);
+            MakeBeepSound;
             
             % Add sound when presenting the test images
             % PsychPortAudio

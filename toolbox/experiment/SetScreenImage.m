@@ -1,7 +1,7 @@
-function [] = DisplayImagePTB(image,window,windowRect,options)
+function [] = SetScreenImage(image,window,windowRect,options)
 % This displays images on the screen using PTB.
 %
-% Syntax: [] = DisplayImagePTB(image)
+% Syntax: [] = SetScreenImage(image)
 %
 % Description: 
 %    This is to display test images in the experiment for the SACC project
@@ -37,5 +37,9 @@ end
 imageTexture = Screen('MakeTexture', window, image);
 Screen('DrawTexture', window, imageTexture, [], windowRect);
 Screen('Flip', window);
+
+if (options.verbose)
+    fprintf('Image is now being displayed on the screen...');
+end
 
 end
