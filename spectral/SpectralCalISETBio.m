@@ -1,8 +1,13 @@
 % SpectralCalISETBio
 %
-% Explore spectral fits with swubprimaries, this
-% version using the calibration structures and
-% ISETBio machinery.
+% Description:
+%    Explore spectral fits with swubprimaries, this
+%    version using the calibration structures and
+%    ISETBio machinery.
+%
+%    See SpectralCalCompute for a more elaborated version of
+%    this with more options, checks, and plots, but without
+%    ISETBio connection.
 %
 
 % History:
@@ -26,7 +31,7 @@ S = [380 2 201];
 %% Set key stimulus parameters
 %
 % Condition Name.
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -89,66 +94,8 @@ switch (conditionName)
         B_natural{2} = B_naturalRaw;
         B_natural{3} = B_naturalRaw;
 
-    case 'ConeIsolating'
-        % Background xy.
-        %
-        % Specify the chromaticity, but we'll chose the luminance based
-        % on the range available in the device.
-        targetBgxy = [0.3127 0.3290]';
-
-        % Target color direction and max contrasts.
-        %
-        % This is the basic desired modulation direction positive excursion. We go
-        % equally in positive and negative directions.  Make this unit vector
-        % length, as that is good convention for contrast.
-        targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
-
-        % Specify desired primary properties.
-        %
-        % These are the target contrasts for the three primaries. We want these to
-        % span a triangle around the line specified above. Here we define that
-        % triangle by hand.  May need a little fussing for other directions, and
-        % might be able to autocompute good choices.
-        targetScreenPrimaryContrastDir(:,1) = [1 0 0]'; targetScreenPrimaryContrastDir(:,1) = targetScreenPrimaryContrastDir(:,1)/norm(targetScreenPrimaryContrastDir(:,1));
-        targetScreenPrimaryContrastDir(:,2) = [0 1 0]'; targetScreenPrimaryContrastDir(:,2) = targetScreenPrimaryContrastDir(:,2)/norm(targetScreenPrimaryContrastDir(:,2));
-        targetScreenPrimaryContrastDir(:,3) = [0 0 1]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
-
-        % Set parameters for getting desired target primaries.
-        targetScreenPrimaryContrasts = [0.03 0.03 0.03];
-        targetPrimaryHeadroom = 1;
-        primaryHeadroom = 0.00;
-        targetLambda = 3;
-
-        % We may not need the whole direction contrast excursion. Specify max
-        % contrast we want relative to that direction vector.
-        % The first number is
-        % the amount we want to use, the second has a little headroom so we don't
-        % run into numerical error at the edges. The second number is used when
-        % defining the three primaries, the first when computing desired weights on
-        % the primaries.
-        spatialGaborTargetContrast = 0.04;
-        plotAxisLimit = 100*spatialGaborTargetContrast;
-
-        % Set up basis to try to keep spectra close to.
-        %
-        % This is how we enforce a smoothness or other constraint
-        % on the spectra.  What happens in the routine that finds
-        % primaries is that there is a weighted error term that tries to
-        % maximize the projection onto a passed basis set.
-        basisType = 'fourier';
-        nFourierBases = 7;
-        switch (basisType)
-            case 'cieday'
-                load B_cieday
-                B_naturalRaw = SplineSpd(S_cieday,B_cieday,S);
-            case 'fourier'
-                B_naturalRaw = MakeFourierBasis(S,nFourierBases);
-            otherwise
-                error('Unknown basis set specified');
-        end
-        B_natural{1} = B_naturalRaw;
-        B_natural{2} = B_naturalRaw;
-        B_natural{3} = B_naturalRaw;
+    otherwise
+        error('Unknown condition name specified')
 end
 
 %% Define calibration filenames/params.
@@ -168,8 +115,8 @@ channelNInputLevels = 253;
 %% Load screen calibration and refit its gamma
 screenCal = LoadCalFile(screenCalName);
 screenCalObj = ObjectToHandleCalOrCalStruct(screenCal);
-gammaMethod = 'identity';
-screenCalObj.set('gamma.fitType',gammaMethod);
+gammaFitMethod = 'identity';
+screenCalObj.set('gamma.fitType',gammaFitMethod);
 CalibrateFitGamma(screenCalObj, screenNInputLevels);
 
 %% Load channel calibrations.
@@ -199,73 +146,12 @@ T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
 load T_xyzJuddVos % Judd-Vos XYZ Color matching function
 T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
-%% Let's look at little at the channel calibration.
-%
-% Eventually this will be handled by the analyze program,
-% when it is generalized for more than three primaries.  But
-% we are impatient people so we will hack something up here.
-PLOT_CHANNELINVARIANCE = false;
-if (PLOT_CHANNELINVARIANCE)
-    gammaMeasurements = channelCals{1}.rawData.gammaCurveMeanMeasurements;
-    [~,nMeas,~] = size(gammaMeasurements);
-    for pp = 1:nChannels
-        maxSpd = squeeze(gammaMeasurements(pp,end,:));
-        figure;
-        subplot(1,2,1); hold on;
-        plot(wls,maxSpd,'r','LineWidth',3);
-        for mm = 1:nMeas-1
-            temp = squeeze(gammaMeasurements(pp,mm,:));
-            plot(wls,temp,'k','LineWidth',1);
-        end
-        subplot(1,2,2); hold on
-        plot(wls,maxSpd,'r','LineWidth',3);
-        for mm = 1:nMeas-1
-            temp = squeeze(gammaMeasurements(pp,mm,:));
-            scaleFactor = temp\maxSpd;
-            plot(wls,scaleFactor*temp,'k','LineWidth',1);
-        end
-    end
-end
-
-%% Plot channel gamma functions.
-PLOT_CHANNELGAMMA = false;
-if (PLOT_CHANNELGAMMA)
-    for pp = 1:nChannels
-        figure; hold on;
-        plot(channelCals{1}.rawData.gammaInput,channelCals{1}.rawData.gammaTable(:,pp),'ko','MarkerSize',12,'MarkerFaceColor','k');
-        plot(gammaInput,gammaTable(:,pp),'k','LineWidth',2);
-    end
-end
-
-%% Plot x,y if desired.
-PLOT_CHANNELCHROMATICITY = false;
-if (PLOT_CHANNELCHROMATICITY)
-    figure; hold on;
-    for pp = 1:nChannels
-        for mm = 1:nMeas
-            % XYZ calculation for each measurement
-            spd_temp = squeeze(gammaMeasurements(pp,mm,:));
-            XYZ_temp = T_xyz*spd_temp;
-            xyY_temp = XYZToxyY(XYZ_temp);
-
-            plot(xyY_temp(1,:),xyY_temp(2,:),'r.','Markersize',10); % Coordinates of the channel
-            xlabel('CIE x');
-            ylabel('CIE y');
-        end
-    end
-
-    % Add spectrum locus to plot, connected end to end
-    colorgamut=XYZToxyY(T_xyz);
-    colorgamut(:,end+1)=colorgamut(:,1);
-    plot(colorgamut(1,:),colorgamut(2,:),'k-');
-end
-
 %% Image spatial parameters.
-sineFreqCyclesPerImage = 6;
-gaborSdImageFraction = 0.1;
-
-% Image size in pixels
-imageN = 512;
+%
+% Image will be centered in display.
+sineFreqCyclesPerDeg = 3;
+gaborSdDeg = 3;
+stimulusSizeDeg = 10;
 
 %% Get half on spectrum.
 %
@@ -274,16 +160,6 @@ imageN = 512;
 halfOnChannels = 0.5*ones(nChannels,1);
 halfOnSpd = PrimaryToSpd(channelCalObjs{1},halfOnChannels);
 
-%% Make sure gamma correction behaves well with unquantized conversion.
-%
-% This is just a check, not a computational step we need.
-SetGammaMethod(channelCalObjs{1},0);
-halfOnSettings = PrimaryToSettings(channelCalObjs{1},halfOnChannels);
-halfOnPrimariesChk = SettingsToPrimary(channelCalObjs{1},halfOnSettings);
-if (max(abs(halfOnChannels-halfOnPrimariesChk)) > 1e-8)
-    error('Gamma self-inversion not sufficiently precise');
-end
-
 %% Use quantized conversion from here on.
 %
 % Comment in the line that refits the gamma to see
@@ -291,32 +167,12 @@ end
 %
 % CalibrateFitGamma(channelCalObjs{1},10);
 channelGammaMethod = 2;
-SetGammaMethod(channelCalObjs{1},channelGammaMethod);
-SetGammaMethod(channelCalObjs{2},channelGammaMethod);
-SetGammaMethod(channelCalObjs{3},channelGammaMethod);
+for cc = 1:3
+    SetGammaMethod(channelCalObjs{cc},channelGammaMethod);
+end
 
 %% Use extant machinery to get primaries from spectrum.
 %
-% This isn't used in our calculations.  Any difference in the
-% two lines here reflects a bug in the SpdToPrimary/PrimaryToSpd pair.
-if (VERBOSE)
-    halfOnPrimariesChk = SpdToPrimary(channelCalObjs{1},halfOnSpd);
-    halfOnSpdChk = PrimaryToSpd(channelCalObjs{1},halfOnPrimariesChk);
-    figure; hold on;
-    plot(wls,halfOnSpd,'r','LineWidth',3);
-    plot(wls,halfOnSpdChk,'k','LineWidth',1);
-
-    % Show effect of quantization.
-    %
-    % It's very small at the nominal 253 levels of the subprimaries, but will
-    % increase if you refit the gamma functios to a small number of levels.
-    halfOnPrimariesChk = SpdToPrimary(channelCalObjs{1},halfOnSpd);
-    halfOnSettingsChk = PrimaryToSettings(channelCalObjs{1},halfOnPrimariesChk);
-    halfOnPrimariesChk1 = SettingsToPrimary(channelCalObjs{1},halfOnSettingsChk);
-    halfOnSpdChk1 = PrimaryToSpd(channelCalObjs{1},halfOnPrimariesChk1);
-    plot(wls,halfOnSpdChk1,'g','LineWidth',1);
-end
-
 % Define wavelength range that will be used to enforce the smoothnes
 % through the projection onto an underlying basis set.  We don't the whole
 % visible spectrum as putting weights on the extrema where people are not
@@ -433,15 +289,52 @@ screenGammaMethod = 2;
 SetGammaMethod(screenCalObj,screenGammaMethod);
 
 %% Create ISETBio display from the calibration file
-screenCalStruct = screenCalObj.cal;
-screenCalStruct.describe.displayDescription.screenSizeMM = [508 285];
-screenCalStruct.describe.displayDescription.screenSizePixel = [1920 1080];
+%
+% The DMD dimensions and distance are dummied up so that the visual
+% angle matches that of our optical system, but so that the optical
+% distance is large enough to mimic optical infinity.
+%
+% Currently screen size in degrees is made up.  
+screenHorizPixels = 1920;
+screenVertPixels = 1080;
+screenSizeDeg = [20 20*screenVertPixels/screenHorizPixels];
+screenPixelsPerDeg = round(mean([screenSizeDeg ./ [screenHorizPixels screenVertPixels]]));
+screenDistanceVirtualMeters = 10;
+screenSizeMeters = 2*screenDistanceVirtualMeters*[atand(screenSizeDeg(1)/2) atand(screenSizeDeg(2)/2)];
+
+% Create ISETBio display
 extraCalData = ptb.ExtraCalData;
-extraCalData.distance = 2;
+extraCalData.distance = screenDistanceVirtualMeters;
+screenCalStruct = screenCalObj.cal;
+screenCalStruct.describe.displayDescription.screenSizeMM = 1000*screenSizeMeters;
+screenCalStruct.describe.displayDescription.screenSizePixel = [screenHorizPixels screenVertPixels];
 screenDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
 
 %% Get calibration structure back out
-screenCalStructFromDisplay = ptb.GeneratePTBCalStructFromIsetbioDisplayObject(screenDisplayObject);
+%
+% This should match screenCalObj, and we should be able to get same image
+% data from the ISETBio scene as from the PTB routines.
+screenCalStructFromDisplay = ptb.GeneratePTCalStructFromIsetbioDisplayObject(screenDisplayObject);
+screenCalObjFromDisplay = ObjectToHandleCalOrCalStruct(screenCalStructFromDisplay);
+SetSensorColorSpace(screenCalObjFromDisplay,T_cones,S);
+SetGammaMethod(screenCalObjFromDisplay,screenGammaMethod);
+
+% Let's check that what comes back is what went in.
+if (any(any(screenCalObj.get('S') ~= screenCalObjFromDisplay.get('S'))))
+    error('Wavelength support distorted in and out of ISETBio display object');
+end
+if (any(any(screenCalObj.get('P_device') ~= screenCalObjFromDisplay.get('P_device'))))
+    error('Device primaries distorted in and out of ISETBio display object');
+end
+if (any(any(screenCalObj.get('gammaInput') ~= screenCalObjFromDisplay.get('gammaInput'))))
+    error('Gamma table input distorted in and out of ISETBio display object');
+end
+if (any(any(screenCalObj.get('gammaTable') ~= screenCalObjFromDisplay.get('gammaTable'))))
+    error('Gamma table distorted in and out of ISETBio display object');
+end
+if (any(any(screenCalObj.get('P_ambient') ~= screenCalObjFromDisplay.get('P_ambient'))))
+    error('Ambient spd distorted in and out of ISETBio display object');
+end
 
 %% Set up desired background.
 %
@@ -464,10 +357,22 @@ fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
 % This is our monochrome contrast modulation image.  Multiply
 % by the max contrast vector to get the LMS contrast image.
 fprintf('Making Gabor contrast image\n');
-centerN = imageN/2;
-gaborSdPixels = gaborSdImageFraction*imageN;
-rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,imageN);
-gaussianWindow = normpdf(MakeRadiusMat(imageN,imageN,centerN,centerN),0,gaborSdPixels);
+
+% Stimulus goes into a square image.  Want number of pixels
+% to be even.
+stimulusN = round*(stimulusSizeDeg*screenPixelsPerDeg);
+if (rem(stimulusN,2) ~= 0)
+    stimulusN = stimulusN+1;
+end
+centerN = stimulusN/2;
+
+% Convert image parameters in degrees to those in pixels.
+sineFreqCyclesPerImage = sineFreqCyclesPerDeg;
+gaborSdImageFraction = 0.1;
+
+gaborSdPixels = gaborSdImageFraction*stimulusN;
+rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,stimulusN);
+gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
 rawMonochromeUnquantizedContrastGaborImage = rawMonochromeSineImage.*gaussianWindow;
 
@@ -580,17 +485,17 @@ if (SLOWMETHODCHECK)
 end
 
 %% Convert representations we want to take forward to image format
-desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,imageN,imageN);
-standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,imageN,imageN);
-standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,imageN,imageN);
-uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,imageN,imageN);
+desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,stimulusN,stimulusN);
+standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,stimulusN,stimulusN);
+standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,stimulusN,stimulusN);
+uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = T_xyz*desiredSpdGaborCal;
 SRGBPrimaryCal = XYZToSRGBPrimary(predictedXYZCal);
 scaleFactor = max(SRGBPrimaryCal(:));
 SRGBCal = SRGBGammaCorrect(SRGBPrimaryCal/(2*scaleFactor),0);
-SRGBImage = uint8(CalFormatToImage(SRGBCal,imageN,imageN));
+SRGBImage = uint8(CalFormatToImage(SRGBCal,stimulusN,stimulusN));
 
 % Show the SRGB image
 figure; imshow(SRGBImage);
@@ -606,14 +511,14 @@ title('Image of settings');
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
 figure; hold on
-plot(1:imageN,100*standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:imageN,100*standardPredictedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:imageN,100*standardPredictedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 if (screenGammaMethod == 2)
     title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone Contrast');
 else
@@ -628,14 +533,14 @@ ylim([-plotAxisLimit plotAxisLimit]);
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
 figure; hold on
-plot(1:imageN,100*uniqueQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:imageN,100*uniqueQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:imageN,100*uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:imageN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
