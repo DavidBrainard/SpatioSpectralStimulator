@@ -149,8 +149,8 @@ T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 %% Image spatial parameters.
 %
 % Image will be centered in display.
-sineFreqCyclesPerDeg = 3;
-gaborSdDeg = 3;
+sineFreqCyclesPerDeg = 1;
+gaborSdDeg = 1.5;
 stimulusSizeDeg = 10;
 
 %% Get half on spectrum.
@@ -290,17 +290,37 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 
 %% Create ISETBio display from the calibration file
 %
+% On the DMD size, Derek writes (email 2022-01-11):
+%     Looking at the system design, I find that the conversion is 7.74350
+%     degrees : 12 mm = 0.64529 degrees per mm. This indicates that the
+%     diagonal of the DMD occupies a FOV of 2*7.74350 = 15.487 degrees ~
+%     15.5 degrees.
+%
+%     We can use this to solve for the h and v size in degrees.
+%     Let the horizontal size by x and the diagonal be d.  We know
+%     that d^2 = x^2 * (1+(screenVertPixels/screenHorizPixels)^2). So
+%     x = sqrt(d^2/(1+(screenVertPixels/screenHorizPixels)^2)).
+%
 % The DMD dimensions and distance are dummied up so that the visual
 % angle matches that of our optical system, but so that the optical
 % distance is large enough to mimic optical infinity.
 %
-% Currently screen size in degrees is made up.  
+% Currently screen size in degrees is made up. 
+screenDiagSizeDeg = 15.5;
+inchesPerMeter = 39.3701;
 screenHorizPixels = 1920;
 screenVertPixels = 1080;
-screenSizeDeg = [20 20*screenVertPixels/screenHorizPixels];
-screenPixelsPerDeg = round(mean([screenSizeDeg ./ [screenHorizPixels screenVertPixels]]));
+screenHorizontalSizeDeg = sqrt(screenDiagSizeDeg^2/(1+(screenVertPixels/screenHorizPixels)^2));
+screenSizeDeg = screenHorizontalSizeDeg*[1 screenVertPixels/screenHorizPixels];
+checkDiagSizeDeg = vecnorm(screenSizeDeg);
+if (abs((checkDiagSizeDeg-screenDiagSizeDeg)/screenDiagSizeDeg) > 1e-5)
+    error('You did not understand what Pythagoras said!');
+end
+screenPixelsPerDeg = round(mean([[screenHorizPixels screenVertPixels] ./ screenSizeDeg]));
 screenDistanceVirtualMeters = 10;
-screenSizeMeters = 2*screenDistanceVirtualMeters*[atand(screenSizeDeg(1)/2) atand(screenSizeDeg(2)/2)];
+screenSizeMeters = 2*screenDistanceVirtualMeters*[tand(screenSizeDeg(1)/2) tand(screenSizeDeg(2)/2)];
+screenSizeInches = screenSizeMeters*inchesPerMeter;
+screenDpi = mean([screenHorizPixels screenVertPixels] ./ screenSizeInches);
 
 % Create ISETBio display
 extraCalData = ptb.ExtraCalData;
@@ -308,13 +328,14 @@ extraCalData.distance = screenDistanceVirtualMeters;
 screenCalStruct = screenCalObj.cal;
 screenCalStruct.describe.displayDescription.screenSizeMM = 1000*screenSizeMeters;
 screenCalStruct.describe.displayDescription.screenSizePixel = [screenHorizPixels screenVertPixels];
-screenDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
+screenISETBioDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
+screenISETBioDisplayObject = rmfield(screenISETBioDisplayObject,'dixel');
 
 %% Get calibration structure back out
 %
 % This should match screenCalObj, and we should be able to get same image
 % data from the ISETBio scene as from the PTB routines.
-screenCalStructFromDisplay = ptb.GeneratePTCalStructFromIsetbioDisplayObject(screenDisplayObject);
+screenCalStructFromDisplay = ptb.GeneratePTCalStructFromIsetbioDisplayObject(screenISETBioDisplayObject);
 screenCalObjFromDisplay = ObjectToHandleCalOrCalStruct(screenCalStructFromDisplay);
 SetSensorColorSpace(screenCalObjFromDisplay,T_cones,S);
 SetGammaMethod(screenCalObjFromDisplay,screenGammaMethod);
@@ -359,21 +380,29 @@ fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
 fprintf('Making Gabor contrast image\n');
 
 % Stimulus goes into a square image.  Want number of pixels
-% to be even.
-stimulusN = round*(stimulusSizeDeg*screenPixelsPerDeg);
+% to be even. If we adjust pixels, also adjust image size in 
+% degrees.
+stimulusN = round(stimulusSizeDeg*screenPixelsPerDeg);
 if (rem(stimulusN,2) ~= 0)
     stimulusN = stimulusN+1;
+    stimulusSizeDeg = stimulusN/screenPixelsPerDeg;
 end
 centerN = stimulusN/2;
 
 % Convert image parameters in degrees to those in pixels.
-sineFreqCyclesPerImage = sineFreqCyclesPerDeg;
-gaborSdImageFraction = 0.1;
+sineFreqCyclesPerImage = sineFreqCyclesPerDeg*stimulusSizeDeg;
+gaborSdPixels = gaborSdDeg*screenPixelsPerDeg;
 
-gaborSdPixels = gaborSdImageFraction*stimulusN;
+% Make sine image. The function MakeSineImage actually makes plaids. By
+% making the horozontal frequency (first argument) 0, we get a vertical
+% sinusoid.
 rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,stimulusN);
+
+% Make Gaussian window and normalize its max to one.
 gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,gaborSdPixels);
 gaussianWindow = gaussianWindow/max(gaussianWindow(:));
+
+% Multiply to get Gabor
 rawMonochromeUnquantizedContrastGaborImage = rawMonochromeSineImage.*gaussianWindow;
 
 % Put it into cal format.  Each pixel in cal format is one column.  Here
@@ -425,40 +454,6 @@ standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcit
 %% Set up point cloud of contrasts for all possible settings
 [contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
 
-%% Find settings by exhaustive search of point cloud for each pixel
-%
-% Go through the gabor image, and for each pixel find the settings that
-% come as close as possible to producing the desired excitations.
-% Conceptually straightforward, but a bit slow.
-SLOWMETHODCHECK = false;
-if (SLOWMETHODCHECK)
-    tic;
-    fprintf('Point cloud exhaustive method, finding image settings\n')
-    printIter = 10000;
-    ptCldSettingsGaborCal = zeros(3,size(desiredContrastGaborCal,2));
-    minIndex = zeros(1,size(desiredContrastGaborCal,2));
-    for ll = 1:size(desiredContrastGaborCal,2)
-        if (rem(ll,printIter) == 0)
-            fprintf('Finding settings for iteration %d of %d\n',ll,size(desiredContrastGaborCal,2));
-        end
-        minIndex = findNearestNeighbors(contrastPtCld,desiredContrastGaborCal(:,ll)',1);
-        ptCldSettingsGaborCal(:,ll) = ptCldSettingsCal(:,minIndex);
-    end
-    toc
-
-    % Get contrasts we think we have obtained.
-    ptCldExcitationsGaborCal = SettingsToSensor(screenCalObj,ptCldSettingsGaborCal);
-    ptCldContrastGaborCal = ExcitationsToContrast(ptCldExcitationsGaborCal,screenBgExcitations);
-
-    % Plot of how well pixelwise point cloud method does in obtaining desired contrats
-    figure; clf;
-    plot(desiredContrastGaborCal(:),ptCldContrastGaborCal(:),'r+');
-    axis('square');
-    xlabel('Desired L, M or S contrast');
-    ylabel('Predicted L, M, or S contrast');
-    title('Pixelwise point cloud image method');
-end
-
 %% Get image from point cloud, in cal format
 uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(contrastPtCld,desiredContrastGaborCal,ptCldSettingsCal);
 
@@ -477,18 +472,48 @@ xlabel('Desired L, M or S contrast');
 ylabel('Predicted L, M, or S contrast');
 title('Quantized unique point cloud image method');
 
-% Check that we get the same answer
-if (SLOWMETHODCHECK)
-    if (max(abs(uniqueQuantizedContrastGaborCal(:)-uniqueQuantizedContrastGaborCal(:))) > 0)
-        fprintf('Point cloud and unique method methods do not agree\n');
-    end
-end
-
 %% Convert representations we want to take forward to image format
 desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,stimulusN,stimulusN);
 standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,stimulusN,stimulusN);
 standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,stimulusN,stimulusN);
 uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+
+%% Put the image into an ISETBio scene
+%
+% Some of these calls seem really slow.  Look at with profiler.
+ISETBioGaborScene = sceneFromFile(standardSettingsGaborImage,'rgb', [], screenISETBioDisplayObject);
+sceneWindow(ISETBioGaborScene);
+
+% Check stimulus dimensions match. Not quite at present.  Why not?
+screenSizeMetersCheck = [sceneGet(ISETBioGaborScene,'width') ...
+                         sceneGet(ISETBioGaborScene,'height')];
+screenHorizontalSizeDegCheck = sceneGet(ISETBioGaborScene,'horizontal fov');
+
+% Calculate cone contrasts from the ISETBio scene.
+% These had better match what we get when we compute outside of ISETBio.
+% And indeed the cone excitations are very close.
+ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy');
+[ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
+ISETBioPredictedExcitationsGaborCal = T_cones*ISETBioGaborCal;
+limMin = 0.01; limMax = 0.02;
+figure; clf; hold on;
+plot(standardPredictedExcitationsGaborCal(1,:),ISETBioPredictedExcitationsGaborCal(1,:),'r+');
+plot(standardPredictedExcitationsGaborCal(2,:),ISETBioPredictedExcitationsGaborCal(2,:),'g+');
+plot(standardPredictedExcitationsGaborCal(3,:),ISETBioPredictedExcitationsGaborCal(3,:),'b+');
+plot([limMin limMax],[limMin limMax]);
+xlabel('Standard Cone Excitations');
+ylabel('ISETBio Cone Excitations');
+axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
+title('Cone Excitations Comparison');
+if (max(abs(standardPredictedExcitationsGaborCal(:)-ISETBioPredictedExcitationsGaborCal(:)) ./ ...
+    standardPredictedExcitationsGaborCal(:)) > 1e-6)
+    error('Standard and ISETBio data do not agree well enough');
+end
+
+%% Compute cone contrasts from ISETBio scene
+%
+% These should match closely what we get when we do the same thing via PTB
+% routines.
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = T_xyz*desiredSpdGaborCal;
