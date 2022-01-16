@@ -199,7 +199,7 @@ screenBackgroundScaleFactor = 0.5;
 % approximate channel gamut we aim the background at.
 for pp = 1:nScreenPrimaries
     [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
-        B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
+        B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',false);
 end
 if (any(channelBackgroundPrimaries < 0) | any(channelBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
@@ -244,6 +244,7 @@ isolatingNaturalApproxSpd2 = B_natural{2}*(B_natural{2}(projectIndices,:)\screen
 isolatingNaturalApproxSpd3 = B_natural{3}*(B_natural{3}(projectIndices,:)\screenPrimarySpd(projectIndices,3));
 
 % Plot of the screen primary spectra.
+figure; clf; 
 subplot(2,2,1); hold on
 plot(wls,screenPrimarySpd(:,1),'b','LineWidth',2);
 plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
@@ -305,55 +306,78 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 % angle matches that of our optical system, but so that the optical
 % distance is large enough to mimic optical infinity.
 %
-% Currently screen size in degrees is made up. 
+% Display parameters
 screenDiagSizeDeg = 15.5;
+screenDistanceVirtualMeters = 10;
 inchesPerMeter = 39.3701;
-screenHorizPixels = 1920;
-screenVertPixels = 1080;
-screenHorizontalSizeDeg = sqrt(screenDiagSizeDeg^2/(1+(screenVertPixels/screenHorizPixels)^2));
-screenSizeDeg = screenHorizontalSizeDeg*[1 screenVertPixels/screenHorizPixels];
-checkDiagSizeDeg = vecnorm(screenSizeDeg);
-if (abs((checkDiagSizeDeg-screenDiagSizeDeg)/screenDiagSizeDeg) > 1e-5)
+screenHorizSizePixels = 1920;
+screenVertSizePixels = 1080;
+
+% Figure out virtual size in meters to produce desired diagonal size in deg
+% Note that we need to do this along the diagonal because degrees aren't
+% linear in meters, so we want to work first in the physical units of the
+% display, not in degrees.
+screenDiagSizeMeters = 2*screenDistanceVirtualMeters*tand(screenDiagSizeDeg/2);
+screenHorizSizeMeters = sqrt(screenDiagSizeMeters^2/(1+(screenVertSizePixels/screenHorizSizePixels)^2));
+screenVertSizeMeters = screenHorizSizeMeters*screenVertSizePixels/screenHorizSizePixels;
+screenSizeMeters = [screenHorizSizeMeters screenVertSizeMeters];
+screenSizeInches = screenSizeMeters*inchesPerMeter;
+if (abs((screenDiagSizeMeters - vecnorm(screenSizeMeters))/screenDiagSizeMeters) > 1e-6)
     error('You did not understand what Pythagoras said!');
 end
-screenPixelsPerDeg = round(mean([[screenHorizPixels screenVertPixels] ./ screenSizeDeg]));
-screenDistanceVirtualMeters = 10;
-screenSizeMeters = 2*screenDistanceVirtualMeters*[tand(screenSizeDeg(1)/2) tand(screenSizeDeg(2)/2)];
-screenSizeInches = screenSizeMeters*inchesPerMeter;
-screenDpi = mean([screenHorizPixels screenVertPixels] ./ screenSizeInches);
 
-% Create ISETBio display
+% Collect up screen size in pixels
+screenSizePixels = [screenHorizSizePixels screenVertSizePixels];
+screenDiagSizePixels = vecnorm(screenSizePixels);
+
+% Get dpi and make sure everything is consistent.
+screenDpi = vecnorm(screenSizePixels)/vecnorm(screenSizeInches);
+screenDpiChk = mean(screenSizePixels ./ screenSizeInches);
+if (abs((screenDpi - vecnorm(screenDpiChk))/screenDpi) > 1e-6)
+    error('Screen is not rigid');
+end
+screenDpm = screenDpi*inchesPerMeter;
+
+% Get horizontal and vertical size of screen in degrees. We take pixels per
+% degree along the diagonal as the best compromise, need to use that when
+% we compute image sizes below.
+screenSizeDeg = 2*atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
+screenSizeHorizDeg = screenSizeDeg(1);
+screenSizeVertDeg = screenSizeDeg(2);
+screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
+
+% Create ISETBio display.
 extraCalData = ptb.ExtraCalData;
 extraCalData.distance = screenDistanceVirtualMeters;
 screenCalStruct = screenCalObj.cal;
 screenCalStruct.describe.displayDescription.screenSizeMM = 1000*screenSizeMeters;
-screenCalStruct.describe.displayDescription.screenSizePixel = [screenHorizPixels screenVertPixels];
-screenISETBioDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
-screenISETBioDisplayObject = rmfield(screenISETBioDisplayObject,'dixel');
+screenCalStruct.describe.displayDescription.screenSizePixel = [screenHorizSizePixels screenVertSizePixels];
+ISETBioDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
+ISETBioDisplayObject = rmfield(ISETBioDisplayObject,'dixel');
 
 %% Get calibration structure back out
 %
 % This should match screenCalObj, and we should be able to get same image
 % data from the ISETBio scene as from the PTB routines.
-screenCalStructFromDisplay = ptb.GeneratePTCalStructFromIsetbioDisplayObject(screenISETBioDisplayObject);
-screenCalObjFromDisplay = ObjectToHandleCalOrCalStruct(screenCalStructFromDisplay);
-SetSensorColorSpace(screenCalObjFromDisplay,T_cones,S);
-SetGammaMethod(screenCalObjFromDisplay,screenGammaMethod);
+screenCalStructFromISETBio = ptb.GeneratePTCalStructFromIsetbioDisplayObject(ISETBioDisplayObject);
+screenCalObjFromISETBio = ObjectToHandleCalOrCalStruct(screenCalStructFromISETBio);
+SetSensorColorSpace(screenCalObjFromISETBio,T_cones,S);
+SetGammaMethod(screenCalObjFromISETBio,screenGammaMethod);
 
 % Let's check that what comes back is what went in.
-if (any(any(screenCalObj.get('S') ~= screenCalObjFromDisplay.get('S'))))
+if (any(any(screenCalObj.get('S') ~= screenCalObjFromISETBio.get('S'))))
     error('Wavelength support distorted in and out of ISETBio display object');
 end
-if (any(any(screenCalObj.get('P_device') ~= screenCalObjFromDisplay.get('P_device'))))
+if (any(any(screenCalObj.get('P_device') ~= screenCalObjFromISETBio.get('P_device'))))
     error('Device primaries distorted in and out of ISETBio display object');
 end
-if (any(any(screenCalObj.get('gammaInput') ~= screenCalObjFromDisplay.get('gammaInput'))))
+if (any(any(screenCalObj.get('gammaInput') ~= screenCalObjFromISETBio.get('gammaInput'))))
     error('Gamma table input distorted in and out of ISETBio display object');
 end
-if (any(any(screenCalObj.get('gammaTable') ~= screenCalObjFromDisplay.get('gammaTable'))))
+if (any(any(screenCalObj.get('gammaTable') ~= screenCalObjFromISETBio.get('gammaTable'))))
     error('Gamma table distorted in and out of ISETBio display object');
 end
-if (any(any(screenCalObj.get('P_ambient') ~= screenCalObjFromDisplay.get('P_ambient'))))
+if (any(any(screenCalObj.get('P_ambient') ~= screenCalObjFromISETBio.get('P_ambient'))))
     error('Ambient spd distorted in and out of ISETBio display object');
 end
 
@@ -382,12 +406,16 @@ fprintf('Making Gabor contrast image\n');
 % Stimulus goes into a square image.  Want number of pixels
 % to be even. If we adjust pixels, also adjust image size in 
 % degrees.
-stimulusN = round(stimulusSizeDeg*screenPixelsPerDeg);
+stimulusN = round(vecnorm([stimulusSizeDeg stimulusSizeDeg])*screenPixelsPerDeg/sqrt(2));
 if (rem(stimulusN,2) ~= 0)
     stimulusN = stimulusN+1;
-    stimulusSizeDeg = stimulusN/screenPixelsPerDeg;
 end
 centerN = stimulusN/2;
+
+% Compute expected stimulus size in degrees based on actual
+% pixels in the square image
+stimulusHorizSizeDeg = vecnorm([stimulusN stimulusN])/(screenPixelsPerDeg*sqrt(2));
+stimulusHorizSizeMeters = stimulusN/screenDpm;
 
 % Convert image parameters in degrees to those in pixels.
 sineFreqCyclesPerImage = sineFreqCyclesPerDeg*stimulusSizeDeg;
@@ -480,19 +508,30 @@ uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGabo
 
 %% Put the image into an ISETBio scene
 %
-% Some of these calls seem really slow.  Look at with profiler.
-ISETBioGaborScene = sceneFromFile(standardSettingsGaborImage,'rgb', [], screenISETBioDisplayObject);
+% These calls are a bit slow for large images and the fine wavelength
+% sampling used here. But these would be done as pre-compute steps so
+% it doesn't seem worth trying to optimize at this point.
+ISETBioGaborScene = sceneFromFile(standardSettingsGaborImage,'rgb', [], ISETBioDisplayObject);
 sceneWindow(ISETBioGaborScene);
 
-% Check stimulus dimensions match. Not quite at present.  Why not?
-screenSizeMetersCheck = [sceneGet(ISETBioGaborScene,'width') ...
-                         sceneGet(ISETBioGaborScene,'height')];
-screenHorizontalSizeDegCheck = sceneGet(ISETBioGaborScene,'horizontal fov');
+% Check stimulus dimensions match. These are good to about a percent, which 
+% we can live with.
+stimulusHorizSizeMetersChk = sceneGet(ISETBioGaborScene,'width');
+stimulusHorizSizeDegChk = sceneGet(ISETBioGaborScene,'horizontal fov');
+if (abs(stimulusHorizSizeMeters - stimulusHorizSizeMetersChk)/stimulusHorizSizeMeters > 0.01)
+    error('Horizontal size in meters mismatch of too much');
+end
+if (abs(stimulusHorizSizeDeg - stimulusHorizSizeDegChk)/stimulusHorizSizeDeg > 0.01)
+    error('Horizontal size in deg mismatch of too much');
+end
 
-% Calculate cone contrasts from the ISETBio scene.
-% These had better match what we get when we compute outside of ISETBio.
-% And indeed the cone excitations are very close.
-ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy');
+% Calculate cone excitations from the ISETBio scene.
+% These should match what we get when we compute
+% outside of ISETBio. And indeed!
+
+% ISETBio energy comes back as power per nm, we need to convert to power
+% per wlband to work with PTB, by multiplying by S(2).
+ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy')*S(2);
 [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
 ISETBioPredictedExcitationsGaborCal = T_cones*ISETBioGaborCal;
 limMin = 0.01; limMax = 0.02;
@@ -510,10 +549,13 @@ if (max(abs(standardPredictedExcitationsGaborCal(:)-ISETBioPredictedExcitationsG
     error('Standard and ISETBio data do not agree well enough');
 end
 
-%% Compute cone contrasts from ISETBio scene
-%
-% These should match closely what we get when we do the same thing via PTB
-% routines.
+% Go back to the RGB image starting with the ISETBio representation.
+PrimaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device')\ ...
+    (ISETBioGaborCal-screenCalObjFromISETBio.get('P_ambient'));
+settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,PrimaryFromISETBioGaborCal);
+if (max(abs(standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardSettingsGaborCal(:)) > 1e-6)
+    error('Cannot get home again in settings land');
+end
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = T_xyz*desiredSpdGaborCal;
