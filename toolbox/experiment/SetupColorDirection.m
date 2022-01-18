@@ -13,23 +13,33 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 %    elsewhere, see the "See also" list below.
 %
 % Inputs:
-%    conditionName        - String containing the type name for the direction.
+%    conditionName           - String containing the type name for the
+%                              direction.
 %
 % Outputs:
-%    colorDirectionParams - Structure with the needed parameters.
+%    colorDirectionParams    - Structure with the needed parameters.
 %
 % Optional key/value pairs:
 %
-% See also: SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
-%           SpectralCalISETBio
+% See also: 
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
 % History:
-%   01/18/22  dhb, smo    - Wrote it
+%   01/18/22  dhb, smo       - Wrote it
 
-% Some parameters which might become key/value pairs
+%% Set parameters.
+arguments
+    conditionName (1,1) {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
+    options
+end
+
+%% Set some initial parameters on the struct here.
+%
+% Some parameters which might become key/value pairs.
 colorDirectionParams.fieldSizeDegrees = 2;
 
-% Set condition name
+% Set condition name.
 colorDirectionParams.conditionName = conditionName;
 
 % Set wavelength support.
@@ -49,15 +59,15 @@ switch (colorDirectionParams.conditionName)
         % Specify the chromaticity, but we'll chose the luminance based
         % on the range available in the device.
         colorDirectionParams.targetBgxy = [0.3127 0.3290]';
-
+        
         % Target color direction and max contrasts.
         %
         % This is the basic desired modulation direction positive excursion. We go
         % equally in positive and negative directions.  Make this unit vector
         % length, as that is good convention for contrast.
         colorDirectionParams.targetStimulusContrastDir = [1 -1 0]';
-        colorDirectionParams.targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
-
+        colorDirectionParams.targetStimulusContrastDir = colorDirectionParams.targetStimulusContrastDir / norm(colorDirectionParams.targetStimulusContrastDir);
+        
         % Specify desired primary properties.
         %
         % These are the target contrasts for the three primaries. We want these to
@@ -65,18 +75,18 @@ switch (colorDirectionParams.conditionName)
         % triangle by hand.  May need a little fussing for other directions, and
         % might be able to autocompute good choices.
         colorDirectionParams.targetScreenPrimaryContrastDir(:,1) = [-1 1 0]';
-        colorDirectionParams.targetScreenPrimaryContrastDir(:,1) = targetScreenPrimaryContrastDir(:,1)/norm(targetScreenPrimaryContrastDir(:,1));
+        colorDirectionParams.targetScreenPrimaryContrastDir(:,1) = colorDirectionParams.targetScreenPrimaryContrastDir(:,1) / norm(colorDirectionParams.targetScreenPrimaryContrastDir(:,1));
         colorDirectionParams.targetScreenPrimaryContrastDir(:,2) = [1 -1 0.5]';
-        colorDirectionParams.targetScreenPrimaryContrastDir(:,2) = targetScreenPrimaryContrastDir(:,2)/norm(targetScreenPrimaryContrastDir(:,2));
+        colorDirectionParams.targetScreenPrimaryContrastDir(:,2) = colorDirectionParams.targetScreenPrimaryContrastDir(:,2) / norm(colorDirectionParams.targetScreenPrimaryContrastDir(:,2));
         colorDirectionParams.targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]';
-        colorDirectionParams.targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
-
+        colorDirectionParams.targetScreenPrimaryContrastDir(:,3) = colorDirectionParams.targetScreenPrimaryContrastDir(:,3) / norm(colorDirectionParams.targetScreenPrimaryContrastDir(:,3));
+        
         % Set parameters for getting desired target primaries.
         colorDirectionParams.targetScreenPrimaryContrasts = [0.05 0.05 0.05];
         colorDirectionParams.targetPrimaryHeadroom = 1.05;
         colorDirectionParams.primaryHeadroom = 0;
         colorDirectionParams.targetLambda = 3;
-
+        
         % Set up basis to try to keep spectra close to.
         %
         % This is how we enforce a smoothness or other constraint
@@ -94,10 +104,10 @@ switch (colorDirectionParams.conditionName)
             otherwise
                 error('Unknown basis set specified');
         end
-        colorDirectionParams.B_natural{1} = B_naturalRaw;
-        colorDirectionParams.B_natural{2} = B_naturalRaw;
-        colorDirectionParams.B_natural{3} = B_naturalRaw;
-
+        colorDirectionParams.B_natural{1} = colorDirectionParams.B_naturalRaw;
+        colorDirectionParams.B_natural{2} = colorDirectionParams.B_naturalRaw;
+        colorDirectionParams.B_natural{3} = colorDirectionParams.B_naturalRaw;
+        
     otherwise
         error('Unknown condition name specified')
 end
@@ -126,5 +136,7 @@ colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDegrees = colorDirectio
 colorDirectionParams.T_cones = ComputeObserverFundamentals(colorDirectionParams.psiParamsStruct.coneParams,colorDirectionParams.S);
 
 % Judd-Vos XYZ color matching function
-load T_xyzJuddVos 
+load T_xyzJuddVos
 colorDirectionParams.T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
+
+end
