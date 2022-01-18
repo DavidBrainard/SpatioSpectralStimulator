@@ -151,7 +151,7 @@ T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 % Image will be centered in display.
 sineFreqCyclesPerDeg = 1;
 gaborSdDeg = 1.5;
-stimulusSizeDeg = 10;
+stimulusSizeDeg = 7;
 
 %% Get half on spectrum.
 %
@@ -550,9 +550,9 @@ if (max(abs(standardPredictedExcitationsGaborCal(:)-ISETBioPredictedExcitationsG
 end
 
 % Go back to the RGB image starting with the ISETBio representation.
-PrimaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device')\ ...
+primaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device') \ ...
     (ISETBioGaborCal-screenCalObjFromISETBio.get('P_ambient'));
-settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,PrimaryFromISETBioGaborCal);
+settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,primaryFromISETBioGaborCal);
 if (max(abs(standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardSettingsGaborCal(:)) > 1e-6)
     error('Cannot get home again in settings land');
 end
