@@ -29,36 +29,17 @@ conditionName = 'LminusMSmooth';
 % Set up the color direction parameters here.
 colorDirectionParams = SetupColorDirection(conditionName);
 
-%% Load screen calibration and refit its gamma
+%% Load screen calibration and refit its gamma.
 %
 % Load screen calibration.
 screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
                colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
 
 % Load channel calibration.
-nScreenPrimaries = 3;
-
+nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 for ii = 1:nScreenPrimaries
     channelCalObjs{ii} = LoadCalibration(colorDirectionParams.channelCalNames{ii},...
                          colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
-end
-
-% Make a function that takes in the parameters structure and returns the
-% channel primaries.
-screenCal = LoadCalFile(screenCalName);
-screenCalObj = ObjectToHandleCalOrCalStruct(screenCal);
-gammaFitMethod = 'identity';
-screenCalObj.set('gamma.fitType',gammaFitMethod);
-CalibrateFitGamma(screenCalObj, screenNInputLevels);
-
-%% Load channel calibrations.
-nScreenPrimaries = 3;
-channelCals = cell(nScreenPrimaries ,1);
-channelCalObjs = cell(nScreenPrimaries ,1);
-for cc = 1:length(channelCalNames)
-    channelCals{cc} = LoadCalFile(channelCalNames{cc});
-    channelCalObjs{cc} = ObjectToHandleCalOrCalStruct(channelCals{cc});
-    CalibrateFitGamma(channelCalObjs{cc}, channelNInputLevels);
 end
 
 %% Get out some data to work with.
