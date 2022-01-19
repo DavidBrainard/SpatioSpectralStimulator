@@ -16,18 +16,14 @@
 %% Clear
 clear; close all;
 
-%% Verbose?
-%
-% Set to true to get more output
-VERBOSE = false;
-
 %% Set key stimulus parameters.
 %
-% Condition Name. It should be either 'LminusMSmooth' or 'ConeIsolating'.
+% Set up color direction parameters by its condition name.
 conditionName = 'LminusMSmooth';
-
-% Set up the color direction parameters here.
 colorDirectionParams = SetupColorDirection(conditionName);
+
+% Set to true to get more output.
+VERBOSE = false;
 
 %% Load screen calibration and refit its gamma.
 %
@@ -45,7 +41,9 @@ end
 %% Get out some data to work with.
 %
 % This is from the channel calibration file.
-Scheck = channelCalObjs{1}.get('S');
+for pp = 1:nScreenPrimaries
+    Scheck(pp,:) = channelCalObjs{pp}.get('S');
+end
 if (any(colorDirectionParams.S ~= Scheck))
     error('Mismatch between calibration file S and that specified at top');
 end
@@ -58,13 +56,6 @@ nChannels = channelCalObjs{1}.get('nDevices');
 sineFreqCyclesPerDeg = 1;
 gaborSdDeg = 1.5;
 stimulusSizeDeg = 7;
-
-%% Get half on spectrum.
-%
-% This is useful for scaling things reasonably - we start with half of the
-% available range of the primaries.
-halfOnChannels = 0.5*ones(nChannels,1);
-halfOnSpd = PrimaryToSpd(channelCalObjs{1},halfOnChannels);
 
 %% Use quantized conversion from here on.
 %
@@ -104,14 +95,15 @@ screenBackgroundScaleFactor = 0.5;
 % arbitrarily to 1 just above. The scale factor determines where in the
 % approximate channel gamut we aim the background at.
 for pp = 1:nScreenPrimaries
-    [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,colorDirectionParams.T_xyz,channelCalObjs{pp}, ...
-        colorDirectionParams.B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',false);
+    [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = ...
+        FindBgChannelPrimaries(targetBgXYZ, colorDirectionParams.T_xyz, channelCalObjs{pp}, colorDirectionParams.B_natural{pp}, ...
+        projectIndices, primaryHeadRoom, targetLambda, 'scaleFactor', 0.6, 'Scale', true, 'Verbose', VERBOSE);
 end
 if (any(channelBackgroundPrimaries < 0) | any(channelBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
 end
 fprintf('Background primary min: %0.2f, max: %0.2f, mean: %0.2f\n', ...
-    min(channelBackgroundPrimaries(:)),max(channelBackgroundPrimaries(:)),mean(channelBackgroundPrimaries(:)));
+    min(channelBackgroundPrimaries(:)), max(channelBackgroundPrimaries(:)), mean(channelBackgroundPrimaries(:)));
 
 %% Find primaries with desired LMS contrast.
 %
@@ -569,8 +561,8 @@ for pp = 1:length(channelCalObjs)
     screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp},screenPrimarySettings(:,pp)));
 end
 figure; clf; hold on
-plot(SToWls(colorDirectionParams.S),screenPrimarySpdCheck,'k','LineWidth',4);
-plot(SToWls(colorDirectionParams.S),screenPrimarySpd,'r','LineWidth',2);
+plot(wls,screenPrimarySpdCheck,'k','LineWidth',4);
+plot(wls,screenPrimarySpd,'r','LineWidth',2);
 xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
