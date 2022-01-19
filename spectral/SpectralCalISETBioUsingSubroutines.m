@@ -21,106 +21,28 @@ clear; close all;
 % Set to true to get more output
 VERBOSE = false;
 
-% Set wavelength support.
+%% Set key stimulus parameters.
 %
-% This needs to match what's in the calibration files, but
-% we need it before we read those files.  A mismatch will
-% throw an error below.
-S = [380 2 201];
-
-%% Set key stimulus parameters
-%
-% Condition Name.
+% Condition Name. It should be either 'LminusMSmooth' or 'ConeIsolating'.
 conditionName = 'LminusMSmooth';
 
 % Set up the color direction parameters here.
 colorDirectionParams = SetupColorDirection(conditionName);
 
-% (This part should be gone if the above function works fine - in 'SetupColorDirection')
-%
-% switch (conditionName)
-%     case 'LminusMSmooth'
-%         % Background xy.
-%         %
-%         % Specify the chromaticity, but we'll chose the luminance based
-%         % on the range available in the device.
-%         targetBgxy = [0.3127 0.3290]';
-% 
-%         % Target color direction and max contrasts.
-%         %
-%         % This is the basic desired modulation direction positive excursion. We go
-%         % equally in positive and negative directions.  Make this unit vector
-%         % length, as that is good convention for contrast.
-%         targetStimulusContrastDir = [1 -1 0]'; targetStimulusContrastDir = targetStimulusContrastDir/norm(targetStimulusContrastDir);
-% 
-%         % Specify desired primary properties.
-%         %
-%         % These are the target contrasts for the three primaries. We want these to
-%         % span a triangle around the line specified above. Here we define that
-%         % triangle by hand.  May need a little fussing for other directions, and
-%         % might be able to autocompute good choices.
-%         targetScreenPrimaryContrastDir(:,1) = [-1 1 0]'; targetScreenPrimaryContrastDir(:,1) = targetScreenPrimaryContrastDir(:,1)/norm(targetScreenPrimaryContrastDir(:,1));
-%         targetScreenPrimaryContrastDir(:,2) = [1 -1 0.5]'; targetScreenPrimaryContrastDir(:,2) = targetScreenPrimaryContrastDir(:,2)/norm(targetScreenPrimaryContrastDir(:,2));
-%         targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
-% 
-%         % Set parameters for getting desired target primaries.
-%         targetScreenPrimaryContrasts = [0.05 0.05 0.05];
-%         targetPrimaryHeadroom = 1.05;
-%         primaryHeadroom = 0;
-%         targetLambda = 3;
-% 
-%         % We may not need the whole direction contrast excursion. Specify max
-%         % contrast we want relative to that direction vector.
-%         % The first number is
-%         % the amount we want to use, the second has a little headroom so we don't
-%         % run into numerical error at the edges. The second number is used when
-%         % defining the three primaries, the first when computing desired weights on
-%         % the primaries.
-%         spatialGaborTargetContrast = 0.04;
-%         plotAxisLimit = 100*spatialGaborTargetContrast;
-% 
-%         % Set up basis to try to keep spectra close to.
-%         %
-%         % This is how we enforce a smoothness or other constraint
-%         % on the spectra.  What happens in the routine that finds
-%         % primaries is that there is a weighted error term that tries to
-%         % maximize the projection onto a passed basis set.
-%         basisType = 'fourier';
-%         nFourierBases = 7;
-%         switch (basisType)
-%             case 'cieday'
-%                 load B_cieday
-%                 B_naturalRaw = SplineSpd(S_cieday,B_cieday,S);
-%             case 'fourier'
-%                 B_naturalRaw = MakeFourierBasis(S,nFourierBases);
-%             otherwise
-%                 error('Unknown basis set specified');
-%         end
-%         B_natural{1} = B_naturalRaw;
-%         B_natural{2} = B_naturalRaw;
-%         B_natural{3} = B_naturalRaw;
-% 
-%     otherwise
-%         error('Unknown condition name specified')
-% end
-
-% (This part should be gone if the above function works fine - in 'SetupColorDirection')
-%% Define calibration filenames/params.
-% %
-% % This is a standard calibration file for the DLP screen,
-% % with the subprimaries set to something.  As we'll see below,
-% % we're going to rewrite those.nPrimaries
-% screenCalName = 'SACC';
-% screenNInputLevels = 256;
-% 
-% % These are the calibration files for each of the primaries, which
-% % then entails measuring the spectra of all the subprimaries for that
-% % primary.
-% channelCalNames = {'SACCPrimary1' 'SACCPrimary2' 'SACCPrimary3'};
-% channelNInputLevels = 253;
-
 %% Load screen calibration and refit its gamma
 %
+% Load screen calibration.
+screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
+               colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
+
+% Load channel calibration.
+nScreenPrimaries = 3;
+
+for ii = 1:nScreenPrimaries
+    channelCalObjs{ii} = LoadCalibration(colorDirectionParams.channelCalNames{ii},...
+                         colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
+end
+
 % Make a function that takes in the parameters structure and returns the
 % channel primaries.
 screenCal = LoadCalFile(screenCalName);
@@ -148,13 +70,6 @@ if (any(S ~= Scheck))
 end
 wls = SToWls(S);
 nChannels = channelCalObjs{1}.get('nDevices');
-
-%% Cone fundamentals and XYZ CMFs.
-psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
-psiParamsStruct.coneParams.fieldSizeDegrees = 2;
-T_cones = ComputeObserverFundamentals(psiParamsStruct.coneParams,S);
-load T_xyzJuddVos % Judd-Vos XYZ Color matching function
-T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
 %% Image spatial parameters.
 %

@@ -20,8 +20,9 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 %    colorDirectionParams    - Structure with the needed parameters.
 %
 % Optional key/value pairs:
+%    N/A
 %
-% See also: 
+% See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
@@ -30,8 +31,8 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 
 %% Set parameters.
 arguments
-    conditionName (1,1) {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
-    options
+    conditionName {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
+    options.temp
 end
 
 %% Set some initial parameters on the struct here.
@@ -43,10 +44,6 @@ colorDirectionParams.fieldSizeDegrees = 2;
 colorDirectionParams.conditionName = conditionName;
 
 % Set wavelength support.
-%
-% This needs to match what's in the calibration files, but
-% we need it before we read those files.  A mismatch will
-% throw an error below.
 colorDirectionParams.S = [380 2 201];
 
 %% Set key stimulus parameters
@@ -98,9 +95,9 @@ switch (colorDirectionParams.conditionName)
         switch (colorDirectionParams.basisType)
             case 'cieday'
                 load B_cieday
-                colorDirectionParams.B_naturalRaw = SplineSpd(S_cieday,B_cieday,S);
+                colorDirectionParams.B_naturalRaw = SplineSpd(S_cieday, B_cieday, colorDirectionParams.S);
             case 'fourier'
-                colorDirectionParams.B_naturalRaw = MakeFourierBasis(S,nFourierBases);
+                colorDirectionParams.B_naturalRaw = MakeFourierBasis(colorDirectionParams.S, colorDirectionParams.nFourierBases);
             otherwise
                 error('Unknown basis set specified');
         end
@@ -112,31 +109,30 @@ switch (colorDirectionParams.conditionName)
         error('Unknown condition name specified')
 end
 
-%% Direction independent device parameters
+%% Direction independent device parameters.
 %
 % Calibration filenames/params.
 %
 % This is a standard calibration file for the DLP screen,
-% with the subprimaries set to something.  As we'll see below,
-% we're going to rewrite those.nPrimaries
+% with the channels set to something.
 colorDirectionParams.screenCalName = 'SACC';
 colorDirectionParams.screenNInputLevels = 256;
 
-% These are the calibration files for each of the primaries, which
-% then entails measuring the spectra of all the subprimaries for that
-% primary.
+% These are the calibration files for each of the screen primaries, which
+% then entails measuring the spectra of all the channels for that
+% screen primary.
 colorDirectionParams.channelCalNames = {'SACCPrimary1' 'SACCPrimary2' 'SACCPrimary3'};
 colorDirectionParams.channelNInputLevels = 253;
 
-%% Direction independent colorimetery parameters
+%% Direction independent colorimetery parameters.
 %
 % Cone fundamentals and XYZ CMFs.
 colorDirectionParams.psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
 colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDegrees = colorDirectionParams.fieldSizeDegrees;
 colorDirectionParams.T_cones = ComputeObserverFundamentals(colorDirectionParams.psiParamsStruct.coneParams,colorDirectionParams.S);
 
-% Judd-Vos XYZ color matching function
-load T_xyzJuddVos
-colorDirectionParams.T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
+% Judd-Vos XYZ color matching function.
+load T_xyzJuddVos;
+colorDirectionParams.T_xyz = SplineCmf(S_xyzJuddVos, 683*T_xyzJuddVos, colorDirectionParams.S);
 
 end
