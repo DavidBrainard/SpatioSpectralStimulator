@@ -84,6 +84,15 @@ switch (colorDirectionParams.conditionName)
         colorDirectionParams.primaryHeadroom = 0;
         colorDirectionParams.targetLambda = 3;
         
+        % We may not need the whole direction contrast excursion. Specify max
+        % contrast we want relative to that direction vector.
+        % The first number is
+        % the amount we want to use, the second has a little headroom so we don't
+        % run into numerical error at the edges. The second number is used when
+        % defining the three primaries, the first when computing desired weights on
+        % the primaries.
+        colorDirectionParams.spatialGaborTargetContrast = 0.04;
+        
         % Set up basis to try to keep spectra close to.
         %
         % This is how we enforce a smoothness or other constraint

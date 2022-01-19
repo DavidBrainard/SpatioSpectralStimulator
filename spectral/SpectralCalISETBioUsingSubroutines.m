@@ -37,8 +37,8 @@ screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
 
 % Load channel calibration.
 nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
-for ii = 1:nScreenPrimaries
-    channelCalObjs{ii} = LoadCalibration(colorDirectionParams.channelCalNames{ii},...
+for pp = 1:nScreenPrimaries
+    channelCalObjs{pp} = LoadCalibration(colorDirectionParams.channelCalNames{pp},...
                          colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
 end
 
@@ -46,10 +46,10 @@ end
 %
 % This is from the channel calibration file.
 Scheck = channelCalObjs{1}.get('S');
-if (any(S ~= Scheck))
+if (any(colorDirectionParams.S ~= Scheck))
     error('Mismatch between calibration file S and that specified at top');
 end
-wls = SToWls(S);
+wls = SToWls(colorDirectionParams.S);
 nChannels = channelCalObjs{1}.get('nDevices');
 
 %% Image spatial parameters.
@@ -92,7 +92,7 @@ projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 % Set parameters for getting desired background primaries.
 primaryHeadRoom = 0;
 targetLambda = 3;
-targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
+targetBgXYZ = xyYToXYZ([colorDirectionParams.targetBgxy ; 1]);
 
 % Adjust these to keep background in gamut
 primaryBackgroundScaleFactor = 0.5;
@@ -104,8 +104,8 @@ screenBackgroundScaleFactor = 0.5;
 % arbitrarily to 1 just above. The scale factor determines where in the
 % approximate channel gamut we aim the background at.
 for pp = 1:nScreenPrimaries
-    [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
-        B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',false);
+    [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,colorDirectionParams.T_xyz,channelCalObjs{pp}, ...
+        colorDirectionParams.B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',false);
 end
 if (any(channelBackgroundPrimaries < 0) | any(channelBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
@@ -127,12 +127,13 @@ for pp = 1:nScreenPrimaries
     for oo = 1:length(otherPrimaries)
         extraAmbientSpd = extraAmbientSpd + channelBackgroundSpd(:,otherPrimaries(oo));
     end
-
+    
     % Get isolating screen primaries.
-    [screenPrimaryPrimaries(:,pp),screenPrimaryPrimariesQuantized(:,pp),screenPrimarySpd(:,pp),screenPrimaryContrast(:,pp),screenPrimaryModulationPrimaries(:,pp)] ... 
-        = FindChannelPrimaries(targetScreenPrimaryContrastDir(:,pp), ...
-        targetPrimaryHeadroom,targetScreenPrimaryContrasts(pp),channelBackgroundPrimaries(:,pp), ...
-        T_cones,channelCalObjs{pp},B_natural{pp},projectIndices,primaryHeadroom,targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
+    [screenPrimaryPrimaries(:,pp),screenPrimaryPrimariesQuantized(:,pp),screenPrimarySpd(:,pp),screenPrimaryContrast(:,pp),screenPrimaryModulationPrimaries(:,pp)] ...
+        = FindChannelPrimaries(colorDirectionParams.targetScreenPrimaryContrastDir(:,pp), ...
+        colorDirectionParams.targetPrimaryHeadroom,colorDirectionParams.targetScreenPrimaryContrasts(pp),channelBackgroundPrimaries(:,pp), ...
+        colorDirectionParams.T_cones,channelCalObjs{pp},colorDirectionParams.B_natural{pp},projectIndices,colorDirectionParams.primaryHeadroom,...
+        colorDirectionParams.targetLambda,'ExtraAmbientSpd',extraAmbientSpd);
     
     % We can wonder about how close to gamut our primaries are.  Compute
     % that here.
@@ -145,9 +146,9 @@ for pp = 1:nScreenPrimaries
 end
 
 %% How close are spectra to subspace defined by basis?
-isolatingNaturalApproxSpd1 = B_natural{1}*(B_natural{1}(projectIndices,:)\screenPrimarySpd(projectIndices,1));
-isolatingNaturalApproxSpd2 = B_natural{2}*(B_natural{2}(projectIndices,:)\screenPrimarySpd(projectIndices,2));
-isolatingNaturalApproxSpd3 = B_natural{3}*(B_natural{3}(projectIndices,:)\screenPrimarySpd(projectIndices,3));
+isolatingNaturalApproxSpd1 = colorDirectionParams.B_natural{1} * (colorDirectionParams.B_natural{1}(projectIndices,:)\screenPrimarySpd(projectIndices,1));
+isolatingNaturalApproxSpd2 = colorDirectionParams.B_natural{2} * (colorDirectionParams.B_natural{2}(projectIndices,:)\screenPrimarySpd(projectIndices,2));
+isolatingNaturalApproxSpd3 = colorDirectionParams.B_natural{3} * (colorDirectionParams.B_natural{3}(projectIndices,:)\screenPrimarySpd(projectIndices,3));
 
 % Plot of the screen primary spectra.
 figure; clf; 
@@ -182,7 +183,7 @@ title('Primary 3');
 % sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
 screenCalObj.set('P_device',screenPrimarySpd);
-SetSensorColorSpace(screenCalObj,T_cones,S);
+SetSensorColorSpace(screenCalObj,colorDirectionParams.T_cones,colorDirectionParams.S);
 
 %% Set screen gamma method.
 %
@@ -267,7 +268,7 @@ ISETBioDisplayObject = rmfield(ISETBioDisplayObject,'dixel');
 % data from the ISETBio scene as from the PTB routines.
 screenCalStructFromISETBio = ptb.GeneratePTCalStructFromIsetbioDisplayObject(ISETBioDisplayObject);
 screenCalObjFromISETBio = ObjectToHandleCalOrCalStruct(screenCalStructFromISETBio);
-SetSensorColorSpace(screenCalObjFromISETBio,T_cones,S);
+SetSensorColorSpace(screenCalObjFromISETBio,colorDirectionParams.T_cones,colorDirectionParams.S);
 SetGammaMethod(screenCalObjFromISETBio,screenGammaMethod);
 
 % Let's check that what comes back is what went in.
@@ -290,7 +291,7 @@ end
 %% Set up desired background.
 %
 % We aim for the background that we said we wanted when we built the screen primaries.
-desiredBgExcitations = screenBackgroundScaleFactor*T_cones*sum(channelBackgroundSpd,2);
+desiredBgExcitations = screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 figure; clf; hold on;
@@ -367,7 +368,7 @@ title('Effect of contrast quantization');
 % at each pixel.  This is done by a single matrix multiply plus a lead
 % factor.  We work cal format here as that makes color transforms
 % efficient.
-desiredContrastGaborCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastGaborCal;
+desiredContrastGaborCal = colorDirectionParams.spatialGaborTargetContrast * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastGaborCal;
 
 % Convert cone contrast to excitations
 desiredExcitationsGaborCal = ContrastToExcitation(desiredContrastGaborCal,screenBgExcitations);
@@ -437,20 +438,20 @@ end
 
 % ISETBio energy comes back as power per nm, we need to convert to power
 % per wlband to work with PTB, by multiplying by S(2).
-ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy')*S(2);
+ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
 [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
-ISETBioPredictedExcitationsGaborCal = T_cones*ISETBioGaborCal;
+ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
 limMin = 0.01; limMax = 0.02;
 figure; clf; hold on;
-plot(standardPredictedExcitationsGaborCal(1,:),ISETBioPredictedExcitationsGaborCal(1,:),'r+');
-plot(standardPredictedExcitationsGaborCal(2,:),ISETBioPredictedExcitationsGaborCal(2,:),'g+');
-plot(standardPredictedExcitationsGaborCal(3,:),ISETBioPredictedExcitationsGaborCal(3,:),'b+');
-plot([limMin limMax],[limMin limMax]);
+plot(standardPredictedExcitationsGaborCal(1,:), ISETBioPredictedExcitationsGaborCal(1,:),'r+');
+plot(standardPredictedExcitationsGaborCal(2,:), ISETBioPredictedExcitationsGaborCal(2,:),'g+');
+plot(standardPredictedExcitationsGaborCal(3,:), ISETBioPredictedExcitationsGaborCal(3,:),'b+');
+plot([limMin limMax], [limMin limMax]);
 xlabel('Standard Cone Excitations');
 ylabel('ISETBio Cone Excitations');
 axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
 title('Cone Excitations Comparison');
-if (max(abs(standardPredictedExcitationsGaborCal(:)-ISETBioPredictedExcitationsGaborCal(:)) ./ ...
+if (max(abs(standardPredictedExcitationsGaborCal(:) - ISETBioPredictedExcitationsGaborCal(:)) ./ ...
     standardPredictedExcitationsGaborCal(:)) > 1e-6)
     error('Standard and ISETBio data do not agree well enough');
 end
@@ -464,7 +465,7 @@ if (max(abs(standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standar
 end
 
 %% SRGB image via XYZ, scaled to display
-predictedXYZCal = T_xyz*desiredSpdGaborCal;
+predictedXYZCal = colorDirectionParams.T_xyz * desiredSpdGaborCal;
 SRGBPrimaryCal = XYZToSRGBPrimary(predictedXYZCal);
 scaleFactor = max(SRGBPrimaryCal(:));
 SRGBCal = SRGBGammaCorrect(SRGBPrimaryCal/(2*scaleFactor),0);
@@ -483,6 +484,8 @@ title('Image of settings');
 %
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
+plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
+
 figure; hold on
 plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
 plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
@@ -526,7 +529,7 @@ ylim([-plotAxisLimit plotAxisLimit]);
 % quantize to 14 bits here on the contrast, but nor does it hurt.
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-desiredContrastCheckCal = spatialGaborTargetContrast*targetStimulusContrastDir*rawMonochromeContrastCheckCal;
+desiredContrastCheckCal = colorDirectionParams.spatialGaborTargetContrast * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
 desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
 
 % For each check calibration find the settings that
@@ -566,8 +569,8 @@ for pp = 1:length(channelCalObjs)
     screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp},screenPrimarySettings(:,pp)));
 end
 figure; clf; hold on
-plot(SToWls(S),screenPrimarySpdCheck,'k','LineWidth',4);
-plot(SToWls(S),screenPrimarySpd,'r','LineWidth',2);
+plot(SToWls(colorDirectionParams.S),screenPrimarySpdCheck,'k','LineWidth',4);
+plot(SToWls(colorDirectionParams.S),screenPrimarySpd,'r','LineWidth',2);
 xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
