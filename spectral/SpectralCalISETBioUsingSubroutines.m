@@ -195,26 +195,12 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 % Display parameters.
 screenDiagSizeDeg = 15.5;
 screenDistanceVirtualMeters = 10;
-inchesPerMeter = 39.3701;
-screenHorizSizePixels = 1920;
-screenVertSizePixels = 1080;
-
-% Figure out virtual size in meters to produce desired diagonal size in deg
-% Note that we need to do this along the diagonal because degrees aren't
-% linear in meters, so we want to work first in the physical units of the
-% display, not in degrees.
-screenDiagSizeMeters = 2*screenDistanceVirtualMeters*tand(screenDiagSizeDeg/2);
-screenHorizSizeMeters = sqrt(screenDiagSizeMeters^2/(1+(screenVertSizePixels/screenHorizSizePixels)^2));
-screenVertSizeMeters = screenHorizSizeMeters*screenVertSizePixels/screenHorizSizePixels;
-screenSizeMeters = [screenHorizSizeMeters screenVertSizeMeters];
-screenSizeInches = screenSizeMeters*inchesPerMeter;
-if (abs((screenDiagSizeMeters - vecnorm(screenSizeMeters))/screenDiagSizeMeters) > 1e-6)
-    error('You did not understand what Pythagoras said!');
-end
-
-% Collect up screen size in pixels
-screenSizePixels = [screenHorizSizePixels screenVertSizePixels];
+screenSizePixels = [1920 1080];
 screenDiagSizePixels = vecnorm(screenSizePixels);
+
+% Convert the screen size from deg to meters/inches.
+[screenDiagSizeMeters,screenSizeMeters,screenSizeInches] = ...
+    DegToMeters(screenDiagSizeDeg,screenDistanceVirtualMeters,screenSizePixels,'DegToInches',true);
 
 % Get dpi and make sure everything is consistent.
 screenDpi = vecnorm(screenSizePixels)/vecnorm(screenSizeInches);
@@ -222,22 +208,23 @@ screenDpiChk = mean(screenSizePixels ./ screenSizeInches);
 if (abs((screenDpi - vecnorm(screenDpiChk))/screenDpi) > 1e-6)
     error('Screen is not rigid');
 end
+inchesPerMeter = 39.3701;
 screenDpm = screenDpi*inchesPerMeter;
 
 % Get horizontal and vertical size of screen in degrees. We take pixels per
 % degree along the diagonal as the best compromise, need to use that when
 % we compute image sizes below.
-screenSizeDeg = 2*atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
+screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
 screenSizeHorizDeg = screenSizeDeg(1);
-screenSizeVertDeg = screenSizeDeg(2);
+screenSizeVertDeg  = screenSizeDeg(2);
 screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
 
 % Create ISETBio display.
 extraCalData = ptb.ExtraCalData;
 extraCalData.distance = screenDistanceVirtualMeters;
 screenCalStruct = screenCalObj.cal;
-screenCalStruct.describe.displayDescription.screenSizeMM = 1000*screenSizeMeters;
-screenCalStruct.describe.displayDescription.screenSizePixel = [screenHorizSizePixels screenVertSizePixels];
+screenCalStruct.describe.displayDescription.screenSizeMM = 1000 * screenSizeMeters;
+screenCalStruct.describe.displayDescription.screenSizePixel = screenSizePixels;
 ISETBioDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
 ISETBioDisplayObject = rmfield(ISETBioDisplayObject,'dixel');
 
