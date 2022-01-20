@@ -2,7 +2,7 @@
 %
 % Description:
 %    Illustrate how to set up ISETBio based stimuli for the projector.
-%    This version illustrates use of our encapsulated functions.  
+%    This version illustrates use of our encapsulated functions.
 %
 %    See SpectralCalCompute etc. (see "See also" list below) for a more
 %    elaborated version of this the underlying computations.
@@ -29,13 +29,13 @@ VERBOSE = false;
 %
 % Load screen calibration.
 screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
-               colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
+    colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
 
 % Load channel calibration.
 nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 for pp = 1:nScreenPrimaries
     channelCalObjs{pp} = LoadCalibration(colorDirectionParams.channelCalNames{pp},...
-                         colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
+        colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
 end
 
 %% Get out some data to work with.
@@ -145,7 +145,7 @@ for pp = 1:nScreenPrimaries
 end
 
 % Plot of the screen primary spectra.
-figure; clf; 
+figure; clf;
 for pp = 1:nScreenPrimaries
     subplot(2,2,pp); hold on;
     plot(wls,screenPrimarySpd(:,pp),'b','LineWidth',2);
@@ -276,45 +276,14 @@ title('Check that we obtrain desired background excitations');
 fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
     screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
 
-%% Make monochrome Gabor patch in range -1 to 1.
+%% Make a monochrome Gabor patch in range -1 to 1.
 %
-% This is our monochrome contrast modulation image.  Multiply
-% by the max contrast vector to get the LMS contrast image.
+% This is our monochrome contrast modulation image. Multiply by the max
+% contrast vector to get the LMS contrast image.
 fprintf('Making Gabor contrast image\n');
-
-% Stimulus goes into a square image.  Want number of pixels
-% to be even. If we adjust pixels, also adjust image size in 
-% degrees.
-stimulusN = round(vecnorm([stimulusSizeDeg stimulusSizeDeg])*screenPixelsPerDeg/sqrt(2));
-if (rem(stimulusN,2) ~= 0)
-    stimulusN = stimulusN+1;
-end
-centerN = stimulusN/2;
-
-% Compute expected stimulus size in degrees based on actual
-% pixels in the square image
-stimulusHorizSizeDeg = vecnorm([stimulusN stimulusN])/(screenPixelsPerDeg*sqrt(2));
-stimulusHorizSizeMeters = stimulusN/screenDpm;
-
-% Convert image parameters in degrees to those in pixels.
-sineFreqCyclesPerImage = sineFreqCyclesPerDeg*stimulusSizeDeg;
-gaborSdPixels = gaborSdDeg*screenPixelsPerDeg;
-
-% Make sine image. The function MakeSineImage actually makes plaids. By
-% making the horozontal frequency (first argument) 0, we get a vertical
-% sinusoid.
-rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,stimulusN);
-
-% Make Gaussian window and normalize its max to one.
-gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,gaborSdPixels);
-gaussianWindow = gaussianWindow/max(gaussianWindow(:));
-
-% Multiply to get Gabor
-rawMonochromeUnquantizedContrastGaborImage = rawMonochromeSineImage.*gaussianWindow;
-
-% Put it into cal format.  Each pixel in cal format is one column.  Here
-% there is just one row since it is a monochrome image at this point.
-rawMonochromeUnquantizedContrastGaborCal = ImageToCalFormat(rawMonochromeUnquantizedContrastGaborImage);
+[rawMonochromeUnquantizedContrastGaborImage, rawMonochromeUnquantizedContrastGaborCal, ...
+    stimulusN, centerN, stimulusHorizSizeDeg, stimulusHorizSizeMeters] = ...
+    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm);
 
 %% Quantize the contrast image to a (large) fixed number of levels.
 %
@@ -393,7 +362,7 @@ uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGabo
 ISETBioGaborScene = sceneFromFile(standardSettingsGaborImage,'rgb', [], ISETBioDisplayObject);
 sceneWindow(ISETBioGaborScene);
 
-% Check stimulus dimensions match. These are good to about a percent, which 
+% Check stimulus dimensions match. These are good to about a percent, which
 % we can live with.
 stimulusHorizSizeMetersChk = sceneGet(ISETBioGaborScene,'width');
 stimulusHorizSizeDegChk = sceneGet(ISETBioGaborScene,'horizontal fov');
@@ -424,7 +393,7 @@ ylabel('ISETBio Cone Excitations');
 axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
 title('Cone Excitations Comparison');
 if (max(abs(standardPredictedExcitationsGaborCal(:) - ISETBioPredictedExcitationsGaborCal(:)) ./ ...
-    standardPredictedExcitationsGaborCal(:)) > 1e-6)
+        standardPredictedExcitationsGaborCal(:)) > 1e-6)
     error('Standard and ISETBio data do not agree well enough');
 end
 
