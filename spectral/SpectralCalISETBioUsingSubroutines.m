@@ -138,41 +138,28 @@ for pp = 1:nScreenPrimaries
 end
 
 %% How close are spectra to subspace defined by basis?
-isolatingNaturalApproxSpd1 = colorDirectionParams.B_natural{1} * (colorDirectionParams.B_natural{1}(projectIndices,:)\screenPrimarySpd(projectIndices,1));
-isolatingNaturalApproxSpd2 = colorDirectionParams.B_natural{2} * (colorDirectionParams.B_natural{2}(projectIndices,:)\screenPrimarySpd(projectIndices,2));
-isolatingNaturalApproxSpd3 = colorDirectionParams.B_natural{3} * (colorDirectionParams.B_natural{3}(projectIndices,:)\screenPrimarySpd(projectIndices,3));
+%
+% This part has been updated using the loop to make it short.
+for pp = 1:nScreenPrimaries
+    isolatingNaturalApproxSpd(:,pp) = colorDirectionParams.B_natural{pp} * (colorDirectionParams.B_natural{pp}(projectIndices,:)\screenPrimarySpd(projectIndices,pp));
+end
 
 % Plot of the screen primary spectra.
 figure; clf; 
-subplot(2,2,1); hold on
-plot(wls,screenPrimarySpd(:,1),'b','LineWidth',2);
-plot(wls,isolatingNaturalApproxSpd1,'r:','LineWidth',1);
-plot(wls(projectIndices),screenPrimarySpd(projectIndices,1),'b','LineWidth',4);
-plot(wls(projectIndices),isolatingNaturalApproxSpd1(projectIndices),'r:','LineWidth',3);
-xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
-title('Primary 1');
-
-subplot(2,2,2); hold on
-plot(wls,screenPrimarySpd(:,2),'b','LineWidth',2);
-plot(wls,isolatingNaturalApproxSpd2,'r:','LineWidth',1);
-plot(wls(projectIndices),screenPrimarySpd(projectIndices,2),'b','LineWidth',4);
-plot(wls(projectIndices),isolatingNaturalApproxSpd2(projectIndices),'r:','LineWidth',3);
-xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
-title('Primary 2');
-
-subplot(2,2,3); hold on
-plot(wls,screenPrimarySpd(:,3),'b','LineWidth',2);
-plot(wls,isolatingNaturalApproxSpd3,'r:','LineWidth',1);
-plot(wls(projectIndices),screenPrimarySpd(projectIndices,3),'b','LineWidth',4);
-plot(wls(projectIndices),isolatingNaturalApproxSpd3(projectIndices),'r:','LineWidth',3);
-xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
-title('Primary 3');
+for pp = 1:nScreenPrimaries
+    subplot(2,2,pp); hold on;
+    plot(wls,screenPrimarySpd(:,pp),'b','LineWidth',2);
+    plot(wls,isolatingNaturalApproxSpd(:,pp),'r:','LineWidth',1);
+    plot(wls(projectIndices),screenPrimarySpd(projectIndices,pp),'b','LineWidth',4);
+    plot(wls(projectIndices),isolatingNaturalApproxSpd(projectIndices,pp),'r:','LineWidth',3);
+    xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
+    title(append('Primary ', num2str(pp)));
+end
 
 %% Set the screen primaries.
 %
-% We want these to match those we set up with the
-% channel calculations above.  Need to reset
-% sensor color space after we do this, so that the
+% We want these to match those we set up with the channel calculations
+% above.  Need to reset sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
 screenCalObj.set('P_device',screenPrimarySpd);
 SetSensorColorSpace(screenCalObj,colorDirectionParams.T_cones,colorDirectionParams.S);
@@ -188,7 +175,7 @@ SetSensorColorSpace(screenCalObj,colorDirectionParams.T_cones,colorDirectionPara
 screenGammaMethod = 2;
 SetGammaMethod(screenCalObj,screenGammaMethod);
 
-%% Create ISETBio display from the calibration file
+%% Create ISETBio display from the calibration file.
 %
 % On the DMD size, Derek writes (email 2022-01-11):
 %     Looking at the system design, I find that the conversion is 7.74350
@@ -205,7 +192,7 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 % angle matches that of our optical system, but so that the optical
 % distance is large enough to mimic optical infinity.
 %
-% Display parameters
+% Display parameters.
 screenDiagSizeDeg = 15.5;
 screenDistanceVirtualMeters = 10;
 inchesPerMeter = 39.3701;
