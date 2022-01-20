@@ -198,9 +198,21 @@ screenDistanceVirtualMeters = 10;
 screenSizePixels = [1920 1080];
 screenDiagSizePixels = vecnorm(screenSizePixels);
 
-% Convert the screen size from deg to meters/inches.
+% Convert the screen size from degrees to meters/inches.
+%
+% Note that we need to do this along the diagonal because degrees aren't
+% linear in meters, so we want to work first in the physical units of the
+% display, not in degrees.
 [screenDiagSizeMeters,screenSizeMeters,screenSizeInches] = ...
     DegToMeters(screenDiagSizeDeg,screenDistanceVirtualMeters,screenSizePixels,'DegToInches',true);
+
+% Get horizontal and vertical size of screen in degrees. We take pixels per
+% degree along the diagonal as the best compromise, need to use that when
+% we compute image sizes below.
+screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
+screenSizeHorizDeg = screenSizeDeg(1);
+screenSizeVertDeg  = screenSizeDeg(2);
+screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
 
 % Get dpi and make sure everything is consistent.
 screenDpi = vecnorm(screenSizePixels)/vecnorm(screenSizeInches);
@@ -210,14 +222,6 @@ if (abs((screenDpi - vecnorm(screenDpiChk))/screenDpi) > 1e-6)
 end
 inchesPerMeter = 39.3701;
 screenDpm = screenDpi*inchesPerMeter;
-
-% Get horizontal and vertical size of screen in degrees. We take pixels per
-% degree along the diagonal as the best compromise, need to use that when
-% we compute image sizes below.
-screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
-screenSizeHorizDeg = screenSizeDeg(1);
-screenSizeVertDeg  = screenSizeDeg(2);
-screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
 
 % Create ISETBio display.
 extraCalData = ptb.ExtraCalData;
@@ -234,8 +238,8 @@ ISETBioDisplayObject = rmfield(ISETBioDisplayObject,'dixel');
 % data from the ISETBio scene as from the PTB routines.
 screenCalStructFromISETBio = ptb.GeneratePTCalStructFromIsetbioDisplayObject(ISETBioDisplayObject);
 screenCalObjFromISETBio = ObjectToHandleCalOrCalStruct(screenCalStructFromISETBio);
-SetSensorColorSpace(screenCalObjFromISETBio,colorDirectionParams.T_cones,colorDirectionParams.S);
-SetGammaMethod(screenCalObjFromISETBio,screenGammaMethod);
+SetSensorColorSpace(screenCalObjFromISETBio, colorDirectionParams.T_cones, colorDirectionParams.S);
+SetGammaMethod(screenCalObjFromISETBio, screenGammaMethod);
 
 % Let's check that what comes back is what went in.
 if (any(any(screenCalObj.get('S') ~= screenCalObjFromISETBio.get('S'))))
@@ -260,6 +264,8 @@ end
 desiredBgExcitations = screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
+
+% Plot it.
 figure; clf; hold on;
 plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
 axis('square');

@@ -10,10 +10,6 @@ function [screenDiagSizeMeters, screenSizeMeters, screenSizeInches] = DegToMeter
 %    project using the ISETBio, which takes the screen size information in
 %    meters. 
 %
-%    Note that we need to do this along the diagonal because
-%    degrees aren't linear in meters, so we want to work first in the
-%    physical units of the display, not in degrees.
-%
 % Inputs:
 %    screenDiagSizeDeg        - Target screen diagonal size in degrees.
 %    screenDistanceMeters     - Distance between the screen and the
