@@ -1,7 +1,7 @@
 function colorDirectionParams = SetupColorDirection(conditionName,options)
 % Set up a parameter structure for a color direction.
 %
-% Synopsis:
+% Syntax:
 %    colorDirectionParams = SetupColorDirection(conditionName)
 %
 % Description:

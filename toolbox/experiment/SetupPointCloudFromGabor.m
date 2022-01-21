@@ -1,4 +1,33 @@
+function [] = SetupPointCloudFromGabor()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
+
+%%
 
 %% Get cone contrast/excitation gabor image.
 %
@@ -26,3 +55,5 @@ standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcit
 
 %% Set up point cloud of contrasts for all possible settings
 [contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
+
+end

@@ -1,7 +1,7 @@
 function [screenDiagSizeMeters, screenSizeMeters, screenSizeInches] = DegToMeters(screenDiagSizeDeg,screenDistanceMeters,screenSizePixels,options)
 % Convert the screen size from degree to meters.
 %
-% Synopsis:
+% Syntax:
 %    [screenDiagSizeMeters, screenSizeMeters, screenSizeInches] = DegToMeters(screenDiagSizeDeg,screenDistanceMeters,screenSizePixels)
 %
 % Description:

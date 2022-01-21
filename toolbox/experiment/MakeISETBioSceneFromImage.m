@@ -1,4 +1,31 @@
+function [] = MakeISETBioSceneFromImage()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
 
 %% Get image from point cloud in cal format.
 uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(contrastPtCld,desiredContrastGaborCal,ptCldSettingsCal);
@@ -23,3 +50,4 @@ desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,stimulusN,s
 standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,stimulusN,stimulusN);
 standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,stimulusN,stimulusN);
 uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+end

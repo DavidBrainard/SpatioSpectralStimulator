@@ -1,4 +1,33 @@
+function [] = LoadAndSetExperimentCalFiles()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
+
+%%
 
 %% Load screen calibration and refit its gamma.
 %
@@ -46,3 +75,4 @@ end
 % The point cloud method below reduces this problem.
 screenGammaMethod = 2;
 SetGammaMethod(screenCalObj,screenGammaMethod);
+end

@@ -1,3 +1,32 @@
+function [] = MakeImageSettingsFromPtCld()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
+
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
+
 %% We want this routine to take contrast explicitly, expressed relative to max contrast we set up,
 % when it makes the image.  We will call this multiple times to make
 % stimuli of different contrasts.
@@ -25,3 +54,4 @@ desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,stimulusN,s
 standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,stimulusN,stimulusN);
 standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,stimulusN,stimulusN);
 uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+end

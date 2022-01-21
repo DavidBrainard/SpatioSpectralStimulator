@@ -1,4 +1,33 @@
+function [] = SetupISETBioDisplayObject()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
+
+%%
 % Note that we will want to be able to pass in custom primaries to this
 % routine, or at least do it with different cal files, because we'll do it
 % sometimes with nominal primaries and sometimes with measured primaries.
@@ -55,3 +84,4 @@ screenDpm = screenDpi*inchesPerMeter;
 % the same values.
 [ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(screenCalObj,screenDistanceVirtualMeters,...
     screenSizeMeters,screenSizePixels,colorDirectionParams.T_cones,colorDirectionParams.S,screenGammaMethod,'verbose',VERBOSE);
+end

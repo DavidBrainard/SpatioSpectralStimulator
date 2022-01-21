@@ -2,7 +2,7 @@ function [ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(
     screenSizeMeters,screenSizePixels,T_cones,S,screenGammaMethod,options)
 % Make ISETBio display object from the calibration object.
 %
-% Synopsis:
+% Syntax:
 %    [ISETBioDisplayObject] = MakeISETBioDisplayObj(screenCalObj,screenDistanceMeters,...
 %     screenSizeMeters,screenSizePixels,T_cones,S,screenGammaMethod)
 %

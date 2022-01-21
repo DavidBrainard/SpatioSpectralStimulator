@@ -1,4 +1,31 @@
+function [] = SetupBackground()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
 
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
 
 %% Set up desired background.
 %
@@ -17,3 +44,5 @@ xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
 title('Check that we obtrain desired background excitations');
 fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
     screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
+end
+

@@ -2,7 +2,7 @@ function [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeter
     MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm,options)
 % Make a monochrome gabor patch image.
 %
-% Synopsis:
+% Syntax:
 %    [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeters] = ...
 %       MakeMonochromeGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm)
 %

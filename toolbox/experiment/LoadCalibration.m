@@ -1,8 +1,8 @@
 function [calObj] = LoadCalibration(calName,nInputLevels,options)
 % Load calibration files and refit its gamma.
 %
-% Synopsis:
-%    d
+% Syntax:
+%    [calObj] = LoadCalibration(calName,nInputLevels)
 %
 % Description:
 %    Load the calibration measurement files using the designated file names

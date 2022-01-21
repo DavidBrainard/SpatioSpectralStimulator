@@ -1,3 +1,31 @@
+function [] = SetupChannelPrimaries()
+% d
+%
+% Syntax:
+%    d
+%
+% Description:
+%    d
+%
+% Inputs:
+%    d                       -
+%
+% Outputs:
+%    d                       -
+%
+% Optional key/value pairs:
+%    d                       - d
+%
+% See also:
+%    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
+%    SpectralCalISETBio
+
+% History:
+%   01/21/22  dhb,ga,smo     - Wrote it
+
+%% Set parameters.
+arguments
+end
 
 %% Find background primaries to acheive desired xy at intensity scale of display.
 %
@@ -73,4 +101,5 @@ for pp = 1:nScreenPrimaries
     plot(wls(projectIndices),isolatingNaturalApproxSpd(projectIndices,pp),'r:','LineWidth',3);
     xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
     title(append('Primary ', num2str(pp)));
+end
 end
