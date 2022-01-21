@@ -210,8 +210,6 @@ screenDiagSizePixels = vecnorm(screenSizePixels);
 % degree along the diagonal as the best compromise, need to use that when
 % we compute image sizes below.
 screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
-screenSizeHorizDeg = screenSizeDeg(1);
-screenSizeVertDeg  = screenSizeDeg(2);
 screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
 
 % Get dpi and make sure everything is consistent.
@@ -223,40 +221,13 @@ end
 inchesPerMeter = 39.3701;
 screenDpm = screenDpi*inchesPerMeter;
 
-% Create ISETBio display.
-extraCalData = ptb.ExtraCalData;
-extraCalData.distance = screenDistanceVirtualMeters;
-screenCalStruct = screenCalObj.cal;
-screenCalStruct.describe.displayDescription.screenSizeMM = 1000 * screenSizeMeters;
-screenCalStruct.describe.displayDescription.screenSizePixel = screenSizePixels;
-ISETBioDisplayObject = ptb.GenerateIsetbioDisplayObjectFromPTBCalStruct('SACC', screenCalStruct, extraCalData, false);
-ISETBioDisplayObject = rmfield(ISETBioDisplayObject,'dixel');
-
-%% Get calibration structure back out
+% Create ISETBio display object here.
 %
-% This should match screenCalObj, and we should be able to get same image
-% data from the ISETBio scene as from the PTB routines.
-screenCalStructFromISETBio = ptb.GeneratePTCalStructFromIsetbioDisplayObject(ISETBioDisplayObject);
-screenCalObjFromISETBio = ObjectToHandleCalOrCalStruct(screenCalStructFromISETBio);
-SetSensorColorSpace(screenCalObjFromISETBio, colorDirectionParams.T_cones, colorDirectionParams.S);
-SetGammaMethod(screenCalObjFromISETBio, screenGammaMethod);
-
-% Let's check that what comes back is what went in.
-if (any(any(screenCalObj.get('S') ~= screenCalObjFromISETBio.get('S'))))
-    error('Wavelength support distorted in and out of ISETBio display object');
-end
-if (any(any(screenCalObj.get('P_device') ~= screenCalObjFromISETBio.get('P_device'))))
-    error('Device primaries distorted in and out of ISETBio display object');
-end
-if (any(any(screenCalObj.get('gammaInput') ~= screenCalObjFromISETBio.get('gammaInput'))))
-    error('Gamma table input distorted in and out of ISETBio display object');
-end
-if (any(any(screenCalObj.get('gammaTable') ~= screenCalObjFromISETBio.get('gammaTable'))))
-    error('Gamma table distorted in and out of ISETBio display object');
-end
-if (any(any(screenCalObj.get('P_ambient') ~= screenCalObjFromISETBio.get('P_ambient'))))
-    error('Ambient spd distorted in and out of ISETBio display object');
-end
+% Note that the function takes T_cones, S, screenGammaMethod for checking
+% if the reverse calculation (from ISETBio to calibration object) can get
+% the same values.
+[ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(screenCalObj,screenDistanceVirtualMeters,...
+    screenSizeMeters,screenSizePixels,colorDirectionParams.T_cones,colorDirectionParams.S,screenGammaMethod,'verbose',VERBOSE);
 
 %% Set up desired background.
 %
@@ -283,7 +254,7 @@ fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
 fprintf('Making Gabor contrast image\n');
 [rawMonochromeUnquantizedContrastGaborImage, rawMonochromeUnquantizedContrastGaborCal, ...
     stimulusN, centerN, stimulusHorizSizeDeg, stimulusHorizSizeMeters] = ...
-    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm);
+    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm,'verbose',VERBOSE);
 
 %% Quantize the contrast image to a (large) fixed number of levels.
 %
@@ -330,7 +301,7 @@ standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcit
 %% Set up point cloud of contrasts for all possible settings
 [contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
 
-%% Get image from point cloud, in cal format
+%% Get image from point cloud in cal format.
 uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(contrastPtCld,desiredContrastGaborCal,ptCldSettingsCal);
 
 % Print out min/max of settings
