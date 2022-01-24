@@ -1,79 +1,83 @@
-function [screenCalObj,channelCalObjs,screenGammaMethod] = LoadAndSetExperimentCalFiles(colorDirectionParams)
-% d
+function [screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,options)
+% Load calibration files and refit the gamma.
 %
 % Syntax:
-%    d
+%    [screenCalObj,channelCalObjs,screenGammaMethod] = LoadAndSetExperimentCalFiles(colorDirectionParams)
 %
 % Description:
-%    d
+%    It loads the calibration data, both screen and channel, and it does
+%    quantized conversion by refitting the gamma.
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams         - 
 %
 % Outputs:
-%    d                       -
+%    screenCalObj                 - 
+%    channelCalObjs               - 
+%    screenGammaMethod            - 
 %
 % Optional key/value pairs:
-%    d                       - d
+%    options.screenGammaMethod    - 
+%    options.channelGammaMethod   - 
+%    options.verbose              - 
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,gka,smo         - Wrote it.
+%   01/24/22  smo                 - Made it work.
 
 %% Set parameters.
 arguments
     colorDirectionParams
+    options.screenGammaMethod (1,1) = 2
+    options.channelGammaMethod (1,1) = 2
+    options.verbose (1,1) = true
 end
 
-%%
-
-%% Load screen calibration and refit its gamma.
+%% Load calibration data here.
 %
-% Load screen calibration.
+% Load screen calibration data.
 screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
     colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
 
-% Load channel calibration.
+% Load channel calibration data.
 nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 for pp = 1:nScreenPrimaries
     channelCalObjs{pp} = LoadCalibration(colorDirectionParams.channelCalNames{pp},...
         colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
 end
 
-%% Get out some data to work with.
+if (options.verbose)
+    disp('Calibration data has been loaded sucessfully!');
+end
+
+%% Refit the channel gamma.
 %
-% This is from the channel calibration file.
+% Before refitting the gamma, check if the wavelength range matches between
+% colorDirectionParams and the calbibration data.
 for pp = 1:nScreenPrimaries
     Scheck(pp,:) = channelCalObjs{pp}.get('S');
 end
 if (any(colorDirectionParams.S ~= Scheck))
     error('Mismatch between calibration file S and that specified at top');
 end
-wls = SToWls(colorDirectionParams.S);
-nChannels = channelCalObjs{1}.get('nDevices');
 
-%% Use quantized conversion from here on.
-%
-% Comment in the line that refits the gamma to see
-% effects of extreme quantization one what follows.
-%
-% CalibrateFitGamma(channelCalObjs{1},10);
-channelGammaMethod = 2;
+% Use quantized conversion from here on.
 for cc = 1:3
-    SetGammaMethod(channelCalObjs{cc},channelGammaMethod);
+    SetGammaMethod(channelCalObjs{cc},options.channelGammaMethod);
 end
 
 %% Set screen gamma method.
 %
-% If we set to 0, there is no quantization and the result is excellent.
-% If we set to 2, this is quantized at 256 levels and the result is more
-% of a mess.  The choice of 2 represents what we think will actually happen
+% If we set to 0, there is no quantization and the result is excellent. If
+% we set to 2, this is quantized at 256 levels and the result is more of a
+% mess. The choice of 2 represents what we think will actually happen
 % since the real device is quantized.
 %
 % The point cloud method below reduces this problem.
-screenGammaMethod = 2;
-SetGammaMethod(screenCalObj,screenGammaMethod);
+SetGammaMethod(screenCalObj,options.screenGammaMethod);
+
 end

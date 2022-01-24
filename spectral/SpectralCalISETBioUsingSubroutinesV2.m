@@ -26,7 +26,8 @@ colorDirectionParams = SetupColorDirection(conditionName);
 VERBOSE = false;
 
 %% Do all calibraiton loading.
-[screenCalObj,channelCalObjs,screenGammaMethod] = LoadAndSetExperimentCalFiles(colorDirectionParams);
+screenGammaMethod = 2;
+[screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,'screenGammaMethod',screenGammaMethod,'verbose',VERBOSE);
 
 %% Image spatial parameters.
 %
