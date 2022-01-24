@@ -1,4 +1,4 @@
-function [] = SetupPointCloudFromGabor()
+function [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,screenBgExcitations,options)
 % d
 %
 % Syntax:
@@ -25,6 +25,11 @@ function [] = SetupPointCloudFromGabor()
 
 %% Set parameters.
 arguments
+    colorDirectionParams
+    rawMonochromeContrastGaborCal
+    screenCalObj
+    screenBgExcitations
+    options.verbose (1,1) = true
 end
 
 %%
@@ -54,6 +59,23 @@ standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPred
 standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 
 %% Set up point cloud of contrasts for all possible settings
-[contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
+[contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',options.verbose);
+
+%% Save the results in a struct.
+
+% Standard gabor cal object.
+standardGaborCalObject.desiredContrastGaborCal = desiredContrastGaborCal;
+standardGaborCalObject.desiredExcitationsGaborCal = desiredExcitationsGaborCal;
+standardGaborCalObject.standardPrimariesGaborCal = standardPrimariesGaborCal;
+standardGaborCalObject.desiredSpdGaborCal = desiredSpdGaborCal;
+standardGaborCalObject.standardSettingsGaborCal = standardSettingsGaborCal;
+standardGaborCalObject.standardPredictedPrimariesGaborCal = standardPredictedPrimariesGaborCal;
+standardGaborCalObject.standardPredictedExcitationsGaborCal = standardPredictedExcitationsGaborCal;
+standardGaborCalObject.standardPredictedContrastGaborCal = standardPredictedContrastGaborCal;
+
+% Point cloud object.
+ptCldObject.desiredContrastGaborCal = desiredContrastGaborCal;
+ptCldObject.contrastPtCld = contrastPtCld;
+ptCldObject.ptCldSettingsCal = ptCldSettingsCal;
 
 end

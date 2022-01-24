@@ -1,4 +1,4 @@
-function [] = MakeImageSettingsFromPtCld()
+function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObj,screenCalObj,standardGaborCalObject,screenBgExcitations,stimulusN)
 % d
 %
 % Syntax:
@@ -25,6 +25,11 @@ function [] = MakeImageSettingsFromPtCld()
 
 %% Set parameters.
 arguments
+    ptCldObj
+    screenCalObj
+    standardGaborCalObject
+    screenBgExcitations
+    stimulusN
 end
 
 %% We want this routine to take contrast explicitly, expressed relative to max contrast we set up,
@@ -32,7 +37,7 @@ end
 % stimuli of different contrasts.
 
 %% Get image from point cloud in cal format.
-uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(contrastPtCld,desiredContrastGaborCal,ptCldSettingsCal);
+uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(ptCldObj.contrastPtCld,ptCldObj.desiredContrastGaborCal,ptCldObj.ptCldSettingsCal);
 
 % Print out min/max of settings
 fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
@@ -43,15 +48,16 @@ uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitatio
 
 % Plot of how well point cloud method does in obtaining desired contrats
 figure; clf;
-plot(desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
+plot(ptCldObj.desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
 axis('square');
 xlabel('Desired L, M or S contrast');
 ylabel('Predicted L, M, or S contrast');
 title('Quantized unique point cloud image method');
 
 %% Convert representations we want to take forward to image format
-desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,stimulusN,stimulusN);
-standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,stimulusN,stimulusN);
-standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,stimulusN,stimulusN);
-uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+gaborImageObject.desiredContrastGaborImage = CalFormatToImage(ptCldObj.desiredContrastGaborCal,stimulusN,stimulusN);
+gaborImageObject.standardPredictedContrastImage = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal,stimulusN,stimulusN);
+gaborImageObject.standardSettingsGaborImage = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal,stimulusN,stimulusN);
+gaborImageObject.uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+
 end

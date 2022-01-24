@@ -1,5 +1,5 @@
 function [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeters] = ...
-    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm,options)
+    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObj,options)
 % Make a monochrome gabor patch image.
 %
 % Syntax:
@@ -42,16 +42,20 @@ arguments
     stimulusSizeDeg (1,1)
     sineFreqCyclesPerDeg (1,1)
     gaborSdDeg (1,1)
-    screenPixelsPerDeg (1,1)
-    screenDpm (1,1)
+    screenSizeObj
     options.verbose (1,1) = true
+end
+
+%% Say hello.
+if(options.verbose)
+    fprintf('Making Gabor contrast image\n');
 end
 
 %% Set stimulus size in pixels.
 %
 % Stimulus goes into a square image.  Want number of pixels to be even. If
 % we adjust pixels, also adjust image size in degrees.
-stimulusN = round(vecnorm([stimulusSizeDeg stimulusSizeDeg])*screenPixelsPerDeg/sqrt(2));
+stimulusN = round(vecnorm([stimulusSizeDeg stimulusSizeDeg])*screenSizeObj.screenPixelsPerDeg/sqrt(2));
 if (rem(stimulusN,2) ~= 0)
     stimulusN = stimulusN+1;
 end
@@ -59,14 +63,14 @@ centerN = stimulusN/2;
 
 % Compute expected stimulus size in degrees based on actual pixels in the
 % square image.
-gaborSizeDeg = vecnorm([stimulusN stimulusN])/(screenPixelsPerDeg*sqrt(2));
-gaborSizeMeters = stimulusN/screenDpm;
+gaborSizeDeg = vecnorm([stimulusN stimulusN])/(screenSizeObj.screenPixelsPerDeg*sqrt(2));
+gaborSizeMeters = stimulusN/screenSizeObj.screenDpm;
 
 %% Convert image parameters in degrees to those in pixels.
 sineFreqCyclesPerImage = sineFreqCyclesPerDeg * stimulusSizeDeg;
-gaborSdPixels = gaborSdDeg * screenPixelsPerDeg;
+gaborSdPixels = gaborSdDeg * screenSizeObj.screenPixelsPerDeg;
 
-%% Make sine image here. 
+%% Make sine image here.
 %
 % The function MakeSineImage actually makes plaids. By making the
 % horozontal frequency (first argument) 0, we get a vertical sinusoid.

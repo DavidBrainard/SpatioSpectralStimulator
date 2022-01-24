@@ -45,6 +45,7 @@ colorDirectionParams.conditionName = conditionName;
 
 % Set wavelength support.
 colorDirectionParams.S = [380 2 201];
+colorDirectionParams.wls = SToWls(colorDirectionParams.S);
 
 %% Set key stimulus parameters
 %

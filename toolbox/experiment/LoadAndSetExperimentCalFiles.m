@@ -1,4 +1,4 @@
-function [] = LoadAndSetExperimentCalFiles()
+function [screenCalObj,channelCalObjs,screenGammaMethod] = LoadAndSetExperimentCalFiles(colorDirectionParams)
 % d
 %
 % Syntax:
@@ -25,6 +25,7 @@ function [] = LoadAndSetExperimentCalFiles()
 
 %% Set parameters.
 arguments
+    colorDirectionParams
 end
 
 %%

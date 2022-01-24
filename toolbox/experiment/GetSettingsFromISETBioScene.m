@@ -1,4 +1,4 @@
-function [] = GetSettingsFromISETBioScene()
+function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject)
 % d
 %
 % Syntax:
@@ -25,14 +25,19 @@ function [] = GetSettingsFromISETBioScene()
 
 %% Set parameters.
 arguments
+    screenCalObjFromISETBio
+    ISETBioGaborCalObject
+    standardGaborCalObject
 end
 
 %%
-
 primaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device') \ ...
-    (ISETBioGaborCal-screenCalObjFromISETBio.get('P_ambient'));
+    (ISETBioGaborCalObject.ISETBioGaborCal - screenCalObjFromISETBio.get('P_ambient'));
+
 settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,primaryFromISETBioGaborCal);
-if (max(abs(standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardSettingsGaborCal(:)) > 1e-6)
+
+% Check if it is reasonable.
+if (max(abs(standardGaborCalObject.standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardGaborCalObject.standardSettingsGaborCal(:)) > 1e-6)
     error('Cannot get home again in settings land');
 end
 

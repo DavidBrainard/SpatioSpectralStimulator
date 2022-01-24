@@ -1,4 +1,4 @@
-function [] = SetupChannelPrimaries()
+function [screenPrimaryChannelObj,bgChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,options)
 % d
 %
 % Syntax:
@@ -25,6 +25,10 @@ function [] = SetupChannelPrimaries()
 
 %% Set parameters.
 arguments
+    colorDirectionParams
+    channelCalObjs
+    projectIndices
+    options.verbose = true
 end
 
 %% Find background primaries to acheive desired xy at intensity scale of display.
@@ -33,10 +37,7 @@ end
 primaryHeadRoom = 0;
 targetLambda = 3;
 targetBgXYZ = xyYToXYZ([colorDirectionParams.targetBgxy ; 1]);
-
-% Adjust these to keep background in gamut
-% primaryBackgroundScaleFactor = 0.5;
-screenBackgroundScaleFactor = 0.5;
+nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 
 % Make a loop for getting background for all primaries.
 % Passing true for key 'Scale' causes these to be scaled reasonably
@@ -46,7 +47,7 @@ screenBackgroundScaleFactor = 0.5;
 for pp = 1:nScreenPrimaries
     [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = ...
         FindBgChannelPrimaries(targetBgXYZ, colorDirectionParams.T_xyz, channelCalObjs{pp}, colorDirectionParams.B_natural{pp}, ...
-        projectIndices, primaryHeadRoom, targetLambda, 'scaleFactor', 0.6, 'Scale', true, 'Verbose', VERBOSE);
+        projectIndices, primaryHeadRoom, targetLambda, 'scaleFactor', 0.6, 'Scale', true, 'Verbose', options.verbose);
 end
 if (any(channelBackgroundPrimaries < 0) | any(channelBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
@@ -95,11 +96,28 @@ end
 figure; clf;
 for pp = 1:nScreenPrimaries
     subplot(2,2,pp); hold on;
-    plot(wls,screenPrimarySpd(:,pp),'b','LineWidth',2);
-    plot(wls,isolatingNaturalApproxSpd(:,pp),'r:','LineWidth',1);
-    plot(wls(projectIndices),screenPrimarySpd(projectIndices,pp),'b','LineWidth',4);
-    plot(wls(projectIndices),isolatingNaturalApproxSpd(projectIndices,pp),'r:','LineWidth',3);
+    plot(colorDirectionParams.wls,screenPrimarySpd(:,pp),'b','LineWidth',2);
+    plot(colorDirectionParams.wls,isolatingNaturalApproxSpd(:,pp),'r:','LineWidth',1);
+    plot(colorDirectionParams.wls(projectIndices),screenPrimarySpd(projectIndices,pp),'b','LineWidth',4);
+    plot(colorDirectionParams.wls(projectIndices),isolatingNaturalApproxSpd(projectIndices,pp),'r:','LineWidth',3);
     xlabel('Wavelength (nm)'); ylabel('Power (arb units)');
     title(append('Primary ', num2str(pp)));
 end
+
+%% Save the results in one struct variable.
+%
+% Screen background priamry struct.
+bgChannelObject.channelBackgroundPrimaries = channelBackgroundPrimaries;
+bgChannelObject.channelBackgroundSpd = channelBackgroundSpd;
+bgChannelObject.channelBackgroundXYZ = channelBackgroundXYZ;
+
+% Screen primary channel struct.
+screenPrimaryChannelObj.screenPrimaryPrimaries= screenPrimaryPrimaries;
+screenPrimaryChannelObj.screenPrimaryPrimariesQuantized = screenPrimaryPrimariesQuantized;
+screenPrimaryChannelObj.screenPrimarySpd = screenPrimarySpd;
+screenPrimaryChannelObj.screenPrimaryContrast = screenPrimaryContrast;
+screenPrimaryChannelObj.screenPrimaryModulationPrimaries = screenPrimaryModulationPrimaries;
+screenPrimaryChannelObj.screenPrimarySettings = screenPrimarySettings;
+screenPrimaryChannelObj.isolatingNaturalApproxSpd = isolatingNaturalApproxSpd;
+
 end

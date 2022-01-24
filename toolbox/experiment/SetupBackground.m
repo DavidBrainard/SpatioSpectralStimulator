@@ -1,4 +1,4 @@
-function [] = SetupBackground()
+function [bgScreenPrimaryObj] = SetupBackground(colorDirectionParams,screenCalObj,bgChannelObject)
 % d
 %
 % Syntax:
@@ -25,12 +25,18 @@ function [] = SetupBackground()
 
 %% Set parameters.
 arguments
+    colorDirectionParams
+    screenCalObj
+    bgChannelObject
 end
 
 %% Set up desired background.
 %
+% Adjust these to keep background in gamut
+screenBackgroundScaleFactor = 0.5;
+
 % We aim for the background that we said we wanted when we built the screen primaries.
-desiredBgExcitations = screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(channelBackgroundSpd,2);
+desiredBgExcitations = screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(bgChannelObject.channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 
@@ -44,5 +50,11 @@ xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
 title('Check that we obtrain desired background excitations');
 fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
     screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
+
+%% Save the results in a struct.
+bgScreenPrimaryObj.desiredBgExcitations = desiredBgExcitations;
+bgScreenPrimaryObj.screenBgSettings = screenBgSettings;
+bgScreenPrimaryObj.screenBgExcitations = screenBgExcitations;
+
 end
 

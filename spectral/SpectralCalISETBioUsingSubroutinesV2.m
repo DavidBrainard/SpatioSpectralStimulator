@@ -25,10 +25,8 @@ colorDirectionParams = SetupColorDirection(conditionName);
 % Set to true to get more output.
 VERBOSE = false;
 
-%% Do all calibraiton loading
-[...] = LoadAndSetExperimentCalFiles(....)
-
-
+%% Do all calibraiton loading.
+[screenCalObj,channelCalObjs,screenGammaMethod] = LoadAndSetExperimentCalFiles(colorDirectionParams);
 
 %% Image spatial parameters.
 %
@@ -36,8 +34,6 @@ VERBOSE = false;
 sineFreqCyclesPerDeg = 1;
 gaborSdDeg = 1.5;
 stimulusSizeDeg = 7;
-
-
 
 %% Use extant machinery to get primaries from spectrum.
 %
@@ -47,36 +43,32 @@ stimulusSizeDeg = 7;
 % sensitive costs us smoothness in the spectral region we care most about.
 lowProjectWl = 400;
 highProjectWl = 700;
-projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
+projectIndices = find(colorDirectionParams.wls > lowProjectWl & colorDirectionParams.wls < highProjectWl);
 
 %% Find primaries with desired LMS contrast.
-[...] = SetupChannelPrimaries(...);
-
+[screenPrimaryChannelObj,bgChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices);
 
 %% Set the screen primaries.
 %
 % We want these to match those we set up with the channel calculations
 % above.  Need to reset sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-screenCalObj.set('P_device',screenPrimarySpd);
+screenCalObj.set('P_device',screenPrimaryChannelObj.screenPrimarySpd);
 SetSensorColorSpace(screenCalObj,colorDirectionParams.T_cones,colorDirectionParams.S);
 
-
-
 %% Create ISETBio display from the calibration file.
-[...] = SetupISETBioDisplayObject
+[ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj);
 
 %% Background
-[...] = SetupBackground(...);
+[bgScreenPrimaryObject] = SetupBackground(colorDirectionParams,screenCalObj,bgChannelObject);
 
 %% Make a monochrome Gabor patch in range -1 to 1.
 %
 % This is our monochrome contrast modulation image. Multiply by the max
 % contrast vector to get the LMS contrast image.
-fprintf('Making Gabor contrast image\n');
 [rawMonochromeUnquantizedContrastGaborImage, rawMonochromeUnquantizedContrastGaborCal, ...
     stimulusN, centerN, stimulusHorizSizeDeg, stimulusHorizSizeMeters] = ...
-    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenPixelsPerDeg,screenDpm,'verbose',VERBOSE);
+    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,'verbose',VERBOSE);
 
 %% Quantize the contrast image to a (large) fixed number of levels.
 %
@@ -97,20 +89,19 @@ ylabel('Quantized Gabor contrasts');
 title('Effect of contrast quantization');
 
 %% Get cone contrast/excitation gabor image.
-[...] = SetupPointCloudFromGabor(...)
+[ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,bgScreenPrimaryObject.screenBgExcitations);
 
 %% Make image from point cloud
-[...] = MakeImageSettingsFromPtCld(...);
+gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,bgScreenPrimaryObject.screenBgExcitations,stimulusN);
 
 %% Put the image into an ISETBio scene
-[...] = MakeISETBioSceneFromImage(...);
+ISETBioGaborCalObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,ISETBioDisplayObject,screenSizeObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg);
 
 % Go back to the RGB image starting with the ISETBio representation.
-[...] = GetSettingsFromISETBioScene(...);
-
+[primaryFromISETBioGaborCal, settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject);
 
 %% SRGB image via XYZ, scaled to display
-predictedXYZCal = colorDirectionParams.T_xyz * desiredSpdGaborCal;
+predictedXYZCal = colorDirectionParams.T_xyz * standardGaborCalObject.desiredSpdGaborCal;
 SRGBPrimaryCal = XYZToSRGBPrimary(predictedXYZCal);
 scaleFactor = max(SRGBPrimaryCal(:));
 SRGBCal = SRGBGammaCorrect(SRGBPrimaryCal/(2*scaleFactor),0);
@@ -122,7 +113,7 @@ title('SRGB Gabor Image');
 
 %% Show the settings image
 figure; clf;
-imshow(standardSettingsGaborImage);
+imshow(gaborImageObject.standardSettingsGaborImage);
 title('Image of settings');
 
 %% Plot slice through predicted LMS contrast image.
@@ -132,14 +123,14 @@ title('Image of settings');
 plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
 
 figure; hold on
-plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:stimulusN,100*standardPredictedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 if (screenGammaMethod == 2)
     title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone Contrast');
 else
@@ -154,14 +145,14 @@ ylim([-plotAxisLimit plotAxisLimit]);
 % Note that the y-axis in this plot is individual cone contrast, which is
 % not the same as the vector length contrast of the modulation.
 figure; hold on
-plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:stimulusN,100*uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:stimulusN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
 title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
@@ -175,7 +166,7 @@ ylim([-plotAxisLimit plotAxisLimit]);
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 desiredContrastCheckCal = colorDirectionParams.spatialGaborTargetContrast * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
-desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
+desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,bgScreenPrimaryObject.screenBgExcitations);
 
 % For each check calibration find the settings that
 % come as close as possible to producing the desired excitations.
@@ -185,11 +176,11 @@ desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screen
 % compute the cone contrasts with respect to the backgound (0 contrast
 % measurement, first settings), we should approximate the cone contrasts in
 % desiredContrastCheckCal.
-ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,desiredContrastCheckCal,ptCldSettingsCal);
+ptCldScreenSettingsCheckCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,desiredContrastCheckCal,ptCldObject.ptCldSettingsCal);
 ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
 ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
-ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
+ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal, bgScreenPrimaryObject.screenBgExcitations);
 figure; clf; hold on;
 plot(desiredContrastCheckCal(:),ptCldScreenContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
 xlim([0 plotAxisLimit/100]); ylim([0 plotAxisLimit/100]); axis('square');
@@ -211,11 +202,11 @@ xlabel('Computed primaries'); ylabel('Check primaries from spd'); axis('square')
 % Make sure that screenPrimarySettings leads to screenPrimarySpd
 clear screenPrimarySpdCheck
 for pp = 1:length(channelCalObjs)
-    screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp},screenPrimarySettings(:,pp)));
+    screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp}, screenPrimaryChannelObj.screenPrimarySettings(:,pp)));
 end
 figure; clf; hold on
-plot(wls,screenPrimarySpdCheck,'k','LineWidth',4);
-plot(wls,screenPrimarySpd,'r','LineWidth',2);
+plot(colorDirectionParams.wls, screenPrimarySpdCheck,'k','LineWidth',4);
+plot(colorDirectionParams.wls, screenPrimaryChannelObj.screenPrimarySpd,'r','LineWidth',2);
 xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
@@ -224,9 +215,5 @@ screenSettingsImage = standardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
-    save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
-        'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
-        'desiredContrastCheckCal', ...
-        'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
-        'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
+    save(testFilename,'colorDirectionParams');
 end

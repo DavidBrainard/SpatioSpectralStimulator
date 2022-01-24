@@ -1,4 +1,4 @@
-function [] = SetupISETBioDisplayObject()
+function [ISETBioDisplayObject,screenSizeObj,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,options)
 % d
 %
 % Syntax:
@@ -25,9 +25,14 @@ function [] = SetupISETBioDisplayObject()
 
 %% Set parameters.
 arguments
+    colorDirectionParams
+    screenCalObj
+    options.verbose (1,1) = true
 end
 
 %%
+
+screenGammaMethod = 2;
 % Note that we will want to be able to pass in custom primaries to this
 % routine, or at least do it with different cal files, because we'll do it
 % sometimes with nominal primaries and sometimes with measured primaries.
@@ -50,7 +55,7 @@ end
 %
 % Display parameters.
 screenDiagSizeDeg = 15.5;
-screenDistanceVirtualMeters = 10;
+screenDistanceMeters = 10;
 screenSizePixels = [1920 1080];
 screenDiagSizePixels = vecnorm(screenSizePixels);
 
@@ -60,12 +65,12 @@ screenDiagSizePixels = vecnorm(screenSizePixels);
 % linear in meters, so we want to work first in the physical units of the
 % display, not in degrees.
 [screenDiagSizeMeters,screenSizeMeters,screenSizeInches] = ...
-    DegToMeters(screenDiagSizeDeg,screenDistanceVirtualMeters,screenSizePixels,'DegToInches',true);
+    DegToMeters(screenDiagSizeDeg,screenDistanceMeters,screenSizePixels,'DegToInches',true);
 
 % Get horizontal and vertical size of screen in degrees. We take pixels per
 % degree along the diagonal as the best compromise, need to use that when
 % we compute image sizes below.
-screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceVirtualMeters));
+screenSizeDeg = 2 * atand(screenSizeMeters/(2*screenDistanceMeters));
 screenPixelsPerDeg = screenDiagSizePixels / screenDiagSizeDeg;
 
 % Get dpi and make sure everything is consistent.
@@ -82,6 +87,20 @@ screenDpm = screenDpi*inchesPerMeter;
 % Note that the function takes T_cones, S, screenGammaMethod for checking
 % if the reverse calculation (from ISETBio to calibration object) can get
 % the same values.
-[ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(screenCalObj,screenDistanceVirtualMeters,...
-    screenSizeMeters,screenSizePixels,colorDirectionParams.T_cones,colorDirectionParams.S,screenGammaMethod,'verbose',VERBOSE);
+[ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(screenCalObj,screenDistanceMeters,...
+    screenSizeMeters,screenSizePixels,colorDirectionParams.T_cones,colorDirectionParams.S,screenGammaMethod,'verbose',options.verbose);
+
+%% Save the screen size params in a struct?
+screenSizeObj.screenDiagSizeDeg = screenDiagSizeDeg;
+screenSizeObj.screenDistanceMeters = screenDistanceMeters;
+screenSizeObj.screenSizeMeters = screenSizeMeters;
+screenSizeObj.screenDiagSizeMeters = screenDiagSizeMeters;
+screenSizeObj.screenSizeInches = screenSizeInches;
+screenSizeObj.screenSizePixels = screenSizePixels;
+screenSizeObj.screenDiagSizePixels = screenDiagSizePixels;
+screenSizeObj.screenSizeDeg = screenSizeDeg;
+screenSizeObj.screenPixelsPerDeg = screenPixelsPerDeg;
+screenSizeObj.screenDpi = screenDpi;
+screenSizeObj.screenDpm = screenDpm;
+
 end
