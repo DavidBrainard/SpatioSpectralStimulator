@@ -23,7 +23,7 @@ conditionName = 'LminusMSmooth';
 colorDirectionParams = SetupColorDirection(conditionName);
 
 % Set to true to get more output.
-VERBOSE = false;
+VERBOSE = true;
 
 %% Do all calibraiton loading.
 screenGammaMethod = 2;
@@ -47,21 +47,21 @@ highProjectWl = 700;
 projectIndices = find(colorDirectionParams.wls > lowProjectWl & colorDirectionParams.wls < highProjectWl);
 
 %% Find primaries with desired LMS contrast.
-[screenPrimaryChannelObj,bgChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices);
+[screenPrimaryChannelObject,backgroundChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,'verbose',VERBOSE);
 
 %% Set the screen primaries.
 %
 % We want these to match those we set up with the channel calculations
 % above.  Need to reset sensor color space after we do this, so that the
 % conversion matrix is properly recomputed.
-screenCalObj.set('P_device',screenPrimaryChannelObj.screenPrimarySpd);
-SetSensorColorSpace(screenCalObj,colorDirectionParams.T_cones,colorDirectionParams.S);
+screenCalObj.set('P_device', screenPrimaryChannelObject.screenPrimarySpd);
+SetSensorColorSpace(screenCalObj, colorDirectionParams.T_cones, colorDirectionParams.S);
 
 %% Create ISETBio display from the calibration file.
-[ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj);
+[ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,'verbose',VERBOSE);
 
-%% Background
-[bgScreenPrimaryObject] = SetupBackground(colorDirectionParams,screenCalObj,bgChannelObject);
+%% Set up the background screen primaries.
+backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject,'verbose',VERBOSE);
 
 %% Make a monochrome Gabor patch in range -1 to 1.
 %
@@ -90,16 +90,20 @@ ylabel('Quantized Gabor contrasts');
 title('Effect of contrast quantization');
 
 %% Get cone contrast/excitation gabor image.
-[ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,bgScreenPrimaryObject.screenBgExcitations);
+[ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
+    screenCalObj,backgroundScreenPrimaryObject.screenBgExcitations,'verbose',VERBOSE);
 
-%% Make image from point cloud
-gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,bgScreenPrimaryObject.screenBgExcitations,stimulusN);
+%% Make image from point cloud.
+gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
+    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',VERBOSE);
 
-%% Put the image into an ISETBio scene
-ISETBioGaborCalObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,ISETBioDisplayObject,screenSizeObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg);
+%% Put the image into an ISETBio scene.
+ISETBioGaborCalObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSE);
 
 % Go back to the RGB image starting with the ISETBio representation.
-[primaryFromISETBioGaborCal, settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject);
+[primaryFromISETBioGaborCal, settingsFromISETBioGaborCal] = ...
+    GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,'verbose',VERBOSE);
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = colorDirectionParams.T_xyz * standardGaborCalObject.desiredSpdGaborCal;
@@ -167,21 +171,21 @@ ylim([-plotAxisLimit plotAxisLimit]);
 rawMonochromeUnquantizedContrastCheckCal = [0 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 desiredContrastCheckCal = colorDirectionParams.spatialGaborTargetContrast * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
-desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,bgScreenPrimaryObject.screenBgExcitations);
+desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,backgroundScreenPrimaryObject.screenBgExcitations);
 
-% For each check calibration find the settings that
-% come as close as possible to producing the desired excitations.
+% For each check calibration find the settings that come as close as
+% possible to producing the desired excitations.
 %
 % If we measure for a uniform field the spectra corresopnding to each of
-% the settings in the columns of ptCldScreenSettingsCheckCall, then
-% compute the cone contrasts with respect to the backgound (0 contrast
-% measurement, first settings), we should approximate the cone contrasts in
+% the settings in the columns of ptCldScreenSettingsCheckCall, then compute
+% the cone contrasts with respect to the backgound (0 contrast measurement,
+% first settings), we should approximate the cone contrasts in
 % desiredContrastCheckCal.
 ptCldScreenSettingsCheckCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,desiredContrastCheckCal,ptCldObject.ptCldSettingsCal);
 ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
 ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
-ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal, bgScreenPrimaryObject.screenBgExcitations);
+ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal, backgroundScreenPrimaryObject.screenBgExcitations);
 figure; clf; hold on;
 plot(desiredContrastCheckCal(:),ptCldScreenContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
 xlim([0 plotAxisLimit/100]); ylim([0 plotAxisLimit/100]); axis('square');
@@ -203,18 +207,25 @@ xlabel('Computed primaries'); ylabel('Check primaries from spd'); axis('square')
 % Make sure that screenPrimarySettings leads to screenPrimarySpd
 clear screenPrimarySpdCheck
 for pp = 1:length(channelCalObjs)
-    screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp}, screenPrimaryChannelObj.screenPrimarySettings(:,pp)));
+    screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp}, screenPrimaryChannelObject.screenPrimarySettings(:,pp)));
 end
 figure; clf; hold on
 plot(colorDirectionParams.wls, screenPrimarySpdCheck,'k','LineWidth',4);
-plot(colorDirectionParams.wls, screenPrimaryChannelObj.screenPrimarySpd,'r','LineWidth',2);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd,'r','LineWidth',2);
 xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
 %% Save out what we need to check things on the DLP
+%
+% This part needs to be updated as we get most of our results in the objects
+% now.
 screenSettingsImage = standardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
-    save(testFilename,'colorDirectionParams');
+    save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
+        'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
+        'desiredContrastCheckCal', ...
+        'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
+        'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end

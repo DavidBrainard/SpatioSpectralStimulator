@@ -17,9 +17,10 @@ function [screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirec
 %    screenGammaMethod            - 
 %
 % Optional key/value pairs:
-%    options.screenGammaMethod    - 
-%    options.channelGammaMethod   - 
-%    options.verbose              - 
+%    screenGammaMethod            - 
+%    channelGammaMethod           - 
+%    verbose                      - Boolean. Default true. Controls
+%                                   plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
@@ -41,13 +42,13 @@ end
 %
 % Load screen calibration data.
 screenCalObj = LoadCalibration(colorDirectionParams.screenCalName,...
-    colorDirectionParams.screenNInputLevels,'setGammaFitMethod',true);
+    colorDirectionParams.screenNInputLevels,'gammaFitMethod','identity');
 
 % Load channel calibration data.
 nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 for pp = 1:nScreenPrimaries
     channelCalObjs{pp} = LoadCalibration(colorDirectionParams.channelCalNames{pp},...
-        colorDirectionParams.channelNInputLevels,'setGammaFitMethod',false);
+        colorDirectionParams.channelNInputLevels);
 end
 
 if (options.verbose)

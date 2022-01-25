@@ -1,27 +1,36 @@
-function [ISETBioDisplayObject,screenSizeObj,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,options)
-% d
+function [ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,options)
+% Set up ISETBio display object from the screen cal object.
 %
 % Syntax:
-%    d
+%    [ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj)
 %
 % Description:
-%    d
+%    It creates ISETBio display object from screen cal object as we want to
+%    utilize ISETBio in the SACC project. It also prints out the screen
+%    calibration object as an output, which is taken back from ISETBio
+%    object to make sure that we can move the domain from one to another
+%    with no problems.
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams      -
+%    screenCalObj              -
 %
 % Outputs:
-%    d                       -
+%    ISETBioDisplayObject      -
+%    screenSizeObject          -
+%    screenCalObjFromISETBio   -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    verbose                   - Boolean. Default true. Controls
+%                                plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,ga,smo     - Wrote it.
+%   01/24/22  smo            - Made it work.
 
 %% Set parameters.
 arguments
@@ -30,30 +39,9 @@ arguments
     options.verbose (1,1) = true
 end
 
-%%
-
-screenGammaMethod = 2;
-% Note that we will want to be able to pass in custom primaries to this
-% routine, or at least do it with different cal files, because we'll do it
-% sometimes with nominal primaries and sometimes with measured primaries.
-
+%% Set the display size in different units.
 %
-% On the DMD size, Derek writes (email 2022-01-11):
-%     Looking at the system design, I find that the conversion is 7.74350
-%     degrees : 12 mm = 0.64529 degrees per mm. This indicates that the
-%     diagonal of the DMD occupies a FOV of 2*7.74350 = 15.487 degrees ~
-%     15.5 degrees.
-%
-%     We can use this to solve for the h and v size in degrees.
-%     Let the horizontal size by x and the diagonal be d.  We know
-%     that d^2 = x^2 * (1+(screenVertPixels/screenHorizPixels)^2). So
-%     x = sqrt(d^2/(1+(screenVertPixels/screenHorizPixels)^2)).
-%
-% The DMD dimensions and distance are dummied up so that the visual
-% angle matches that of our optical system, but so that the optical
-% distance is large enough to mimic optical infinity.
-%
-% Display parameters.
+% Set the display parameters.
 screenDiagSizeDeg = 15.5;
 screenDistanceMeters = 10;
 screenSizePixels = [1920 1080];
@@ -80,27 +68,28 @@ if (abs((screenDpi - vecnorm(screenDpiChk))/screenDpi) > 1e-6)
     error('Screen is not rigid');
 end
 inchesPerMeter = 39.3701;
-screenDpm = screenDpi*inchesPerMeter;
+screenDpm = screenDpi * inchesPerMeter;
 
-% Create ISETBio display object here.
+%% Create ISETBio display object here.
 %
 % Note that the function takes T_cones, S, screenGammaMethod for checking
 % if the reverse calculation (from ISETBio to calibration object) can get
 % the same values.
+screenGammaMethod = 2;
 [ISETBioDisplayObject,screenCalObjFromISETBio] = MakeISETBioDisplayObj(screenCalObj,screenDistanceMeters,...
     screenSizeMeters,screenSizePixels,colorDirectionParams.T_cones,colorDirectionParams.S,screenGammaMethod,'verbose',options.verbose);
 
-%% Save the screen size params in a struct?
-screenSizeObj.screenDiagSizeDeg = screenDiagSizeDeg;
-screenSizeObj.screenDistanceMeters = screenDistanceMeters;
-screenSizeObj.screenSizeMeters = screenSizeMeters;
-screenSizeObj.screenDiagSizeMeters = screenDiagSizeMeters;
-screenSizeObj.screenSizeInches = screenSizeInches;
-screenSizeObj.screenSizePixels = screenSizePixels;
-screenSizeObj.screenDiagSizePixels = screenDiagSizePixels;
-screenSizeObj.screenSizeDeg = screenSizeDeg;
-screenSizeObj.screenPixelsPerDeg = screenPixelsPerDeg;
-screenSizeObj.screenDpi = screenDpi;
-screenSizeObj.screenDpm = screenDpm;
+%% Save the screen size params in a struct.
+screenSizeObject.screenDiagSizeDeg = screenDiagSizeDeg;
+screenSizeObject.screenDistanceMeters = screenDistanceMeters;
+screenSizeObject.screenSizeMeters = screenSizeMeters;
+screenSizeObject.screenDiagSizeMeters = screenDiagSizeMeters;
+screenSizeObject.screenSizeInches = screenSizeInches;
+screenSizeObject.screenSizePixels = screenSizePixels;
+screenSizeObject.screenDiagSizePixels = screenDiagSizePixels;
+screenSizeObject.screenSizeDeg = screenSizeDeg;
+screenSizeObject.screenPixelsPerDeg = screenPixelsPerDeg;
+screenSizeObject.screenDpi = screenDpi;
+screenSizeObject.screenDpm = screenDpm;
 
 end

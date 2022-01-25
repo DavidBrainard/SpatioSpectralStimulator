@@ -1,27 +1,34 @@
 function [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,screenBgExcitations,options)
-% d
+% Set up point cloud from the gabor object.
 %
 % Syntax:
-%    d
+%    [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,screenBgExcitations)
 %
 % Description:
-%    d
+%    This creates the point cloud that has the all possible combinations
+%    that
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams           -
+%    rawMonochromeContrastGaborCal  -
+%    screenCalObj                   -
+%    screenBgExcitations            -
 %
 % Outputs:
-%    d                       -
+%    ptCldObject
+%    standardGaborCalObject         -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    verbose                        - Boolean. Default true. Controls
+%                                     plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,gka,smo           - Wrote it.
+%   01/24/22  smo                   - Made it work.
 
 %% Set parameters.
 arguments
@@ -31,8 +38,6 @@ arguments
     screenBgExcitations
     options.verbose (1,1) = true
 end
-
-%%
 
 %% Get cone contrast/excitation gabor image.
 %
@@ -58,11 +63,14 @@ standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSett
 standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
 standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 
-%% Set up point cloud of contrasts for all possible settings
+%% Set up point cloud of contrasts for all possible settings.
 [contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',options.verbose);
 
-%% Save the results in a struct.
-
+%% Save the results in a struct to print out.
+%
+% Note that 'desiredContrastGaborCal' is saved in both objects for
+% convenience. It can be changed later.
+%
 % Standard gabor cal object.
 standardGaborCalObject.desiredContrastGaborCal = desiredContrastGaborCal;
 standardGaborCalObject.desiredExcitationsGaborCal = desiredExcitationsGaborCal;

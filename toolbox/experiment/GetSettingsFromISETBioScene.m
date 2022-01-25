@@ -1,33 +1,39 @@
-function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject)
-% d
+function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,options)
+% Get settings in cal format from ISETBio scence.
 %
 % Syntax:
-%    d
+%    [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject)
 %
 % Description:
-%    d
+%    TBD
 %
-% Inputs:
-%    d                       -
+% Inputs: 
+%    screenCalObjFromISETBio         -
+%    ISETBioGaborCalObject           -
+%    standardGaborCalObject          -
 %
 % Outputs:
-%    d                       -
+%    primaryFromISETBioGaborCal      -
+%    settingsFromISETBioGaborCal     -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    verbose                         - Boolean. Default true. Controls
+%                                    plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,gka,smo            - Wrote it.
+%   01/24/22  smo                    - Made it work.
 
 %% Set parameters.
 arguments
     screenCalObjFromISETBio
     ISETBioGaborCalObject
     standardGaborCalObject
+    options.verbose (1,1) = true
 end
 
 %%

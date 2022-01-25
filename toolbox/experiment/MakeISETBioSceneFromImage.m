@@ -1,27 +1,36 @@
-function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,ISETBioDisplayObject,screenSizeObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg)
-% d
+function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,options)
+% Make ISETBio scene from the gabor image.
 %
 % Syntax:
-%    d
+%    [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+%                              ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg)
 %
 % Description:
 %    d
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams          -
+%    gaborImageObject              - 
+%    standardGaborCalObject        -
+%    ISETBioDisplayObject          -
+%    stimulusHorizSizeMeters       -
+%    stimulusHorizSizeDeg          -
 %
 % Outputs:
-%    d                       -
+%    ISETBioGaborCalObject         -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    verbose                       - Boolean. Default true. Controls
+%                                    plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,gka,smo     - Wrote it.
+%   01/24/22  smo             - Made it work.
 
 %% Set parameters.
 arguments
@@ -29,9 +38,9 @@ arguments
     gaborImageObject
     standardGaborCalObject
     ISETBioDisplayObject
-    screenSizeObject
     stimulusHorizSizeMeters
     stimulusHorizSizeDeg
+    options.verbose (1,1) = true
 end
 
 %% Put the image into an ISETBio scene
@@ -56,7 +65,7 @@ end
 % Calculate cone excitations from the ISETBio scene.
 % These should match what we get when we compute
 % outside of ISETBio. And indeed!
-
+%
 % ISETBio energy comes back as power per nm, we need to convert to power
 % per wlband to work with PTB, by multiplying by S(2).
 ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);

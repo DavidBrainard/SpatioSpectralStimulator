@@ -35,7 +35,7 @@ function [calObj] = LoadCalibration(calName,nInputLevels,options)
 arguments
     calName {mustBeMember(calName,{'SACC','SACCPrimary1','SACCPrimary2','SACCPrimary3'})}
     nInputLevels (1,1)
-    options.setGammaFitMethod (1,1) = false
+    options.gammaFitMethod = 'identity'
 end
 
 %% Load calibration and refit its gamma.
@@ -45,9 +45,8 @@ cal = LoadCalFile(calName);
 calObj = ObjectToHandleCalOrCalStruct(cal);
 
 % Set the gamma fit method if needed.
-if (options.setGammaFitMethod)
-    gammaFitMethod = 'identity';
-    calObj.set('gamma.fitType',gammaFitMethod);
+if (~isempty(options.gammaFitMethod))
+    calObj.set('gamma.fitType',options.gammaFitMethod);
 end
 
 % Fit the gamma here.

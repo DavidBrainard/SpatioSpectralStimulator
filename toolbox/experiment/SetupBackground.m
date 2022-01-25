@@ -1,60 +1,71 @@
-function [bgScreenPrimaryObj] = SetupBackground(colorDirectionParams,screenCalObj,bgChannelObject)
-% d
+function [backgroundScreenPrimaryObject] = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject,options)
+% Find the background screen primaries that reproduces a desired chromaticity.
 %
 % Syntax:
-%    d
+%    [backgroundScreenPrimaryObject] = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject)
 %
 % Description:
-%    d
+%    This calculates the background screen primaries that reproduces a
+%    desired chromaticity. As we decided the channel primaries, here we
+%    find the screen primaries for the background that reproduces the same
+%    chromaticity as the one we found when calculating the channel
+%    primaries.
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams              -
+%    screenCalObj                      -
+%    backgroundChannelObject           -
 %
 % Outputs:
-%    d                       -
+%    backgroundScreenPrimaryObject     -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    screenBackgroundScaleFactor       - Adjust this to keep the background
+%                                        in gamut.
+%    verbose                           - Boolean. Default true. Controls
+%                                        plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,gka,smo              - Wrote it.
+%   01/24/22  smo                      - Made it work.
 
 %% Set parameters.
 arguments
     colorDirectionParams
     screenCalObj
-    bgChannelObject
+    backgroundChannelObject
+    options.screenBackgroundScaleFactor (1,1) = 0.5
+    options.verbose (1,1) = true
 end
 
 %% Set up desired background.
 %
-% Adjust these to keep background in gamut
-screenBackgroundScaleFactor = 0.5;
-
 % We aim for the background that we said we wanted when we built the screen primaries.
-desiredBgExcitations = screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(bgChannelObject.channelBackgroundSpd,2);
+desiredBgExcitations = options.screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(backgroundChannelObject.channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 
 % Plot it.
-figure; clf; hold on;
-plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
-axis('square');
-xlim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
-ylim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
-xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
-title('Check that we obtrain desired background excitations');
-fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
-    screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
+if (options.verbose)
+    figure; clf; hold on;
+    plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
+    axis('square');
+    xlim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
+    ylim([min([desiredBgExcitations ; screenBgExcitations]),max([desiredBgExcitations ; screenBgExcitations])]);
+    xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
+    title('Check that we obtrain desired background excitations');
+    fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
+        screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
+end
 
 %% Save the results in a struct.
-bgScreenPrimaryObj.desiredBgExcitations = desiredBgExcitations;
-bgScreenPrimaryObj.screenBgSettings = screenBgSettings;
-bgScreenPrimaryObj.screenBgExcitations = screenBgExcitations;
+backgroundScreenPrimaryObject.desiredBgExcitations = desiredBgExcitations;
+backgroundScreenPrimaryObject.screenBgSettings = screenBgSettings;
+backgroundScreenPrimaryObject.screenBgExcitations = screenBgExcitations;
 
 end
 

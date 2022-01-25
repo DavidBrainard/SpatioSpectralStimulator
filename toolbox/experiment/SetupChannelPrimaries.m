@@ -1,34 +1,42 @@
-function [screenPrimaryChannelObj,bgChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,options)
-% d
+function [screenPrimaryChannelObject,backgroundChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,options)
+% Set up channel primaries that reproduce desired cone contrasts.
 %
 % Syntax:
-%    d
+%    [screenPrimaryChannelObj,bgChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices)
 %
 % Description:
-%    d
+%    This finds the channel primareis that reproduce desired cone
+%    contrasts. Here we find the primaries of the background first that
+%    matches a specific chromaticity, then we find the channel primaries
+%    after.
 %
 % Inputs:
-%    d                       -
+%    colorDirectionParams          -
+%    channelCalObjs                -
+%    projectIndices                -
 %
 % Outputs:
-%    d                       -
+%    screenPrimaryChannelObject    -
+%    backgroundChannelObject       -
 %
 % Optional key/value pairs:
-%    d                       - d
+%    verbose                       - Boolean. Default true. Controls
+%                                    plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,ga,smo     - Wrote it
+%   01/21/22  dhb,ga,smo           - Wrote it.
+%   01/24/22  smo                  - Made it work.
 
 %% Set parameters.
 arguments
     colorDirectionParams
     channelCalObjs
     projectIndices
-    options.verbose = true
+    options.verbose (1,1) = true
 end
 
 %% Find background primaries to acheive desired xy at intensity scale of display.
@@ -107,17 +115,17 @@ end
 %% Save the results in one struct variable.
 %
 % Screen background priamry struct.
-bgChannelObject.channelBackgroundPrimaries = channelBackgroundPrimaries;
-bgChannelObject.channelBackgroundSpd = channelBackgroundSpd;
-bgChannelObject.channelBackgroundXYZ = channelBackgroundXYZ;
+backgroundChannelObject.channelBackgroundPrimaries = channelBackgroundPrimaries;
+backgroundChannelObject.channelBackgroundSpd = channelBackgroundSpd;
+backgroundChannelObject.channelBackgroundXYZ = channelBackgroundXYZ;
 
 % Screen primary channel struct.
-screenPrimaryChannelObj.screenPrimaryPrimaries= screenPrimaryPrimaries;
-screenPrimaryChannelObj.screenPrimaryPrimariesQuantized = screenPrimaryPrimariesQuantized;
-screenPrimaryChannelObj.screenPrimarySpd = screenPrimarySpd;
-screenPrimaryChannelObj.screenPrimaryContrast = screenPrimaryContrast;
-screenPrimaryChannelObj.screenPrimaryModulationPrimaries = screenPrimaryModulationPrimaries;
-screenPrimaryChannelObj.screenPrimarySettings = screenPrimarySettings;
-screenPrimaryChannelObj.isolatingNaturalApproxSpd = isolatingNaturalApproxSpd;
+screenPrimaryChannelObject.screenPrimaryPrimaries= screenPrimaryPrimaries;
+screenPrimaryChannelObject.screenPrimaryPrimariesQuantized = screenPrimaryPrimariesQuantized;
+screenPrimaryChannelObject.screenPrimarySpd = screenPrimarySpd;
+screenPrimaryChannelObject.screenPrimaryContrast = screenPrimaryContrast;
+screenPrimaryChannelObject.screenPrimaryModulationPrimaries = screenPrimaryModulationPrimaries;
+screenPrimaryChannelObject.screenPrimarySettings = screenPrimarySettings;
+screenPrimaryChannelObject.isolatingNaturalApproxSpd = isolatingNaturalApproxSpd;
 
 end
