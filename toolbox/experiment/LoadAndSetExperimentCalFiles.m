@@ -9,16 +9,17 @@ function [screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirec
 %    quantized conversion by refitting the gamma.
 %
 % Inputs:
-%    colorDirectionParams         - 
+%    colorDirectionParams         - Structure with the parameters to
+%                                   calculate a contrast gabor image.
 %
 % Outputs:
-%    screenCalObj                 - 
-%    channelCalObjs               - 
-%    screenGammaMethod            - 
+%    screenCalObj                 - Screen calibration object.
+%    channelCalObjs               - Channel calibration objects.
 %
 % Optional key/value pairs:
-%    screenGammaMethod            - 
-%    channelGammaMethod           - 
+%    screenGammaMethod            - This decides the gammma fitting method
+%                                   for the screen.
+%    channelGammaMethod           - Gamma fitting method for the channels.
 %    verbose                      - Boolean. Default true. Controls
 %                                   plotting and printout.
 %

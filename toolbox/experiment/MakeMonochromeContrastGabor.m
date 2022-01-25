@@ -1,4 +1,4 @@
-function [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeters] = ...
+function [gaborImage, gaborCalUnquantized, gaborCalQuantized, stimulusN, centerN, gaborSizeDeg, gaborSizeMeters] = ...
     MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObj,options)
 % Make a monochrome gabor patch image.
 %
@@ -22,11 +22,17 @@ function [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeter
 % Outputs:
 %    gaborImage               - Created monochrome gabor image in image
 %                               format.
-%    gaborCal                 - The monochrome gabor image in cal format.
+%    gaborCalUnquantized      - The monochrome gabor image in cal format 
+%                               before quantization.
+%    gaborCalQuantized        - The monochrome gabor image in cal format
+%                               after quantization. Quantization speeds up
+%                               the further image conversion without any
+%                               meaningful loss of precision.
 %    gaborSizeDeg             - The size of the gabor image in degrees.
 %    gaborSizeMeters          - The size of the gabor image in meters.
 %
 % Optional key/value pairs:
+%    nQuantizeBits
 %    verbose                  - Deafault true. Print out more status message
 %                               if it sets to true.
 %
@@ -36,6 +42,7 @@ function [gaborImage, gaborCal, stimulusN, centerN, gaborSizeDeg, gaborSizeMeter
 
 % History:
 %   01/20/22  smo             - Wrote it
+%   01/25/22  smo             - Added quantization option here.
 
 %% Set parameters.
 arguments
@@ -43,6 +50,7 @@ arguments
     sineFreqCyclesPerDeg (1,1)
     gaborSdDeg (1,1)
     screenSizeObj
+    options.nQuantizeBits (1,1) = 14
     options.verbose (1,1) = true
 end
 
@@ -85,9 +93,32 @@ gaborImage = rawMonochromeSineImage.*gaussianWindow;
 
 % Put it into cal format.  Each pixel in cal format is one column. Here
 % there is just one row since it is a monochrome image at this point.
-gaborCal = ImageToCalFormat(gaborImage);
+gaborCalUnquantized = ImageToCalFormat(gaborImage);
 
 if(options.verbose)
     disp('Monochrome gabor image has been created!');
+end
+
+%% Quantize the contrast image to a (large) fixed number of levels.
+%
+% This allows us to speed up the image conversion without any meaningful
+% loss of precision. If you don't like it, increase number of quantization
+% bits until you are happy again.
+nQuantizeLevels = 2^options.nQuantizeBits;
+gaborCalQuantized = 2*(PrimariesToIntegerPrimaries((gaborCalUnquantized+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+
+if(options.verbose)
+    disp('Monochrome gabor cal has been quantized!');
+end
+
+% Plot of how quantized version does in obtaining desired contrats.
+if (options.verbose)
+    figure; clf;
+    plot(gaborCalUnquantized(:),gaborCalQuantized(:),'r+');
+    axis('square');
+    xlim([0 1]); ylim([0 1]);
+    xlabel('Unquantized Gabor contrasts');
+    ylabel('Quantized Gabor contrasts');
+    title('Effect of contrast quantization');
 end
 end

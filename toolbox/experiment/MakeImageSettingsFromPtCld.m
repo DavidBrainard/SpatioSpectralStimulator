@@ -1,25 +1,31 @@
 function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,screenBgExcitations,stimulusN,options)
-% Make gabor image settings from the point cloud object.
+% Make a gabor image from the point cloud object.
 %
 % Syntax:
 %    [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,screenBgExcitations,stimulusN)
 %
 % Description:
-%    TBD
+%    This makes a gabor image with a desired contrast using the point cloud
+%    method.
 %
 % Inputs:
-%    ptCldObject               -
-%    screenCalObj              -
-%    standardGaborCalObject    -
-%    screenBgExcitations       -
-%    stimulusN                 -
+%    ptCldObject               - Structure with the contrasts for all
+%                                possible settings using the point cloud
+%                                method.
+%    screenCalObj              - Screen calibration object.
+%    standardGaborCalObject    - Structure with the gabor contrasts
+%                                and settings in a cal format.
+%    screenBgExcitations       - Screen background cone excitations.
+%    stimulusN                 - The size of the stimulus (gabor image) in
+%                                pixels.
 %
 % Outputs:
-%    gaborImageObject          -
+%    gaborImageObject          - Structure with the gabor contrast image in
+%                                image format.
 %
 % Optional key/value pairs:
 %    verbose                   - Boolean. Default true. Controls
-%                                     plotting and printout.
+%                                plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
@@ -27,7 +33,7 @@ function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalOb
 
 % History:
 %   01/21/22  dhb,gka,smo      - Wrote it.
-%   01/24/22  smo              - Made it work,
+%   01/24/22  smo              - Made it work.
 
 %% Set parameters.
 arguments

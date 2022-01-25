@@ -5,16 +5,23 @@ function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsF
 %    [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject)
 %
 % Description:
-%    TBD
+%    This gets the gabor image settings from the ISETBio scene. As we want
+%    to use ISETBio in SACC project, this is for getting back the gabor
+%    contrast in a cal format, which should be matched to the contrast
+%    gabor before putting inside the ISETBio world.
 %
 % Inputs: 
-%    screenCalObjFromISETBio         -
-%    ISETBioGaborCalObject           -
-%    standardGaborCalObject          -
-%
+%    screenCalObjFromISETBio         - Screen calibration object acquired
+%                                      from the ISETBio.
+%    ISETBioGaborCalObject           - Structure with the gabor image in a
+%                                      cal format that acquired from the
+%                                      ISETBio scene.
+%    standardGaborCalObject          - Structure with the gabor contrasts
+%                              	       and settings in a cal format.
+% 
 % Outputs:
-%    primaryFromISETBioGaborCal      -
-%    settingsFromISETBioGaborCal     -
+%    primaryFromISETBioGaborCal      - 
+%    settingsFromISETBioGaborCal     - 
 %
 % Optional key/value pairs:
 %    verbose                         - Boolean. Default true. Controls
@@ -22,7 +29,7 @@ function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsF
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
-%    SpectralCalISETBio
+%    SpectralCalISETBio, MakeISETBioSceneFromImage
 
 % History:
 %   01/21/22  dhb,gka,smo            - Wrote it.
@@ -36,7 +43,7 @@ arguments
     options.verbose (1,1) = true
 end
 
-%%
+%% Calculate the settings from the ISETBio.
 primaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device') \ ...
     (ISETBioGaborCalObject.ISETBioGaborCal - screenCalObjFromISETBio.get('P_ambient'));
 

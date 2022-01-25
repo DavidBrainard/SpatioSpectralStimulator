@@ -1,4 +1,4 @@
-function colorDirectionParams = SetupColorDirection(conditionName,options)
+function colorDirectionParams = SetupColorDirection(conditionName)
 % Set up a parameter structure for a color direction.
 %
 % Syntax:
@@ -32,7 +32,6 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 %% Set parameters.
 arguments
     conditionName {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
-    options.temp
 end
 
 %% Set some initial parameters on the struct here.

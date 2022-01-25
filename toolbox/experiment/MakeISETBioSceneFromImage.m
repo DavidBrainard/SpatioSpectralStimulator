@@ -7,18 +7,26 @@ function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParam
 %                              ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg)
 %
 % Description:
-%    d
+%    This puts the target gabor image into ISETBio scene. 
 %
 % Inputs:
-%    colorDirectionParams          -
-%    gaborImageObject              - 
-%    standardGaborCalObject        -
-%    ISETBioDisplayObject          -
-%    stimulusHorizSizeMeters       -
-%    stimulusHorizSizeDeg          -
+%    colorDirectionParams          - Structure with the parameters to
+%                                    calculate a contrast gabor image.
+%    gaborImageObject              - Structure with the gabor contrast image in
+%                                    image format.
+%    standardGaborCalObject        - Structure with the gabor contrasts
+%                                    and settings in a cal format.
+%    ISETBioDisplayObject          - Structure with the parameters to make the
+%                                    ISETBio scene from image.
+%    stimulusHorizSizeMeters       - The horizontal size of the gabor image
+%                                    in meters.
+%    stimulusHorizSizeDeg          - The horizontal size of the gabor image
+%                                    in degrees.
 %
 % Outputs:
-%    ISETBioGaborCalObject         -
+%    ISETBioGaborCalObject         - Structure with the gabor image in a
+%                                    cal format that acquired from the
+%                                    ISETBio scene.
 %
 % Optional key/value pairs:
 %    verbose                       - Boolean. Default true. Controls
@@ -26,7 +34,7 @@ function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParam
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
-%    SpectralCalISETBio
+%    SpectralCalISETBio, GetSettingsFromISETBioScene
 
 % History:
 %   01/21/22  dhb,gka,smo     - Wrote it.
@@ -43,7 +51,7 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Put the image into an ISETBio scene
+%% Put the image into an ISETBio scene.
 %
 % These calls are a bit slow for large images and the fine wavelength
 % sampling used here. But these would be done as pre-compute steps so
@@ -62,7 +70,7 @@ if (abs(stimulusHorizSizeDeg - stimulusHorizSizeDegChk)/stimulusHorizSizeDeg > 0
     error('Horizontal size in deg mismatch of too much');
 end
 
-% Calculate cone excitations from the ISETBio scene.
+%% Calculate cone excitations from the ISETBio scene.
 % These should match what we get when we compute
 % outside of ISETBio. And indeed!
 %

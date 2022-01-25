@@ -12,13 +12,20 @@ function [ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = Setup
 %    with no problems.
 %
 % Inputs:
-%    colorDirectionParams      -
-%    screenCalObj              -
+%    colorDirectionParams      - Structure with the parameters to
+%                                calculate a contrast gabor image.
+%    screenCalObj              - Screen calibration object.
 %
 % Outputs:
-%    ISETBioDisplayObject      -
-%    screenSizeObject          -
-%    screenCalObjFromISETBio   -
+%    ISETBioDisplayObject      - Structure with the parameters to make the
+%                                ISETBio scene from image.
+%    screenSizeObject          - Structure that contains the target display
+%                                size in different units such as meters,
+%                                inches, degs, and pixels.
+%    screenCalObjFromISETBio   - Screen calibration object that is
+%                                calculated from the ISETBio display
+%                                object. This should be matched with the
+%                                initial screen cal object.
 %
 % Optional key/value pairs:
 %    verbose                   - Boolean. Default true. Controls

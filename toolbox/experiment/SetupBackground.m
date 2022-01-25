@@ -12,12 +12,16 @@ function [backgroundScreenPrimaryObject] = SetupBackground(colorDirectionParams,
 %    primaries.
 %
 % Inputs:
-%    colorDirectionParams              -
-%    screenCalObj                      -
-%    backgroundChannelObject           -
+%    colorDirectionParams              - Structure with the parameters to
+%                                        calculate a contrast gabor image.
+%    screenCalObj                      - Screen calibration object.
+%    backgroundChannelObject           - Structure that contains the
+%                                        background channel primaries.
 %
 % Outputs:
-%    backgroundScreenPrimaryObject     -
+%    backgroundScreenPrimaryObject     - Structure with the background
+%                                        screen primaries that reproduces a
+%                                        specific chromaticity.
 %
 % Optional key/value pairs:
 %    screenBackgroundScaleFactor       - Adjust this to keep the background

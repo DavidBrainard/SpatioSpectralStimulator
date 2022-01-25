@@ -1,22 +1,30 @@
 function [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,screenBgExcitations,options)
-% Set up point cloud from the gabor object.
+% Set up point cloud from the gabor image.
 %
 % Syntax:
 %    [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,screenCalObj,screenBgExcitations)
 %
 % Description:
 %    This creates the point cloud that has the all possible combinations
-%    that
+%    of the contrasts. This will be used to create a gabor image with a
+%    desired contrast.
 %
 % Inputs:
-%    colorDirectionParams           -
-%    rawMonochromeContrastGaborCal  -
-%    screenCalObj                   -
-%    screenBgExcitations            -
+%    colorDirectionParams           - Structure with the parameters to
+%                                     calculate a contrast gabor image.
+%    rawMonochromeContrastGaborCal  - Monochrome contrast gabor image in a
+%                                     cal format to compute the gabor image
+%                                     with desired contrast and color
+%                                     direction.
+%    screenCalObj                   - Screen calibration object.
+%    screenBgExcitations            - Screen background cone excitations.
 %
 % Outputs:
-%    ptCldObject
-%    standardGaborCalObject         -
+%    ptCldObject                    - Structure with the contrasts for all
+%                                     possible settings using the point
+%                                     cloud method.
+%    standardGaborCalObject         - Structure with the gabor contrasts
+%                                     and settings in a cal format.
 %
 % Optional key/value pairs:
 %    verbose                        - Boolean. Default true. Controls
@@ -65,11 +73,14 @@ standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcit
 
 %% Set up point cloud of contrasts for all possible settings.
 [contrastPtCld, ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',options.verbose);
+if (options.verbose)
+    disp('Contrast point cloud has been successfully created!');
+end
 
 %% Save the results in a struct to print out.
 %
 % Note that 'desiredContrastGaborCal' is saved in both objects for
-% convenience. It can be changed later.
+% convenience. It can be changed later on.
 %
 % Standard gabor cal object.
 standardGaborCalObject.desiredContrastGaborCal = desiredContrastGaborCal;
