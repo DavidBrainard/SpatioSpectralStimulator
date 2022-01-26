@@ -84,11 +84,11 @@ gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardG
     backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',VERBOSE);
 
 %% Put the image into an ISETBio scene.
-ISETBioGaborCalObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
     ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSE);
 
 % Go back to the RGB image starting with the ISETBio representation.
-fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,'verbose',VERBOSE);
+fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborObject,standardGaborCalObject,'verbose',VERBOSE);
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = colorDirectionParams.T_xyz * standardGaborCalObject.desiredSpdGaborCal;

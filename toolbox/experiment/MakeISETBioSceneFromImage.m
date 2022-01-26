@@ -1,4 +1,4 @@
-function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+function [ISETBioGaborObject] = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
     ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,options)
 % Make ISETBio scene from the gabor image.
 %
@@ -24,9 +24,8 @@ function [ISETBioGaborCalObject] = MakeISETBioSceneFromImage(colorDirectionParam
 %                                    in degrees.
 %
 % Outputs:
-%    ISETBioGaborCalObject         - Structure with the gabor image in a
-%                                    cal format that acquired from the
-%                                    ISETBio scene.
+%    ISETBioGaborObject            - Structure with gabor contrast image in
+%                                    the ISETBio scene format.
 %
 % Optional key/value pairs:
 %    verbose                       - Boolean. Default true. Controls
@@ -57,7 +56,11 @@ end
 % sampling used here. But these would be done as pre-compute steps so
 % it doesn't seem worth trying to optimize at this point.
 ISETBioGaborScene = sceneFromFile(gaborImageObject.standardSettingsGaborImage,'rgb', [], ISETBioDisplayObject);
-sceneWindow(ISETBioGaborScene);
+
+% Show the image on ISETBio scene window.
+if (options.verbose)
+    sceneWindow(ISETBioGaborScene);
+end
 
 % Check stimulus dimensions match. These are good to about a percent, which
 % we can live with.
@@ -80,15 +83,20 @@ ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.
 [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
 ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
 limMin = 0.01; limMax = 0.02;
-figure; clf; hold on;
-plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(1,:), ISETBioPredictedExcitationsGaborCal(1,:),'r+');
-plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(2,:), ISETBioPredictedExcitationsGaborCal(2,:),'g+');
-plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(3,:), ISETBioPredictedExcitationsGaborCal(3,:),'b+');
-plot([limMin limMax], [limMin limMax]);
-xlabel('Standard Cone Excitations');
-ylabel('ISETBio Cone Excitations');
-axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
-title('Cone Excitations Comparison');
+
+% Plot it to comapare the cone excitations between before and after passing
+% the ISETBio scene.
+if (options.verbose)
+    figure; clf; hold on;
+    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(1,:), ISETBioPredictedExcitationsGaborCal(1,:),'r+');
+    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(2,:), ISETBioPredictedExcitationsGaborCal(2,:),'g+');
+    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(3,:), ISETBioPredictedExcitationsGaborCal(3,:),'b+');
+    plot([limMin limMax], [limMin limMax]);
+    xlabel('Standard Cone Excitations');
+    ylabel('ISETBio Cone Excitations');
+    axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
+    title('Cone Excitations Comparison');
+end
 
 % Check if it predicts well.
 if (max(abs(standardGaborCalObject.standardPredictedExcitationsGaborCal(:) - ISETBioPredictedExcitationsGaborCal(:)) ./ ...
@@ -102,7 +110,9 @@ if (options.verbose)
 end
 
 %% Save the results in a struct.
-ISETBioGaborCalObject.ISETBioPredictedExcitationsGaborCal = ISETBioPredictedExcitationsGaborCal;
-ISETBioGaborCalObject.ISETBioGaborCal = ISETBioGaborCal;
+ISETBioGaborObject.ISETBioGaborScene = ISETBioGaborScene;
+ISETBioGaborObject.ISETBioGaborImage = ISETBioGaborImage;
+ISETBioGaborObject.ISETBioPredictedExcitationsGaborCal = ISETBioPredictedExcitationsGaborCal;
+ISETBioGaborObject.ISETBioGaborCal = ISETBioGaborCal;
 
 end

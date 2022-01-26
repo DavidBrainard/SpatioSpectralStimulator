@@ -61,7 +61,7 @@ arguments
 end
 
 %% Create ISETBio display.
-
+%
 % Set extra cal data.
 extraCalData = ptb.ExtraCalData;
 extraCalData.distance = screenDistanceMeters;

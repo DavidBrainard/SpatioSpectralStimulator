@@ -1,4 +1,4 @@
-function colorDirectionParams = SetupColorDirection(conditionName)
+function colorDirectionParams = SetupColorDirection(conditionName,options)
 % Set up a parameter structure for a color direction.
 %
 % Syntax:
@@ -13,25 +13,29 @@ function colorDirectionParams = SetupColorDirection(conditionName)
 %    elsewhere, see the "See also" list below.
 %
 % Inputs:
-%    conditionName           - String containing the type name for the
-%                              direction.
+%    conditionName                - String containing the type name for the
+%                                   direction.
 %
 % Outputs:
-%    colorDirectionParams    - Structure with the needed parameters.
+%    colorDirectionParams         - Structure with the needed parameters.
 %
 % Optional key/value pairs:
-%    N/A
+%    spatialGaborTargetContrast   - Maximum contrast in the target
+%                                   gabor image that we will make.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %    SpectralCalISETBio
 
 % History:
-%   01/18/22  dhb, smo       - Wrote it
+%   01/18/22  dhb, smo             - Wrote it
+%   01/26/22  smo                  - Added an option to set the target
+%                                    contrast of the gabor image.
 
 %% Set parameters.
 arguments
     conditionName {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
+    options.spatialGaborTargetContrast (1,1) = 0.04
 end
 
 %% Set some initial parameters on the struct here.
@@ -91,7 +95,9 @@ switch (colorDirectionParams.conditionName)
         % run into numerical error at the edges. The second number is used when
         % defining the three primaries, the first when computing desired weights on
         % the primaries.
-        colorDirectionParams.spatialGaborTargetContrast = 0.04;
+        %
+        % colorDirectionParams.spatialGaborTargetContrast = 0.04;
+        colorDirectionParams.spatialGaborTargetContrast = options.spatialGaborTargetContrast;
         
         % Set up basis to try to keep spectra close to.
         %
