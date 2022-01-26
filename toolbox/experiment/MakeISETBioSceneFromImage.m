@@ -96,6 +96,11 @@ if (max(abs(standardGaborCalObject.standardPredictedExcitationsGaborCal(:) - ISE
     error('Standard and ISETBio data do not agree well enough');
 end
 
+% Print out if everything goes well.
+if (options.verbose)
+    disp('Gabor image has been successfully calculated from the ISETBio scene!');
+end
+
 %% Save the results in a struct.
 ISETBioGaborCalObject.ISETBioPredictedExcitationsGaborCal = ISETBioPredictedExcitationsGaborCal;
 ISETBioGaborCalObject.ISETBioGaborCal = ISETBioGaborCal;

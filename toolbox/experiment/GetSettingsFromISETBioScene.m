@@ -1,4 +1,4 @@
-function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,options)
+function [fromISETBioGaborCalObject] = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,options)
 % Get settings in cal format from ISETBio scence.
 %
 % Syntax:
@@ -10,7 +10,7 @@ function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsF
 %    contrast in a cal format, which should be matched to the contrast
 %    gabor before putting inside the ISETBio world.
 %
-% Inputs: 
+% Inputs:
 %    screenCalObjFromISETBio         - Screen calibration object acquired
 %                                      from the ISETBio.
 %    ISETBioGaborCalObject           - Structure with the gabor image in a
@@ -18,14 +18,15 @@ function [primaryFromISETBioGaborCal,settingsFromISETBioGaborCal] = GetSettingsF
 %                                      ISETBio scene.
 %    standardGaborCalObject          - Structure with the gabor contrasts
 %                              	       and settings in a cal format.
-% 
+%
 % Outputs:
-%    primaryFromISETBioGaborCal      - 
-%    settingsFromISETBioGaborCal     - 
+%    fromISETBioGaborCalObject      - Gabor image screen primaries and
+%                                     settings in a cal format calculated
+%                                     from the ISETBio scene.
 %
 % Optional key/value pairs:
 %    verbose                         - Boolean. Default true. Controls
-%                                    plotting and printout.
+%                                      plotting and printout.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
@@ -53,5 +54,9 @@ settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,primaryF
 if (max(abs(standardGaborCalObject.standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardGaborCalObject.standardSettingsGaborCal(:)) > 1e-6)
     error('Cannot get home again in settings land');
 end
+
+%% Save the results in a struct.
+fromISETBioGaborCalObject.primaryFromISETBioGaborCal = primaryFromISETBioGaborCal;
+fromISETBioGaborCalObject.settingsFromISETBioGaborCal = settingsFromISETBioGaborCal;
 
 end

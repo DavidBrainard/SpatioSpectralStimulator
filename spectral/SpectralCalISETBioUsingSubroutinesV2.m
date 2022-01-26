@@ -86,8 +86,7 @@ ISETBioGaborCalObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImag
     ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSE);
 
 % Go back to the RGB image starting with the ISETBio representation.
-[primaryFromISETBioGaborCal, settingsFromISETBioGaborCal] = ...
-    GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,'verbose',VERBOSE);
+fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborCalObject,standardGaborCalObject,'verbose',VERBOSE);
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = colorDirectionParams.T_xyz * standardGaborCalObject.desiredSpdGaborCal;
@@ -107,45 +106,22 @@ title('Image of settings');
 
 %% Plot slice through predicted LMS contrast image.
 %
-% Note that the y-axis in this plot is individual cone contrast, which is
-% not the same as the vector length contrast of the modulation.
+% Set the plot limit axis.
 plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
 
-figure; hold on
-plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-
-plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-
-plot(1:stimulusN,100 * gaborImageObject.standardPredictedContrastImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+% SensorToSettings method.
+PlotSliceContrastGaborImage(gaborImageObject.standardPredictedContrastImage, gaborImageObject.desiredContrastGaborImage,...
+    'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 if (screenGammaMethod == 2)
     title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone Contrast');
 else
     title('Image Slice, SensorToSettings Method, No Quantization, LMS Cone Contrast');
 end
-xlabel('x position (pixels)')
-ylabel('LMS Cone Contrast (%)');
-ylim([-plotAxisLimit plotAxisLimit]);
 
-%% Plot slice through point cloud LMS contrast image.
-%
-% Note that the y-axis in this plot is individual cone contrast, which is
-% not the same as the vector length contrast of the modulation.
-figure; hold on
-plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,1),'r','LineWidth',0.5);
-
-plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
-
-plot(1:stimulusN,100 * gaborImageObject.uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
-plot(1:stimulusN,100 * gaborImageObject.desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+% Point cloud method.
+PlotSliceContrastGaborImage(gaborImageObject.uniqueQuantizedContrastGaborImage, gaborImageObject.desiredContrastGaborImage,...
+    'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 title('Image Slice, Point Cloud Method, LMS Cone Contrast');
-xlabel('x position (pixels)')
-ylabel('LMS Cone Contrast (%)');
-ylim([-plotAxisLimit plotAxisLimit]);
 
 %% Generate some settings values corresponding to known contrasts
 %
