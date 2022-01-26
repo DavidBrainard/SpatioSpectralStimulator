@@ -1,66 +1,28 @@
-function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(nullScene, testScene, ...
-    temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
-    saveResponses, visualizeAllComponents)
-% Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
+function [correct] = computePerformanceSACCDisplay(...
+            nullRGBImage, testRGBIimage, ...
+            theSceneTemporalSupportSeconds,displayControlStruct)
+% Run one trial of a psychophysical experiment
 %
 % Syntax:
-%    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, ...
-%       theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
+%    [correct] = computePerformanceSACCDisplay(...
+%            nullRGBImage, testRGBIimage, ...
+ %           theSceneTemporalSupportSeconds,displayControlStruct)
 %
 % Description:
-%     Train a classifier on a discrimination and report back a vector of
-%     1's and 0's indicating correct and incorrect trials respectively.
-%
-%     This uses the ISETBioCSFGeneratorFramework and works because the uers
-%     passes a set of objects with standardized API.  These describe the
-%     two scenes to be discriminated, the neural pipeline that processes
-%     these scenes, and the classifer.
+%     Run one trial of a psychophysical experiment and return correct or
+%     incorrect.  The trial is TAFC.  The two stimuli are nullRGBImage and
+%     testRGBImage.  Subject is correct if he/she chooses testRGBImage.
 %
 % Inputs:
-%     nullScene             - Null scene sequence.
-%     testScene             - Test scene sequence.
-%     temporalSupport       - Temporal support vector (in seconds) for
-%                             scene sequences.
-%     nTrain                - Number of null and test response instances
-%                             used in classifer training.  The two types of
-%                             instances are paired and a nTrain TAFC task is
-%                             simulated.
-%     nTest                 - Number of null and test response instances
-%                             used in classifer training.  The two types of
-%                             instances are paired and nTest TAFC
-%                             trials are simulated for evaluating
-%                             performance.
-%     theNeuralEngine       - @neuralResponseEngine object to compute
-%                             neural responses.
-%     theClassifierEngine   - @responseClassifierEngine object that
-%                             implements observer decision model.  This is
-%                             assumed untrained if trainedNoiseFlag
-%                             contains a string, and trained if
-%                             trainedNoiseFlag is empty.
-%     trainNoiseFlag        - String.  Type of noise to be used in training
-%                             the classifier. This flag are passed to
-%                             theNeuralEngine to generate the training
-%                             response instances. Typically either 'none' or
-%                             'random' depending on whether the desired
-%                             classifier is signal known exactly ('none')
-%                             or signal known statistically ('random').
-%     testNoiseFlag          - String. Type of noise to be used in
-%                             evaluating performance. This flag are passed to
-%                             theNeuralEngine to generate the test
-%                             response instances. Typically 'random'.
-%     saveResponses         - Logical. Whether to return the computed
-%                             response instances
-%     visualAllComponentrs  - Logical. Whether to visualize or not.
+%     nullRGBImage             - 
+%     testRGBImage             - 
+%     temporalSupport          - Temporal support vector (in seconds) for
+%                                scene sequences.
+%     displayControlStruct     - 
+%
 %
 % Outputs:
-%     predictions            - Vector of 1's (correct) and 0's (incorrect)
-%                              that gives trial by trial performance of the
-%                              tested classifier in the TAFC task.
-%                              Contains nTest entries.
-%     theClassifierEngine    - Trained version of passed classifier object.
-%
-%     responses              - Neural responses computed
+%     correct                - 1 ifcorrect and 0 if incorrect.
 %
 % Optional key/value pairs:
 %     None.

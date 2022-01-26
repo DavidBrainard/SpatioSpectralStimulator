@@ -34,20 +34,9 @@ colorDirectionParams = SetupColorDirection(conditionName);
 %% Image spatial parameters.
 %
 % Image will be centered in display.
-sineFreqCyclesPerDeg = 1;
-gaborSdDeg = 1.5;
-stimulusSizeDeg = 7;
-
-%% Display params struct
-%
-% Information about the display configuration that we will use to
-% initialize the scene engine but also have available to pass directly to
-% the routine that runs each psychophysical trial.  This should only
-% include information that we would not need to do a computational observer
-% analysis, but could include things such as whether we are simulating
-% trials or not, and information about the response box.  It could also
-% include information required to make the ISTBio scenes.
-displayParamsStruct = ...;
+spatialTemporalParams.sineFreqCyclesPerDeg = 1;
+spatialTemporalParams.gaborSdDeg = 1.5;
+spatialTemporalParams.stimulusSizeDeg = 7;
 
 %% Instantiate a sceneEngine
 %
@@ -57,18 +46,27 @@ displayParamsStruct = ...;
 % First step is to predefine the contrasts that we will allow the
 % psychophysics to work over.  This gives us a finite list of scenes
 % to compute for.
-stimContrastsToTest = [];
+experimentParams.nContrasts = 5;
+experimentParams.useNominal = true;
+experimentParams.simulateExperiment = true;
+experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGaborTargetContrast,nContrasts);
+experimentParams.slopeRangeLow = 100/20;
+experimentParams.slopeRangeHigh = 10000/20;
+experimentParams.slopeDelta = 100/20;
+experimentParams.minTrial = 20;
+experimentParams.maxTrial = 50;
 
-% Then we do all of the precomputation to get the ISETBio scene sequenced for each
-% possible contrast, in the color direction we are working in. We store
-% this info in the sceneParams structure.  
+% Now do all the computation to get us ISETBio scenes and RGB images for
+% each predefined contrast, relative to the parameters set up above.
 
-% Initialize the scene engine. The scene params will have inside of it the
-% precomputed scene sequences, temporal support, and RGB values for every
-% possible contrast in our list.  So all our sceSACCDisplay funciton will
-% need to do is look up the precomputed information for a particular
-% contrast and return it to us.
-theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParams);
+% Move the precomputed data into the format for the sceSACCDisplay scene
+% engine.
+sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
+for cc = 1:length(experimentParams.stimContrastsToTest)
+    sceneParams.predfinedSceneSequences{cc} = [];
+    sceneParams.predefinedRGBImages{cc} = [];
+end
+sceneParams.temporalSupport = [];  
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 %
@@ -88,8 +86,8 @@ theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParams);
 % a little art to choosing the spacing of the discrete values.  Too many
 % and QUEST+ will run slowly; too few and it may not be able to put stimuli
 % in the right places.
-estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
-slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
+estDomain  = log10(experimentParams.stimContrastsToTest(2:end));
+slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeRangeHigh : experimentParams.slopeDelta;
 
 % Note the explicit setting of the PF for the questThresholdEngine.  Using
 % @qpPFWeibullLog causes it all to happen in log10 units, rather than the
@@ -127,10 +125,14 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
 
 % Set up the estimator object.
-estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
+estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
+    'maxTrial', experimentParams.minTrial, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
     'numEstimator', 4, 'stopCriterion', stopCriterion, ...
     'qpPF',@qpPFWeibullLog);
+
+%% Initialize display for experiment
+displayControlStruct = InitializeDisplayForExperiment;
 
 %% Generate the NULL scene sequence
 %
@@ -162,6 +164,9 @@ while (nextFlag)
     
     % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
+    if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
+        error('Test contrast not in predefined list. Check numerical precision');
+    end
 
     % Get the scene sequence and RGB info for the desired contrast.
     % Our scene engine provides us with the RGB values we need in the
@@ -173,19 +178,17 @@ while (nextFlag)
     % Run the trial and get the response. This routine
     % takes the RGB image info for the trial and returns 1 if is a
     % correct trial and 0 if incorrect trial.
-    predictions = computePerformanceSACCDisplay(...
-            nullStatusReportStruct, testStatusReportStruct, ...
-            theSceneTemporalSupportSeconds,displayParamsStruct);
-    
-   
+    correct = computePerformanceSACCDisplay(...
+            nullStatusReportStruct.RGBImage, testStatusReportStruct.RGBIimage, ...
+            theSceneTemporalSupportSeconds,displayControlStruct);
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
+        estimator.multiTrial(logContrast * ones(1, nTest), correct);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();

@@ -1,4 +1,4 @@
-function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast,sceneParamsStruct)
+function dataOut = sceSACCDisplay(sceneEngineOBJ,testContrast,sceneParamsStruct)
 % Compute function for generating a sequence of scenes depicting a
 % temporal modulation of a uniform field.
 %
@@ -7,7 +7,33 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
-%    object. There are 2 ways to use this function.
+%    object.  This compute function is set up to return the information
+%    required to run a psychophysical experiment on our SACC display, and
+%    also so that can be used within the ISETBioCSFGenerator framework.
+%
+%    Because the computations to generate scenes for each contrast are
+%    relatively slow, we predefine the allowable contrasts.  This is OK,
+%    because we can limit the contrasts that we'll call for to the same
+%    ones for use by Quest+ in the CSF generator code.
+%
+%    Thus in the implementation, we actually just pass in as part of the
+%    sceneParameters structure the predefined scenes that we will use, and
+%    just look up the answer and pass it back.
+%
+%    This routine uses the statusReport field of the returned structure to
+%    hold the RGB data that we want.  The status report is an extra field
+%    understood by the sceneEngine object, that can be used for returning
+%    custom data.  We're overloading that a bit by returning something
+%    substantive, but we don't think that does any harm.
+%
+%    Also note that because of the extensive precomputation required, the
+%    default parameters returned by this routine are a skeleton. If you
+%    passed the defaults in, you'd get an error because you would not have
+%    any precomputed scenes or RGB images.  We think this is also OK,
+%    because we can simply avoid ever doing this in our calling code for
+%    this particular scene engine.
+% 
+%    There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
 %               dataOut = sceUniformFieldTemporalModulation();
@@ -46,7 +72,10 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 %             - If called from a parent @sceneEngine, the returned
 %               struct is organized as follows:
 %                 .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence                            
-%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds                   
+%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds
+%                 .statusReport : a structure containing additional
+%                                 information, and particularly the RGB images we need to show the stimulus
+%                                 at each predefined contrast.
 %
 % Optional key/value input arguments:
 %    None.
@@ -59,77 +88,37 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 
 % History:
 %    01/25/22  dhb, smo  Started on this.
-%
-%   Examples:
-%{
-    % Usage case #1. Just return the default scene params
-    defaultParams = sceSACCDisplay()
-
-    % Usage case #2. Compute a stimulus sequence using a parent @sceneEngine 
-    % object and the default scene params
-
-    % Instantiate the parent @sceneEngine object
-    theSceneEngineOBJ = sceneEngine(@sceSACCDisplay);
-
-    % Generate a test scene
-    testContrast = 0.1;
-    [theTestSceneSequence, temporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(testContrast);
-    
-    % Visualize the generated scene frames
-    theSceneEngineOBJ.visualizeSceneSequence(theTestSceneSequence, temporalSupportSeconds);
-   
-%}
+%    01/26/22  dhb, smo  Wrote version 1.
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
         return;
     end
-    
-    % Create an equal photon uniform field
-    uniformScene = sceneCreate('uniform equal photon', sceneParamsStruct.sizePixels);
 
-    % Set the scene width in degrees
-    uniformScene = sceneSet(uniformScene, 'wAngular', sceneParamsStruct.fovDegs);
-
-    % 1 meter away
-    uniformScene = sceneSet(uniformScene, 'distance', 1.0);
-
-    % background: adjust radiance according to desired  mean luminance
-    meanLuminance = sceneParamsStruct.meanLuminanceCdPerM2;
-    backgroundScene = sceneAdjustLuminance(uniformScene, meanLuminance);
-
-    % pedestal: adjust radiance according to desired  mean luminance and test contrast
-    testLuminance = meanLuminance * (1.0 + testContrast);
-    pedestalScene = sceneAdjustLuminance(uniformScene, testLuminance);
-    
-    % Generate temporal support for the scene sequence
-    temporalSupportSeconds = (0:(sceneParamsStruct.stimDurationFramesNum-1))*(sceneParamsStruct.frameDurationSeconds);
-    
-    % Generate the scene sequence
-    theSceneSequence = cell(1, sceneParamsStruct.stimDurationFramesNum);
-    for frameIndex = 1:sceneParamsStruct.stimDurationFramesNum
-        if (ismember(frameIndex, sceneParamsStruct.stimOnsetFramesIndices))
-            theSceneSequence{frameIndex} = pedestalScene;
-        else
-            theSceneSequence{frameIndex} = backgroundScene;
-        end
+    % Check that sceneParameters contains at least one precomputed contrast
+    if (isempty(sceneParamsStruct.predefinedContrasts))
+        error('Passed sceneParameters struct contains no predefined contrast data');
     end
-    
-    % Assemble dataOut struct
-    dataOut.sceneSequence = theSceneSequence;
-    dataOut.temporalSupport = temporalSupportSeconds;
-    dataOut.statusReport = struct();
+
+    % Called for real, so we need to return the information for the passed
+    % contrast.
+    whichContrast = find(testContrast == sceneParamsStruct.predefinedContrasts);
+    if (isempty(whichContrast))
+        error('Contrast requested is not in predefined list');
+    end
+
+    % Pick out precomputed items for return
+    dataOut.sceneSequence = sceneParamsStruct.predfinedSceneSequences{whichContrast};
+    dataOut.temporalSupport = sceneParamsStruct.predefinedTemporalSupport;
+    dataOut.statusReport.RGBimage = sceneParamsStruct.predefinedRGBImages{whichContrast};
 end
 
 function p = generateDefaultParams()
     p = struct(...
-        'fovDegs', 0.25, ...                        % 0.25 degs across
-        'meanLuminanceCdPerM2', 100, ...            % 100 cd/m2 mean luminance
-        'frameDurationSeconds', 50/1000, ...        % 50 msec frame duration
-        'stimDurationFramesNum', 4, ...             % total time: 200 msec
-        'stimOnsetFramesIndices', [2 3], ...        % modulate luminance at frames 1 and 2, so between 50 and 150 msec
-        'sizePixels', 64 ...                        % 64 x 64 pixels
+        'predefinedContrasts', [], ...              % This can only generate scenes for these contrasts
+        'predefinedRGBImages', {}, ...              % Precomputed RGB images for each contrast
+        'predefinedSceneSequences', {}, ...         % Precomputed scenes for each contrast           
+        'predefinedTemporalSupport', [] ...         % Common precomputed temporal support
     );
 end
