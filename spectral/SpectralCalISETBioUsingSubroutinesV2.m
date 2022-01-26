@@ -1,4 +1,4 @@
-% SpectralCalISETBioUsingSubroutines
+% SpectralCalISETBioUsingSubroutinesV2
 %
 % Description:
 %    Illustrate how to set up ISETBio based stimuli for the projector.
@@ -11,9 +11,11 @@
 %           SpectralCalISETBio
 
 % History:
-%    01/18/2022  dhb,smo    Started on it.
+%    01/18/22  dhb,smo    Started on it.
+%    01/26/22  smo        It is working well with the substituting
+%                         functions!
 
-%% Clear
+%% Clear.
 clear; close all;
 
 %% Set key stimulus parameters.
