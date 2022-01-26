@@ -20,7 +20,9 @@
 %   ISETBioCSFGenerator toolbox and its tutorials.
 %
 % History:
-%   01/18/22  dhb, so   Start writing.
+%   01/18/22  dhb, smo  - Start writing.
+%   01/26/22  smo       - Added the part making the contrast gabor
+%                         image with different contrast levels.
 
 %% Initialization
 clear; close all;
@@ -49,7 +51,7 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 experimentParams.nContrasts = 5;
 experimentParams.useNominal = true;
 experimentParams.simulateExperiment = true;
-experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGaborTargetContrast,nContrasts);
+experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts);
 experimentParams.slopeRangeLow = 100/20;
 experimentParams.slopeRangeHigh = 10000/20;
 experimentParams.slopeDelta = 100/20;
@@ -60,13 +62,13 @@ experimentParams.maxTrial = 50;
 % each predefined contrast, relative to the parameters set up above.
 
 % Move the precomputed data into the format for the sceSACCDisplay scene
-% engine.
+% engine. This will take some fair amount of time to run it.
 sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
 for cc = 1:length(experimentParams.stimContrastsToTest)
-    sceneParams.predfinedSceneSequences{cc} = [];
-    sceneParams.predefinedRGBImages{cc} = [];
+    [sceneParams.predefinedSceneSequences{cc} sceneParams.predefinedRGBImages{cc}] = ...
+        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc),spatialTemporalParams,'verbose',true);
 end
-sceneParams.temporalSupport = [];  
+sceneParams.temporalSupport = [];
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 %
@@ -167,20 +169,20 @@ while (nextFlag)
     if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
         error('Test contrast not in predefined list. Check numerical precision');
     end
-
+    
     % Get the scene sequence and RGB info for the desired contrast.
     % Our scene engine provides us with the RGB values we need in the
     % status report structure.  A bit of overloading of the original
     % intent, but should work just fine.
     [theTestSceneSequences, ~, testStatusReportStruct] = ...
         theSceneEngine.compute(testContrast);
-
+    
     % Run the trial and get the response. This routine
     % takes the RGB image info for the trial and returns 1 if is a
     % correct trial and 0 if incorrect trial.
     correct = computePerformanceSACCDisplay(...
-            nullStatusReportStruct.RGBImage, testStatusReportStruct.RGBIimage, ...
-            theSceneTemporalSupportSeconds,displayControlStruct);
+        nullStatusReportStruct.RGBImage, testStatusReportStruct.RGBIimage, ...
+        theSceneTemporalSupportSeconds,displayControlStruct);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
@@ -244,4 +246,3 @@ if (runValidation)
     ylim([0, 1]);
     
 end
-
