@@ -37,14 +37,23 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 
 %% Set parameters.
 arguments
-    targetContrast (1,1)
+    targetContrast (1,1) {mustBeInRange(targetContrast,0,1,'inclusive')}
     spatialTemporalParams
     options.verbose (1,1) = true
 end
 
-%% Say hello.
+%% Say hello and check if we have all spatial temporal params that we need.
 if (options.verbose)
     fprintf('Starting to create a Gabor image with the contast (%2.2f)...\n',targetContrast);
+end
+
+% Check if the input variable contains every parameters that we need.
+spatialTemporalParamsCheck = {'sineFreqCyclesPerDeg','gaborSdDeg','stimulusSizeDeg'};
+nspatialTemporalParamsCheck = size(spatialTemporalParamsCheck,2);
+for cc = 1:nspatialTemporalParamsCheck
+    if(any(~isfield(spatialTemporalParams,spatialTemporalParamsCheck{cc})))
+        error(append('Not enough spatial temporal parameters, missing parameter: ',spatialTemporalParamsCheck{cc}));
+    end
 end
 
 %% Set key stimulus parameters.
