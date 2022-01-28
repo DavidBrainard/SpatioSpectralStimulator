@@ -1,4 +1,4 @@
-function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targetContrast,spatialTemporalParams,options)
+function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targetContrast,colorDirectionParams,spatialTemporalParams,options)
 % Make a contrast gabor image in both image and ISETBio scene formats.
 %
 % Syntax:
@@ -16,6 +16,8 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 % Inputs:
 %    targetContrast               - Desired maximum contrast to have in the
 %                                   gabor contrast image.
+%    colorDirectionParams         - Structure with the parameters to
+%                                   calculate a contrast gabor image.
 %    spatialTemporalParams        - Structure with the parameters to decide
 %                                   the spatial temporal characteristics of
 %                                   the gabor image.
@@ -38,16 +40,17 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 %% Set parameters.
 arguments
     targetContrast (1,1) {mustBeInRange(targetContrast,0,1,'inclusive')}
+    colorDirectionParams
     spatialTemporalParams
     options.verbose (1,1) = true
 end
 
-%% Say hello and check if we have all spatial temporal params that we need.
+%% Say hello.
 if (options.verbose)
     fprintf('Starting to create a Gabor image with the contast (%2.2f)...\n',targetContrast);
 end
 
-% Check if the input variable contains every parameters that we need.
+%% Check if we have all spatial temporal parameters that we need.
 spatialTemporalParamsCheck = {'sineFreqCyclesPerDeg','gaborSdDeg','stimulusSizeDeg'};
 nspatialTemporalParamsCheck = size(spatialTemporalParamsCheck,2);
 for cc = 1:nspatialTemporalParamsCheck
@@ -56,25 +59,22 @@ for cc = 1:nspatialTemporalParamsCheck
     end
 end
 
-%% Set key stimulus parameters.
-%
-% Set up color direction parameters by its condition name.
-conditionName = 'LminusMSmooth';
-colorDirectionParams = SetupColorDirection(conditionName,'spatialGaborTargetContrast',targetContrast);
+% Set image spatial parameters here.
+sineFreqCyclesPerDeg = spatialTemporalParams.sineFreqCyclesPerDeg;
+gaborSdDeg = spatialTemporalParams.gaborSdDeg;
+stimulusSizeDeg = spatialTemporalParams.stimulusSizeDeg;
 
-% Set to true to get more output.
+%% Verbose setting for printing out all graphs.
+%
+% Set to true to get more output. This is different one than
+% options.verbose. If it sets to true, it prints out all the graphs
+% including the scene image on ISETBio, but we don't want to print out all
+% that stuffs when we run the experiment.
 VERBOSEDETAIL = false;
 
 %% Do all calibraiton loading.
 screenGammaMethod = 2;
 [screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,'screenGammaMethod',screenGammaMethod,'verbose',VERBOSEDETAIL);
-
-%% Image spatial parameters.
-%
-% Image will be centered in display.
-sineFreqCyclesPerDeg = spatialTemporalParams.sineFreqCyclesPerDeg;
-gaborSdDeg = spatialTemporalParams.gaborSdDeg;
-stimulusSizeDeg = spatialTemporalParams.stimulusSizeDeg;
 
 %% Use extant machinery to get primaries from spectrum.
 %
@@ -129,6 +129,8 @@ ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageOb
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
 gaborISETBioScene = ISETBioGaborObject.ISETBioGaborScene;
 
+%% Say goodbye. 
+%
 % Print out if everything goes well.
 if (options.verbose)
     fprintf('Gabor image with the contast (%2.2f) has been successfully created! \n',targetContrast);

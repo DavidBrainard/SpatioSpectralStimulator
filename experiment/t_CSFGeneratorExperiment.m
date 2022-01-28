@@ -66,7 +66,7 @@ experimentParams.maxTrial = 50;
 sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
 for cc = 1:length(experimentParams.stimContrastsToTest)
     [sceneParams.predefinedSceneSequences{cc} sceneParams.predefinedRGBImages{cc}] = ...
-        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc),spatialTemporalParams,'verbose',true);
+        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc),colorDirectionParams,spatialTemporalParams,'verbose',true);
 end
 sceneParams.temporalSupport = [];
 
