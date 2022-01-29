@@ -66,9 +66,13 @@ experimentParams.maxTrial = 50;
 sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
 for cc = 1:length(experimentParams.stimContrastsToTest)
     [sceneParams.predefinedSceneSequences{cc} sceneParams.predefinedRGBImages{cc}] = ...
-        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc),colorDirectionParams,spatialTemporalParams,'verbose',true);
+        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc), ...
+        colorDirectionParams,spatialTemporalParams,'verbose',true);
 end
 sceneParams.temporalSupport = [];
+
+%% Create the scene engine
+theSceneEngine = sceEngine(@sceSACCDisplay,sceneParams);
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 %
@@ -161,7 +165,7 @@ nullContrast = 0.0;
 [logContrast, nextFlag] = estimator.nextStimulus();
 
 % Loop over trials.
-testedContrasts = [];
+nTest = 1;
 while (nextFlag)
     
     % Convert log contrast -> contrast
@@ -222,27 +226,4 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
 fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
     thresholdCriterion,threshold);
 
-%% Validation by computing the entire psychometric curve
-%
-% Takes a rather long time to run, change runValidation to 'true' if you
-% want to run the validation
-runValidation = false;
-if (runValidation)
-    
-    logContrast = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
-    pCorrect = zeros(1, length(logContrast));
-    parfor idx = 1:length(logContrast)
-        testContrast = 10 ^ logContrast(idx);
-        [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
-        
-        pCorrect(idx) = mean(computePerformanceTAFC(...
-            theNullSceneSequence, theTestSceneSequence, ...
-            theSceneTemporalSupportSeconds, 512, 512, ...
-            theNeuralEngine, theRawClassifierEngine), trainFlag, testFlag);
-    end
-    
-    hold on;
-    plot(logContrast, pCorrect, '-ok', 'LineWidth', 1);
-    ylim([0, 1]);
-    
-end
+
