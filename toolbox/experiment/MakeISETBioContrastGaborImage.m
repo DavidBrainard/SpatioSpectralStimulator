@@ -15,7 +15,8 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 % 
 % Inputs:
 %    targetContrast               - Desired maximum contrast to have in the
-%                                   gabor contrast image.
+%                                   gabor contrast image. It is possible to
+%                                   pass multiple levels more than one.
 %    colorDirectionParams         - Structure with the parameters to
 %                                   calculate a contrast gabor image.
 %    spatialTemporalParams        - Structure with the parameters to decide
@@ -30,25 +31,35 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 % Optional key/value pairs:
 %    verbose                      - Boolean. Default true. Controls
 %                                   plotting and printout.
+%    verboseDetail                - Default set to false. This prints out
+%                                   all the graphs, ISETBio scene window,
+%                                   and more status messages. We may not
+%                                   always want to see the detailed graphs
+%                                   during the process making multiple
+%                                   contrast gabor images.
 %
 % See also: SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %           SpectralCalISETBioUsingSubroutinesV2, t_CSFGeneratorExperiment
 
 % History:
 %    01/26/22  smo        Started on it to make it as a separate function.
+%    01/31/22  smo        Now you can pass multiple target gabor contrasts
+%                         to generate the images at once.
 
 %% Set parameters.
 arguments
-    targetContrast (1,1) {mustBeInRange(targetContrast,0,1,'inclusive')}
+    targetContrast {mustBeInRange(targetContrast,0,1,'inclusive')}
     colorDirectionParams
     spatialTemporalParams
     options.verbose (1,1) = true
+    options.verboseDetail (1,1) = false
 end
 
-%% Say hello.
-if (options.verbose)
-    fprintf('Starting to create a Gabor image with the contast (%2.2f)...\n',targetContrast);
-end
+%% Set the target contrast gabor here.
+%
+% This part is for putting multiple contrast levels in the params
+% structure.
+colorDirectionParams.spatialGaborTargetContrast = targetContrast;
 
 %% Check if we have all spatial temporal parameters that we need.
 spatialTemporalParamsCheck = {'sineFreqCyclesPerDeg','gaborSdDeg','stimulusSizeDeg'};
@@ -64,17 +75,9 @@ sineFreqCyclesPerDeg = spatialTemporalParams.sineFreqCyclesPerDeg;
 gaborSdDeg = spatialTemporalParams.gaborSdDeg;
 stimulusSizeDeg = spatialTemporalParams.stimulusSizeDeg;
 
-%% Verbose setting for printing out all graphs.
-%
-% Set to true to get more output. This is different one than
-% options.verbose. If it sets to true, it prints out all the graphs
-% including the scene image on ISETBio, but we don't want to print out all
-% that stuffs when we run the experiment.
-VERBOSEDETAIL = false;
-
 %% Do all calibraiton loading.
 screenGammaMethod = 2;
-[screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,'screenGammaMethod',screenGammaMethod,'verbose',VERBOSEDETAIL);
+[screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,'screenGammaMethod',screenGammaMethod,'verbose',options.verboseDetail);
 
 %% Use extant machinery to get primaries from spectrum.
 %
@@ -87,7 +90,7 @@ highProjectWl = 700;
 projectIndices = find(colorDirectionParams.wls > lowProjectWl & colorDirectionParams.wls < highProjectWl);
 
 %% Find primaries with desired LMS contrast.
-[screenPrimaryChannelObject,backgroundChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,'verbose',VERBOSEDETAIL);
+[screenPrimaryChannelObject,backgroundChannelObject] = SetupChannelPrimaries(colorDirectionParams,channelCalObjs,projectIndices,'verbose',options.verboseDetail);
 
 %% Set the screen primaries.
 %
@@ -98,10 +101,10 @@ screenCalObj.set('P_device', screenPrimaryChannelObject.screenPrimarySpd);
 SetSensorColorSpace(screenCalObj, colorDirectionParams.T_cones, colorDirectionParams.S);
 
 %% Create ISETBio display from the calibration file.
-[ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,'verbose',VERBOSEDETAIL);
+[ISETBioDisplayObject,screenSizeObject,screenCalObjFromISETBio] = SetupISETBioDisplayObject(colorDirectionParams,screenCalObj,'verbose',options.verboseDetail);
 
 %% Set up the background screen primaries.
-backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject,'verbose',VERBOSEDETAIL);
+backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject,'verbose',options.verboseDetail);
 
 %% Make a monochrome Gabor patch in range -1 to 1.
 %
@@ -111,19 +114,19 @@ backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalOb
 nQuantizeBits = 14;
 [rawMonochromeUnquantizedContrastGaborImage, rawMonochromeUnquantizedContrastGaborCal, rawMonochromeContrastGaborCal, ...
     stimulusN, centerN, stimulusHorizSizeDeg, stimulusHorizSizeMeters] = ...
-    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,'verbose',VERBOSEDETAIL,'nQuantizeBits',nQuantizeBits);
+    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,'verbose',options.verboseDetail,'nQuantizeBits',nQuantizeBits);
 
 %% Get cone contrast/excitation gabor image.
 [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
-    screenCalObj,backgroundScreenPrimaryObject.screenBgExcitations,'verbose',VERBOSEDETAIL);
+    screenCalObj,backgroundScreenPrimaryObject.screenBgExcitations,'verbose',options.verboseDetail);
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
-    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',VERBOSEDETAIL);
+    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',options.verboseDetail);
 
 %% Put the image into an ISETBio scene.
 ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
-    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSEDETAIL);
+    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',options.verboseDetail);
 
 %% Save out the images in a single variable.
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
@@ -133,7 +136,7 @@ gaborISETBioScene = ISETBioGaborObject.ISETBioGaborScene;
 %
 % Print out if everything goes well.
 if (options.verbose)
-    fprintf('Gabor image with the contast (%2.2f) has been successfully created! \n',targetContrast);
+    fprintf('Gabor image(s) has(have) been successfully created! \n',targetContrast);
 end
 
 end

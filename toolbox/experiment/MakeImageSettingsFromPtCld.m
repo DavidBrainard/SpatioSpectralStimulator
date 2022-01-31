@@ -34,6 +34,9 @@ function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalOb
 % History:
 %   01/21/22  dhb,gka,smo      - Wrote it.
 %   01/24/22  smo              - Made it work.
+%   01/31/22  smo              - It is possible to work on multiple
+%                                target contrast gabors inside this
+%                                function.
 
 %% Set parameters.
 arguments
@@ -50,31 +53,35 @@ end
 % We want this routine to take contrast explicitly, expressed relative to
 % max contrast we set up, when it makes the image.  We will call this
 % multiple times to make stimuli of different contrasts.
-uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,ptCldObject.desiredContrastGaborCal,ptCldObject.ptCldSettingsCal);
+nContrastPoints = size(standardGaborCalObject.desiredContrastGaborCal,2);
 
-% Print out min/max of settings
-if (options.verbose)
-    fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
+for cc = 1:nContrastPoints
+    uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,standardGaborCalObject.desiredContrastGaborCal{cc},ptCldObject.ptCldSettingsCal);
+    
+    % Print out min/max of settings
+    if (options.verbose)
+        fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
+    end
+    
+    % Get contrasts we think we have obtianed
+    uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
+    uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,screenBgExcitations);
+    
+    % Plot of how well point cloud method does in obtaining desired contrats
+    if (options.verbose)
+        figure; clf;
+        plot(ptCldObject.desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
+        axis('square');
+        xlabel('Desired L, M or S contrast');
+        ylabel('Predicted L, M, or S contrast');
+        title('Quantized unique point cloud image method');
+    end
+    
+    % Convert representations we want to take forward to image format. Also, save the results in a structure.
+    gaborImageObject.uniqueQuantizedContrastGaborImage{cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+    gaborImageObject.desiredContrastGaborImage{cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{cc},stimulusN,stimulusN);
+    gaborImageObject.standardPredictedContrastImage{cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{cc},stimulusN,stimulusN);
+    gaborImageObject.standardSettingsGaborImage{cc} = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal{cc},stimulusN,stimulusN);
 end
-
-% Get contrasts we think we have obtianed
-uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
-uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,screenBgExcitations);
-
-% Plot of how well point cloud method does in obtaining desired contrats
-if (options.verbose)
-    figure; clf;
-    plot(ptCldObject.desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
-    axis('square');
-    xlabel('Desired L, M or S contrast');
-    ylabel('Predicted L, M, or S contrast');
-    title('Quantized unique point cloud image method');
-end
-
-%% Convert representations we want to take forward to image format
-gaborImageObject.desiredContrastGaborImage = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal,stimulusN,stimulusN);
-gaborImageObject.standardPredictedContrastImage = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal,stimulusN,stimulusN);
-gaborImageObject.standardSettingsGaborImage = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal,stimulusN,stimulusN);
-gaborImageObject.uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
 
 end

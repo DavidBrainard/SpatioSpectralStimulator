@@ -7,7 +7,7 @@ function [ISETBioGaborObject] = MakeISETBioSceneFromImage(colorDirectionParams,g
 %                              ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg)
 %
 % Description:
-%    This puts the target gabor image into ISETBio scene. 
+%    This puts the target gabor image into ISETBio scene.
 %
 % Inputs:
 %    colorDirectionParams          - Structure with the parameters to
@@ -38,6 +38,9 @@ function [ISETBioGaborObject] = MakeISETBioSceneFromImage(colorDirectionParams,g
 % History:
 %   01/21/22  dhb,gka,smo     - Wrote it.
 %   01/24/22  smo             - Made it work.
+%   01/31/22  smo             - It is possible to work on multiple
+%                               target contrast gabors inside this
+%                               function.
 
 %% Set parameters.
 arguments
@@ -55,64 +58,68 @@ end
 % These calls are a bit slow for large images and the fine wavelength
 % sampling used here. But these would be done as pre-compute steps so
 % it doesn't seem worth trying to optimize at this point.
-ISETBioGaborScene = sceneFromFile(gaborImageObject.standardSettingsGaborImage,'rgb', [], ISETBioDisplayObject);
+nContrastPoints = size(gaborImageObject.standardSettingsGaborImage,2);
 
-% Show the image on ISETBio scene window.
-if (options.verbose)
-    sceneWindow(ISETBioGaborScene);
+for cc = 1:nContrastPoints
+    % Make ISETBio scene from the gabor image.
+    ISETBioGaborScene = sceneFromFile(gaborImageObject.standardSettingsGaborImage{cc},'rgb', [], ISETBioDisplayObject);
+    
+    % Show the image on ISETBio scene window.
+    if (options.verbose)
+        sceneWindow(ISETBioGaborScene);
+    end
+    
+    % Check stimulus dimensions match. These are good to about a percent, which
+    % we can live with.
+    stimulusHorizSizeMetersChk = sceneGet(ISETBioGaborScene,'width');
+    stimulusHorizSizeDegChk = sceneGet(ISETBioGaborScene,'horizontal fov');
+    if (abs(stimulusHorizSizeMeters - stimulusHorizSizeMetersChk)/stimulusHorizSizeMeters > 0.01)
+        error('Horizontal size in meters mismatch of too much');
+    end
+    if (abs(stimulusHorizSizeDeg - stimulusHorizSizeDegChk)/stimulusHorizSizeDeg > 0.01)
+        error('Horizontal size in deg mismatch of too much');
+    end
+    
+    %% Calculate cone excitations from the ISETBio scene.
+    % These should match what we get when we compute
+    % outside of ISETBio. And indeed!
+    %
+    % ISETBio energy comes back as power per nm, we need to convert to power
+    % per wlband to work with PTB, by multiplying by S(2).
+    ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
+    [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
+    ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
+    limMin = 0.01; limMax = 0.02;
+    
+    % Plot it to comapare the cone excitations between before and after passing
+    % the ISETBio scene.
+    if (options.verbose)
+        figure; clf; hold on;
+        plot(standardGaborCalObject.standardPredictedExcitationsGaborCal{cc}(1,:), ISETBioPredictedExcitationsGaborCal(1,:),'r+');
+        plot(standardGaborCalObject.standardPredictedExcitationsGaborCal{cc}(2,:), ISETBioPredictedExcitationsGaborCal(2,:),'g+');
+        plot(standardGaborCalObject.standardPredictedExcitationsGaborCal{cc}(3,:), ISETBioPredictedExcitationsGaborCal(3,:),'b+');
+        plot([limMin limMax], [limMin limMax]);
+        xlabel('Standard Cone Excitations');
+        ylabel('ISETBio Cone Excitations');
+        axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
+        title('Cone Excitations Comparison');
+    end
+    
+    % Check if it predicts well.
+    if (max(abs(standardGaborCalObject.standardPredictedExcitationsGaborCal{cc}(:) - ISETBioPredictedExcitationsGaborCal(:)) ./ ...
+            standardGaborCalObject.standardPredictedExcitationsGaborCal{cc}(:)) > 1e-6)
+        error('Standard and ISETBio data do not agree well enough');
+    end
+    
+    % Save the results in a struct.
+    ISETBioGaborObject.ISETBioGaborScene{cc} = ISETBioGaborScene;
+    ISETBioGaborObject.ISETBioGaborImage{cc} = ISETBioGaborImage;
+    ISETBioGaborObject.ISETBioPredictedExcitationsGaborCal{cc} = ISETBioPredictedExcitationsGaborCal;
+    ISETBioGaborObject.ISETBioGaborCal{cc} = ISETBioGaborCal;
+    
+    % Print out if everything goes well.
+    if (options.verbose)
+        disp('Gabor image has been successfully calculated from the ISETBio scene!');
+    end
 end
-
-% Check stimulus dimensions match. These are good to about a percent, which
-% we can live with.
-stimulusHorizSizeMetersChk = sceneGet(ISETBioGaborScene,'width');
-stimulusHorizSizeDegChk = sceneGet(ISETBioGaborScene,'horizontal fov');
-if (abs(stimulusHorizSizeMeters - stimulusHorizSizeMetersChk)/stimulusHorizSizeMeters > 0.01)
-    error('Horizontal size in meters mismatch of too much');
-end
-if (abs(stimulusHorizSizeDeg - stimulusHorizSizeDegChk)/stimulusHorizSizeDeg > 0.01)
-    error('Horizontal size in deg mismatch of too much');
-end
-
-%% Calculate cone excitations from the ISETBio scene.
-% These should match what we get when we compute
-% outside of ISETBio. And indeed!
-%
-% ISETBio energy comes back as power per nm, we need to convert to power
-% per wlband to work with PTB, by multiplying by S(2).
-ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
-[ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
-ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
-limMin = 0.01; limMax = 0.02;
-
-% Plot it to comapare the cone excitations between before and after passing
-% the ISETBio scene.
-if (options.verbose)
-    figure; clf; hold on;
-    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(1,:), ISETBioPredictedExcitationsGaborCal(1,:),'r+');
-    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(2,:), ISETBioPredictedExcitationsGaborCal(2,:),'g+');
-    plot(standardGaborCalObject.standardPredictedExcitationsGaborCal(3,:), ISETBioPredictedExcitationsGaborCal(3,:),'b+');
-    plot([limMin limMax], [limMin limMax]);
-    xlabel('Standard Cone Excitations');
-    ylabel('ISETBio Cone Excitations');
-    axis('square'); xlim([limMin limMax]); ylim([limMin limMax]);
-    title('Cone Excitations Comparison');
-end
-
-% Check if it predicts well.
-if (max(abs(standardGaborCalObject.standardPredictedExcitationsGaborCal(:) - ISETBioPredictedExcitationsGaborCal(:)) ./ ...
-        standardGaborCalObject.standardPredictedExcitationsGaborCal(:)) > 1e-6)
-    error('Standard and ISETBio data do not agree well enough');
-end
-
-% Print out if everything goes well.
-if (options.verbose)
-    disp('Gabor image has been successfully calculated from the ISETBio scene!');
-end
-
-%% Save the results in a struct.
-ISETBioGaborObject.ISETBioGaborScene = ISETBioGaborScene;
-ISETBioGaborObject.ISETBioGaborImage = ISETBioGaborImage;
-ISETBioGaborObject.ISETBioPredictedExcitationsGaborCal = ISETBioPredictedExcitationsGaborCal;
-ISETBioGaborObject.ISETBioGaborCal = ISETBioGaborCal;
-
 end

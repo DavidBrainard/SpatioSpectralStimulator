@@ -60,15 +60,13 @@ experimentParams.maxTrial = 50;
 
 % Now do all the computation to get us ISETBio scenes and RGB images for
 % each predefined contrast, relative to the parameters set up above.
-
+%
 % Move the precomputed data into the format for the sceSACCDisplay scene
 % engine. This will take some fair amount of time to run it.
 sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
-for cc = 1:length(experimentParams.stimContrastsToTest)
-    [sceneParams.predefinedSceneSequences{cc} sceneParams.predefinedRGBImages{cc}] = ...
-        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest(cc), ...
-        colorDirectionParams,spatialTemporalParams,'verbose',true);
-end
+[sceneParams.predefinedSceneSequences sceneParams.predefinedRGBImages] = ...
+    MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
+    colorDirectionParams,spatialTemporalParams,'verbose',true);
 sceneParams.temporalSupport = [];
 
 %% Create the scene engine
