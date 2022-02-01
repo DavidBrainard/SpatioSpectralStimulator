@@ -66,7 +66,7 @@ experimentParams.maxTrial = 50;
 sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
 [sceneParams.predefinedSceneSequences sceneParams.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
-    colorDirectionParams,spatialTemporalParams,'verbose',true);
+    colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true);
 sceneParams.temporalSupport = [];
 
 %% Create the scene engine

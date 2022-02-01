@@ -29,6 +29,9 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 %    gaborRGBImage                - Created gabor image in RGB format.
 %
 % Optional key/value pairs:
+%    measure                      - Default set to false. If it sets
+%                                   to true, it measures the channel
+%                                   primaries to calculate the point cloud.
 %    verbose                      - Boolean. Default true. Controls
 %                                   plotting and printout.
 %    verboseDetail                - Default set to false. This prints out
@@ -51,6 +54,7 @@ arguments
     targetContrast {mustBeInRange(targetContrast,0,1,'inclusive')}
     colorDirectionParams
     spatialTemporalParams
+    options.measure (1,1) = false
     options.verbose (1,1) = true
     options.verboseDetail (1,1) = false
 end
@@ -120,7 +124,7 @@ nQuantizeBits = 14;
 [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimaryObject] = ...
     SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
     screenCalObj,backgroundScreenPrimaryObject,screenPrimaryChannelObject,...
-    'measure',false,'warmupTimeMinutes',30,'verbose',options.verboseDetail);
+    'measure',options.measure,'warmupTimeMinutes',30,'verbose',options.verboseDetail);
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
