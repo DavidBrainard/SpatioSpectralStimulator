@@ -5,6 +5,8 @@
 
 % History:
 %    01/03/22 smo    Started on it.
+%    01/10/22 smo    Both simulation and PTB versions working and added
+%                    beep sound when presenting the test image.
 
 %% Initialize.
 clear; close all;
@@ -17,9 +19,11 @@ clear; close all;
 initialScreenSettings = [1 1 1];
 nTestImages = 2;
 nTrials = 3;
+timeDelayBtwImages = 1;
 
 VERBOSE = true;
-TURNONSCREEN = false;
+TURNONSCREEN = true;
+BEEPSOUND = false;
 
 %% Load the test images for the experiment.
 %
@@ -44,19 +48,30 @@ image = theData.screenSettingsImage;
 % image on the projector using PTB.
 if (TURNONSCREEN)
     % Open the screen ready.
-    [winodw windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',VERBOSE);
+    [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',VERBOSE);
     
     % Display the test images here.
     for ii = 1:nTestImages
         for tt = 1:nTrials
             % First Image.
-            DisplayImagePTB(image, window, windowRect);
+            SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end
+            
+            % Make a time delay before displaying the other image of the
+            % pair.
+            for dd = 1:timeDelayBtwImages;
+                pause(1);
+            end
             
             % Second Image.
-            DisplayImagePTB(image, window, windowRect);
-            
-            % Add sound when presenting the test images
-            % PsychPortAudio
+            SetScreenImage(image, window, windowRect,'verbose',VERBOSE);
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end 
             
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
@@ -101,7 +116,7 @@ if (~TURNONSCREEN)
     for ii = 1:nTestImages
         for tt = 1:nTrials
             figure; clf;
-            
+                        
             % Set the position and the size of the test image.
             imageFig = figure;
             x = screenXPixel*0.2;
@@ -115,7 +130,12 @@ if (~TURNONSCREEN)
             title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
             
             % Right side image.
-            subplot(1,2,2); imshow(image);
+            subplot(1,2,2); imshow(image);           
+            
+            % Make a beep sound as an audible cue.
+            if (BEEPSOUND)
+                MakeBeepSound;
+            end 
             
             if (VERBOSE)
                 fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
