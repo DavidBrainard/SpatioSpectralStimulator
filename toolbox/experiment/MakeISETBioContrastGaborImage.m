@@ -59,6 +59,11 @@ arguments
     options.verboseDetail (1,1) = false
 end
 
+%% Say hello.
+if (options.verbose)
+    fprintf('Starting to make gabor image(s)...\n');
+end
+
 %% Set the target contrast gabor here.
 %
 % This part is for putting multiple contrast levels in the params
@@ -139,10 +144,8 @@ gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
 gaborISETBioScene = ISETBioGaborObject.ISETBioGaborScene;
 
 %% Say goodbye. 
-%
-% Print out if everything goes well.
 if (options.verbose)
-    fprintf('Gabor image(s) has(have) been successfully created! \n',targetContrast);
+    fprintf('Gabor image(s) has(have) been successfully created! \n');
 end
 
 end
