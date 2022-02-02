@@ -23,6 +23,9 @@
 %   01/18/22  dhb, smo  - Start writing.
 %   01/26/22  smo       - Added the part making the contrast gabor
 %                         image with different contrast levels.
+%   02/02/22  smo       - Updated on the function
+%                         computePerformanceSACCDisplay for getting
+%                         response from patients.
 
 %% Initialization
 clear; close all;
@@ -182,9 +185,14 @@ while (nextFlag)
     % Run the trial and get the response. This routine
     % takes the RGB image info for the trial and returns 1 if is a
     % correct trial and 0 if incorrect trial.
+    %
+    % Current version of 'computePerformanceSACCDisplay' does not use
+    % displayControlStruct, so maybe we can delete it if that doesn't
+    % affect the whole system. (SEMIN)
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBImage, testStatusReportStruct.RGBIimage, ...
-        theSceneTemporalSupportSeconds,displayControlStruct);
+        theSceneTemporalSupportSeconds,displayControlStruct,...
+        'simulation',true,'beepSound',true,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));

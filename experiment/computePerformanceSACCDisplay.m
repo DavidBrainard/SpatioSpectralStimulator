@@ -1,4 +1,4 @@
-function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBIimage,...
+function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
     theSceneTemporalSupportSeconds,displayControlStruct,options)
 % Run one trial of a psychophysical experiment.
 %
@@ -11,61 +11,96 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBIimage,..
 %     incorrect.  The trial is TAFC.  The two stimuli are nullRGBImage and
 %     testRGBImage.  Subject is correct if he/she chooses testRGBImage.
 %
+%     It can be executed both with and without using PTB. In the
+%     experiment, we will use the PTB version, but we can also run this by
+%     displaying the images on the figure if the option 'simulation' set to
+%     true.
+%
 % Inputs:
-%     nullRGBImage             -
-%     testRGBImage             -
-%     temporalSupport          - Temporal support vector (in seconds) for
-%                                scene sequences.
-%     displayControlStruct     -
+%     nullRGBImage                   - Null RGB image as a reference for
+%                                      evaluation, which means no contrast
+%                                      image in SACC project.
+%     testRGBImage                   - Test RGB image to be compared with
+%                                      the null image.
+%     theSceneTemporalSupportSeconds - Temporal support vector (in
+%                                      seconds) for scene sequences.
+%     displayControlStruct*          - TBD. It is not called in this
+%                                      function, maybe we want to delete it
+%                                      later on.
 %
 % Outputs:
-%     correct                  - 1 ifcorrect and 0 if incorrect.
+%     correct                        - 1 if correct and 0 if incorrect.
 %
 % Optional key/value pairs:
-%     simulation               - If you are not acutally running the
-%                                experiment, set this to true and image
-%                                figure will show up on the screen instead
-%                                of displaying it on PTB. It will be useful
-%                                to check and debug.
-%    verbose                   - Boolean. Default true. Controls
-%                                printout.
+%     simulation                     - If you are not acutally running
+%                                      the experiment, set this to true and
+%                                      null and test images will be showed
+%                                      on the figure instead of displaying
+%                                      it on PTB.
+%    imageMagnificationFactor        - When simulation was set to true,
+%                                      this decides the size of the null
+%                                      and test images. If it is set to 1,
+%                                      it displays the original image size.
+%    beepSound                       - If it is set to true, make a beep
+%                                      sound every when an image is
+%                                      displaying as an audible cue for
+%                                      patients.
+%    verbose                         - Boolean. Default true. Controls
+%                                      printout.
 %
 % See also
-%   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC
+%   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC,
+%   SACC_runExperiment
 
 % History:
-%   10/23/20  dhb             - Comments.
-%   02/02/22  smo             - Modifying it to use in SACC project.
+%   10/23/20  dhb                   - Comments.
+%   02/02/22  smo                   - Modified it to use in SACC project.
 
 %% Set parameters.
 arguments
     nullRGBImage
-    testRGBIimage
+    testRGBImage
     theSceneTemporalSupportSeconds
     displayControlStruct
     options.simulation (1,1) = true
+    options.imageMagnificationFactor (1,1) = 1.5
+    options.beepSound (1,1) = false
     options.verbose (1,1) = true
 end
 
-%% Running trials using PTB.
+%% Running trials - Using PTB.
 %
 % This part will be used for the actual experiment displaying the test
 % image on the projector using PTB.
 if (~options.simulation)
     % Open the screen ready.
     initialScreenSettings = [1 1 1];
-    [winodw windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
+    [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
     
     % Display the test images here.
     %
     % Null RGB Image.
-    DisplayImagePTB(nullRGBImage, window, windowRect);
-    MakeBeep
+    SetScreenImage(nullRGBImage, window, windowRect,'verbose',options.verbose);
+    % Make a beep sound as an audible cue.
+    if (options.beepSound)
+        MakeBeepSound;
+    end
+    
+    % Make a time delay before displaying the other image of the
+    % pair.
+    for dd = 1:theSceneTemporalSupportSeconds;
+        pause(1);
+    end
+    
     % Test RGB Image.
-    DisplayImagePTB(testRGBIimage, window, windowRect);
+    SetScreenImage(testRGBImage, window, windowRect,'verbose',options.verbose);
+    % Make a beep sound as an audible cue.
+    if (options.beepSound)
+        MakeBeepSound;
+    end
     
     if (options.verbose)
-        fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
+        fprintf('Test image is displaying and waiting for the key press... \n');
     end
     
     % Get a key stroke response here.
@@ -80,13 +115,13 @@ end
 %% Running trials - Simulation without using PTB.
 %
 % This part does not use PTB and just diplay test images side-by-side on
-% Figure and record key stroke responses, which would be helpful to check
-% the sequence of the experiment before running it with the patients.
+% the figure and record key stroke responses, which would be helpful to
+% check the sequence of the experiment before running it with the patients.
 if (options.simulation)
     % Resize the image as desired here.
-    imageMagnificationFactor = 1.5;
-    image = imresize(image,imageMagnificationFactor);
-    imageSize = size(image);
+    nullRGBImageResize = imresize(nullRGBImage,options.imageMagnificationFactor);
+    testRGBImageResize = imresize(testRGBImage,options.imageMagnificationFactor);
+    imageSize = size(nullRGBImageResize);
     imageXPixel = imageSize(1);
     imageYPixel = imageSize(2);
     
@@ -95,67 +130,62 @@ if (options.simulation)
     screenXPixel = screenSize(3);
     screenYPixel = screenSize(4);
     
-    % Display test image.
-    %
-    % Now it just displays an image, but this part will be substituted with a
-    % separate function displaying the image using PTB later on.
-    
+    % Display image here.
     figure; clf;
     
     % Set the position and the size of the test image.
     imageFig = figure;
-    x = screenXPixel*0.2;
-    y = screenYPixel*0.2;
-    width = imageXPixel*2;
+    x = screenXPixel * 0.2;
+    y = screenYPixel * 0.2;
+    width = imageXPixel * 2;
     height = imageYPixel;
     set(imageFig, 'Position', [x y width height])
     
     % Left side image.
-    subplot(1,2,1); imshow(image);
-    title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
-    
+    subplot(1,2,1); imshow(nullRGBImageResize);
+    title('Test Image','fontsize',15);
     % Right side image.
-    subplot(1,2,2); imshow(image);
+    subplot(1,2,2); imshow(testRGBImageResize);
+    
+    % Make a beep sound as an audible cue.
+    if (options.beepSound)
+        MakeBeepSound;
+    end
     
     if (options.verbose)
-        fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
+        fprintf('Test image is displaying and waiting for the key is pressed... \n');
     end
     
     % Get a response either Yes or No.
-    %
-    % It can be also done by using 'ginput'. But, here we used the function
-    % waitforbuttonpresss.
-    %
-    % Following is the ASCII allocated number for the keyboards.
-    %
-    % 28 leftarrow
-    % 29 rightarrow
-    % 30 uparrow
-    % 31 downarrow
     gettingResponse = waitforbuttonpress;
-    response(tt,ii) = double(get(gcf,'CurrentCharacter'));
+    response = double(get(gcf,'CurrentCharacter'));
     close all;
-    
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
 end
 if(options.verbose)
-    fprintf('Test image %d evalaution complete! \n',ii);
+    fprintf('Test image evalaution complete! \n');
 end
 
-%% Show the results.
+%% Convert the response into a single number either 0 or 1.
 %
-% Convert the response into 0 / 1
+% Key press response is converted based on the ASCII allocated number for
+% the keyboards. [28 = leftarrow / 29 = rightarrow].
+%
+% Current version always displays the test image on the right, so pressing
+% the right arrow key receives the correct answer (1). It should be changed
+% according to how we display the images later on.
+correctResponse   = 1;
+incorrectResponse = 0;
 leftArrow  = 28;
 rightArrow = 29;
-response(response == leftArrow)  = 0;
-response(response == rightArrow) = 1;
+response(response == rightArrow) = correctResponse;
+response(response == leftArrow)  = incorrectResponse;
 
 correct = response;
 
+%% Close.
 if (~options.simulation)
     CloseScreen;
-end
-
 end
