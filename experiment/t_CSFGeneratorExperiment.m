@@ -51,6 +51,9 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 % First step is to predefine the contrasts that we will allow the
 % psychophysics to work over.  This gives us a finite list of scenes
 % to compute for.
+%
+% It used to set as min = 20 / max = 50. Here we want to check fast if it
+% is working, so we just put small numbers for trials. (SEMIN)
 experimentParams.nContrasts = 5;
 experimentParams.useNominal = true;
 experimentParams.simulateExperiment = true;
@@ -58,22 +61,22 @@ experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGa
 experimentParams.slopeRangeLow = 100/20;
 experimentParams.slopeRangeHigh = 10000/20;
 experimentParams.slopeDelta = 100/20;
-experimentParams.minTrial = 20;
-experimentParams.maxTrial = 50;
+experimentParams.minTrial = 10;
+experimentParams.maxTrial = 20;
 
 % Now do all the computation to get us ISETBio scenes and RGB images for
 % each predefined contrast, relative to the parameters set up above.
 %
 % Move the precomputed data into the format for the sceSACCDisplay scene
 % engine. This will take some fair amount of time to run it.
-sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
-[sceneParams.predefinedSceneSequences sceneParams.predefinedRGBImages] = ...
+sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
+[sceneParamsStruct.predefinedSceneSequences sceneParamsStruct.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
     colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true);
-sceneParams.temporalSupport = [];
+sceneParamsStruct.predefinedTemporalSupport = 3;
 
 %% Create the scene engine
-theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParams);
+theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 %
@@ -139,7 +142,7 @@ estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
     'qpPF',@qpPFWeibullLog);
 
 %% Initialize display for experiment
-displayControlStruct = InitializeDisplayForExperiment;
+% displayControlStruct = InitializeDisplayForExperiment;
 
 %% Generate the NULL scene sequence
 %
@@ -155,7 +158,7 @@ nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds, nullStatusReportStruct] ...
     = theSceneEngine.compute(nullContrast);
 
-%% Threshold estimation with QUEST+
+%% Threshold estimation with QUEST+.
 %
 % There is some logic here to cache scenes and classifiers for each
 % contrast tested, so that things will run faster if a contrast is repeated
@@ -169,8 +172,11 @@ nullContrast = 0.0;
 nTest = 1;
 while (nextFlag)
     
-    % Convert log contrast -> contrast
-    testContrast = 10 ^ logContrast;
+    % Convert log contrast -> contrast.
+    %
+    % We round it to set it as exact the number of the target contrast.
+    % Otherwise, it throws the error.
+    testContrast = round(10 ^ logContrast,4);
     if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
         error('Test contrast not in predefined list. Check numerical precision');
     end
@@ -188,9 +194,11 @@ while (nextFlag)
     %
     % Current version of 'computePerformanceSACCDisplay' does not use
     % displayControlStruct, so maybe we can delete it if that doesn't
-    % affect the whole system. (SEMIN)
+    % affect the whole system. Here we just set it to meaningless number 1
+    % (SEMIN).
+    displayControlStruct = 1;
     correct = computePerformanceSACCDisplay(...
-        nullStatusReportStruct.RGBImage, testStatusReportStruct.RGBIimage, ...
+        nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
         theSceneTemporalSupportSeconds,displayControlStruct,...
         'simulation',true,'beepSound',true,'verbose',true);
     
@@ -207,13 +215,18 @@ while (nextFlag)
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
 end
 
-%% Show results
+%% Show results.
 fprintf('%d trials recorded \n', estimator.nTrial);
 
-% Estimate threshold and plot/report results.  This
-% does a maximumu likelihood based on the trials run, and is not subject to
-% the discretization used by QUEST+.
-if(strcmp(questMode, 'validationMode'))
+% Estimate threshold and plot/report results.  This does a maximum
+% likelihood based on the trials run, and is not subject to the
+% discretization used by QUEST+.
+%
+% I don't understand much about this part, so I arbitrarily set the
+% plotSize as 50 here. (SEMIN)
+if (exist('questMode'))
+    plotSize = 50;
+elseif(strcmp(questMode, 'validationMode'))
     plotSize = 50;
 else
     plotSize = 10;

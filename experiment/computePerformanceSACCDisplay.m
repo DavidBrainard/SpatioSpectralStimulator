@@ -63,7 +63,7 @@ arguments
     theSceneTemporalSupportSeconds
     displayControlStruct
     options.simulation (1,1) = true
-    options.imageMagnificationFactor (1,1) = 1.5
+    options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
     options.verbose (1,1) = true
 end
@@ -141,11 +141,19 @@ if (options.simulation)
     height = imageYPixel;
     set(imageFig, 'Position', [x y width height])
     
-    % Left side image.
-    subplot(1,2,1); imshow(nullRGBImageResize);
+    % Randomize the location of the images.
+    % We want to display the null and the test images by mixing their
+    imageSideLeft  = 1;
+    imageSideRight = 2;
+    imageSides = [imageSideLeft imageSideRight];
+    whichSideNullImage = randi([imageSideLeft imageSideRight]);
+    whichSideTestImage = setdiff(imageSides,whichSideNullImage);
+    
+    % Display null image.
+    subplot(1,2,whichSideNullImage); imshow(nullRGBImageResize);
     title('Test Image','fontsize',15);
-    % Right side image.
-    subplot(1,2,2); imshow(testRGBImageResize);
+    % Display test image.
+    subplot(1,2,whichSideTestImage); imshow(testRGBImageResize);
     
     % Make a beep sound as an audible cue.
     if (options.beepSound)
@@ -157,6 +165,10 @@ if (options.simulation)
     end
     
     % Get a response either Yes or No.
+    % 
+    % In this part, we want to add the lines limiting the key stroke
+    % response to either Left or Right. Otherwise, it displays some message
+    % and asks patients to try it again. (SEMIN)
     gettingResponse = waitforbuttonpress;
     response = double(get(gcf,'CurrentCharacter'));
     close all;
@@ -172,17 +184,28 @@ end
 %
 % Key press response is converted based on the ASCII allocated number for
 % the keyboards. [28 = leftarrow / 29 = rightarrow].
-%
-% Current version always displays the test image on the right, so pressing
-% the right arrow key receives the correct answer (1). It should be changed
-% according to how we display the images later on.
 correctResponse   = 1;
 incorrectResponse = 0;
 leftArrow  = 28;
 rightArrow = 29;
-response(response == rightArrow) = correctResponse;
-response(response == leftArrow)  = incorrectResponse;
 
+switch whichSideTestImage
+    % When test image was shown on the left side.
+    case (imageSideLeft)
+    response(response == rightArrow) = incorrectResponse;
+    response(response == leftArrow)  = correctResponse;
+    % When test image was shown on the right side.
+    case (imageSideRight)
+    response(response == rightArrow) = correctResponse;
+    response(response == leftArrow)  = incorrectResponse;
+    otherwise
+    error('Check if your images are placed in right positions!');
+end
+
+% Check if the response value is either 0 or 1.
+if (~any(response == [correctResponse, incorrectResponse]))
+    error('Response value should be either 0 or 1!');
+end
 correct = response;
 
 %% Close.
