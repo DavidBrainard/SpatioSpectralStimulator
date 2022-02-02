@@ -70,7 +70,7 @@ sceneParams.predefiendContrasts = experimentParams.stimContrastsToTest;
 sceneParams.temporalSupport = [];
 
 %% Create the scene engine
-theSceneEngine = sceEngine(@sceSACCDisplay,sceneParams);
+theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParams);
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 %
@@ -223,5 +223,3 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
     thresholdCriterion,threshold);
-
-

@@ -1,12 +1,10 @@
-function [correct] = computePerformanceSACCDisplay(...
-            nullRGBImage, testRGBIimage, ...
-            theSceneTemporalSupportSeconds,displayControlStruct)
-% Run one trial of a psychophysical experiment
+function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBIimage,...
+    theSceneTemporalSupportSeconds,displayControlStruct,options)
+% Run one trial of a psychophysical experiment.
 %
 % Syntax:
-%    [correct] = computePerformanceSACCDisplay(...
-%            nullRGBImage, testRGBIimage, ...
- %           theSceneTemporalSupportSeconds,displayControlStruct)
+%    [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBIimage,...
+%    theSceneTemporalSupportSeconds,displayControlStruct)
 %
 % Description:
 %     Run one trial of a psychophysical experiment and return correct or
@@ -14,125 +12,150 @@ function [correct] = computePerformanceSACCDisplay(...
 %     testRGBImage.  Subject is correct if he/she chooses testRGBImage.
 %
 % Inputs:
-%     nullRGBImage             - 
-%     testRGBImage             - 
+%     nullRGBImage             -
+%     testRGBImage             -
 %     temporalSupport          - Temporal support vector (in seconds) for
 %                                scene sequences.
-%     displayControlStruct     - 
-%
+%     displayControlStruct     -
 %
 % Outputs:
-%     correct                - 1 ifcorrect and 0 if incorrect.
+%     correct                  - 1 ifcorrect and 0 if incorrect.
 %
 % Optional key/value pairs:
-%     None.
+%     simulation               - If you are not acutally running the
+%                                experiment, set this to true and image
+%                                figure will show up on the screen instead
+%                                of displaying it on PTB. It will be useful
+%                                to check and debug.
+%    verbose                   - Boolean. Default true. Controls
+%                                printout.
 %
 % See also
 %   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC
-%
 
 % History:
-%   10/23/20  dhb  Comments.
+%   10/23/20  dhb             - Comments.
+%   02/02/22  smo             - Modifying it to use in SACC project.
 
-% Empty responses
-responses = [];
+%% Set parameters.
+arguments
+    nullRGBImage
+    testRGBIimage
+    theSceneTemporalSupportSeconds
+    displayControlStruct
+    options.simulation (1,1) = true
+    options.verbose (1,1) = true
+end
 
-% Train the classifier.
+%% Running trials using PTB.
 %
-% If trainNoiseFlag is empty, then the passed classifier has already been trained
-% and training is skipped.  Otherwise trainFlag is passed to the stimulus
-% generation routine to indicate what type of noise (typically 'none' or
-% 'random') should be used in the training.
-
-if (~isempty(trainNoiseFlag))
-    % Generate stimulus for training, NULL stimulus
-    [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-        nullScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainNoiseFlag});
+% This part will be used for the actual experiment displaying the test
+% image on the projector using PTB.
+if (~options.simulation)
+    % Open the screen ready.
+    initialScreenSettings = [1 1 1];
+    [winodw windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
     
-    % Generate stimulus for training, TEST stimulus
-    [inSampleTestStimResponses, responseTemporalSupportSeconds] = theNeuralEngine.compute(...
-        testScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainNoiseFlag});
-    
-    if (visualizeAllComponents)
-        if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-            diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
-            % Visualize the activation
-            theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
-        
-            % Also visualize the full absorptions density
-            figNo = 999;
-            theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
-        end
-        
-        if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
-            theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-                responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
-                'stimulusTemporalSupportSeconds', temporalSupport,...
-                'stimulusSceneSequence', testScene);
-        end
-        
-    end
-    
-    % Train the classifier. This shows the usage to extact information
-    % from the container retrned as the first return value from the neural
-    % response engine - we index the responses by the string contained in
-    % the variable trainFlag (which was itself passed to the neural
-    % repsonse engine above.)
+    % Display the test images here.
     %
-    % Once extracted from the container, the responses are a 3 dimensional
-    % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
-    %   instancesNum   - number of response instances
-    %   mNeuralDim     - dimension of neural response at one timepoint
-    %   tTimeBins      - number of time points in stimulus sequence.
-    theClassifierEngine.compute('train', ...
-        inSampleNullStimResponses(trainNoiseFlag), ...
-        inSampleTestStimResponses(trainNoiseFlag));
+    % Null RGB Image.
+    DisplayImagePTB(nullRGBImage, window, windowRect);
+    MakeBeep
+    % Test RGB Image.
+    DisplayImagePTB(testRGBIimage, window, windowRect);
     
-    % Save computed response instances
-    if (saveResponses)
-        responses.inSampleNullStimResponses = inSampleNullStimResponses;
-        responses.inSampleTestStimResponses = inSampleTestStimResponses;
+    if (options.verbose)
+        fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
     end
     
+    % Get a key stroke response here.
+    gettingResponse = waitforbuttonpress;
+    response(tt,ii) = double(get(gcf,'CurrentCharacter'));
+    close all;
+    if (options.verbose)
+        fprintf('     Key input has been received! \n');
+    end
 end
 
-% Predict using trained classifier.
+%% Running trials - Simulation without using PTB.
 %
-% Generate stimulus for prediction, NULL stimulus.  The variable testFlag
-% indicates what type of noise is used to generate the stimuli used for
-% prediction.  Typically 'random'.
-[outOfSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-    nullScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testNoiseFlag});
-
-% Generate stimuli for prediction, TEST stimulus
-[outOfSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-    testScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testNoiseFlag});
-
-% Do the prediction
-dataOut = theClassifierEngine.compute('predict', ...
-    outOfSampleNullStimResponses(testNoiseFlag), ...
-    outOfSampleTestStimResponses(testNoiseFlag));
-
-% Save computed response instances
-if (saveResponses)
-    responses.outOfSampleNullStimResponses = outOfSampleNullStimResponses;
-    responses.outOfSampleTestStimResponses = outOfSampleTestStimResponses;
-end
+% This part does not use PTB and just diplay test images side-by-side on
+% Figure and record key stroke responses, which would be helpful to check
+% the sequence of the experiment before running it with the patients.
+if (options.simulation)
+    % Resize the image as desired here.
+    imageMagnificationFactor = 1.5;
+    image = imresize(image,imageMagnificationFactor);
+    imageSize = size(image);
+    imageXPixel = imageSize(1);
+    imageYPixel = imageSize(2);
     
-% Set return variable.  For each trial 0 means wrong and 1 means right.
-% Taking mean(response) gives fraction correct.
-predictions = dataOut.trialPredictions;
+    % Get the display info here.
+    screenSize = get(0,'screensize');
+    screenXPixel = screenSize(3);
+    screenYPixel = screenSize(4);
+    
+    % Display test image.
+    %
+    % Now it just displays an image, but this part will be substituted with a
+    % separate function displaying the image using PTB later on.
+    
+    figure; clf;
+    
+    % Set the position and the size of the test image.
+    imageFig = figure;
+    x = screenXPixel*0.2;
+    y = screenYPixel*0.2;
+    width = imageXPixel*2;
+    height = imageYPixel;
+    set(imageFig, 'Position', [x y width height])
+    
+    % Left side image.
+    subplot(1,2,1); imshow(image);
+    title(append('Test Image ',num2str(ii),' - Trial ',num2str(tt)),'fontsize',15);
+    
+    % Right side image.
+    subplot(1,2,2); imshow(image);
+    
+    if (options.verbose)
+        fprintf('Test image %d - trial %d is displaying and waiting for the key is pressed... \n',ii,tt);
+    end
+    
+    % Get a response either Yes or No.
+    %
+    % It can be also done by using 'ginput'. But, here we used the function
+    % waitforbuttonpresss.
+    %
+    % Following is the ASCII allocated number for the keyboards.
+    %
+    % 28 leftarrow
+    % 29 rightarrow
+    % 30 uparrow
+    % 31 downarrow
+    gettingResponse = waitforbuttonpress;
+    response(tt,ii) = double(get(gcf,'CurrentCharacter'));
+    close all;
+    
+    if (options.verbose)
+        fprintf('     Key input has been received! \n');
+    end
+end
+if(options.verbose)
+    fprintf('Test image %d evalaution complete! \n',ii);
+end
+
+%% Show the results.
+%
+% Convert the response into 0 / 1
+leftArrow  = 28;
+rightArrow = 29;
+response(response == leftArrow)  = 0;
+response(response == rightArrow) = 1;
+
+correct = response;
+
+if (~options.simulation)
+    CloseScreen;
+end
 
 end
