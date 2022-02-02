@@ -109,7 +109,7 @@ function dataOut = sceSACCDisplay(sceneEngineOBJ,testContrast,sceneParamsStruct)
     end
 
     % Pick out precomputed items for return
-    dataOut.sceneSequence = sceneParamsStruct.predfinedSceneSequences{whichContrast};
+    dataOut.sceneSequence = sceneParamsStruct.predefinedSceneSequences{whichContrast};
     dataOut.temporalSupport = sceneParamsStruct.predefinedTemporalSupport;
     dataOut.statusReport.RGBimage = sceneParamsStruct.predefinedRGBImages{whichContrast};
 end
