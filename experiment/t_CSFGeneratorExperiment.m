@@ -4,28 +4,28 @@
 %    t_CSFGeneratorExperiment
 %
 % Description:
-%    Demonstrates how to use our CSF generator machinery to drive a psychophysical
-%    experiment.
+%    Demonstrates how to use our CSF generator machinery to drive a
+%    psychophysical experiment.
 %
 % Inputs:
 %    None.
 %
 % Outputs:
-%   None.
+%    None.
 %
 % Optional key/value pairs:
 %    None.
 %
 % See Also:
-%   ISETBioCSFGenerator toolbox and its tutorials.
+%    ISETBioCSFGenerator toolbox and its tutorials.
 %
 % History:
-%   01/18/22  dhb, smo  - Start writing.
-%   01/26/22  smo       - Added the part making the contrast gabor
-%                         image with different contrast levels.
-%   02/02/22  smo       - Updated on the function
-%                         computePerformanceSACCDisplay for getting
-%                         response from patients.
+%    01/18/22  dhb, smo  - Start writing.
+%    01/26/22  smo       - Added the part making the contrast gabor
+%                          image with different contrast levels.
+%    02/02/22  smo       - Updated on the function
+%                          computePerformanceSACCDisplay for getting
+%                          response from patients.
 
 %% Initialization
 clear; close all;

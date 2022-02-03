@@ -105,7 +105,7 @@ if (~options.simulation)
     
     % Get a key stroke response here.
     gettingResponse = waitforbuttonpress;
-    response(tt,ii) = double(get(gcf,'CurrentCharacter'));
+    response(tt,nLoopTrial) = double(get(gcf,'CurrentCharacter'));
     close all;
     if (options.verbose)
         fprintf('     Key input has been received! \n');
@@ -129,18 +129,7 @@ if (options.simulation)
     screenSize = get(0,'screensize');
     screenXPixel = screenSize(3);
     screenYPixel = screenSize(4);
-    
-    % Display image here.
-    figure; clf;
-    
-    % Set the position and the size of the test image.
-    imageFig = figure;
-    x = screenXPixel * 0.2;
-    y = screenYPixel * 0.2;
-    width = imageXPixel * 2;
-    height = imageYPixel;
-    set(imageFig, 'Position', [x y width height])
-    
+      
     % Randomize the location of the images.
     % We want to display the null and the test images by mixing their
     imageSideLeft  = 1;
@@ -149,12 +138,24 @@ if (options.simulation)
     whichSideNullImage = randi([imageSideLeft imageSideRight]);
     whichSideTestImage = setdiff(imageSides,whichSideNullImage);
     
+    % Display images here.
+    figure; clf;
+    
+    % Set the position and the size of the images.
+    %
+    % Note that the (x,y) = (0,0) is the left and bottom end of the screen.
+    % We will display the images on the full screen anyways.
+    x = 0;
+    y = 0;
+    width = screenXPixel;
+    height = screenYPixel;
+    set(figure, 'Position', [x y width height])
+    
     % Display null image.
     subplot(1,2,whichSideNullImage); imshow(nullRGBImageResize);
-    title('Test Image','fontsize',15);
     % Display test image.
     subplot(1,2,whichSideTestImage); imshow(testRGBImageResize);
-    
+        
     % Make a beep sound as an audible cue.
     if (options.beepSound)
         MakeBeepSound;
@@ -164,14 +165,32 @@ if (options.simulation)
         fprintf('Test image is displaying and waiting for the key is pressed... \n');
     end
     
-    % Get a response either Yes or No.
-    % 
-    % In this part, we want to add the lines limiting the key stroke
-    % response to either Left or Right. Otherwise, it displays some message
-    % and asks patients to try it again. (SEMIN)
-    gettingResponse = waitforbuttonpress;
-    response = double(get(gcf,'CurrentCharacter'));
+    % Get a key stroke response here.
+    %
+    % Key press response is saved in a single number based on the ASCII
+    % allocated number for the keyboards. 
+    % [28 = leftarrow / 29 = rightarrow].
+    leftArrow  = 28;
+    rightArrow = 29;
+    
+    % Make a loop till patients press either left of right arrow key.
+    metCondition = false;
+    nLoopTrial = 1;
+    while (nLoopTrial >= 1)
+        gettingResponse = waitforbuttonpress;
+        response = double(get(gcf,'CurrentCharacter'));
+        if (response == leftArrow || response == rightArrow)
+            metCondition = true;
+            break
+        else 
+            metCondition = false;
+            nLoopTrial = nLoopTrial + 1;
+        end
+    end
+    
+    % Close all windows.
     close all;
+    
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
@@ -180,14 +199,9 @@ if(options.verbose)
     fprintf('Test image evalaution complete! \n');
 end
 
-%% Convert the response into a single number either 0 or 1.
-%
-% Key press response is converted based on the ASCII allocated number for
-% the keyboards. [28 = leftarrow / 29 = rightarrow].
+%% Convert the key response into a single number either 0 or 1.
 correctResponse   = 1;
 incorrectResponse = 0;
-leftArrow  = 28;
-rightArrow = 29;
 
 switch whichSideTestImage
     % When test image was shown on the left side.
