@@ -1,5 +1,5 @@
 function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
-    theSceneTemporalSupportSeconds,displayControlStruct,options)
+    theSceneTemporalSupportSeconds,options)
 % Run one trial of a psychophysical experiment.
 %
 % Syntax:
@@ -24,9 +24,6 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                      the null image.
 %     theSceneTemporalSupportSeconds - Temporal support vector (in
 %                                      seconds) for scene sequences.
-%     displayControlStruct*          - TBD. It is not called in this
-%                                      function, maybe we want to delete it
-%                                      later on.
 %
 % Outputs:
 %     correct                        - 1 if correct and 0 if incorrect.
@@ -55,13 +52,16 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 % History:
 %   10/23/20  dhb                   - Comments.
 %   02/02/22  smo                   - Modified it to use in SACC project.
+%   02/04/22  smo                   - Removed the input variable
+%                                     displayControlStruct which is not
+%                                     needed in this version. We can bring
+%                                     it back if we want to.
 
 %% Set parameters.
 arguments
     nullRGBImage
     testRGBImage
     theSceneTemporalSupportSeconds
-    displayControlStruct
     options.simulation (1,1) = true
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
@@ -77,39 +77,94 @@ if (~options.simulation)
     initialScreenSettings = [1 1 1];
     [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
     
-    % Display the test images here.
+    % Randomize the displaying order of null and test images.
+    displayFirstNull = 1;
+    displayFirstTest = 2;
+    displayOrders = [displayFirstNull displayFirstTest];
+    whichOneToStart = randi(displayOrders);
+    
+    allImages = [nullRGBImage testRGBImage];
+    firstDisplayImage  = allImages(whichOneToStart);
+    secondDisplayImage = allImages(setdiff(displayOrders,whichOneToStart));
+    
+    % Display the images here.
     %
-    % Null RGB Image.
-    SetScreenImage(nullRGBImage, window, windowRect,'verbose',options.verbose);
+    % First image.
+    SetScreenImage(firstDisplayImage, window, windowRect,'verbose',options.verbose);
     % Make a beep sound as an audible cue.
     if (options.beepSound)
         MakeBeepSound;
     end
-    
     % Make a time delay before displaying the other image of the
     % pair.
     for dd = 1:theSceneTemporalSupportSeconds;
         pause(1);
     end
     
-    % Test RGB Image.
-    SetScreenImage(testRGBImage, window, windowRect,'verbose',options.verbose);
+    % Second image.
+    SetScreenImage(secondDisplayImage, window, windowRect,'verbose',options.verbose);
     % Make a beep sound as an audible cue.
     if (options.beepSound)
         MakeBeepSound;
     end
     
+    % Get a key stroke response here.
     if (options.verbose)
         fprintf('Test image is displaying and waiting for the key press... \n');
     end
     
-    % Get a key stroke response here.
-    gettingResponse = waitforbuttonpress;
-    response(tt,nLoopTrial) = double(get(gcf,'CurrentCharacter'));
-    close all;
+    % Key press response is saved in a single number based on the ASCII
+    % allocated number for the keyboards.
+    % [28 = leftarrow / 29 = rightarrow].
+    %
+    % Maybe we want to change this key to press for the case using the PTB
+    % because it is not very intuitive. Or we can switch to use the
+    % joy-stick to evaluate.
+    leftArrow  = 28;
+    rightArrow = 29;
+    
+    % Make a loop till patients press either left of right arrow key.
+    metCondition = false;
+    nLoopTrial = 1;
+    while (nLoopTrial >= 1)
+        gettingResponse = waitforbuttonpress;
+        response = double(get(gcf,'CurrentCharacter'));
+        if (response == leftArrow || response == rightArrow)
+            metCondition = true;
+            break
+        else
+            metCondition = false;
+            nLoopTrial = nLoopTrial + 1;
+        end
+    end
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
+    
+    % Convert the key response into a single number either 0 or 1.
+    correctResponse   = 1;
+    incorrectResponse = 0;
+    
+    switch whichOneToStart
+        % When null image was shown at first sequence.
+        case (displayFirstTest)
+            response(response == rightArrow) = incorrectResponse;
+            response(response == leftArrow)  = correctResponse;
+            % When test image was shown at first sequence.
+        case (displayFirstNull)
+            response(response == rightArrow) = correctResponse;
+            response(response == leftArrow)  = incorrectResponse;
+        otherwise
+            error('Check if your images are placed in right positions!');
+    end
+    
+    % Check if the response value is either 0 or 1.
+    if (~any(response == [correctResponse, incorrectResponse]))
+        error('Response value should be either 0 or 1!');
+    end
+    
+    % Close.
+    CloseScreen;
 end
 
 %% Running trials - Simulation without using PTB.
@@ -129,9 +184,8 @@ if (options.simulation)
     screenSize = get(0,'screensize');
     screenXPixel = screenSize(3);
     screenYPixel = screenSize(4);
-      
+    
     % Randomize the location of the images.
-    % We want to display the null and the test images by mixing their
     imageSideLeft  = 1;
     imageSideRight = 2;
     imageSides = [imageSideLeft imageSideRight];
@@ -155,20 +209,19 @@ if (options.simulation)
     subplot(1,2,whichSideNullImage); imshow(nullRGBImageResize);
     % Display test image.
     subplot(1,2,whichSideTestImage); imshow(testRGBImageResize);
-        
+    
     % Make a beep sound as an audible cue.
     if (options.beepSound)
         MakeBeepSound;
     end
     
+    % Get a key stroke response here.
     if (options.verbose)
         fprintf('Test image is displaying and waiting for the key is pressed... \n');
     end
     
-    % Get a key stroke response here.
-    %
     % Key press response is saved in a single number based on the ASCII
-    % allocated number for the keyboards. 
+    % allocated number for the keyboards.
     % [28 = leftarrow / 29 = rightarrow].
     leftArrow  = 28;
     rightArrow = 29;
@@ -182,7 +235,7 @@ if (options.simulation)
         if (response == leftArrow || response == rightArrow)
             metCondition = true;
             break
-        else 
+        else
             metCondition = false;
             nLoopTrial = nLoopTrial + 1;
         end
@@ -199,30 +252,29 @@ if(options.verbose)
     fprintf('Test image evalaution complete! \n');
 end
 
-%% Convert the key response into a single number either 0 or 1.
+% Convert the key response into a single number either 0 or 1.
 correctResponse   = 1;
 incorrectResponse = 0;
 
 switch whichSideTestImage
     % When test image was shown on the left side.
     case (imageSideLeft)
-    response(response == rightArrow) = incorrectResponse;
-    response(response == leftArrow)  = correctResponse;
-    % When test image was shown on the right side.
+        response(response == rightArrow) = incorrectResponse;
+        response(response == leftArrow)  = correctResponse;
+        % When test image was shown on the right side.
     case (imageSideRight)
-    response(response == rightArrow) = correctResponse;
-    response(response == leftArrow)  = incorrectResponse;
+        response(response == rightArrow) = correctResponse;
+        response(response == leftArrow)  = incorrectResponse;
     otherwise
-    error('Check if your images are placed in right positions!');
+        error('Check if your images are placed in right positions!');
 end
 
 % Check if the response value is either 0 or 1.
 if (~any(response == [correctResponse, incorrectResponse]))
     error('Response value should be either 0 or 1!');
 end
+
+%% Print out the results.
 correct = response;
 
-%% Close.
-if (~options.simulation)
-    CloseScreen;
 end

@@ -193,13 +193,11 @@ while (nextFlag)
     % correct trial and 0 if incorrect trial.
     %
     % Current version of 'computePerformanceSACCDisplay' does not use
-    % displayControlStruct, so maybe we can delete it if that doesn't
-    % affect the whole system. Here we just set it to meaningless number 1
-    % (SEMIN).
-    displayControlStruct = 1;
+    % displayControlStruct, which was needed in the previous version. Maybe
+    % we can bring it back when it is needed.
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-        theSceneTemporalSupportSeconds,displayControlStruct,...
+        theSceneTemporalSupportSeconds,...
         'simulation',true,'beepSound',true,'verbose',true);
     
     % Report what happened
