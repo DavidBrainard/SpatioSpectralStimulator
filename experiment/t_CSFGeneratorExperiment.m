@@ -195,10 +195,11 @@ while (nextFlag)
     % Current version of 'computePerformanceSACCDisplay' does not use
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
+    runningMode = 'simulation';
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-        theSceneTemporalSupportSeconds,testContrast,'simulation',true,...
-        'autoResponse',true,'beepSound',false,'verbose',true);
+        theSceneTemporalSupportSeconds,testContrast,'runningMode',runningMode,...
+        'autoResponse',false,'beepSound',false,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
