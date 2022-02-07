@@ -205,11 +205,11 @@ for cc = 1:nContrastPoints
     
     % Save the results in a struct.
     standardGaborCalObject.desiredContrastGaborCal{cc} = desiredContrastGaborCal;
-    standardGaborCalObject.desiredExcitationsGaborCal{cc} = desiredExcitationsGaborCal;
-    standardGaborCalObject.standardPrimariesGaborCal{cc} = standardPrimariesGaborCal;
-    standardGaborCalObject.desiredSpdGaborCal{cc} = desiredSpdGaborCal;
+%     standardGaborCalObject.desiredExcitationsGaborCal{cc} = desiredExcitationsGaborCal;
+%     standardGaborCalObject.standardPrimariesGaborCal{cc} = standardPrimariesGaborCal;
+%     standardGaborCalObject.desiredSpdGaborCal{cc} = desiredSpdGaborCal;
     standardGaborCalObject.standardSettingsGaborCal{cc} = standardSettingsGaborCal;
-    standardGaborCalObject.standardPredictedPrimariesGaborCal{cc} = standardPredictedPrimariesGaborCal;
+%     standardGaborCalObject.standardPredictedPrimariesGaborCal{cc} = standardPredictedPrimariesGaborCal;
     standardGaborCalObject.standardPredictedExcitationsGaborCal{cc} = standardPredictedExcitationsGaborCal;
     standardGaborCalObject.standardPredictedContrastGaborCal{cc} = standardPredictedContrastGaborCal;
 end
