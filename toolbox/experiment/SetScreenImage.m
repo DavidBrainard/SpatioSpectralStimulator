@@ -1,7 +1,8 @@
 function [] = SetScreenImage(image,window,windowRect,options)
 % This displays images on the screen using PTB.
 %
-% Syntax: [] = SetScreenImage(image)
+% Syntax: 
+%    [] = SetScreenImage(image,window,windowRect)
 %
 % Description: 
 %    This is to display test images in the experiment for the SACC project
