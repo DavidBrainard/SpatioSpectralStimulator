@@ -23,7 +23,9 @@ function [] = SetScreenImage(image,window,windowRect,options)
 %                                 and printout.
 
 % History:
-%    01/06/21  smo                Started on it
+%    01/06/22  smo                Started on it
+%    02/07/22  smo                Now the image is displayed in its size 
+%                                 at the center of the screen.  
 
 %% Set parameters.
 arguments
@@ -45,9 +47,20 @@ else
 end
 
 % Display image here as a texture. This is faster and more flexible way to
-% display images using PTB than the function screen('PutImage').
+% display images using PTB than the function screen('PutImage'). We will
+% display the images at the center of the screen in its image size.
+%
+% Make image texture.
 imageTexture = Screen('MakeTexture', window, image);
-Screen('DrawTexture', window, imageTexture, [], windowRect);
+
+% Make image windowRect for placing it at the center of the screen.
+centerScreen = [windowRect(3) windowRect(4)] * 0.5;
+imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
+imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
+    centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
+
+% Display image here.
+Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
 Screen('Flip', window);
 
 % Show the verbose message.

@@ -74,7 +74,7 @@ end
 % image on the projector using PTB.
 if (~options.simulation)
     % Open the screen ready.
-    initialScreenSettings = [1 1 1];
+    initialScreenSettings = [0 0 0];
     [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
     
     % Randomize the displaying order of null and test images.
@@ -83,9 +83,9 @@ if (~options.simulation)
     displayOrders = [displayFirstNull displayFirstTest];
     whichOneToStart = randi(displayOrders);
     
-    allImages = [nullRGBImage testRGBImage];
-    firstDisplayImage  = allImages(whichOneToStart);
-    secondDisplayImage = allImages(setdiff(displayOrders,whichOneToStart));
+    allImages = {nullRGBImage testRGBImage};
+    firstDisplayImage  = allImages{whichOneToStart};
+    secondDisplayImage = allImages{setdiff(displayOrders,whichOneToStart)};
     
     % Display the images here.
     %
@@ -247,7 +247,6 @@ if (options.simulation)
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
-end
 if(options.verbose)
     fprintf('Test image evalaution complete! \n');
 end
@@ -272,6 +271,7 @@ end
 % Check if the response value is either 0 or 1.
 if (~any(response == [correctResponse, incorrectResponse]))
     error('Response value should be either 0 or 1!');
+end
 end
 
 %% Print out the results.
