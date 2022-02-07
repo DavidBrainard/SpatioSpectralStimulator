@@ -1,5 +1,5 @@
 function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
-    theSceneTemporalSupportSeconds,options)
+    theSceneTemporalSupportSeconds,testContrast,options)
 % Run one trial of a psychophysical experiment.
 %
 % Syntax:
@@ -24,6 +24,12 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                      the null image.
 %     theSceneTemporalSupportSeconds - Temporal support vector (in
 %                                      seconds) for scene sequences.
+%     testContrast                   - Contrast value of the input image.
+%                                      This is only used when getting an
+%                                      automatic response based on the
+%                                      probability estimated from the
+%                                      psychometric function with certain
+%                                      parameters.
 %
 % Outputs:
 %     correct                        - 1 if correct and 0 if incorrect.
@@ -42,6 +48,9 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                      sound every when an image is
 %                                      displaying as an audible cue for
 %                                      patients.
+%    autoResponse                    - If it is set to true, make an
+%                                      automatic response based on the
+%                                      probability 
 %    verbose                         - Boolean. Default true. Controls
 %                                      printout.
 %
@@ -56,15 +65,19 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                     displayControlStruct which is not
 %                                     needed in this version. We can bring
 %                                     it back if we want to.
+%   02/07/22  smo                   - Added an option getting automatic
+%                                     response.
 
 %% Set parameters.
 arguments
     nullRGBImage
     testRGBImage
     theSceneTemporalSupportSeconds
+    testContrast
     options.simulation (1,1) = true
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
+    options.autoResponse (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -74,7 +87,7 @@ end
 % image on the projector using PTB.
 if (~options.simulation)
     % Open the screen ready.
-    initialScreenSettings = [0 0 0];
+    initialScreenSettings = [0 0 0]';
     [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
     
     % Randomize the displaying order of null and test images.
@@ -113,7 +126,7 @@ if (~options.simulation)
         fprintf('Test image is displaying and waiting for the key press... \n');
     end
     
-    % Key press response is saved in a single number based on the ASCII
+    %% Key press response is saved in a single number based on the ASCII
     % allocated number for the keyboards.
     % [28 = leftarrow / 29 = rightarrow].
     %
@@ -124,6 +137,7 @@ if (~options.simulation)
     rightArrow = 29;
     
     % Make a loop till patients press either left of right arrow key.
+    if (~options.autoResponse)
     metCondition = false;
     nLoopTrial = 1;
     while (nLoopTrial >= 1)
@@ -136,12 +150,12 @@ if (~options.simulation)
             metCondition = false;
             nLoopTrial = nLoopTrial + 1;
         end
-    end
+    end   
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
     
-    % Convert the key response into a single number either 0 or 1.
+    %% Convert the key response into a single number either 0 or 1.
     correctResponse   = 1;
     incorrectResponse = 0;
     
@@ -158,13 +172,21 @@ if (~options.simulation)
             error('Check if your images are placed in right positions!');
     end
     
-    % Check if the response value is either 0 or 1.
+    %% Check if the response value is either 0 or 1.
     if (~any(response == [correctResponse, incorrectResponse]))
         error('Response value should be either 0 or 1!');
     end
     
-    % Close.
+    elseif (options.autoResponse)
+        nTrials = 1;
+        pCorrect = 0.5;
+        response = binornd(nTrials,pCorrect);
+    end
+    
+    if (~options.simulation)
+        % Close.
     CloseScreen;
+    end
 end
 
 %% Running trials - Simulation without using PTB.
@@ -268,13 +290,13 @@ switch whichSideTestImage
         error('Check if your images are placed in right positions!');
 end
 
-% Check if the response value is either 0 or 1.
+%% Check if the response value is either 0 or 1.
 if (~any(response == [correctResponse, incorrectResponse]))
     error('Response value should be either 0 or 1!');
 end
 end
 
-%% Print out the results.
+% Print out the results.
 correct = response;
 
 end

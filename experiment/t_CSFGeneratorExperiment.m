@@ -54,7 +54,7 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 %
 % It used to set as min = 20 / max = 50. Here we want to check fast if it
 % is working, so we just put small numbers for trials. (SEMIN)
-experimentParams.nContrasts = 5;
+experimentParams.nContrasts = 3;
 experimentParams.useNominal = true;
 experimentParams.simulateExperiment = true;
 experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts);
@@ -73,7 +73,7 @@ sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
 [sceneParamsStruct.predefinedSceneSequences sceneParamsStruct.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
     colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true);
-sceneParamsStruct.predefinedTemporalSupport = 3;
+sceneParamsStruct.predefinedTemporalSupport = 0.2;
 
 %% Create the scene engine
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -197,8 +197,8 @@ while (nextFlag)
     % we can bring it back when it is needed.
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-        theSceneTemporalSupportSeconds,...
-        'simulation',true,'beepSound',true,'verbose',true);
+        theSceneTemporalSupportSeconds,testContrast,'simulation',true,...
+        'autoResponse',true,'beepSound',false,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
