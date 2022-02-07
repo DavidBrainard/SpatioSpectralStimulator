@@ -213,19 +213,19 @@ if (~options.autoResponse)
         imageSideLeft = displayFirstTest;
         imageSideRight = displayFirstNull;
     end
-
+    
     % Convert the numbers here.
     switch whichSideTestImage
         % When test image was shown on the left side (simulation) or first order (PTB).
-    case (imageSideLeft)
-        response(response == rightArrow) = incorrectResponse;
-        response(response == leftArrow)  = correctResponse;
-        % When test image was shown on the right side (simulation) or second order (PTB).
-    case (imageSideRight)
-        response(response == rightArrow) = correctResponse;
-        response(response == leftArrow)  = incorrectResponse;
-    otherwise
-        error('Check if your images are placed in right positions!');
+        case (imageSideLeft)
+            response(response == rightArrow) = incorrectResponse;
+            response(response == leftArrow)  = correctResponse;
+            % When test image was shown on the right side (simulation) or second order (PTB).
+        case (imageSideRight)
+            response(response == rightArrow) = correctResponse;
+            response(response == leftArrow)  = incorrectResponse;
+        otherwise
+            error('Check if your images are placed in right positions!');
     end
     
     % Check if the response value is either 0 or 1.
@@ -234,20 +234,19 @@ if (~options.autoResponse)
     end
     
 elseif (options.autoResponse)
-    % Getting an auto response based on the test contrat level. 
+    % Getting an auto response based on the test contrat level.
     nTrials = 1;
     pCorrect = 0.5;
     response = binornd(nTrials,pCorrect);
 end
 
-% Close.
+%% Close.
 switch (options.runningMode)
     case 'PTB'
         CloseScreen;
     case 'simulation'
         close all;
 end
-
 if (options.verbose)
     fprintf('Key input has been received! \n');
 end
