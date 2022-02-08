@@ -26,6 +26,8 @@
 %    02/02/22  smo       - Updated on the function
 %                          computePerformanceSACCDisplay for getting
 %                          response from patients.
+%    02/08/22  dhb,smo   - Added an option to skip making the ISETBio scenes
+%                          which takes time and memory a lot.
 
 %% Initialization
 clear; close all;
@@ -69,10 +71,16 @@ experimentParams.maxTrial = 20;
 %
 % Move the precomputed data into the format for the sceSACCDisplay scene
 % engine. This will take some fair amount of time to run it.
+%
+% For experiment, turn off generation of ISETBio scenes because it eats up
+% time and even worse memory.  But can turn on in the future for
+% computational analyses.
+noISETBio = true;
 sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
-[sceneParamsStruct.predefinedSceneSequences sceneParamsStruct.predefinedRGBImages] = ...
+[sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
-    colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true);
+    colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true, ...
+    'noISETBio',noISETBio);
 sceneParamsStruct.predefinedTemporalSupport = 0.2;
 
 %% Create the scene engine
@@ -157,6 +165,9 @@ estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds, nullStatusReportStruct] ...
     = theSceneEngine.compute(nullContrast);
+if (noISETBio)
+    nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1};
+end
 
 %% Threshold estimation with QUEST+.
 %
@@ -195,7 +206,7 @@ while (nextFlag)
     % Current version of 'computePerformanceSACCDisplay' does not use
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
-    runningMode = 'simulation';
+    runningMode = 'PTB';
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
         theSceneTemporalSupportSeconds,testContrast,'runningMode',runningMode,...

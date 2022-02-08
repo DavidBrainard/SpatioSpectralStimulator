@@ -95,7 +95,7 @@ switch (options.runningMode)
         % Randomize the displaying order of null and test images.
         displayFirstTest = 1;
         displayFirstNull = 2;
-        displayOrders = [displayFirstNull displayFirstTest];
+        displayOrders = [displayFirstTest displayFirstNull];
         whichOneToStart = randi(displayOrders);
         
         allImages = {testRGBImage nullRGBImage};

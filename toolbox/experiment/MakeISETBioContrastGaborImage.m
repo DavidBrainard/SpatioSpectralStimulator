@@ -1,8 +1,10 @@
-function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targetContrast,colorDirectionParams,spatialTemporalParams,options)
+function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
+    targetContrast,colorDirectionParams,spatialTemporalParams,options)
 % Make a contrast gabor image in both image and ISETBio scene formats.
 %
 % Syntax:
-%    [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targetContrast,spatialTemporalParams)
+%    [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
+%   targetContrast,colorDirectionParams,spatialTemporalParams)
 %
 % Description:
 %    This makes a contrast gabor image in both image and ISETBio scene
@@ -11,7 +13,10 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 %    contrast levels.
 %
 %    This is basically the function version of the
-%    (SpectralCalISETBioUsingSubroutinesV2).
+%    (SpectralCalISETBioUsingaborRGBImagegSubroutinesV2).
+%
+%    It works for a single target contrast or multiple if the target
+%    contrast is passed with multiple contrast levels in a cell array.
 % 
 % Inputs:
 %    targetContrast               - Desired maximum contrast to have in the
@@ -29,17 +34,19 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 %    gaborRGBImage                - Created gabor image in RGB format.
 %
 % Optional key/value pairs:
-%    measure                      - Default set to false. If it sets
+%    measure                      - Default to false. If it sets
 %                                   to true, it measures the channel
 %                                   primaries to calculate the point cloud.
-%    verbose                      - Boolean. Default true. Controls
+%    verbose                      - Default to true. Boolean. Controls
 %                                   plotting and printout.
-%    verboseDetail                - Default set to false. This prints out
-%                                   all the graphs, ISETBio scene window,
-%                                   and more status messages. We may not
-%                                   always want to see the detailed graphs
-%                                   during the process making multiple
-%                                   contrast gabor images.
+%    verboseDetail                - Default to false. This prints out
+%                                   gaborRGBImage all the graphs, ISETBio
+%                                   scene window, and more status messages.
+%                                   We may not always want to see the
+%                                   detailed graphs during the process
+%                                   making multiple contrast gabor images.
+%    noISETBio                    - Default to true. Skip the ISETBio
+%                                   computations.
 %
 % See also: SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %           SpectralCalISETBioUsingSubroutinesV2, t_CSFGeneratorExperiment
@@ -48,6 +55,8 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(targe
 %    01/26/22  smo        Started on it to make it as a separate function.
 %    01/31/22  smo        Now you can pass multiple target gabor contrasts
 %                         to generate the images at once.
+%    02/08/22  dhb,smo    Added an option to skip making the ISETBio scenes
+%                         which takes time and memory a lot.
 
 %% Set parameters.
 arguments
@@ -57,6 +66,7 @@ arguments
     options.measure (1,1) = false
     options.verbose (1,1) = true
     options.verboseDetail (1,1) = false
+    options.noISETBio (1,1) = true
 end
 
 %% Say hello.
@@ -136,12 +146,18 @@ gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardG
     backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',options.verboseDetail);
 
 %% Put the image into an ISETBio scene.
-ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
-    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',options.verboseDetail);
+if (~options.noISETBio)
+    ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+        ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',options.verboseDetail);
+    
+    gaborISETBioScene = ISETBioGaborObject.ISETBioGaborScene;
+else
+    nContrast = size(targetContrast,2);
+    gaborISETBioScene = cell(1,nContrast);
+end
 
 %% Save out the images in a single variable.
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
-gaborISETBioScene = ISETBioGaborObject.ISETBioGaborScene;
 
 %% Say goodbye. 
 if (options.verbose)
