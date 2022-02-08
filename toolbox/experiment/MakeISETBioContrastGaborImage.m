@@ -47,6 +47,10 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
 %                                   making multiple contrast gabor images.
 %    noISETBio                    - Default to true. Skip the ISETBio
 %                                   computations.
+%    lightVer                     - Deafult to true. Print out less variables
+%                                   saved in the structure. It does not affect
+%                                   making final gabor images, but saving some
+%                                   time and memory.
 %
 % See also: SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %           SpectralCalISETBioUsingSubroutinesV2, t_CSFGeneratorExperiment
@@ -56,7 +60,9 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
 %    01/31/22  smo        Now you can pass multiple target gabor contrasts
 %                         to generate the images at once.
 %    02/08/22  dhb,smo    Added an option to skip making the ISETBio scenes
-%                         which takes time and memory a lot.
+%                         which takes time and memory a lot. Also, Added an
+%                         option to print out less variable saved in the
+%                         final structure.
 
 %% Set parameters.
 arguments
@@ -67,6 +73,7 @@ arguments
     options.verbose (1,1) = true
     options.verboseDetail (1,1) = false
     options.noISETBio (1,1) = true
+    options.lightVer (1,1) = true
 end
 
 %% Say hello.
@@ -125,7 +132,7 @@ SetSensorColorSpace(screenCalObj, colorDirectionParams.T_cones, colorDirectionPa
 %% Set up the background screen primaries.
 backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalObj,backgroundChannelObject,'verbose',options.verboseDetail);
 
-%% Make a monochrome Gabor patch in range -1 to 1.
+%% Make a monochrome Gabor patch in rangMakeISETBioSceneFromImagee -1 to 1.
 %
 % This is our monochrome contrast modulation image. Multiply by the max
 % contrast vector to get the LMS contrast image. The function includes the
@@ -143,7 +150,7 @@ nQuantizeBits = 14;
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
-    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',options.verboseDetail);
+    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',options.verboseDetail,'lightVer',options.lightVer);
 
 %% Put the image into an ISETBio scene.
 if (~options.noISETBio)

@@ -59,6 +59,10 @@ function [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimar
 %                                     projector when you decide to measure
 %                                     the channel primaries. It set the
 %                                     time in minutes.
+%    lightVer                       - Deafult to true. Print out less variables
+%                                     saved in the structure. It does not affect
+%                                     making final gabor images, but saving some
+%                                     time and memory.
 %    verbose                        - Boolean. Default true. Controls
 %                                     plotting and printout.
 %
@@ -75,6 +79,8 @@ function [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimar
 %   02/01/22  smo                   - Added the part measuring the channel
 %                                     primaries before creating point
 %                                     cloud.
+%   02/08/22  smo                   - Added an option to print out less variable
+%                                     saved in the final structure.
 
 %% Set parameters.
 arguments
@@ -86,6 +92,7 @@ arguments
     options.measure (1,1) = false
     options.warmupTimeMinutes (1,1) = 30
     options.verbose (1,1) = true
+    options.lightVer (1,1) = true
 end
 
 %% Take some parameters out from the structure.
@@ -205,12 +212,14 @@ for cc = 1:nContrastPoints
     
     % Save the results in a struct.
     standardGaborCalObject.desiredContrastGaborCal{cc} = desiredContrastGaborCal;
-    standardGaborCalObject.desiredExcitationsGaborCal{cc} = desiredExcitationsGaborCal;
-    standardGaborCalObject.standardPrimariesGaborCal{cc} = standardPrimariesGaborCal;
-    standardGaborCalObject.desiredSpdGaborCal{cc} = desiredSpdGaborCal;
     standardGaborCalObject.standardSettingsGaborCal{cc} = standardSettingsGaborCal;
-    standardGaborCalObject.standardPredictedPrimariesGaborCal{cc} = standardPredictedPrimariesGaborCal;
-    standardGaborCalObject.standardPredictedExcitationsGaborCal{cc} = standardPredictedExcitationsGaborCal;
-    standardGaborCalObject.standardPredictedContrastGaborCal{cc} = standardPredictedContrastGaborCal;
+    if (~options.lightVer)
+        standardGaborCalObject.desiredExcitationsGaborCal{cc} = desiredExcitationsGaborCal;
+        standardGaborCalObject.standardPrimariesGaborCal{cc} = standardPrimariesGaborCal;
+        standardGaborCalObject.desiredSpdGaborCal{cc} = desiredSpdGaborCal;
+        standardGaborCalObject.standardPredictedPrimariesGaborCal{cc} = standardPredictedPrimariesGaborCal;
+        standardGaborCalObject.standardPredictedExcitationsGaborCal{cc} = standardPredictedExcitationsGaborCal;
+        standardGaborCalObject.standardPredictedContrastGaborCal{cc} = standardPredictedContrastGaborCal;
+    end
 end
 end

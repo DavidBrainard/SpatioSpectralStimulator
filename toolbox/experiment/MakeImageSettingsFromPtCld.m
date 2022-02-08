@@ -24,6 +24,10 @@ function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalOb
 %                                image format.
 %
 % Optional key/value pairs:
+%    lightVer                  - Deafult to true. Print out less variables
+%                                saved in the structure. It does not affect
+%                                making final gabor images, but saving some
+%                                time and memory.
 %    verbose                   - Boolean. Default true. Controls
 %                                plotting and printout.
 %
@@ -37,6 +41,8 @@ function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalOb
 %   01/31/22  smo              - It is possible to work on multiple
 %                                target contrast gabors inside this
 %                                function.
+%   02/08/22  smo              - Added an option to print out less variable
+%                                saved in the final structure.
 
 %% Set parameters.
 arguments
@@ -45,6 +51,7 @@ arguments
     standardGaborCalObject
     screenBgExcitations
     stimulusN
+    options.lightVer (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -78,9 +85,11 @@ for cc = 1:nContrastPoints
     end
     
     % Convert representations we want to take forward to image format. Also, save the results in a structure.
-    gaborImageObject.uniqueQuantizedContrastGaborImage{cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
-    gaborImageObject.desiredContrastGaborImage{cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{cc},stimulusN,stimulusN);
-    gaborImageObject.standardPredictedContrastImage{cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{cc},stimulusN,stimulusN);
+    if(~options.lightVer)
+        gaborImageObject.uniqueQuantizedContrastGaborImage{cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+        gaborImageObject.desiredContrastGaborImage{cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{cc},stimulusN,stimulusN);
+        gaborImageObject.standardPredictedContrastImage{cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{cc},stimulusN,stimulusN);
+    end
     gaborImageObject.standardSettingsGaborImage{cc} = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal{cc},stimulusN,stimulusN);
 end
 
