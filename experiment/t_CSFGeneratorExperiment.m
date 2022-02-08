@@ -54,10 +54,10 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 %
 % It used to set as min = 20 / max = 50. Here we want to check fast if it
 % is working, so we just put small numbers for trials. (SEMIN)
-experimentParams.nContrasts = 3;
+experimentParams.nContrasts = 10;
 experimentParams.useNominal = true;
 experimentParams.simulateExperiment = true;
-experimentParams.stimContrastsToTest = linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts);
+experimentParams.stimContrastsToTest = round(linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts),4);
 experimentParams.slopeRangeLow = 100/20;
 experimentParams.slopeRangeHigh = 10000/20;
 experimentParams.slopeDelta = 100/20;
@@ -199,7 +199,7 @@ while (nextFlag)
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
         theSceneTemporalSupportSeconds,testContrast,'runningMode',runningMode,...
-        'autoResponse',false,'beepSound',false,'verbose',true);
+        'autoResponse',true,'beepSound',false,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));

@@ -234,9 +234,13 @@ if (~options.autoResponse)
     end
     
 elseif (options.autoResponse)
-    % Getting an auto response based on the test contrat level.
+    % Getting an auto response based on the test contrast level. This part
+    % needs to be modified to reflect the psychometric function params that
+    % we will use for fitting the data.
     nTrials = 1;
-    pCorrect = 0.5;
+    thresholdCriterionContrast = 0.03;
+    slope = 5;
+    pCorrect = wblcdf(testContrast,thresholdCriterionContrast,slope);
     response = binornd(nTrials,pCorrect);
 end
 
