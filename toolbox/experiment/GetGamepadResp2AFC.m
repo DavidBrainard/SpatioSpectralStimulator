@@ -1,13 +1,16 @@
 function [buttonPress] = GetGamepadResp2AFC(options)
-% Get button responses from gamepad for 2-AFC task.
+% Get a button response from gamepad for 2-AFC task.
 %
 % Syntax:
-%    [bttnPress] = GetGamepadResp2AFC()
+%    [buttonPress] = GetGamepadResp2AFC()
 %
 % Description:
 %    This function get responses from 2 buttons from the gamepad and
 %    returns a 1 or 2 output response. The buttons can be defined as
 %    key/value pairs. Default is set to 1 for (Y) button / 2 for (A) button.
+%
+%    The output result 1 means the first sequence image was selected, and 2
+%    means the second was selected.
 %
 % Inputs:
 %    N/A
@@ -21,6 +24,8 @@ function [buttonPress] = GetGamepadResp2AFC(options)
 %                        the first interval. Default "Y" on Longitech F310.
 %    numButtonDown -     The button number on the gamepad corresponding to
 %                        the second interval. Default "A" on Longitech F310.
+%    pause -             Default to 0. You can set the time delay after the
+%                        evaluation. Unit is in second.
 %    verbose -           Default to true. Print out more status messages.
 
 % History:
@@ -31,7 +36,7 @@ function [buttonPress] = GetGamepadResp2AFC(options)
 arguments
     options.numButtonUp (1,1) = 4
     options.numBurronDown (1,1) = 2
-    options.pauseTime (1,1) = 0
+    options.pause (1,1) = 0.5
     options.verbose (1,1) = true
 end
 
@@ -69,8 +74,9 @@ end
 % Print out which image was selected.
 if (options.verbose)
     fprintf('(%s) image has been selected!',selectImg);
-    
+end
+
 % Pause if you want.
-pause(options.pauseTime);
+pause(options.pause);
 
 end

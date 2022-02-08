@@ -35,11 +35,15 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %     correct                        - 1 if correct and 0 if incorrect.
 %
 % Optional key/value pairs:
-%     simulation                     - If you are not acutally running
+%     runningMode                    - If you are not acutally running
 %                                      the experiment, set this to true and
 %                                      null and test images will be showed
 %                                      on the figure instead of displaying
 %                                      it on PTB.
+%    expKeyType                      - Default to 'keyboard'. Set either
+%                                      'keyboard' or 'gamepad' to get a
+%                                      response when running the
+%                                      experiment.
 %    imageMagnificationFactor        - When simulation was set to true,
 %                                      this decides the size of the null
 %                                      and test images. If it is set to 1,
@@ -78,6 +82,7 @@ arguments
     window (1,1)
     windowRect (1,4)
     options.runningMode = 'simulation'
+    options.expKeyType = 'keyboard'
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
     options.autoResponse (1,1) = true
@@ -185,18 +190,33 @@ rightArrow = 29;
 
 % Make a loop till patients press either left of right arrow key.
 if (~options.autoResponse)
-    metCondition = false;
-    nLoopTrial = 1;
-    while (nLoopTrial >= 1)
-        gettingResponse = waitforbuttonpress;
-        response = double(get(gcf,'CurrentCharacter'));
-        if (response == leftArrow || response == rightArrow)
-            metCondition = true;
-            break
-        else
+    switch (options.expKeyType)
+        % Get a response using a keyboard.
+        case 'keyboard'
             metCondition = false;
-            nLoopTrial = nLoopTrial + 1;
-        end
+            nLoopTrial = 1;
+            while (nLoopTrial >= 1)
+                gettingResponse = waitforbuttonpress;
+                response = double(get(gcf,'CurrentCharacter'));
+                if (response == leftArrow || response == rightArrow)
+                    metCondition = true;
+                    break
+                else
+                    metCondition = false;
+                    nLoopTrial = nLoopTrial + 1;
+                end
+            end
+            
+            % Get a response using a gamepad.
+        case 'gamepad'
+            gamepadRespFirst  = 1;
+            gamepadRespSecond = 2;
+            responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+            if (responseGamePad == gamepadRespFirst)
+                response = leftArrow;
+            elseif (responseGamePad == gamepadRespSecond)
+                response = rightArrow;
+            end
     end
     if (options.verbose)
         fprintf('     Key input has been received! \n');

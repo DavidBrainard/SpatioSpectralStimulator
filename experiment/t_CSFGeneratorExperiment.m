@@ -56,7 +56,7 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 %
 % It used to set as min = 20 / max = 50. Here we want to check fast if it
 % is working, so we just put small numbers for trials. (SEMIN)
-experimentParams.nContrasts = 50;
+experimentParams.nContrasts = 10;
 experimentParams.useNominal = true;
 experimentParams.simulateExperiment = true;
 experimentParams.stimContrastsToTest = round(linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts),4);
@@ -80,6 +80,7 @@ experimentParams.maxTrial = 20;
 % can save a lot of memory and time. What we get is the same.
 noISETBio = true;
 lightVer = true;
+
 sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
 [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
@@ -186,6 +187,7 @@ end
 % Set the number of trials for the loop and running mode. 
 nTest = 1;
 runningMode = 'PTB';
+expKeyType = 'gamepad';
 
 % Open projector.
 if (strcmp(runningMode,'PTB'))
@@ -225,7 +227,8 @@ while (nextFlag)
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
         theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
-        'runningMode',runningMode,'autoResponse',false,'beepSound',false,'verbose',true);
+        'runningMode',runningMode,'autoResponse',false,...
+        'expKeyType',expKeyType,'beepSound',false,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
