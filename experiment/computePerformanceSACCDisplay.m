@@ -1,5 +1,5 @@
 function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
-    theSceneTemporalSupportSeconds,testContrast,options)
+    theSceneTemporalSupportSeconds,testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
 %
 % Syntax:
@@ -75,6 +75,8 @@ arguments
     testRGBImage
     theSceneTemporalSupportSeconds
     testContrast
+    window (1,1)
+    windowRect (1,4)
     options.runningMode = 'simulation'
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
@@ -88,10 +90,6 @@ switch (options.runningMode)
         % This part will be used for the actual experiment displaying the test
         % image on the projector using PTB.
         %
-        % Open the screen ready.
-        initialScreenSettings = [0 0 0]';
-        [window windowRect] = OpenPlainScreen(initialScreenSettings,'verbose',options.verbose);
-        
         % Randomize the displaying order of null and test images.
         displayFirstTest = 1;
         displayFirstNull = 2;
@@ -247,7 +245,6 @@ end
 %% Close.
 switch (options.runningMode)
     case 'PTB'
-        CloseScreen;
     case 'simulation'
         close all;
 end

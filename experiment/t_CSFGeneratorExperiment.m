@@ -74,7 +74,10 @@ experimentParams.maxTrial = 20;
 %
 % For experiment, turn off generation of ISETBio scenes because it eats up
 % time and even worse memory.  But can turn on in the future for
-% computational analyses.
+% computational analyses. 
+%
+% Also, lightVer prints out less variables inside the function so that we
+% can save a lot of memory and time. What we get is the same.
 noISETBio = true;
 lightVer = true;
 sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
@@ -180,8 +183,18 @@ end
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-% Loop over trials.
+% Set the number of trials for the loop and running mode. 
 nTest = 1;
+runningMode = 'PTB';
+
+% Open projector.
+if (strcmp(runningMode,'PTB'))
+   [window windowRect] = OpenPlainScreen([0 0 0]');
+elseif (strcmo(runningMode,'simulation'))
+   window = [];
+   windowRect = [];
+end
+    
 while (nextFlag)
     
     % Convert log contrast -> contrast.
@@ -207,11 +220,12 @@ while (nextFlag)
     % Current version of 'computePerformanceSACCDisplay' does not use
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
-    runningMode = 'PTB';
+
+    % Getting response here.
     correct = computePerformanceSACCDisplay(...
         nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-        theSceneTemporalSupportSeconds,testContrast,'runningMode',runningMode,...
-        'autoResponse',false,'beepSound',false,'verbose',true);
+        theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
+        'runningMode',runningMode,'autoResponse',false,'beepSound',false,'verbose',true);
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
@@ -224,6 +238,11 @@ while (nextFlag)
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
+end
+
+% Close projector.
+if (strcmp(runningMode,'PTB'))
+    CloseScreen;
 end
 
 %% Show results.
