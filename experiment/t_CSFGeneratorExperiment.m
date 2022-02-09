@@ -36,7 +36,9 @@ clear; close all;
 %
 % Set up color direction
 conditionName = 'LminusMSmooth';
-colorDirectionParams = SetupColorDirection(conditionName);
+spatialGaborTargetContrast = 0.04;
+colorDirectionParams = SetupColorDirection(conditionName,...
+    'spatialGaborTargetContrast',spatialGaborTargetContrast);
 
 %% Image spatial parameters.
 %
@@ -49,22 +51,21 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 %
 % First set up the scene parameters that will be needed by
 % the sceSACCDisplay.
-
+%
 % First step is to predefine the contrasts that we will allow the
 % psychophysics to work over.  This gives us a finite list of scenes
 % to compute for.
-%
-% It used to set as min = 20 / max = 50. Here we want to check fast if it
-% is working, so we just put small numbers for trials. (SEMIN)
 experimentParams.nContrasts = 10;
-experimentParams.useNominal = true;
-experimentParams.simulateExperiment = true;
+experimentParams.measure = false;
 experimentParams.stimContrastsToTest = round(linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts),4);
 experimentParams.slopeRangeLow = 100/20;
 experimentParams.slopeRangeHigh = 10000/20;
 experimentParams.slopeDelta = 100/20;
 experimentParams.minTrial = 10;
-experimentParams.maxTrial = 20;
+experimentParams.maxTrial = 10;
+experimentParams.nTest = 5;
+experimentParams.runningMode = 'PTB';
+experimentParams.expKeyType = 'gamepad';
 
 % Now do all the computation to get us ISETBio scenes and RGB images for
 % each predefined contrast, relative to the parameters set up above.
@@ -81,12 +82,15 @@ experimentParams.maxTrial = 20;
 noISETBio = true;
 lightVer = true;
 
-sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
+% Make contrast gabor images here.
 [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
     MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
-    colorDirectionParams,spatialTemporalParams,'measure',false,'verbose',true, ...
-    'noISETBio',noISETBio,'lightVer',lightVer);
-sceneParamsStruct.predefinedTemporalSupport = 0.2;
+    colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
+    'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer);
+
+% Set some of the scene parameters.
+sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
+sceneParamsStruct.predefinedTemporalSupport = 2;
 
 %% Create the scene engine
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -180,25 +184,21 @@ end
 % contrast tested, so that things will run faster if a contrast is repeated
 % a second time.  This can use up space, so for real problems you may need
 % to think about space-time tradeoffs, caching things to disk, etc.
-
+%
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-% Set the number of trials for the loop and running mode. 
-nTest = 1;
-runningMode = 'PTB';
-expKeyType = 'gamepad';
-
 % Open projector.
-if (strcmp(runningMode,'PTB'))
+if (strcmp(experimentParams.runningMode,'PTB'))
    [window windowRect] = OpenPlainScreen([0 0 0]');
-elseif (strcmo(runningMode,'simulation'))
-   window = [];
-   windowRect = [];
+elseif (strcmp(experimentParams.runningMode,'simulation'))
+   % Set arbitrary numbers to pass and these will not be used in the
+   % further function.
+   window = 1;
+   windowRect = [0 0 1920 1080];
 end
     
 while (nextFlag)
-    
     % Convert log contrast -> contrast.
     %
     % We round it to set it as exact the number of the target contrast.
@@ -222,13 +222,15 @@ while (nextFlag)
     % Current version of 'computePerformanceSACCDisplay' does not use
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
-
-    % Getting response here.
-    correct = computePerformanceSACCDisplay(...
-        nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-        theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
-        'runningMode',runningMode,'autoResponse',false,...
-        'expKeyType',expKeyType,'beepSound',false,'verbose',true);
+    %
+    % Get a response here. Make a loop for the number of trials.   
+    for tt = 1:experimentParams.nTest
+        correct(tt) = computePerformanceSACCDisplay(...
+            nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
+            theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
+            'runningMode',experimentParams.runningMode,'autoResponse',false,...
+            'expKeyType',experimentParams.expKeyType,'beepSound',false,'verbose',true);
+    end
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
@@ -236,15 +238,15 @@ while (nextFlag)
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), correct);
+        estimator.multiTrial(logContrast * ones(1, experimentParams.nTest), correct);
     
-    % Get current threshold estimate
+    % Get current threshold estimate.
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
 end
 
 % Close projector.
-if (strcmp(runningMode,'PTB'))
+if (strcmp(experimentParams.runningMode,'PTB'))
     CloseScreen;
 end
 
@@ -254,22 +256,13 @@ fprintf('%d trials recorded \n', estimator.nTrial);
 % Estimate threshold and plot/report results.  This does a maximum
 % likelihood based on the trials run, and is not subject to the
 % discretization used by QUEST+.
-%
-% I don't understand much about this part, so I arbitrarily set the
-% plotSize as 50 here. (SEMIN)
-if (exist('questMode'))
-    plotSize = 50;
-elseif(strcmp(questMode, 'validationMode'))
-    plotSize = 50;
-else
-    plotSize = 10;
-end
+plotSize = 10;
 
 % Return threshold value. For the mQUESTPlus Weibull PFs, the first
 % parameter of the PF fit is the 0.81606 proportion correct threshold,
-% when lapse rate is 0 and guess rate is 0.5.  Better to make this an
+% when lapse rate is 0 and guess rate is 0.5. Better to make this an
 % explicit parameter, however.
-figure();
+figure; clf;
 thresholdCriterion = 0.81606;
 [threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', plotSize, ...
     'thresholdCriterion', thresholdCriterion);
