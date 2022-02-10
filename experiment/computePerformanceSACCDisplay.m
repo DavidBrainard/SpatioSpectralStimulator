@@ -107,14 +107,28 @@ switch (options.runningMode)
         
         % Display the images here.
         %
+        % Cross-fixation image before displaying the images. This is useful
+        % when audible cue is not working.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar','patternColor',[1 1 1]);
+        % Make a time delay.
+        for dd = 1:theSceneTemporalSupportSeconds;
+            pause(1);
+        end
+        
         % First image.
         SetScreenImage(firstDisplayImage, window, windowRect,'verbose',options.verbose);
         % Make a beep sound as an audible cue.
         if (options.beepSound)
             MakeBeepSound;
         end
-        % Make a time delay before displaying the other image of the
-        % pair.
+        % Make a time delay.
+        for dd = 1:theSceneTemporalSupportSeconds;
+            pause(1);
+        end
+        
+        % Cross-fixation image again.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar','patternColor',[1 1 1]);
+        % Make a time delay.
         for dd = 1:theSceneTemporalSupportSeconds;
             pause(1);
         end
@@ -124,6 +138,10 @@ switch (options.runningMode)
         % Make a beep sound as an audible cue.
         if (options.beepSound)
             MakeBeepSound;
+        end
+        % Make a time delay.
+        for dd = 1:theSceneTemporalSupportSeconds;
+            pause(1);
         end
         
     case 'simulation'
@@ -256,9 +274,9 @@ elseif (options.autoResponse)
     % needs to be modified to reflect the psychometric function params that
     % we will use for fitting the data.
     nTrials = 1;
-    thresholdCriterionContrast = 0.03;
-    slope = 5;
-    pCorrect = wblcdf(testContrast,thresholdCriterionContrast,slope);
+    a = 0.01;
+    b = 1.5;
+    pCorrect = wblcdf(testContrast,a,b);
     response = binornd(nTrials,pCorrect);
 end
 

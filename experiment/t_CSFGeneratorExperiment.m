@@ -55,17 +55,20 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 % First step is to predefine the contrasts that we will allow the
 % psychophysics to work over.  This gives us a finite list of scenes
 % to compute for.
-experimentParams.nContrasts = 10;
+experimentParams.nContrasts = 20;
 experimentParams.measure = false;
 experimentParams.stimContrastsToTest = round(linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts),4);
-experimentParams.slopeRangeLow = 100/20;
-experimentParams.slopeRangeHigh = 10000/20;
-experimentParams.slopeDelta = 100/20;
-experimentParams.minTrial = 10;
-experimentParams.maxTrial = 10;
-experimentParams.nTest = 5;
+experimentParams.slopeRangeLow = 20/20;
+experimentParams.slopeRangeHigh = 400/20;
+experimentParams.slopeDelta = 20/20;
+experimentParams.minTrial = 30;
+experimentParams.maxTrial = 50;
+experimentParams.nTest = 1;
+experimentParams.nQUESTEstimator = 1;
 experimentParams.runningMode = 'PTB';
 experimentParams.expKeyType = 'gamepad';
+experimentParams.beepSound = false;
+experimentParams.autoResponse = false;
 
 % Now do all the computation to get us ISETBio scenes and RGB images for
 % each predefined contrast, relative to the parameters set up above.
@@ -90,7 +93,7 @@ lightVer = true;
 
 % Set some of the scene parameters.
 sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
-sceneParamsStruct.predefinedTemporalSupport = 2;
+sceneParamsStruct.predefinedTemporalSupport = 0.5;
 
 %% Create the scene engine
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -155,8 +158,8 @@ stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
 estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
     'maxTrial', experimentParams.minTrial, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
-    'numEstimator', 4, 'stopCriterion', stopCriterion, ...
-    'qpPF',@qpPFWeibullLog);
+    'numEstimator', experimentParams.nQUESTEstimator, ...
+    'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
 
 %% Initialize display for experiment
 % displayControlStruct = InitializeDisplayForExperiment;
@@ -228,8 +231,8 @@ while (nextFlag)
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
-            'runningMode',experimentParams.runningMode,'autoResponse',false,...
-            'expKeyType',experimentParams.expKeyType,'beepSound',false,'verbose',true);
+            'runningMode',experimentParams.runningMode,'autoResponse',experimentParams.autoResponse,...
+            'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,'verbose',true);
     end
     
     % Report what happened
