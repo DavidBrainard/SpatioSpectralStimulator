@@ -141,7 +141,7 @@ switch options.patternType
 end
 
 if (options.verbose)
-    fprintf('(%s) pattern is displaying...n\',options.patternType);
+    fprintf('(%s) pattern is displaying...\n',options.patternType);
 end
 
 end

@@ -109,7 +109,8 @@ switch (options.runningMode)
         %
         % Cross-fixation image before displaying the images. This is useful
         % when audible cue is not working.
-        DisplayScreenPattern(window,windowRect,'patternType','crossbar','patternColor',[1 1 1]);
+         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[1 1 1],'verbose',false);
         % Make a time delay.
         for dd = 1:theSceneTemporalSupportSeconds;
             pause(1);
@@ -127,7 +128,8 @@ switch (options.runningMode)
         end
         
         % Cross-fixation image again.
-        DisplayScreenPattern(window,windowRect,'patternType','crossbar','patternColor',[1 1 1]);
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[1 1 1],'verbose',false);
         % Make a time delay.
         for dd = 1:theSceneTemporalSupportSeconds;
             pause(1);
