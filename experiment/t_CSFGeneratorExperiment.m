@@ -32,80 +32,102 @@
 %% Initialization
 clear; close all;
 
-%% Parameters
-%
-% Set up color direction
+%% Load data if you want to skip making the images.
 conditionName = 'LminusMSmooth';
-spatialGaborTargetContrast = 0.02;
-colorDirectionParams = SetupColorDirection(conditionName,...
-    'spatialGaborTargetContrast',spatialGaborTargetContrast);
-
-%% Image spatial parameters.
-%
-% Image will be centered in display.
-spatialTemporalParams.sineFreqCyclesPerDeg = 1;
-spatialTemporalParams.gaborSdDeg = 1.5;
-spatialTemporalParams.stimulusSizeDeg = 7;
-
-%% Instantiate a sceneEngine
-%
-% First set up the scene parameters that will be needed by
-% the sceSACCDisplay.
-%
-% First step is to predefine the contrasts that we will allow the
-% psychophysics to work over.  This gives us a finite list of scenes
-% to compute for.
-experimentParams.minContrast = 0.001;
-experimentParams.nContrasts = 20;
-experimentParams.measure = false;
-experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
-experimentParams.slopeRangeLow = 0.5;
-experimentParams.slopeRangeHigh = 6;
-experimentParams.slopeDelta = 0.5;
-experimentParams.minTrial = 50;
-experimentParams.maxTrial = 50;
-experimentParams.nTest = 1;
-experimentParams.nQUESTEstimator = 1;
-experimentParams.runningMode = 'PTB';
-experimentParams.expKeyType = 'gamepad';
-experimentParams.beepSound = false;
-
-AUTORESPONSE = true;
-if (AUTORESPONSE)
-    autoResponse.psiFunc = @qpPFWeibullLog;
-    autoResponse.thresh = 0.004;
-    autoResponse.slope = 2;
-    autoResponse.guess = 0.5;
-    autoResponse.lapse = 0.01;
-    autoResponse.psiParams = [log10(autoResponse.thresh) autoResponse.slope autoResponse.guess autoResponse.lapse];
-else
-    autoResponse = [];
+LOADDATA = true;
+if (LOADDATA)
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s',conditionName));
+        load(testFilename);
+    end
 end
 
-% Now do all the computation to get us ISETBio scenes and RGB images for
-% each predefined contrast, relative to the parameters set up above.
+%% Set up parameters.
 %
-% Move the precomputed data into the format for the sceSACCDisplay scene
-% engine. This will take some fair amount of time to run it.
-%
-% For experiment, turn off generation of ISETBio scenes because it eats up
-% time and even worse memory.  But can turn on in the future for
-% computational analyses. 
-%
-% Also, lightVer prints out less variables inside the function so that we
-% can save a lot of memory and time. What we get is the same.
-noISETBio = true;
-lightVer = true;
+if (~LOADDATA)
+    % Set up color direction
+    spatialGaborTargetContrast = 0.02;
+    colorDirectionParams = SetupColorDirection(conditionName,...
+        'spatialGaborTargetContrast',spatialGaborTargetContrast);
+    
+    %% Image spatial parameters.
+    %
+    % Image will be centered in display.
+    spatialTemporalParams.sineFreqCyclesPerDeg = 1;
+    spatialTemporalParams.gaborSdDeg = 1.5;
+    spatialTemporalParams.stimulusSizeDeg = 7;
+    
+    %% Instantiate a sceneEngine
+    %
+    % First set up the scene parameters that will be needed by
+    % the sceSACCDisplay.
+    %
+    % First step is to predefine the contrasts that we will allow the
+    % psychophysics to work over.  This gives us a finite list of scenes
+    % to compute for.
+    experimentParams.minContrast = 0.001;
+    experimentParams.nContrasts = 20;
+    experimentParams.measure = false;
+    experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
+    experimentParams.slopeRangeLow = 0.5;
+    experimentParams.slopeRangeHigh = 6;
+    experimentParams.slopeDelta = 0.5;
+    experimentParams.minTrial = 50;
+    experimentParams.maxTrial = 50;
+    experimentParams.nTest = 1;
+    experimentParams.nQUESTEstimator = 1;
+    experimentParams.runningMode = 'PTB';
+    experimentParams.expKeyType = 'gamepad';
+    experimentParams.beepSound = false;
+end
 
-% Make contrast gabor images here.
-[sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
-    MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
-    colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
-    'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer);
-
-% Set some of the scene parameters.
-sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
-sceneParamsStruct.predefinedTemporalSupport = 0.5;
+AUTORESPONSE = false;
+if (AUTORESPONSE)
+    autoResponseParams.psiFunc = @qpPFWeibullLog;
+    autoResponseParams.thresh = 0.004;
+    autoResponseParams.slope = 2;
+    autoResponseParams.guess = 0.5;
+    autoResponseParams.lapse = 0.01;
+    autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
+else
+    autoResponseParams = [];
+end
+    
+if(~LOADDATA)
+    % Now do all the computation to get us ISETBio scenes and RGB images for
+    % each predefined contrast, relative to the parameters set up above.
+    %
+    % Move the precomputed data into the format for the sceSACCDisplay scene
+    % engine. This will take some fair amount of time to run it.
+    %
+    % For experiment, turn off generation of ISETBio scenes because it eats up
+    % time and even worse memory.  But can turn on in the future for
+    % computational analyses.
+    %
+    % Also, lightVer prints out less variables inside the function so that we
+    % can save a lot of memory and time. What we get is the same.
+    noISETBio = true;
+    lightVer = true;
+    
+    % Make contrast gabor images here.
+    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
+        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
+        colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
+        'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer);
+    
+    % Set some of the scene parameters.
+    sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
+    sceneParamsStruct.predefinedTemporalSupport = 0.5;
+    
+    % Save the images and params.
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s',conditionName));
+        save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
+            'experimentParams','autoResponseParams','noISETBio','lightVer');
+    end
+end
 
 %% Create the scene engine
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -243,7 +265,7 @@ while (nextFlag)
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
-            'runningMode',experimentParams.runningMode,'autoResponse',autoResponse,...
+            'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,'verbose',true);
     end
     
@@ -283,5 +305,5 @@ thresholdCriterion = 0.81606;
     'thresholdCriterion', thresholdCriterion);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
-fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units).%0.4f (linear units)\n', ...
+fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %0.4f (linear units)\n', ...
     thresholdCriterion,threshold,10^threshold);
