@@ -36,7 +36,7 @@ clear; close all;
 %
 % Set up color direction
 conditionName = 'LminusMSmooth';
-spatialGaborTargetContrast = 0.04;
+spatialGaborTargetContrast = 0.02;
 colorDirectionParams = SetupColorDirection(conditionName,...
     'spatialGaborTargetContrast',spatialGaborTargetContrast);
 
@@ -55,20 +55,32 @@ spatialTemporalParams.stimulusSizeDeg = 7;
 % First step is to predefine the contrasts that we will allow the
 % psychophysics to work over.  This gives us a finite list of scenes
 % to compute for.
+experimentParams.minContrast = 0.001;
 experimentParams.nContrasts = 20;
 experimentParams.measure = false;
-experimentParams.stimContrastsToTest = round(linspace(0,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts),4);
-experimentParams.slopeRangeLow = 20/20;
-experimentParams.slopeRangeHigh = 400/20;
-experimentParams.slopeDelta = 20/20;
-experimentParams.minTrial = 30;
+experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
+experimentParams.slopeRangeLow = 0.5;
+experimentParams.slopeRangeHigh = 6;
+experimentParams.slopeDelta = 0.5;
+experimentParams.minTrial = 50;
 experimentParams.maxTrial = 50;
 experimentParams.nTest = 1;
 experimentParams.nQUESTEstimator = 1;
 experimentParams.runningMode = 'PTB';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = false;
-experimentParams.autoResponse = false;
+
+AUTORESPONSE = true;
+if (AUTORESPONSE)
+    autoResponse.psiFunc = @qpPFWeibullLog;
+    autoResponse.thresh = 0.004;
+    autoResponse.slope = 2;
+    autoResponse.guess = 0.5;
+    autoResponse.lapse = 0.01;
+    autoResponse.psiParams = [log10(autoResponse.thresh) autoResponse.slope autoResponse.guess autoResponse.lapse];
+else
+    autoResponse = [];
+end
 
 % Now do all the computation to get us ISETBio scenes and RGB images for
 % each predefined contrast, relative to the parameters set up above.
@@ -117,7 +129,7 @@ theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 % and QUEST+ will run slowly; too few and it may not be able to put stimuli
 % in the right places.
 estDomain  = log10(experimentParams.stimContrastsToTest(2:end));
-slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeRangeHigh : experimentParams.slopeDelta;
+slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : experimentParams.slopeRangeHigh;
 
 % Note the explicit setting of the PF for the questThresholdEngine.  Using
 % @qpPFWeibullLog causes it all to happen in log10 units, rather than the
@@ -156,7 +168,7 @@ stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
 
 % Set up the estimator object.
 estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
-    'maxTrial', experimentParams.minTrial, ...
+    'maxTrial', experimentParams.maxTrial, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
     'numEstimator', experimentParams.nQUESTEstimator, ...
     'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
@@ -231,7 +243,7 @@ while (nextFlag)
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
-            'runningMode',experimentParams.runningMode,'autoResponse',experimentParams.autoResponse,...
+            'runningMode',experimentParams.runningMode,'autoResponse',autoResponse,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,'verbose',true);
     end
     
@@ -271,5 +283,5 @@ thresholdCriterion = 0.81606;
     'thresholdCriterion', thresholdCriterion);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
-fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
-    thresholdCriterion,threshold);
+fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units).%0.4f (linear units)\n', ...
+    thresholdCriterion,threshold,10^threshold);

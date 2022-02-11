@@ -85,7 +85,7 @@ arguments
     options.expKeyType = 'keyboard'
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
-    options.autoResponse (1,1) = true
+    options.autoResponse (1,1) = []
     options.verbose (1,1) = true
 end
 
@@ -209,7 +209,7 @@ leftArrow  = 28;
 rightArrow = 29;
 
 % Make a loop till patients press either left of right arrow key.
-if (~options.autoResponse)
+if (isempty(options.autoResponse))
     switch (options.expKeyType)
         % Get a response using a keyboard.
         case 'keyboard'
@@ -241,6 +241,7 @@ if (~options.autoResponse)
     if (options.verbose)
         fprintf('     Key input has been received! \n');
     end
+    
     % Convert the key response into a single number either 0 or 1.
     correctResponse   = 1;
     incorrectResponse = 0;
@@ -271,15 +272,14 @@ if (~options.autoResponse)
         error('Response value should be either 0 or 1!');
     end
     
-elseif (options.autoResponse)
-    % Getting an auto response based on the test contrast level. This part
-    % needs to be modified to reflect the psychometric function params that
-    % we will use for fitting the data.
+else
+    % Getting an auto response based on the test contrast level. 
     nTrials = 1;
-    a = 0.01;
-    b = 1.5;
-    pCorrect = wblcdf(testContrast,a,b);
-    response = binornd(nTrials,pCorrect);
+    [responseVec] = options.autoResponse.psiFunc(log10(testContrast),options.autoResponse.psiParams);
+    response = binornd(nTrials,responseVec(2));
+    if (options.verbose)
+        fprintf('Test contrast %0.4f, pCorrect = %0.3f, response %d\n',testContrast,responseVec(2),response);
+    end
 end
 
 %% Close.
