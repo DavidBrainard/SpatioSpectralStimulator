@@ -3,8 +3,8 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 % Run one trial of a psychophysical experiment.
 %
 % Syntax:
-%    [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBIimage,...
-%    theSceneTemporalSupportSeconds,displayControlStruct)
+%    [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
+%    theSceneTemporalSupportSeconds,testContrast,window,windowRect)
 %
 % Description:
 %     Run one trial of a psychophysical experiment and return correct or
@@ -17,45 +17,47 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %     true.
 %
 % Inputs:
-%     nullRGBImage                   - Null RGB image as a reference for
+%     nullRGBImage -                   Null RGB image as a reference for
 %                                      evaluation, which means no contrast
 %                                      image in SACC project.
-%     testRGBImage                   - Test RGB image to be compared with
+%     testRGBImage -                   Test RGB image to be compared with
 %                                      the null image.
 %     theSceneTemporalSupportSeconds - Temporal support vector (in
 %                                      seconds) for scene sequences.
-%     testContrast                   - Contrast value of the input image.
+%     testContrast -                   Contrast value of the input image.
 %                                      This is only used when getting an
 %                                      automatic response based on the
 %                                      probability estimated from the
 %                                      psychometric function with certain
 %                                      parameters.
+%    window -                          PTB window for opened screen.
+%    windowRect -                      Rect corresonding to window.
 %
 % Outputs:
-%     correct                        - 1 if correct and 0 if incorrect.
+%     correct -                        1 if correct and 0 if incorrect.
 %
 % Optional key/value pairs:
-%     runningMode                    - If you are not acutally running
+%     runningMode -                    If you are not acutally running
 %                                      the experiment, set this to true and
 %                                      null and test images will be showed
 %                                      on the figure instead of displaying
 %                                      it on PTB.
-%    expKeyType                      - Default to 'keyboard'. Set either
+%    expKeyType -                      Default to 'keyboard'. Set either
 %                                      'keyboard' or 'gamepad' to get a
 %                                      response when running the
 %                                      experiment.
-%    imageMagnificationFactor        - When simulation was set to true,
+%    imageMagnificationFactor -        When simulation was set to true,
 %                                      this decides the size of the null
 %                                      and test images. If it is set to 1,
 %                                      it displays the original image size.
-%    beepSound                       - If it is set to true, make a beep
+%    beepSound -                       If it is set to true, make a beep
 %                                      sound every when an image is
 %                                      displaying as an audible cue for
 %                                      patients.
-%    autoResponse                    - If it is set to true, make an
+%    autoResponse -                    If it is set to true, make an
 %                                      automatic response based on the
 %                                      probability
-%    verbose                         - Boolean. Default true. Controls
+%    verbose -                         Boolean. Default true. Controls
 %                                      printout.
 %
 % See also
@@ -85,7 +87,7 @@ arguments
     options.expKeyType = 'keyboard'
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
-    options.autoResponse (1,1) = []
+    options.autoResponse = []
     options.verbose (1,1) = true
 end
 

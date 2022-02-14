@@ -125,7 +125,7 @@ if(~LOADDATA)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = fullfile(testFiledir,sprintf('RunExpData_%s',conditionName));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
-            'experimentParams','autoResponseParams','noISETBio','lightVer');
+            'experimentParams','noISETBio','lightVer');
     end
 end
 
