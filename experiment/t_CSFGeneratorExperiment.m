@@ -76,6 +76,7 @@ if (~LOADDATA)
     experimentParams.minTrial = 50;
     experimentParams.maxTrial = 50;
     experimentParams.nTest = 1;
+    experimentParams.nTestValidation = 16;
     experimentParams.nQUESTEstimator = 1;
     experimentParams.runningMode = 'PTB';
     experimentParams.expKeyType = 'gamepad';
@@ -190,7 +191,7 @@ experimentMode = 'validation';
 
 switch experimentMode
     case 'adaptive'
-        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01; 
+        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
         % Set up the estimator object.
         estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
             'maxTrial', experimentParams.maxTrial, ...
@@ -199,12 +200,19 @@ switch experimentMode
             'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
         
     case 'validation'
-        % If the nTest is set to 16, its standard deviation is 9.69 % 
-        nTestValidation = 16; 
-        estimator = questThresholdEngine('validation',true,'nRepeat',nTestValidation, ...
-        'estDomain', estDomain, 'slopeRange', slopeRange, 'qpPF', @qpPFWeibullLog);
-    
-    otherwise    
+        % Set the test contrast domain to validate.
+        lowerLimEstDomain = 0.001;
+        higherLimEstDomain = 0.010;
+        estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
+            experimentParams.stimContrastsToTest <= higherLimEstDomain));
+        estDomainValidation = estDomain(estDomainIndex);
+        
+        % Set up the estimator object.
+        estimator = questThresholdEngine('validation',true, ...
+            'nRepeat',experimentParams.nTestValidation, 'estDomain', estDomainValidation, ...
+            'slopeRange', slopeRange, 'qpPF', @qpPFWeibullLog);
+        
+    otherwise
         error('Experiment mode should be set either (adaptive) or (validation).');
 end
 
