@@ -82,7 +82,7 @@ if (~LOADDATA)
     experimentParams.beepSound = false;
 end
 
-AUTORESPONSE = false;
+AUTORESPONSE = true;
 if (AUTORESPONSE)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
     autoResponseParams.thresh = 0.004;
@@ -139,7 +139,7 @@ theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 % psychophysical procedure, QUEST+, to make the computations efficient.
 % You can learn more about QUEST+ at the gitHub site that has our QUEST+
 % Matlab implementation: https://github.com/BrainardLab/mQUESTPlus.
-%
+%false
 % A features of QUEST+ is that you need to specify a discrete list of
 % contrast values that will be tested, which in the wrapper here is also
 % taken as the set of possible thresholds as QUEST+ chooses stimulus values.
@@ -185,15 +185,28 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % appropriate choice of minimum number of trials.
 %
 % Choices (comment in one):
-%stopCriterion = 0.025;
-stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
+% stopCriterion = 0.025;
+experimentMode = 'validation';
 
-% Set up the estimator object.
-estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
-    'maxTrial', experimentParams.maxTrial, ...
-    'estDomain', estDomain, 'slopeRange', slopeRange, ...
-    'numEstimator', experimentParams.nQUESTEstimator, ...
-    'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
+switch experimentMode
+    case 'adaptive'
+        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01; 
+        % Set up the estimator object.
+        estimator = questThresholdEngine('minTrial', experimentParams.minTrial, ...
+            'maxTrial', experimentParams.maxTrial, ...
+            'estDomain', estDomain, 'slopeRange', slopeRange, ...
+            'numEstimator', experimentParams.nQUESTEstimator, ...
+            'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
+        
+    case 'validation'
+        % If the nTest is set to 16, its standard deviation is 9.69 % 
+        nTestValidation = 16; 
+        estimator = questThresholdEngine('validation',true,'nRepeat',nTestValidation, ...
+        'estDomain', estDomain, 'slopeRange', slopeRange, 'qpPF', @qpPFWeibullLog);
+    
+    otherwise    
+        error('Experiment mode should be set either (adaptive) or (validation).');
+end
 
 %% Initialize display for experiment
 % displayControlStruct = InitializeDisplayForExperiment;
