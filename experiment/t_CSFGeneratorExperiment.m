@@ -261,7 +261,15 @@ end
 % probably want to move this to a place where the test cross
 % is displayed for the first time.  Or display test cross here,
 % or something.
+if (and(strcmp(experimentParams.runningMode,'PTB'),strcmp(experimentParams.expKeyType,'gamepad')))
+    % Display crossbar image.
+    DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+        'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
     
+    % Waiting for key to be pressed to start.
+    GetGamepadResp2AFC('verbose',false);
+end
+
 while (nextFlag)
     % Convert log contrast -> contrast.
     %
