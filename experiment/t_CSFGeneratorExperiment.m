@@ -76,13 +76,13 @@ if (~LOADDATA)
     experimentParams.minTrial = 50;
     experimentParams.maxTrial = 50;
     experimentParams.nTest = 1;
-    experimentParams.nTestValidation = 16;
     experimentParams.nQUESTEstimator = 1;
-    experimentParams.runningMode = 'PTB';
-    experimentParams.expKeyType = 'gamepad';
-    experimentParams.beepSound = false;
 end
-
+experimentParams.nTestValidation = 16;
+experimentParams.runningMode = 'PTB';
+experimentParams.expKeyType = 'gamepad';
+experimentParams.beepSound = false;
+    
 AUTORESPONSE = true;
 if (AUTORESPONSE)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
