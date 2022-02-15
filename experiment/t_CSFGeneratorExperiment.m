@@ -47,7 +47,7 @@ end
 %
 if (~LOADDATA)
     % Set up color direction
-    spatialGaborTargetContrast = 0.02;
+    spatialGaborTargetContrast = 0.01;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -66,7 +66,7 @@ if (~LOADDATA)
     % First step is to predefine the contrasts that we will allow the
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
-    experimentParams.minContrast = 0.001;
+    experimentParams.minContrast = 0.0005;
     experimentParams.nContrasts = 20;
     experimentParams.measure = false;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
@@ -78,12 +78,12 @@ if (~LOADDATA)
     experimentParams.nTest = 1;
     experimentParams.nQUESTEstimator = 1;
 end
-experimentParams.nTestValidation = 16;
+experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = false;
     
-AUTORESPONSE = true;
+AUTORESPONSE = false;
 if (AUTORESPONSE)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
     autoResponseParams.thresh = 0.004;
@@ -161,7 +161,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % Run 'numEstimator > 1' interleaved QUEST+ objects. In this case,
 % the threshold engine calculates the running standard error (SE)
 % among those objects. Essentially, this is an internal estimate of
-% the precision of the current threshold estimate.  Given this, the
+% the precision of the c10urrent threshold estimate.  Given this, the
 % stopping criterion is triggered when either of the following is
 % true
 %   1) total number of trials >= 'minTrial' AND the 'stopCrition'
@@ -201,8 +201,8 @@ switch experimentMode
         
     case 'validation'
         % Set the test contrast domain to validate.
-        lowerLimEstDomain = 0.001;
-        higherLimEstDomain = 0.010;
+        lowerLimEstDomain = 0.0004;
+        higherLimEstDomain = 0.006;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex);
@@ -255,6 +255,12 @@ elseif (strcmp(experimentParams.runningMode,'simulation'))
    window = 1;
    windowRect = [0 0 1920 1080];
 end
+
+% If PTB mode and not simulating response, wait for subject
+% to press a button before starting trials. In the end, 
+% probably want to move this to a place where the test cross
+% is displayed for the first time.  Or display test cross here,
+% or something.
     
 while (nextFlag)
     % Convert log contrast -> contrast.
@@ -281,7 +287,7 @@ while (nextFlag)
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
     %
-    % Get a response here. Make a loop for the number of trials.   
+    % Get a response here. Make a loop for the number of trials. 
     for tt = 1:experimentParams.nTest
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...

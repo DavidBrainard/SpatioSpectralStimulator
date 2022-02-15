@@ -113,40 +113,42 @@ switch (options.runningMode)
         % when audible cue is not working.
          DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[1 1 1],'verbose',false);
+        
         % Make a time delay.
-        for dd = 1:theSceneTemporalSupportSeconds;
-            pause(1);
-        end
+        WaitSecs(theSceneTemporalSupportSeconds);
         
         % First image.
         SetScreenImage(firstDisplayImage, window, windowRect,'verbose',options.verbose);
+        
         % Make a beep sound as an audible cue.
         if (options.beepSound)
             MakeBeepSound;
         end
-        % Make a time delay.
-        for dd = 1:theSceneTemporalSupportSeconds;
-            pause(1);
-        end
         
+        % Make a time delay.
+        WaitSecs(theSceneTemporalSupportSeconds);
+
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[1 1 1],'verbose',false);
+        
         % Make a time delay.
-        for dd = 1:theSceneTemporalSupportSeconds;
-            pause(1);
-        end
+        WaitSecs(theSceneTemporalSupportSeconds);
         
         % Second image.
         SetScreenImage(secondDisplayImage, window, windowRect,'verbose',options.verbose);
+        
         % Make a beep sound as an audible cue.
         if (options.beepSound)
             MakeBeepSound;
         end
+        
         % Make a time delay.
-        for dd = 1:theSceneTemporalSupportSeconds;
-            pause(1);
-        end
+        WaitSecs(theSceneTemporalSupportSeconds);
+
+        % Cross-fixation image again.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[1 1 1],'verbose',false);
         
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on
