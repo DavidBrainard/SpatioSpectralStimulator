@@ -23,6 +23,9 @@ function [] = DisplayScreenPattern(window,windowRect,options)
 %    patternColor -               Deafult to white ([1 1 1]). Set color of
 %                                 the pattern. Each value should be ranged
 %                                 within 0-1.
+%    imageBackground -            Image to use as a background instead of
+%                                 plain screen. Input should be in format
+%                                 either double or uint8.
 %    verbose -                    Boolean. Default true. Controls
 %                                 printout.
 %
@@ -30,7 +33,9 @@ function [] = DisplayScreenPattern(window,windowRect,options)
 %    N/A
 
 % History:
-%   02/10/22 smo               Started on it.
+%   02/10/22 smo                  Started on it.
+%   02/15/22 smo                  Now it is possible to display crossbar 
+%                                 pattern on image.
 
 %% Set parameters.
 arguments
@@ -38,6 +43,7 @@ arguments
     windowRect (1,4)
     options.patternColor (1,3) = [1 1 1]
     options.patternType = 'crossbar'
+    options.imageBackground = []
     options.verbose (1,1) = true
 end
 
@@ -108,6 +114,7 @@ switch options.patternType
                 Screen('DrawLine',window,options.patternColor,fromX,fromY,toX,toY,barWidthPixel);
                 Screen('Flip', window);
         end
+        
     case 'crossbar'
         % Set up alpha-blending for smooth (anti-aliased) lines.
         Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -131,12 +138,35 @@ switch options.patternType
         % Draw the fixation cross here at the center of the screen.
         nInputLevels = 256;
         patternColor = SettingsToIntegers(options.patternColor,'nInputLevels',nInputLevels);
-        Screen('DrawLines', window, allCoords,...
-            lineWidthPix, patternColor, [xCenter yCenter], 2);
         
-        % Flip to the screen
-        Screen('Flip', window);
-        
+        % Display image as a background if you want.
+        if (~isempty(options.imageBackground))
+            % We will blend crossbar on the image background.
+            % This version assumes the image is in a square shape.
+            crossbarImage = options.imageBackground;
+            imageSize = size(crossbarImage);
+            imageCenter = imageSize(1) * 0.5;
+            imageLineWidth = [imageCenter-lineWidthPix : imageCenter+lineWidthPix];
+            crossbarCoords = [imageCenter-fixCrossDimPix/2 : imageCenter+fixCrossDimPix/2];
+            
+            % Set crossbar image here and display.
+            for ii = 1:size(options.patternColor,2)
+                % Horizontal part of the crossbar.
+                crossbarImage(imageLineWidth,crossbarCoords,ii) = options.patternColor(ii);
+                % Vertical part of the crossbar.
+                crossbarImage(crossbarCoords,imageLineWidth,ii) = options.patternColor(ii);
+            end
+            SetScreenImage(crossbarImage, window, windowRect);
+            
+        else
+            % Display crossbar on the plain screen.
+            Screen('DrawLines', window, allCoords,...
+                lineWidthPix, [xCenter yCenter], 2);
+            
+            % Flip to the screen.
+            Screen('Flip', window);
+        end
+          
     otherwise
 end
 

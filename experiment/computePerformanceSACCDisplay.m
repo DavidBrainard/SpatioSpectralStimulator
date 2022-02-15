@@ -111,8 +111,8 @@ switch (options.runningMode)
         %
         % Cross-fixation image before displaying the images. This is useful
         % when audible cue is not working.
-         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[1 1 1],'verbose',false);
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
@@ -127,10 +127,10 @@ switch (options.runningMode)
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
-
+        
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[1 1 1],'verbose',false);
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
@@ -145,10 +145,10 @@ switch (options.runningMode)
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
-
+        
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[1 1 1],'verbose',false);
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on
