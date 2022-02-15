@@ -267,7 +267,11 @@ if (and(strcmp(experimentParams.runningMode,'PTB'),strcmp(experimentParams.expKe
         'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
     
     % Waiting for key to be pressed to start.
-    GetGamepadResp2AFC('verbose',false);
+    responseGamePad = GetGamepadResp2AFC('verbose',false);
+    possibleResponseGamePad = [1 2];
+    if (any(responseGamePad == possibleResponseGamePad))
+        disp('Experiment is going to be started!');
+    end
 end
 
 while (nextFlag)
