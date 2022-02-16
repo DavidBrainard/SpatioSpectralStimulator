@@ -1,10 +1,10 @@
-function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
+function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioContrastGaborImage(...
     targetContrast,colorDirectionParams,spatialTemporalParams,options)
 % Make a contrast gabor image in both image and ISETBio scene formats.
 %
 % Syntax:
-%    [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
-%   targetContrast,colorDirectionParams,spatialTemporalParams)
+%    [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioContrastGaborImage(...
+%    targetContrast,colorDirectionParams,spatialTemporalParams)
 %
 % Description:
 %    This makes a contrast gabor image in both image and ISETBio scene
@@ -32,6 +32,8 @@ function [gaborISETBioScene,gaborRGBImage] = MakeISETBioContrastGaborImage(...
 %    gaborISETBioScene            - Created gabor image in a ISETBio scene
 %                                   format.
 %    gaborRGBImage                - Created gabor image in RGB format.
+%    screenPrimarySettings        - Screen primary settings that reproduces
+%                                   the desired cone contrasts.
 %
 % Optional key/value pairs:
 %    measure                      - Default to false. If it sets
@@ -165,6 +167,9 @@ end
 
 %% Save out the images in a single variable.
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
+
+%% Save out the screen primary settings too.
+screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
 
 %% Say goodbye. 
 if (options.verbose)

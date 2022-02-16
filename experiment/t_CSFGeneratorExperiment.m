@@ -34,7 +34,8 @@ clear; close all;
 
 %% Load data if you want to skip making the images.
 conditionName = 'LminusMSmooth';
-LOADDATA = true;
+LOADDATA = false;
+SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
@@ -82,9 +83,9 @@ experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = false;
-    
-AUTORESPONSE = false;
-if (AUTORESPONSE)
+experimentParams.autoResponse = false;
+
+if (experimentParams.autoResponse)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
     autoResponseParams.thresh = 0.004;
     autoResponseParams.slope = 2;
@@ -112,7 +113,7 @@ if(~LOADDATA)
     lightVer = true;
     
     % Make contrast gabor images here.
-    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages] = ...
+    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages experimentParams.screenPrimarySettings] = ...
         MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
         colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
         'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer);
@@ -187,7 +188,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 %
 % Choices (comment in one):
 % stopCriterion = 0.025;
-experimentMode = 'validation';
+experimentMode = 'adaptive';
 
 switch experimentMode
     case 'adaptive'
@@ -202,10 +203,10 @@ switch experimentMode
     case 'validation'
         % Set the test contrast domain to validate.
         lowerLimEstDomain = 0.0004;
-        higherLimEstDomain = 0.006;
+        higherLimEstDomain = 0.004;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
-        estDomainValidation = estDomain(estDomainIndex);
+        estDomainValidation = estDomain(estDomainIndex-1);
         
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
@@ -246,9 +247,11 @@ end
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-% Open projector.
+% Open projector and set the screen primary settings as we found.
 if (strcmp(experimentParams.runningMode,'PTB'))
    [window windowRect] = OpenPlainScreen([0 0 0]');
+   SetChannelSettings(experimentParams.screenPrimarySettings);
+   
 elseif (strcmp(experimentParams.runningMode,'simulation'))
    % Set arbitrary numbers to pass and these will not be used in the
    % further function.
@@ -346,3 +349,13 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %0.4f (linear units)\n', ...
     thresholdCriterion,threshold,10^threshold);
+
+%% Save the results.
+if (SAVETHERESULTS)
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,sprintf('RunExpResults_%s_%s',conditionName,dayTimestr));
+        save(testFilename,'estimator');
+    end
+end
