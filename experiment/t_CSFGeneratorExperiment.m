@@ -34,7 +34,7 @@ clear; close all;
 
 %% Load data if you want to skip making the images.
 conditionName = 'LminusMSmooth';
-LOADDATA = false;
+LOADDATA = true;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -48,7 +48,7 @@ end
 %
 if (~LOADDATA)
     % Set up color direction
-    spatialGaborTargetContrast = 0.01;
+    spatialGaborTargetContrast = 0.02;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -74,7 +74,7 @@ if (~LOADDATA)
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
     experimentParams.slopeDelta = 0.5;
-    experimentParams.minTrial = 50;
+    experimentParams.minTrial = 30;
     experimentParams.maxTrial = 50;
     experimentParams.nTest = 1;
     experimentParams.nQUESTEstimator = 1;
@@ -188,7 +188,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 %
 % Choices (comment in one):
 % stopCriterion = 0.025;
-experimentMode = 'adaptive';
+experimentMode = 'validation';
 
 switch experimentMode
     case 'adaptive'
@@ -202,8 +202,8 @@ switch experimentMode
         
     case 'validation'
         % Set the test contrast domain to validate.
-        lowerLimEstDomain = 0.0004;
-        higherLimEstDomain = 0.004;
+        lowerLimEstDomain = 0.001;
+        higherLimEstDomain = 0.007;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
