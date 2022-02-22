@@ -76,7 +76,8 @@ thePath = path;
 isThere = findstr(thePath,[filesep 'VPixx']);
 if (isempty(isThere))
     addpath(genpath(options.projectorToolboxPath));
-    isThere = findstr(thePath,[filesep 'VPixx']);
+    thePathWithToolbox = path;
+    isThere = findstr(thePathWithToolbox,[filesep 'VPixx']);
     if (isempty(isThere))
         error('Unable to add VPixx toolbox to path. Figure out why not and fix.');
     end
