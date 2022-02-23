@@ -68,7 +68,7 @@ if (~LOADDATA)
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
-    experimentParams.nContrasts = 20;
+    experimentParams.nContrasts = 30;
     experimentParams.measure = false;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;
@@ -202,8 +202,8 @@ switch experimentMode
         
     case 'validation'
         % Set the test contrast domain to validate.
-        lowerLimEstDomain = 0.001;
-        higherLimEstDomain = 0.007;
+        lowerLimEstDomain = 0.0005;
+        higherLimEstDomain = 0.006;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
@@ -335,16 +335,16 @@ fprintf('%d trials recorded \n', estimator.nTrial);
 % Estimate threshold and plot/report results.  This does a maximum
 % likelihood based on the trials run, and is not subject to the
 % discretization used by QUEST+.
-plotSize = 10;
-
+%
 % Return threshold value. For the mQUESTPlus Weibull PFs, the first
 % parameter of the PF fit is the 0.81606 proportion correct threshold,
 % when lapse rate is 0 and guess rate is 0.5. Better to make this an
 % explicit parameter, however.
 figure; clf;
 thresholdCriterion = 0.81606;
-[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', plotSize, ...
-    'thresholdCriterion', thresholdCriterion);
+plotSize = 10;
+[threshold, para, dataOut] = estimator.thresholdMLE('showPlot', true, 'pointSize', plotSize, ...
+    'thresholdCriterion', thresholdCriterion, 'returnData', true);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %0.4f (linear units)\n', ...
