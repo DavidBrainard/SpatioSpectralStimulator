@@ -42,16 +42,16 @@
 		"flavor": "",
 		"hook": "",
 		"importance": "",
-		"localHookTemplate": "",
+		"localHookTemplate": "configuration/ISETBioCSFGeneratorLocalHookTemplate.m",
 		"name": "ISETBioCSFGenerator",
 		"pathPlacement": "append",
-		"subfolder": "",
+		"subfolder": ["toolbox", "tutorials", "validation", "resources", "recipes", "computeFunctions"],
 		"toolboxRoot": "",
-		"type": "include",
+		"type": "git",
 		"update": "",
-		"url": ""
+		"url": "https://github.com/isetbio/ISETBioCSFGenerator.git"
 	},
-        {
+	{
 		"flavor": "",
 		"hook": "",
 		"importance": "",
@@ -64,6 +64,19 @@
 		"update": "",
 		"url": ""
 	},
+    {
+        "flavor": "",
+        "hook": "",
+        "importance": "",
+        "localHookTemplate": "",
+        "name": "Palamedes",
+        "pathPlacement": "append",
+        "subfolder": "",
+        "toolboxRoot": "",
+        "type": "webget",
+        "update": "never",
+        "url": ""
+    },
     {
 		"flavor": "",
 		"hook": "",
