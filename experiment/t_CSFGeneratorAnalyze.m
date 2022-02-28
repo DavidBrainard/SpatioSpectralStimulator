@@ -59,5 +59,5 @@ for dd = 1:nData
         subplot(4,3,dd); hold on;
     end 
     [paramsFitted] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', false);
+        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', ~SUBPLOT);
 end
