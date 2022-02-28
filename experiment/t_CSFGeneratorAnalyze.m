@@ -19,7 +19,7 @@
 %    t_CSFGeneratorExperiment.
 
 % History:
-%    02/28/22  smo -          Started on it.
+%    02/28/22  smo            Started on it.
 
 %% Start over.
 clear; close all;
@@ -31,8 +31,10 @@ conditionName = 'LminusMSmooth';
 
 %% Load the data and PF fitting.
 %
-% You can loop it if you want to fit multiple data.
-nData = 10;
+% You can loop it if you want to fit multiple data. nData decides the
+% number of data to load from the most recent one.
+nData = 12;
+SUBPLOT = true;
 for dd = 1:nData
     % Load the data.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -46,11 +48,16 @@ for dd = 1:nData
     % Set fitting params and pull out the data.
     nTrials = theData.estimator.nRepeat;
     thresholdCriterion = 0.81606;
-    [threshold, para, dataOut] = theData.estimator.thresholdMLE('thresholdCriterion', thresholdCriterion, 'returnData', true);
+    [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+        'thresholdCriterion', thresholdCriterion, 'returnData', true);
     
     % Set the contrast levels in linear unit.
     examinedContrastsLinear = 10.^dataOut.examinedContrasts;
     
     % PF fitting here.
-    [paramsFitted] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, 'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE);
+    if (SUBPLOT)
+        subplot(4,3,dd); hold on;
+    end 
+    [paramsFitted] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', false);
 end

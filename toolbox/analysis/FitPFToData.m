@@ -33,6 +33,10 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 conducted per each stimulus level.
 %    thresholdCriterion -         Default to 0.81606. This is the value of
 %                                 pCorrect as a criteria to find threshold.
+%    figureWindow -               Default to true. Make a new figure window
+%                                 to plot the results. If you want to plot
+%                                 multiple threshold results in a subplot,
+%                                 set this to false and do so.
 %    verbose -                    Default to true. Boolean. Controls
 %                                 plotting and printout.
 %
@@ -50,6 +54,7 @@ arguments
     options.paramsFree (1,4) = [1 1 0 1]
     options.nTrials (1,1) = 20
     options.thresholdCriterion (1,1) = 0.81606
+    options.figureWindow (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -97,8 +102,9 @@ end
 
 %% Plot the results if you want.
 if (options.verbose)
-    figure; clf; hold on;
-    
+    if (options.figureWindow)
+        figure; clf; hold on;
+    end 
     % Plot all data.
     marekrColorGray = [0.7 0.7 0.7];
     plot(stimLevels,pCorrect,'ko','MarkerFaceColor',marekrColorGray,'MarkerSize',10);
@@ -107,9 +113,10 @@ if (options.verbose)
     % Mark threshold point.
     plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
     ylim([0 1]);
-    xlabel('Contrast');
-    ylabel('pCorrect');
-    legend('Data','PF fit','Threshold');
+    xlabel('Contrast', 'FontSize', 15);
+    ylabel('pCorrect', 'FontSize', 15);
+    legend('Data','PF fit','Threshold','FontSize', 12, 'location', 'southeast');
+    title(append('Threshold: ', num2str(round(thresholdFitted,4))), 'FontSize', 15);
 end
 
 end
