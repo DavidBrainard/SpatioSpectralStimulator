@@ -2,26 +2,39 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 % Fit Psychometric function to the given data.
 %
 % Syntax:
-%    [] = FitPFToData()
+%    [paramsFitted] = FitPFToData(stimLevels,pCorrect)
 %
 % Description:
-%    This fits Psychometric function to the data given as an input.
+%    This fits Psychometric function to the data given as an input. You can
+%    choose PF either Weibull or Logistic.
 %
 % Inputs:
-%    stimLevels -                 ddd
-%    pCorrect - 
+%    stimLevels -                 Array of the stimulus levels.
+%    pCorrect -                   Array of percentage correct per each
+%                                 stimulus level. This should be the same
+%                                 size of the stimLevels.
 %
 % Outputs:
-%    paramsFitted
+%    paramsFitted -               Parameters found from PF fitting. It's in
+%                                 the format of the array [threshold slope
+%                                 guess lapse]. You can choose which one to
+%                                 be free/not free parameters.
 %
 % Optional key/value pairs:
 %    PF -                         Default to 'weibull'. Choose the function
 %                                 to fit the data either 'weibull' or
 %                                 'logistic'.
-%    verbose -                    Boolean. Default true.  Controls plotting
-%                                 and printout.
+%    paramsFree -                 Default to [1 1 0 1]. This decides which
+%                                 parameters to be free. Array represents
+%                                 [threshold slope guess lapse]. Each can
+%                                 be set either 0 or 1, where 0 = fixed
+%                                 1 = free.
 %    nTrials -                    Default to 20. The number of trials
 %                                 conducted per each stimulus level.
+%    thresholdCriterion -         Default to 0.81606. This is the value of
+%                                 pCorrect as a criteria to find threshold.
+%    verbose -                    Default to true. Boolean. Controls
+%                                 plotting and printout.
 %
 % See also:
 %    N/A
@@ -34,14 +47,18 @@ arguments
     stimLevels
     pCorrect
     options.PF = 'weibull'
+    options.paramsFree (1,4) = [1 1 0 1]
     options.nTrials (1,1) = 20
     options.thresholdCriterion (1,1) = 0.81606
     options.verbose (1,1) = true
 end
 
-%% Set fitting type.
-%
-% Choose a function to use.
+%% Check the size of the input parameters.
+if (~any(size(stimLevels) == size(pCorrect)))
+    error('Stimulus level and pCorrect array size does not match!');
+end
+
+%% Set PF fitting type here.
 switch options.PF
     case 'weibull'
         PF = @PAL_Weibull;
@@ -50,7 +67,7 @@ switch options.PF
     otherwise
 end
 
-%% Fitting PF here.
+%% Fitting PF.
 %
 % Set up the PF fitting (requires Palamedes toolbox).  Note that the
 % catch trials are added in here in the call to the fit.
@@ -64,31 +81,35 @@ guess = 0.5;
 lapse = 0.01;
 searchGrid = [threshold slope guess lapse];
 
-% Set which params to be found.
-% paramsFree = [thresh slope guess lapse]; 0 = fixed; 1 = free.
-paramsFree = [1 1 0 1]; 
+% PF fitting happens here.
 paramsFitted = PAL_PFML_Fit(stimLevels, nCorrect, ...
-    nTrialsPerContrast, searchGrid, paramsFree, PF);
+    nTrialsPerContrast, searchGrid, options.paramsFree, PF);
 
 % Make a smooth curves with finer stimulus levels.
 nFineStimLevels = 1000;
-fineStimLevels = linspace(0,max(stimLevels),nFineStimLevels);
+fineStimLevels = linspace(0, max(stimLevels), nFineStimLevels);
 smoothPsychometric = PF(paramsFitted, fineStimLevels);
 thresholdFitted = PF(paramsFitted, options.thresholdCriterion, 'inv');
 
-%% Plot the results.
-%
-% All data.
-figure; clf; hold on;
-marekrColorGray = [0.7 0.7 0.7];
-plot(stimLevels,pCorrect,'ko','MarkerFaceColor',marekrColorGray,'MarkerSize',10);
-plot(fineStimLevels,smoothPsychometric,'r','LineWidth',3);
+if (options.verbose)
+    fprintf('Threshold was found at %.4f (linear unit) \n', thresholdFitted);
+end
 
-% Threshold point.
-plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
-ylim([0 1]);
-xlabel('Contrast');
-ylabel('pCorrect');
-legend('Data','PF fit','Threshold');
+%% Plot the results if you want.
+if (options.verbose)
+    figure; clf; hold on;
+    
+    % Plot all data.
+    marekrColorGray = [0.7 0.7 0.7];
+    plot(stimLevels,pCorrect,'ko','MarkerFaceColor',marekrColorGray,'MarkerSize',10);
+    plot(fineStimLevels,smoothPsychometric,'r','LineWidth',3);
+    
+    % Mark threshold point.
+    plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+    ylim([0 1]);
+    xlabel('Contrast');
+    ylabel('pCorrect');
+    legend('Data','PF fit','Threshold');
+end
 
 end
