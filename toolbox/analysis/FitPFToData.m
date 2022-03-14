@@ -45,6 +45,9 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 
 % History:
 %   02/25/22 dhb, smo             Started on it.
+%   03/14/22 smo                  Added a plotting option to make different
+%                                 marker size over different number of
+%                                 trials.
 
 %% Set parameters.
 arguments
@@ -56,6 +59,7 @@ arguments
     options.thresholdCriterion (1,1) = 0.81606
     options.figureWindow (1,1) = true
     options.verbose (1,1) = true
+    options.pointSize = ones(1,length(stimLevels))*100
 end
 
 %% Check the size of the input parameters.
@@ -105,12 +109,16 @@ if (options.verbose)
     if (options.figureWindow)
         figure; clf; hold on;
     end 
-    % Plot all data.
-    marekrColorGray = [0.7 0.7 0.7];
-    plot(stimLevels,pCorrect,'ko','MarkerFaceColor',marekrColorGray,'MarkerSize',10);
+    
+    % Plot all experimental data (gray points).
+    %
+    % Marker size will be different over the number of the trials per each
+    % test point.
+    scatter(stimLevels, pCorrect, options.pointSize,...
+        'MarkerEdgeColor', zeros(1,3), 'MarkerFaceColor', ones(1,3) * 0.5, 'MarkerFaceAlpha', 0.5);
     plot(fineStimLevels,smoothPsychometric,'r','LineWidth',3);
     
-    % Mark threshold point.
+    % Mark the threshold point (red point).
     plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
     ylim([0 1]);
     xlabel('Contrast', 'FontSize', 15);
