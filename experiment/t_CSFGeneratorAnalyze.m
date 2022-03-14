@@ -51,16 +51,17 @@ for dd = 1:nData
     nTrials = theData.estimator.nRepeat;
     [stimVec, responseVec, structVec] = combineData(theData.estimator);
     
-    % Make marker size different according to the number of trials.
+    % Set marker size here. We will use this number to plot the results to
+    % have different marker size according to the number of trials. Here
+    % we used the same method to decide the size of each marker as
+    % 'thresholdMLE' does.
     stimVal = unique(stimVec);
     pCorrect = zeros(1,length(stimVal));
-    
     for idx = 1:length(stimVal)
         prop = responseVec(stimVec == stimVal(idx));
         pCorrect(idx) = sum(prop) / length(prop);
-        
-     pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
-    end  
+        pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
+    end
     
     thresholdCriterion = 0.81606;
     [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
