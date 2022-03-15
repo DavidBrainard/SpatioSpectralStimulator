@@ -48,13 +48,17 @@ end
 %
 if (~LOADDATA)
     % Set up color direction
+    %
+    % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
+    % cpd. If set 0.02, it's almost impossible to detect the stimuli.
     spatialGaborTargetContrast = 0.02;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
     %% Image spatial parameters.
     %
-    % Image will be centered in display.
+    % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
+    % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
     spatialTemporalParams.sineFreqCyclesPerDeg = 1;
     spatialTemporalParams.gaborSdDeg = 1.5;
     spatialTemporalParams.stimulusSizeDeg = 7;
@@ -68,7 +72,7 @@ if (~LOADDATA)
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
-    experimentParams.nContrasts = 30;
+    experimentParams.nContrasts = 20;
     experimentParams.measure = false;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;
@@ -141,7 +145,7 @@ theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 % psychophysical procedure, QUEST+, to make the computations efficient.
 % You can learn more about QUEST+ at the gitHub site that has our QUEST+
 % Matlab implementation: https://github.com/BrainardLab/mQUESTPlus.
-%false
+% 
 % A features of QUEST+ is that you need to specify a discrete list of
 % contrast values that will be tested, which in the wrapper here is also
 % taken as the set of possible thresholds as QUEST+ chooses stimulus values.
@@ -185,9 +189,6 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-%
-% Choices (comment in one):
-% stopCriterion = 0.025;
 experimentMode = 'validation';
 
 switch experimentMode
@@ -201,9 +202,12 @@ switch experimentMode
             'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
         
     case 'validation'
-        % Set the test contrast domain to validate.
-        lowerLimEstDomain = 0.0005;
-        higherLimEstDomain = 0.006;
+        % Set the test contrast domain to validate. 
+        %
+        % lowerLimEstDomain = 0.002 / higherLimEstDomain = 0.009 for 1 cpd
+        % lowerLimEstDomain = 0.006 / higherLimEstDomain = 0.020 for 18 cpd
+        lowerLimEstDomain = 0.002;
+        higherLimEstDomain = 0.009;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
