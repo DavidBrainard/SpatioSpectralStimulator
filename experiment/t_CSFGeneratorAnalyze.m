@@ -35,13 +35,16 @@ conditionName = 'LminusMSmooth';
 %
 % You can loop it if you want to fit multiple data. nData decides the
 % number of data to load from the most recent one.
-nData = 6;
+%
+% Set startData to 0 if you want to read the data from the most recent.
+startData = 0;
+nData = 1;
 SUBPLOT = true;
 for dd = 1:nData
     % Load the data.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpResults_%s',conditionName),'olderDate',dd-1);
+        testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpResults_%s',conditionName),'olderDate',startData+dd-1);
         theData = load(testFilename);
     else
         error('Cannot find data file');
@@ -72,9 +75,22 @@ for dd = 1:nData
     
     % PF fitting here.
     if (SUBPLOT)
-        subplot(3,2,dd); hold on;
-    end 
-    [paramsFitted] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+        subplot(1,1,dd); hold on;
+    end
+    [paramsFitted(:,dd)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', ~SUBPLOT, 'pointSize', pointSize);
     clear pointSize;
+end
+
+%% Add the mean threshold from Adaptive method if you want to compare it with the result from Validation method.
+%
+% This is temporary, we may make this part more elaborate later on.
+ADDMEANTHRESHOLD = false;
+
+if (ADDMEANTHRESHOLD)
+    meanThreshold = 0.0030;
+    stdThreshold = 0.0010;
+    plot(meanThreshold, thresholdCriterion, 'ko','MarkerFaceColor','b','MarkerSize',12);
+    e = errorbar(meanThreshold,thresholdCriterion,stdThreshold,'horizontal');
+    e.Color = 'blue';
 end
