@@ -45,8 +45,8 @@ nChannels = size(channelSettings,1);
 % Print out.
 if (options.verbose)
     for cc = 1:nChannels
-        fprintf('Ch%d: %d  %d  %d \n', cc, ...
-            channelSetting(dd,1),channelSetting(dd,2),channelSetting(dd,3));
+        fprintf('Ch%d: %d    %d    %d \n', cc, ...
+            channelSetting(cc,1),channelSetting(cc,2),channelSetting(cc,3));
     end
 end
 end
