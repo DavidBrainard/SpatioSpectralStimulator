@@ -56,7 +56,7 @@ for ss = 1:nSpds
     
     % Print out the results if you want.
     if (options.verbose)
-        fprintf('Spectrum (%2.0d) peak wavelength: %d \n', ss, peakWavelengths(ss));
+        fprintf('Spectrum (%2.0d) peak wavelength: %d nm \n', ss, peakWavelengths(ss));
     end
 end
 
