@@ -51,13 +51,35 @@ for ss = 1:nSpds
     % results are available in peakWavelegnths.
     spdSingle = spds(:,ss);
     peakWavelength = max(spdSingle);
-    idxPeakWavelength = find(spdSingle(:) == peakWavelength);
-    peakWavelengths(ss) = spdStart + spdInterval * (idxPeakWavelength - 1);
+    idxPeakWavelength(ss) = find(spdSingle(:) == peakWavelength);
+    peakWavelengths(ss) = spdStart + spdInterval * (idxPeakWavelength(ss) - 1);
     
     % Print out the results if you want.
     if (options.verbose)
         fprintf('Spectrum (%2.0d) peak wavelength: %d \n', ss, peakWavelengths(ss));
     end
+end
+
+% Plot the results if you want.
+if (options.verbose)
+    wls = SToWls(options.S);
+    
+    figure; clf; hold on;
+    % Plot the all test spectra.
+    plot(wls,spds);
+    
+    % Mark peak wavelength and also make legend in cell array to add in the
+    % plot.
+    for ss = 1:nSpds
+        plot(peakWavelengths(ss),spds(idxPeakWavelength(ss),ss),'o',...
+            'MarkerSize',8,'MarkerEdgeColor',zeros(3,1),'MarkerFaceColor',[1 0 0]);
+        legends{ss} = append('Spd',num2str(ss));
+    end
+    legends{end+1} = 'Peak';
+    xlabel('Wavelength (nm)','FontSize',15);
+    ylabel('Spectral irrdiance','FontSize',15);
+    xlim([380 780]);
+    legend(legends','FontSize',10);
 end
 
 end
