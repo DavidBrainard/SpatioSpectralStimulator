@@ -28,6 +28,8 @@
 %                          response from patients.
 %    02/08/22  dhb,smo   - Added an option to skip making the ISETBio scenes
 %                          which takes time and memory a lot.
+%    03/17/22  smo       - Now we set the temporal scene support time
+%                          differently for stimuli and cross fixation point. 
 
 %% Initialization
 clear; close all;
@@ -125,6 +127,7 @@ if(~LOADDATA)
     % Set some of the scene parameters.
     sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
     sceneParamsStruct.predefinedTemporalSupport = 0.5;
+    sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
     
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -237,6 +240,8 @@ end
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds, nullStatusReportStruct] ...
     = theSceneEngine.compute(nullContrast);
+theCrossbarTemporalSupportSeconds = sceneParamsStruct.predefinedTemporalSupportCrossbar;
+
 if (noISETBio)
     nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1};
 end
@@ -310,7 +315,7 @@ while (nextFlag)
     for tt = 1:experimentParams.nTest
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-            theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
+            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,'verbose',true);
     end
