@@ -53,7 +53,7 @@ if (~LOADDATA)
     %
     % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    spatialGaborTargetContrast = 0.02;
+    spatialGaborTargetContrast = 0.04;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -61,7 +61,7 @@ if (~LOADDATA)
     %
     % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
     % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
-    spatialTemporalParams.sineFreqCyclesPerDeg = 1;
+    spatialTemporalParams.sineFreqCyclesPerDeg = 18;
     spatialTemporalParams.gaborSdDeg = 1.5;
     spatialTemporalParams.stimulusSizeDeg = 7;
     
@@ -74,7 +74,7 @@ if (~LOADDATA)
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
-    experimentParams.nContrasts = 20;
+    experimentParams.nContrasts = 40;
     experimentParams.measure = false;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;
@@ -88,8 +88,11 @@ end
 experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB';
 experimentParams.expKeyType = 'gamepad';
-experimentParams.beepSound = false;
+experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
+
+sceneParamsStruct.predefinedTemporalSupport = 0.5;
+sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 
 if (experimentParams.autoResponse)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
@@ -126,8 +129,6 @@ if(~LOADDATA)
     
     % Set some of the scene parameters.
     sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
-    sceneParamsStruct.predefinedTemporalSupport = 0.5;
-    sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
     
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -192,7 +193,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-experimentMode = 'validation';
+experimentMode = 'adaptive';
 
 switch experimentMode
     case 'adaptive'
@@ -209,8 +210,8 @@ switch experimentMode
         %
         % lowerLimEstDomain = 0.002 / higherLimEstDomain = 0.009 for 1 cpd
         % lowerLimEstDomain = 0.006 / higherLimEstDomain = 0.020 for 18 cpd
-        lowerLimEstDomain = 0.002;
-        higherLimEstDomain = 0.009;
+        lowerLimEstDomain = 0.0032;
+        higherLimEstDomain = 0.0158;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
