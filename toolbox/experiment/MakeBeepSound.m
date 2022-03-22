@@ -45,8 +45,21 @@ soundWave = sin(2 * pi * options.pitch * periodTime);
 %
 % The 'Sound' command can be also used, but it cannot play more than 200
 % beeps successively, so we used 'Snd' command here.
-Snd('Play', soundWave, options.frequency); 
-Snd('Wait');
-Snd('Quiet');
-Snd('Close');
+%
+% Check if Snd function works for the device.
+sndStatus = Snd('Open');
+
+if (~sndStatus == 0)
+    % Playing beep sound using Snd function.
+    Snd('Play', soundWave, options.frequency);
+    Snd('Wait');
+    Snd('Quiet');
+    Snd('Close');
+else
+    % Another function to play beep sound if Snd function doesn't work. It
+    % seems Snd function does not work on the Linux machine for SACC
+    % project (as of 3/22/22).
+    Beeper;
+end
+
 end
