@@ -309,4 +309,14 @@ end
 % Print out the results.
 correct = response;
 
+% Play the sound based on the evaluations.
+if (options.beepSound)
+    switch correct
+        case correctResponse
+            MakeBeepSound('preset','correct');
+        case incorrectResponse
+            MakeBeepSound('preset','incorrect');
+    end
+end
+
 end
