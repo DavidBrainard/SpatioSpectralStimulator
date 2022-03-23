@@ -1,0 +1,66 @@
+function [] = WarmupScreen(options)
+% This is to warm up the projector.
+%
+% Syntax: 
+%    [] = WarmupScreen()
+%
+% Description: 
+%    This warms up the projector. It opens the plain screen on the
+%    DMD and set LED channels to turn on.
+% 
+% Inputs:
+%    N/A
+%
+% Outputs:
+%    N/A
+%
+% Optional key/value pairs:
+%    nScreenPrimaries           - Default to 3. The number of primaries in
+%                                 the viewing device primaries.
+%    nChannels                  - Default to 16. The number of
+%                                 independently working channels per each
+%                                 screen primary. The default is set based
+%                                 on the projector for SACC which has 16
+%                                 LED channels.
+%    warmupTimeMin              - Default to 20. The waiting time for the
+%                                 screen to warm up in minute unit. The 20
+%                                 minutes was set as default based on the
+%                                 projector in SACC project.
+%    verbose                    - Default true. Boolean. Controls printout.
+
+% History:
+%    03/23/22  smo              - Started on it
+
+%% Set parameters.
+arguments
+    options.nScreenPrimaries (1,1) = 3
+    options.nChannels (1,1) = 16
+    options.warmupTimeMin (1,1) = 20
+    options.verbose (1,1) = true
+end
+
+%% Open plain screen and set projector settings for warming up the projector.
+%
+% Open screen here.
+screenSettings = ones(options.nScreenPrimaries,1);
+OpenPlainScreen(screenSettings);
+
+% Set channel settings here.
+channelSettings = ones(options.nChannels, options.nScreenPrimaries);
+SetChannelSettings(channelSettings);
+
+% Message when things are ready.
+if (options.verbose)
+    fprintf('Screen is ready to warm up! We will wait for (%d) mintues... \n',options.warmupTimeMin);
+end
+
+% Count time for warming up and alarm when it's done.
+minToSec = 60;
+warmupTimeSec = options.warmupTimeMin * minToSec;
+WaitSecs(warmupTimeSec);
+
+if (options.verbose)
+    fprintf('Screen has been warmed up for (%d) minutes! \n',options.warmupTimeMin);
+end
+
+end
