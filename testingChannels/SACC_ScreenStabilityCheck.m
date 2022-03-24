@@ -7,6 +7,8 @@
 %    11/24/21 smo   Pulled out this part from the old code. It has been
 %                     cleaned up using our SACC measurement functions.
 %    01/07/22 smo   Added the option skipping the measurement.
+%    03/24/22 smo   Added an option using nullImage in the SACC experiment
+%                   to measure it over the time.
 
 %% Initialize.
 clear; close all;
@@ -15,41 +17,43 @@ clear; close all;
 %
 % This code basically measures the spectrum of the plain screen
 % automatically in a specific time interval.
-
+%
 % Set measurement time length and interval. The time is set in minute unit,
 % which will be converted into second unit later in this code.
-totalMeasurementTime_min = 60;
-timeDelayBeforeEachMeasurement_min = 0.1;
-
-timeDelayBeforeMeasurement_sec = timeDelayBeforeEachMeasurement_min * 60;
+totalMeasureTimeMin = 80;
+timeDelayBeforeEachMeasurementMin = 0.1;
+timeDelayBeforeMeasurementSec = timeDelayBeforeEachMeasurementMin * 60;
 
 % Measurement range.
 S = [380 2 201];
 
 % Verbose.
-PLOT = true;
-MEASURE = false;
+VERBOSE = true;
+MEASURE = true;
 
 %% Make a bit of time delay before the measurement starts.
 % You can go out before it's done.
 if (MEASURE)
-    timeDelayGoOut_sec = 3;
-    fprintf('You have %d seconds to go out the room!',timeDelayGoOut_sec);
-    for tt = 1:timeDelayGoOut_sec
-        pause(1) % Pause for 1 seconds (unit)
-    end
+    timeDelayGoOutSec = 3;
+    fprintf('You have %d seconds to go out the room!',timeDelayGoOutSec);
+    WaitSecs(timeDelayGoOutSec);
     
     %% Make screen and spectroradiometer ready.
     %
     % Open the plain screen. Simply set it as white here. It won't change
     % during the whole measurements.
-    screenSettings = [1 1 1];
-    OpenPlainScreen(screenSettings,'projectorMode',true,'verbose',PLOT);
+    screenSettings = [0 0 0];
+    [window windowRect] = OpenPlainScreen(screenSettings,'projectorMode',true,'verbose',VERBOSE);
+    
+    load('nullImage.mat');
+    SetScreenImage(nullImage,window,windowRect);
     
     % Set channel settings.
-    nChannels = 16;
-    nPrimaries = 3;
-    channelSettings = ones(nChannels,nPrimaries);
+%     nChannels = 16;
+%     nPrimaries = 3;
+%     channelSettings = ones(nChannels,nPrimaries);
+    load('screenPrimarySettings.mat');
+    channelSettings = screenPrimarySettings;
     SetChannelSettings(channelSettings);
     
     % Connect to the spectroradiometer. We will use PR670 here.
@@ -61,7 +65,7 @@ if (MEASURE)
     % time and time delay interval which were set from the above.
     %
     % +1 is the measurement at the cold state which is right after the screen turned on.
-    nMeasurments = (totalMeasurementTime_min / timeDelayBeforeEachMeasurement_min) + 1;
+    nMeasurments = round(totalMeasureTimeMin / timeDelayBeforeEachMeasurementMin) + 1;
     allSpdMeasured = zeros(S(3),nMeasurments);
     
     % Measure it.
@@ -71,10 +75,7 @@ if (MEASURE)
         allSpdMeasured(:,i) = MeasureSpectroradiometer;
         
         % Make a delay before next measurement.
-        for tt = 1:timeDelayBeforeMeasurement_sec
-            % Pause for 1 second in unit.
-            pause(1);
-        end
+        WaitSecs(timeDelayBeforeMeasurementSec);
     end
 else
     % Load the data if the measurement is skipped.
@@ -84,6 +85,7 @@ else
         load(testFilename);
     end
 end
+
 %% XYZ calculations
 %
 % Match the wavelength range.
@@ -99,7 +101,7 @@ colorGamut = XYZToxyY(T_xyz);
 colorGamut(:,end+1) = colorGamut(:,1);
 
 %% Plot the data.
-if (PLOT)
+if (VERBOSE)
     % Spds.
     figure; clf; hold on;
     plot(SToWls(S),allSpdMeasured);
@@ -110,7 +112,7 @@ if (PLOT)
     % Luminance.
     figure; clf;
     subplot(2,2,1);
-    measurementTime = linspace(0, totalMeasurementTime_min, nMeasurments);
+    measurementTime = linspace(0, totalMeasureTimeMin, nMeasurments);
     plot(measurementTime, XYZ(3,:),'r.','markersize',10);
     xlabel('Measurement time (min)','fontsize',15);
     ylabel('Luminance (cd/m2)','fontsize',15);
@@ -156,7 +158,7 @@ if (MEASURE)
         testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('stabilityCheck_%s',dayTimestr));
-        save(testFilename,'allSpdMeasured','XYZ','xyY','colorGamut','nMeasurements', ...
-            'totalMeasurementTime_min','timeDelayBeforeEachMeasurement_min','S');
+        save(testFilename,'allSpdMeasured','XYZ','xyY','colorGamut','nMeasurments', ...
+            'totalMeasureTimeMin','timeDelayBeforeEachMeasurementMin','S');
     end
 end
