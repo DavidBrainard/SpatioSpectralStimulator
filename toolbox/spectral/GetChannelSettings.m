@@ -15,6 +15,9 @@ function [channelSettings] = GetChannelSettings(options)
 % Optional key/value pairs:
 %    nPrimaries                 - Default to 3. Number of screen primaries
 %                                 to control.
+%    nChannels                  - Default to 16. Number of LED channels per
+%                                 each screen primary. The default is based
+%                                 on the projector used for SACC project.
 %    verbose                    - Default true. Boolean. Controls plotting
 %                                 and printout.
 
@@ -24,6 +27,7 @@ function [channelSettings] = GetChannelSettings(options)
 %% Set parameters.
 arguments
     options.nPrimaries (1,1) = 3;
+    options.nChannels (1,1) = 16;
     options.verbose (1,1) = true;
 end
 
@@ -31,22 +35,27 @@ end
 %
 % Connect to the projector if it hasn't. It returns non zero if Datapixx has
 % been successfully opened for use.
-if (~isReady)
+if (~exist('isReady'))
     isReady = Datapixx('open');
     isReady = Datapixx('IsReady');
 end
 
 % Get channel settings here.
+%
+% Note that there is a command getting currents info for all channels for
+% one screen primary ('GetPropixxHSLedCurrents'), but somehow it did not
+% work, so we made a loop for all channels.
 for pp = 1:options.nPrimaries
-    channelSettings(:,pp) = Datapixx('GetPropixxHSLedCurrents',pp-1)
+    for cc = 1:options.nChannels
+        channelSettings(cc,pp) = Datapixx('GetPropixxHSLedCurrent',pp-1,cc-1);
+    end
 end
-nChannels = size(channelSettings,1);
 
 % Print out.
 if (options.verbose)
-    for cc = 1:nChannels
-        fprintf('Ch%d: %d    %d    %d \n', cc, ...
-            channelSetting(cc,1),channelSetting(cc,2),channelSetting(cc,3));
+    for cc = 1:options.nChannels
+        fprintf('Ch%2.d: %d  %d  %d \n', cc, ...
+            channelSettings(cc,1),channelSettings(cc,2),channelSettings(cc,3));
     end
 end
 end
