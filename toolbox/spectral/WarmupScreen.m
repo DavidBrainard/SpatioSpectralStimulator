@@ -39,7 +39,7 @@ function [] = WarmupScreen(options)
 arguments
     options.nScreenPrimaries (1,1) = 3
     options.nChannels (1,1) = 16
-    options.warmupTimeMin (1,1) = []
+    options.warmupTimeMin = []
     options.verbose (1,1) = true
 end
 
@@ -59,7 +59,7 @@ if (options.verbose)
 end
 
 % Count time for warming up and alarm when it's done.
-if (~isempty(options.warmupTimeMin)
+if (~isempty(options.warmupTimeMin))
     minToSec = 60;
     warmupTimeSec = options.warmupTimeMin * minToSec;
     WaitSecs(warmupTimeSec);
