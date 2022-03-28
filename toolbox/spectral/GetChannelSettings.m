@@ -55,7 +55,7 @@ end
 if (options.verbose)
     disp('Current channel settings as follows...');
     for cc = 1:options.nChannels
-        fprintf('    (Ch%2.d) : %d  %0d  %0d \n', cc, ...
+        fprintf('    (Ch%2.d) : %3.f  %3.f  %3.f \n', cc, ...
             channelSettings(cc,1),channelSettings(cc,2),channelSettings(cc,3));
     end
 end
