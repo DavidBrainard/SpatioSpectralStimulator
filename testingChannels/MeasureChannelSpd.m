@@ -113,9 +113,9 @@ if (strcmp(DEVICE,'PR670'))
     % Make a string for save file name.
     switch projectorModeNormal
         case true
-            projectorMode = 'normal';
+            projectorMode = 'Normal';
         case false
-            projectorMode = 'steady-on';
+            projectorMode = 'SteadyOn';
     end
     
     % Save the file here.
@@ -130,3 +130,15 @@ end
 
 %% Say goodbye.
 disp('All measurement has been complete!');
+
+%% Save powermeter data here (temporary).
+powerNormalRaw = xlsread('PowerMeterProcessedData.xlsx','NormalSingle');
+powerSteadyRaw = xlsread('PowerMeterProcessedData.xlsx','SteadyOnSingle');
+
+powerNormal = powerNormalRaw(:,3);
+powerNormalSort = powerNormal(2:4:end);
+
+powerSteady = powerSteadyRaw(:,3);
+
+nDataPoints = 18;
+powerNormalSort = 
