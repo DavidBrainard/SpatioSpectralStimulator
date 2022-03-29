@@ -175,7 +175,7 @@ if (VERBOSE)
     end
     
     % Single peak data.
-    powerMeterSingle = reshape(powerMeterSingle,6,3);
+    powerMeterSingle = reshape(powerMeterSingle,length(targetChannels),nPrimaries);
     
     for pp = 1:nPrimaries
         figure; clf;
