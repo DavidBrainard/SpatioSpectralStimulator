@@ -10,7 +10,7 @@
 %                  PR670 or power meter.
 
 %% Initialize.
-clear;  close all;
+clear; close all;
 
 %% Set parameters.
 S = [380 2 201];
@@ -23,10 +23,10 @@ logicalToPhysical = [0:15];
 
 screenSettings = [1 1 1]';
 
-% Choose which device to use within [PR670, powerMeter].
-DEVICE = 'PR670';
+% Choose which device to use within [PR670, powermeter].
+DEVICE = 'powermeter';
 projectorModeNormal = false;
-powerMeterWaitTimeSec = 5;
+powerMeterWaitTimeSec = 0;
 VERBOSE = true;
 
 % Make a string for save file name.
@@ -37,7 +37,7 @@ switch projectorModeNormal
         projectorMode = 'steady-on';
 end
 
-LOADDATA = true;
+LOADDATA = false;
 
 %% Load the data if you want.
 if (LOADDATA)
@@ -103,7 +103,9 @@ if (~LOADDATA)
                 otherwise
             end
         end
-        spdMeasured{pp} = spdChannelSingles;
+        if(strcmp(DEVICE,'PR670'))
+            spdMeasured{pp} = spdChannelSingles;
+        end
     end
     
     %% Close.
@@ -131,76 +133,30 @@ if (~LOADDATA)
     disp('All measurement has been complete!');
 end
 
-%% Plot it.
-if (VERBOSE)
-    % Single peak spectrum.
+%% Find peak spectrum.
+if (strcmp(DEVICE,'PR670'))
     for pp = 1:nPrimaries
+        peakSpd(:,pp) = FindPeakSpds(spdMeasured{pp},'verbose',false);
+    end
+end
+
+%% Plot it.
+if (strcmp(DEVICE,'PR670'))
+    if (VERBOSE)
+        % Single peak spectrum.
+        for pp = 1:nPrimaries
+            figure; clf;
+            plot(SToWls(S),spdMeasured{pp});
+            title(append('Screen Primary: ',num2str(pp),' ',projectorMode),'FontSize',15);
+            xlabel('Wavelength (nm)','FontSize',15);
+            ylabel('Spectral Irradiance','FontSize',15);
+        end
+        
+        % White.
         figure; clf;
-        plot(SToWls(S),spdMeasured{pp});
-        title(append('Screen Primary: ',num2str(pp),' ',projectorMode),'FontSize',15);
+        plot(SToWls(S),spdMeasuredWhite);
+        title(append('White ',projectorMode),'FontSize',15);
         xlabel('Wavelength (nm)','FontSize',15);
         ylabel('Spectral Irradiance','FontSize',15);
     end
-    
-    % White.
-    figure; clf;
-    plot(SToWls(S),spdMeasuredWhite);
-    title(append('White ',projectorMode),'FontSize',15);
-    xlabel('Wavelength (nm)','FontSize',15);
-    ylabel('Spectral Irradiance','FontSize',15);
 end
-
-%% Load powermeter data here (temporary).
-powerSingleNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalSingle');
-powerSingleSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnSingle');
-powerWhiteNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalWhite');
-powerWhiteSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnWhite');
-
-wattToMWatt = 1000;
-
-powerSingleNormalMW = powerSingleNormalWatt .* wattToMWatt;
-powerSingleSteadyOnMW = powerSingleSteadyOnWatt .* wattToMWatt;
-powerWhiteNormalMW = powerWhiteNormalWatt .* wattToMWatt;
-powerWhiteSteadyOnMW = powerWhiteSteadyOnWatt .* wattToMWatt;
-
-% Plot it.
-if (VERBOSE)
-    % Get the projector mode info.
-    if (projectorModeNormal)
-        powerMeterSingle = powerSingleNormalMW;
-        powerMeterWhite = powerWhiteNormalMW;
-    else
-        powerMeterSingle = powerSingleSteadyOnMW;
-        powerMeterWhite = powerWhiteSteadyOnMW;
-    end
-    
-    % Single peak data.
-    powerMeterSingle = reshape(powerMeterSingle,length(targetChannels),nPrimaries);
-    
-    for pp = 1:nPrimaries
-        figure; clf;
-        plot(powerMeterSingle(:,pp),'ro')
-        xlabel('Target channel','FontSize',15);
-        ylabel('Power meter (mw)','FontSize',15);
-        title(append('Screen Primary: ',num2str(pp),' ',projectorMode),'FontSize',15);
-    end
-    
-    % White data.
-    figure; clf;
-    plot(powerMeterWhite,'bo');
-    xlabel('Target channel','FontSize',15);
-    ylabel('Power meter (mw)','FontSize',15);
-    title(append('White ',projectorMode),'FontSize',15);
-end
-
-%% Take the irradiance at target wavelength.
-targetWls = 550;
-Wls = SToWls(S);
-targetWlsIndex = find(Wls == targetWls);
-
-for pp = 1:nPrimaries
-    spdSingle = spdMeasured{pp};
-    spdSingleTargetWls(:,pp) = spdSingle(targetWlsIndex,:);
-end
-
-spdSingleTargetWls = reshape(spdSingleTargetWls, size(spdSingleTargetWls,1)*size(spdSingleTargetWls,2), 1);
