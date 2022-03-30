@@ -6,10 +6,6 @@
 %    MeasureChannelSpd.
 
 % History:
-%    12/01/21 smo       - Started on it for checking the spds of the new projector
-%                         for SACC project.
-%    03/28/22 smo       - Added an option to select the measurement device either
-%                         PR670 or power meter.
 %    03/29/22 dhb, smo  - Add in analysis.
 
 %% Initialize.
@@ -28,7 +24,7 @@ powerMeterWl = 550;
 wls = SToWls(S);
 powerMeterWlIndex = find(wls == powerMeterWl);
 
-projectorModeNormal = true;
+projectorModeNormal = false;
 VERBOSE = true;
 
 %% Load spectrum data here.
@@ -42,6 +38,13 @@ switch projectorModeNormal
     case false
         projectorMode = 'SteadyOn';
 end
+
+% switch projectorModeNormal
+%     case true
+%         projectorMode = 'normal';
+%     case false
+%         projectorMode = 'steady-on';
+% end
 
 % Load the data here.
 olderDate = 0;
@@ -73,7 +76,7 @@ switch projectorModeNormal
         projectorMode = 'SteadyOnMode';
 end
 
-DATASET = 3;
+DATASET = 2;
 
 switch DATASET
     case 1
@@ -227,4 +230,7 @@ plot(k,'ro','MarkerSize',12,'MarkerFaceColor','r');
 xlabel('Target Channels','FontSize',15);
 ylabel('Coefficient k','FontSize',15);
 ylim([0 1.2*max(k(:))]);
+ylim([0 0.0295]);
+
 legend('White','Single peak','FontSize',13);
+title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
