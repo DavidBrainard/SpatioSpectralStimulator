@@ -28,7 +28,7 @@ powerMeterWl = 550;
 wls = SToWls(S);
 powerMeterWlIndex = find(wls == powerMeterWl);
 
-projectorModeNormal = false;
+projectorModeNormal = true;
 VERBOSE = true;
 
 %% Load spectrum data here.
@@ -40,35 +40,31 @@ switch projectorModeNormal
     case true
         projectorMode = 'Normal';
     case false
-        projectorMode = 'steady-on';
+        projectorMode = 'SteadyOn';
 end
 
 % Load the data here.
+olderDate = 0;
 if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
-    testFilename = GetMostRecentFileName(testFiledir,sprintf('SpdData_%s_%s',DEVICE,projectorMode));
+    testFilename = GetMostRecentFileName(testFiledir,sprintf('SpdData_%s_%s',DEVICE,projectorMode),'olderDate',olderDate);
     prData = load(testFilename);
 else
     error('Cannot find data file');
 end
 
+% Cut the negative parts on the spectrum which caused by black correciton.
 for pp = 1:nPrimaries
-    targetChPeakWls(:,pp) = FindPeakSpds(prData.spdMeasured{pp},'verbose',false);
+    prData.spdMeasured{pp} = max(prData.spdMeasured{pp},0);
 end
 
 %% Load powermeter data here.
 curDir = pwd;
 cd(testFiledir);
 
-% DATASET1
-% Data with fixed wavelength sensitivity (550 nm).
-powerSingleNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalSingle');
-powerSingleSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnSingle');
-powerWhiteNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalWhite');
-powerWhiteSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnWhite');
+DEVICE = 'PowerMeter';
+fileType = '.csv';
 
-% DATASET2
-% Data with different wavelength.
 % Make a string for save file name.
 switch projectorModeNormal
     case true
@@ -77,30 +73,68 @@ switch projectorModeNormal
         projectorMode = 'SteadyOnMode';
 end
 
-DEVICE = 'PowerMeter';
-date = '0329';
-fileType = '.csv';
-targetChPeakWls = targetChPeakWls(:,3);
-dataRange = 'D17:D17';
+DATASET = 3;
 
-% Load sinlge peak data here.
-for pp = 1:nPrimaries
-    for cc = 1:nTargetChannels
-        targetChPeakWl = targetChPeakWls(cc);
-        targetCh = targetChannels(cc);
-        fileName = append(DEVICE,'_',projectorMode,'_Primary',...
-            num2str(pp),'_Ch',num2str(targetCh),'_',num2str(targetChPeakWl),'nm_',date,fileType);
-        readFile = readmatrix(fileName, 'Range', dataRange);
-        powerMeterWatt(cc,pp) = readFile;
-    end
-end
-
-% Load white data here.
-for cc = 1:nTargetChannels
-    targetChPeakWl = targetChPeakWls(cc);
-    fileName = append(DEVICE,'_',projectorMode,'_White_',num2str(targetChPeakWl),'nm_',date,fileType);
-    readFile = readmatrix(fileName, 'Range', dataRange);
-    powerMeterWhiteWatt(cc,:) = readFile;
+switch DATASET
+    case 1
+        % DATASET1
+        % Data with fixed wavelength sensitivity (550 nm).
+        powerSingleNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalSingle');
+        powerSingleSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnSingle');
+        powerWhiteNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalWhite');
+        powerWhiteSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnWhite');
+        
+        if (projectorModeNormal)
+            powerMeterWatt = powerSingleNormalWatt;
+            powerMeterWhiteWatt = powerWhiteNormalWatt;
+        else
+            powerMeterWatt = powerSingleSteadyOnWatt;
+            powerMeterWhiteWatt = powerWhiteSteadyOnWatt;
+        end
+        
+    case 2
+        date = '0329';
+        % DATASET2
+        % Data with different wavelength.
+        % Make a string for save file name.
+        switch projectorModeNormal
+            case true
+                projectorMode = 'NormalMode';
+            case false
+                projectorMode = 'SteadyOnMode';
+        end
+       
+        targetChPeakWls = [448 476 404 552 592 620];
+        dataRange = 'D17:D17';
+        
+        % Load sinlge peak data here.
+        for pp = 1:nPrimaries
+            for cc = 1:nTargetChannels
+                targetChPeakWl = targetChPeakWls(cc);
+                targetCh = targetChannels(cc);
+                fileName = append(DEVICE,'_',projectorMode,'_Primary',...
+                    num2str(pp),'_Ch',num2str(targetCh),'_',num2str(targetChPeakWl),'nm_',date,fileType);
+                readFile = readmatrix(fileName, 'Range', dataRange);
+                powerMeterWatt(cc,pp) = readFile;
+            end
+        end
+        
+        % Load white data here.
+        for cc = 1:nTargetChannels
+            targetChPeakWl = targetChPeakWls(cc);
+            fileName = append(DEVICE,'_',projectorMode,'_White_',num2str(targetChPeakWl),'nm_',date,fileType);
+            readFile = readmatrix(fileName, 'Range', dataRange);
+            powerMeterWhiteWatt(cc,:) = readFile;
+        end
+        
+    case 3
+        date = '0330';
+        % DATASET3 (as of 0330).
+        fileName = append(DEVICE,'_',projectorMode,'_Singles_',num2str(powerMeterWl),'nm_',date,fileType);
+        readFile = readmatrix(fileName);
+        powerMeterAllWatt = readFile;
+        powerMeterWhiteWatt = powerMeterAllWatt(1,:);
+        powerMeterWatt = powerMeterAllWatt(2:end,:);
 end
 
 %% Load power meter spectral sensitivity here.
@@ -109,7 +143,14 @@ T_powerMeterRaw = SplineCmf(powerMeterSensitivity(:,1),powerMeterSensitivity(:,2
 
 % Normalize power meter sensitivity so that wl set during measurement
 % is one.
-T_powerMeterMatch = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
+if (DATASET == 2)
+    for cc = 1:nTargetChannels
+        powerMeterWlIndex = find(wls == targetChPeakWls(cc));
+        T_powerMeterMatch(cc,:) = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
+    end
+else
+    T_powerMeterMatch = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
+end
 
 % Plot it.
 figure; clf; hold on;
@@ -126,27 +167,12 @@ cd(curDir);
 %% Power comes in as watts! Convert to mW.
 wattToMWatt = 1000;
 
-% DATASET1
-powerSingleNormalMW = powerSingleNormalWatt .* wattToMWatt;
-powerSingleSteadyOnMW = powerSingleSteadyOnWatt .* wattToMWatt;
-powerWhiteNormalMW = powerWhiteNormalWatt .* wattToMWatt;
-powerWhiteSteadyOnMW = powerWhiteSteadyOnWatt .* wattToMWatt;
-
-% DATASET2
 powerMeterMW = powerMeterWatt .* wattToMWatt;
-powerMeterWhiteMW = powerMeterWhiteWatt .* wattToMWatt;
-
-% Resize power meter data.
-if (projectorModeNormal)
-    powerMeterSingle = powerSingleNormalMW;
-    powerMeterWhite = powerWhiteNormalMW;
-else
-    powerMeterSingle = powerSingleSteadyOnMW;
-    powerMeterWhite = powerWhiteSteadyOnMW;
-end
+powerMeterWhiteMW = powerMeterWhiteWatt .* wattToMWatt; 
 
 % Single peak data. Matching the shpae with the spectrum data.
-powerMeterSingle = reshape(powerMeterSingle,length(targetChannels),nPrimaries);
+powerMeterSingle = reshape(powerMeterMW,length(targetChannels),nPrimaries);
+powerMeterWhite = powerMeterWhiteMW;
 
 %% Plot measured spectra.
 if (VERBOSE)
@@ -173,15 +199,26 @@ for pp = 1:nPrimaries
     spdSingle = prData.spdMeasured{pp};
     
     % Integrate against power meter sensitivity.
-    F(:,pp) = (T_powerMeterMatch * spdSingle)';
+    if (DATASET == 2)
+        for cc = 1:nTargetChannels
+            % Single peak
+            F(cc,pp) = (T_powerMeterMatch(cc,:) * spdSingle(:,cc))';
+            % White.
+            FWhite = (T_powerMeterMatch * prData.spdMeasuredWhite);
+%             FWhite(cc,:) = (T_powerMeterMatch(cc,:) * prData.spdMeasuredWhite(:,cc))';
+        end
+    else
+        % Single peak.
+        F(:,pp) = (T_powerMeterMatch * spdSingle)';
+        % White.
+        FWhite = (T_powerMeterMatch * prData.spdMeasuredWhite);
+    end
 end
-
-FWhite = (T_powerMeterMatch * prData.spdMeasuredWhite);
 
 % Compute factors k.
 % These should be the same for all measurements.
-k = powerMeterMW./F;
-kWhite = powerMeterWhite/FWhite;
+k = powerMeterSingle./F;
+kWhite = powerMeterWhite./FWhite;
 
 % Plot it.
 figure; clf; hold on;
