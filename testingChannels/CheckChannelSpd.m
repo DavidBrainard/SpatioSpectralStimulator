@@ -21,10 +21,8 @@ nTargetChannels = length(targetChannels);
 
 % Power meter settings.
 powerMeterWl = 550;
-wls = SToWls(S);
-powerMeterWlIndex = find(wls == powerMeterWl);
 
-projectorModeNormal = false;
+projectorModeNormal = true;
 VERBOSE = true;
 
 %% Load spectrum data here.
@@ -76,7 +74,7 @@ switch projectorModeNormal
         projectorMode = 'SteadyOnMode';
 end
 
-DATASET = 2;
+DATASET = 3;
 
 switch DATASET
     case 1
@@ -106,14 +104,14 @@ switch DATASET
             case false
                 projectorMode = 'SteadyOnMode';
         end
-       
-        targetChPeakWls = [448 476 404 552 592 620];
+        
+        powerMeterWls = [448 476 404 552 592 620];
         dataRange = 'D17:D17';
         
         % Load sinlge peak data here.
         for pp = 1:nPrimaries
             for cc = 1:nTargetChannels
-                targetChPeakWl = targetChPeakWls(cc);
+                targetChPeakWl = powerMeterWls(cc);
                 targetCh = targetChannels(cc);
                 fileName = append(DEVICE,'_',projectorMode,'_Primary',...
                     num2str(pp),'_Ch',num2str(targetCh),'_',num2str(targetChPeakWl),'nm_',date,fileType);
@@ -124,7 +122,7 @@ switch DATASET
         
         % Load white data here.
         for cc = 1:nTargetChannels
-            targetChPeakWl = targetChPeakWls(cc);
+            targetChPeakWl = powerMeterWls(cc);
             fileName = append(DEVICE,'_',projectorMode,'_White_',num2str(targetChPeakWl),'nm_',date,fileType);
             readFile = readmatrix(fileName, 'Range', dataRange);
             powerMeterWhiteWatt(cc,:) = readFile;
@@ -140,42 +138,7 @@ switch DATASET
         powerMeterWatt = powerMeterAllWatt(2:end,:);
 end
 
-%% Load power meter spectral sensitivity here.
-powerMeterSensitivity = xlsread('PowerMeterResponsivityLocal.xlsx');
-T_powerMeterRaw = SplineCmf(powerMeterSensitivity(:,1),powerMeterSensitivity(:,2)',S);
-
-% Normalize power meter sensitivity so that wl set during measurement
-% is one.
-if (DATASET == 2)
-    for cc = 1:nTargetChannels
-        powerMeterWlIndex = find(wls == targetChPeakWls(cc));
-        T_powerMeterMatch(cc,:) = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
-    end
-else
-    T_powerMeterMatch = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
-end
-
-% Plot it.
-figure; clf; hold on;
-plot(powerMeterWl,T_powerMeterMatch(powerMeterWlIndex),...
-    'o','MarkerFaceColor','r','MarkerEdgeColor',zeros(3,1),'MarkerSize',7);
-plot(wls,T_powerMeterMatch','k');
-xlabel('Wavelength (nm)','FontSize',15');
-ylabel('Normalized sensitivity', 'FontSize', 15);
-legend('Normalized criteria');
-
-% Back to the current path.
-cd(curDir);
-
-%% Power comes in as watts! Convert to mW.
-wattToMWatt = 1000;
-
-powerMeterMW = powerMeterWatt .* wattToMWatt;
-powerMeterWhiteMW = powerMeterWhiteWatt .* wattToMWatt; 
-
-% Single peak data. Matching the shpae with the spectrum data.
-powerMeterSingle = reshape(powerMeterMW,length(targetChannels),nPrimaries);
-powerMeterWhite = powerMeterWhiteMW;
+powerMeterWatt = reshape(powerMeterWatt,nTargetChannels,nPrimaries);
 
 %% Plot measured spectra.
 if (VERBOSE)
@@ -197,31 +160,24 @@ if (VERBOSE)
 end
 
 %% Find scale factors for each measurement
+% Sinlge peaks.
 for pp = 1:nPrimaries
-    % Grab single primary spds
-    spdSingle = prData.spdMeasured{pp};
-    
-    % Integrate against power meter sensitivity.
-    if (DATASET == 2)
-        for cc = 1:nTargetChannels
-            % Single peak
-            F(cc,pp) = (T_powerMeterMatch(cc,:) * spdSingle(:,cc))';
-            % White.
-            FWhite = (T_powerMeterMatch * prData.spdMeasuredWhite);
-%             FWhite(cc,:) = (T_powerMeterMatch(cc,:) * prData.spdMeasuredWhite(:,cc))';
+    for cc = 1:nTargetChannels
+        if (DATASET == 2)
+            powerMeterWl = powerMeterWls(cc);
         end
-    else
-        % Single peak.
-        F(:,pp) = (T_powerMeterMatch * spdSingle)';
-        % White.
-        FWhite = (T_powerMeterMatch * prData.spdMeasuredWhite);
+        k(cc,pp) = SpdToPower(prData.spdMeasured{pp}(:,cc), powerMeterWatt(cc,pp), 'targetWls', powerMeterWl)';
     end
 end
 
-% Compute factors k.
-% These should be the same for all measurements.
-k = powerMeterSingle./F;
-kWhite = powerMeterWhite./FWhite;
+% White.
+nWhites = length(powerMeterWhiteWatt);
+for ww = 1:nWhites
+    if (DATASET == 2)
+        powerMeterWl = powerMeterWls(ww);
+    end
+    kWhite(ww) = SpdToPower(prData.spdMeasuredWhite, powerMeterWhiteWatt(ww), 'targetWls', powerMeterWl);
+end
 
 % Plot it.
 figure; clf; hold on;
@@ -230,7 +186,5 @@ plot(k,'ro','MarkerSize',12,'MarkerFaceColor','r');
 xlabel('Target Channels','FontSize',15);
 ylabel('Coefficient k','FontSize',15);
 ylim([0 1.2*max(k(:))]);
-ylim([0 0.0295]);
-
 legend('White','Single peak','FontSize',13);
 title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
