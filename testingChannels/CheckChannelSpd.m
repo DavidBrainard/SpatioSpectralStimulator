@@ -7,42 +7,27 @@
 
 % History:
 %    03/29/22 dhb, smo  - Add in analysis.
+%    03/31/22 smo       - Made the part of calculation of k as a function.
 
 %% Initialize.
 clear; close all;
 
 %% Set parameters.
-S = [380 2 201];
 nPrimaries = 3;
-nChannels = 16;
-
-targetChannels = [2 4 6 8 10 12];
-nTargetChannels = length(targetChannels);
-
-% Power meter settings.
-powerMeterWl = 550;
-
 projectorModeNormal = true;
+powerMeterWl = 550;
 VERBOSE = true;
 
 %% Load spectrum data here.
 DEVICE = 'PR670';
 
-% Make a string for save file name.
-% It used to be normal / steady-on
+% Make a string for file name.
 switch projectorModeNormal
     case true
-        projectorMode = 'Normal';
+        projectorMode = 'NormalMode';
     case false
-        projectorMode = 'SteadyOn';
+        projectorMode = 'SteadyOnMode';
 end
-
-% switch projectorModeNormal
-%     case true
-%         projectorMode = 'normal';
-%     case false
-%         projectorMode = 'steady-on';
-% end
 
 % Load the data here.
 olderDate = 0;
@@ -59,6 +44,10 @@ for pp = 1:nPrimaries
     prData.spdMeasured{pp} = max(prData.spdMeasured{pp},0);
 end
 
+targetChannels = prData.targetChannels;
+nTargetChannels = length(targetChannels);
+S = prData.S;
+
 %% Load powermeter data here.
 curDir = pwd;
 cd(testFiledir);
@@ -66,20 +55,12 @@ cd(testFiledir);
 DEVICE = 'PowerMeter';
 fileType = '.csv';
 
-% Make a string for save file name.
-switch projectorModeNormal
-    case true
-        projectorMode = 'NormalMode';
-    case false
-        projectorMode = 'SteadyOnMode';
-end
-
 DATASET = 3;
 
 switch DATASET
     case 1
-        % DATASET1
-        % Data with fixed wavelength sensitivity (550 nm).
+        % DATASET 1.
+        % Fixed wavelength sensitivity (550 nm).
         powerSingleNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalSingle');
         powerSingleSteadyOnWatt = xlsread('PowerMeterProcessedData.xlsx','SteadyOnSingle');
         powerWhiteNormalWatt = xlsread('PowerMeterProcessedData.xlsx','NormalWhite');
@@ -94,17 +75,9 @@ switch DATASET
         end
         
     case 2
-        date = '0329';
-        % DATASET2
+        % DATASET 2.
         % Data with different wavelength.
-        % Make a string for save file name.
-        switch projectorModeNormal
-            case true
-                projectorMode = 'NormalMode';
-            case false
-                projectorMode = 'SteadyOnMode';
-        end
-        
+        date = '0329';
         powerMeterWls = [448 476 404 552 592 620];
         dataRange = 'D17:D17';
         
@@ -129,8 +102,10 @@ switch DATASET
         end
         
     case 3
+        % DATASET 3.
+        % Black corrected.
+        % Fixed wavelength sensitivity (550 nm).
         date = '0330';
-        % DATASET3 (as of 0330).
         fileName = append(DEVICE,'_',projectorMode,'_Singles_',num2str(powerMeterWl),'nm_',date,fileType);
         readFile = readmatrix(fileName);
         powerMeterAllWatt = readFile;
@@ -138,6 +113,7 @@ switch DATASET
         powerMeterWatt = powerMeterAllWatt(2:end,:);
 end
 
+% Match the power meter array size.
 powerMeterWatt = reshape(powerMeterWatt,nTargetChannels,nPrimaries);
 
 %% Plot measured spectra.
@@ -160,13 +136,14 @@ if (VERBOSE)
 end
 
 %% Find scale factors for each measurement
+%
 % Sinlge peaks.
 for pp = 1:nPrimaries
     for cc = 1:nTargetChannels
         if (DATASET == 2)
             powerMeterWl = powerMeterWls(cc);
         end
-        k(cc,pp) = SpdToPower(prData.spdMeasured{pp}(:,cc), powerMeterWatt(cc,pp), 'targetWls', powerMeterWl)';
+        k(cc,pp) = SpdToPower(prData.spdMeasured{pp}(:,cc), powerMeterWatt(cc,pp), 'targetWl', powerMeterWl)';
     end
 end
 
@@ -176,15 +153,17 @@ for ww = 1:nWhites
     if (DATASET == 2)
         powerMeterWl = powerMeterWls(ww);
     end
-    kWhite(ww) = SpdToPower(prData.spdMeasuredWhite, powerMeterWhiteWatt(ww), 'targetWls', powerMeterWl);
+    kWhite(ww) = SpdToPower(prData.spdMeasuredWhite, powerMeterWhiteWatt(ww), 'targetWl', powerMeterWl);
 end
 
 % Plot it.
-figure; clf; hold on;
-plot(kWhite,'bo','MarkerSize',12,'MarkerFaceColor','b');
-plot(k,'ro','MarkerSize',12,'MarkerFaceColor','r');
-xlabel('Target Channels','FontSize',15);
-ylabel('Coefficient k','FontSize',15);
-ylim([0 1.2*max(k(:))]);
-legend('White','Single peak','FontSize',13);
-title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
+if (VERBOSE)
+    figure; clf; hold on;
+    plot(kWhite,'bo','MarkerSize',12,'MarkerFaceColor','b');
+    plot(k,'ro','MarkerSize',12,'MarkerFaceColor','r');
+    xlabel('Target Channels','FontSize',15);
+    ylabel('Coefficient k','FontSize',15);
+    ylim([0 1.2*max(k(:))]);
+    legend('White','Single peak','FontSize',13);
+    title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
+end

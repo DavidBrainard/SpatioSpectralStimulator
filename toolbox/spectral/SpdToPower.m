@@ -3,22 +3,27 @@ function [k] = SpdToPower(spd,powerWatt,options)
 % (spectroradiometer) to the absolute (power meter).
 %
 % Syntax:
-%    [k] = SpdToPower(spds,powerWatt)
+%    [k] = SpdToPower(spd,powerWatt)
 %
 % Description:
 %    This calculates k which is the coefficient converting between the
-%    relative irradiance and the absolute value.
+%    relative irradiance and the absolute value. 
+%
+%    It calculates one k value at a time, so if you want to calculate for
+%    multiple cases, you need to make a loop in your run script.
 %
 % Inputs:
-%    spd                        - dd
-%    powerWatt                  -
-%
+%    spd                        - Target spd measured by spectroradiometer.
+%    powerWatt                  - Target power measured using power meter
+%                                 in Watt unit. 
 %
 % Optional key/value pairs:
-%    S                          -
-%    targetWls                  -
-%    wattToMWatt                -
-%    verbose                    - Default to true. Controls printout.
+%    S                          - Default to [380 2 201]. Wavelength range.
+%    targetWl                   - Default to 550. The sensitivity of power
+%                                 meter set for the measurement. 
+%    wattToMWatt                - Default to 1000. It converts the power
+%                                 unit from Watt to MilliWatt. 
+%    verbose                    - Default to false. Controls printout.
 %
 % See also:
 %    MeasureChannelSpd, CheckChannelSpd.
@@ -32,15 +37,15 @@ arguments
     powerWatt
     options.PWsensitivityFilename = 'PowerMeterResponsivityLocal.xlsx'
     options.S (1,3) = [380 2 201]
-    options.targetWls {mustBeInRange(options.targetWls,380,780,"inclusive")} = 550
+    options.targetWl {mustBeInRange(options.targetWl,380,780,"inclusive")} = 550
     options.wattToMWatt = 1000
     options.verbose (1,1) = false
 end
 
 %% Check the sizes of the input array.
-nSpds = size(spd,2);
-nPowerMeterMeasures = length(powerWatt);
-if (~(nSpds == nPowerMeterMeasures))
+nSpd = size(spd,2);
+nPowerMeasure = length(powerWatt);
+if (~(nSpd == nPowerMeasure))
     error('The size does not match between spds and power meter measurements!');
 end
 
@@ -59,16 +64,14 @@ T_powerMeterRaw = SplineCmf(powerMeterSensitivity(:,1),powerMeterSensitivity(:,2
 
 % Normalize power meter sensitivity accoridng to target wavelength when
 % measuring the power meter. Default to 550 nm.
-nTargetWls = length(options.targetWls);
 wls = SToWls(options.S);
-
-powerMeterWlIndex = find(wls == options.targetWls);
+powerMeterWlIndex = find(wls == options.targetWl);
 T_powerMeterMatch = T_powerMeterRaw/T_powerMeterRaw(powerMeterWlIndex);
 
 % Plot it.
 if (options.verbose)
     figure; clf; hold on;
-    plot(options.targetWls,T_powerMeterMatch(powerMeterWlIndex),...
+    plot(options.targetWl,T_powerMeterMatch(powerMeterWlIndex),...
         'o','MarkerFaceColor','r','MarkerEdgeColor',zeros(3,1),'MarkerSize',7);
     plot(wls,T_powerMeterMatch','k');
     xlabel('Wavelength (nm)','FontSize',15');
