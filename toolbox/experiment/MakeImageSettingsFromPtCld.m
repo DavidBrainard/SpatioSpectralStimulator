@@ -77,7 +77,8 @@ for cc = 1:nContrastPoints
     % Plot of how well point cloud method does in obtaining desired contrats
     if (options.verbose)
         figure; clf;
-        plot(ptCldObject.desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
+        desiredContrastGaborCal = cell2mat(standardGaborCalObject.desiredContrastGaborCal);
+        plot(desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
         axis('square');
         xlabel('Desired L, M or S contrast');
         ylabel('Predicted L, M, or S contrast');

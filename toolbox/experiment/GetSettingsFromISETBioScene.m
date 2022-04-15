@@ -45,13 +45,15 @@ arguments
 end
 
 %% Calculate the settings from the ISETBio.
+ISETBioGaborCal = cell2mat(ISETBioGaborCalObject.ISETBioGaborCal);
 primaryFromISETBioGaborCal = screenCalObjFromISETBio.get('P_device') \ ...
-    (ISETBioGaborCalObject.ISETBioGaborCal - screenCalObjFromISETBio.get('P_ambient'));
+    (ISETBioGaborCal - screenCalObjFromISETBio.get('P_ambient'));
 
 settingsFromISETBioGaborCal = PrimaryToSettings(screenCalObjFromISETBio,primaryFromISETBioGaborCal);
 
 % Check if it is reasonable.
-if (max(abs(standardGaborCalObject.standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardGaborCalObject.standardSettingsGaborCal(:)) > 1e-6)
+standardSettingsGaborCal = cell2mat(standardGaborCalObject.standardSettingsGaborCal);
+if (max(abs(standardSettingsGaborCal(:)-settingsFromISETBioGaborCal(:))./standardSettingsGaborCal(:)) > 1e-6)
     error('Cannot get home again in settings land');
 end
 
