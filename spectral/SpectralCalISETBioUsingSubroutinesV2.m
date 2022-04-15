@@ -14,6 +14,8 @@
 %    01/18/22  dhb,smo    Started on it.
 %    01/26/22  smo        It is working well with the substituting
 %                         functions!
+%    04/15/22  smo        Corrections because of the sub routines now
+%                         save the variables in cell format.
 
 %% Clear.
 clear; close all;
@@ -26,6 +28,7 @@ colorDirectionParams = SetupColorDirection(conditionName);
 
 % Set to true to get more output.
 VERBOSE = true;
+lightVer = false;
 
 %% Do all calibraiton loading.
 screenGammaMethod = 2;
@@ -77,11 +80,11 @@ nQuantizeBits = 14;
 
 %% Get cone contrast/excitation gabor image.
 [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
-    screenCalObj,backgroundScreenPrimaryObject.screenBgExcitations,'verbose',VERBOSE);
+    screenCalObj,backgroundScreenPrimaryObject,screenPrimaryChannelObject,'verbose',VERBOSE,'lightVer',lightVer);
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
-    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',VERBOSE);
+    backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',VERBOSE,'lightVer',lightVer);
 
 %% Put the image into an ISETBio scene.
 ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
@@ -91,7 +94,7 @@ ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageOb
 fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborObject,standardGaborCalObject,'verbose',VERBOSE);
 
 %% SRGB image via XYZ, scaled to display
-predictedXYZCal = colorDirectionParams.T_xyz * standardGaborCalObject.desiredSpdGaborCal;
+predictedXYZCal = colorDirectionParams.T_xyz * cell2mat(standardGaborCalObject.desiredSpdGaborCal);
 SRGBPrimaryCal = XYZToSRGBPrimary(predictedXYZCal);
 scaleFactor = max(SRGBPrimaryCal(:));
 SRGBCal = SRGBGammaCorrect(SRGBPrimaryCal/(2*scaleFactor),0);
@@ -103,7 +106,7 @@ title('SRGB Gabor Image');
 
 %% Show the settings image
 figure; clf;
-imshow(gaborImageObject.standardSettingsGaborImage);
+imshow(cell2mat(gaborImageObject.standardSettingsGaborImage));
 title('Image of settings');
 
 %% Plot slice through predicted LMS contrast image.
@@ -112,7 +115,7 @@ title('Image of settings');
 plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
 
 % SensorToSettings method.
-PlotSliceContrastGaborImage(gaborImageObject.standardPredictedContrastImage, gaborImageObject.desiredContrastGaborImage,...
+PlotSliceContrastGaborImage(cell2mat(gaborImageObject.standardPredictedContrastImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
     'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 if (screenGammaMethod == 2)
     title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone Contrast');
@@ -121,7 +124,7 @@ else
 end
 
 % Point cloud method.
-PlotSliceContrastGaborImage(gaborImageObject.uniqueQuantizedContrastGaborImage, gaborImageObject.desiredContrastGaborImage,...
+PlotSliceContrastGaborImage(cell2mat(gaborImageObject.uniqueQuantizedContrastGaborImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
     'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 
@@ -182,7 +185,7 @@ title('Check of consistency between screen primaries and screen primary spds');
 %
 % This part needs to be updated as we get most of our results in the objects
 % now.
-screenSettingsImage = standardSettingsGaborImage;
+screenSettingsImage = gaborImageObject.standardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
