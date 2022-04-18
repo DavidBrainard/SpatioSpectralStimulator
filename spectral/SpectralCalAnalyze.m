@@ -22,8 +22,9 @@ end
 
 %% Load output of SpectralCalCheck
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    olderDate = 1;
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',0);
+    testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
     theCheckData = load(testFilename);
     theData = theCheckData.theData;
 else
