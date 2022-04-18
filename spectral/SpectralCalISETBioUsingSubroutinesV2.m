@@ -183,9 +183,21 @@ title('Check of consistency between screen primaries and screen primary spds');
 
 %% Save out what we need to check things on the DLP
 %
-% This part needs to be updated as we get most of our results in the objects
-% now.
+% For now, we read out variables from objects to save so that we can utilize
+% the other codes, SpectralCalCheck and SpectralCalAnalyze, without changing
+% the variables in the codes (as of 04/18/22).
+S = colorDirectionParams.S;
+T_cones = colorDirectionParams.T_cones;
+screenNInputLevels = colorDirectionParams.screenNInputLevels;
+targetStimulusContrastDir = colorDirectionParams.targetStimulusContrastDir;
+spatialGaborTargetContrast = colorDirectionParams.spatialGaborTargetContrast; 
+
 screenSettingsImage = gaborImageObject.standardSettingsGaborImage;
+
+screenPrimaryPrimaries = screenPrimaryChannelObject.screenPrimaryPrimaries;
+screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
+screenPrimarySpd = screenPrimaryChannelObject.screenPrimarySpd;
+
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
@@ -195,3 +207,4 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
         'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
 end
+disp('Data has been saved successfully!');
