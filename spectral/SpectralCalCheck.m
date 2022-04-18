@@ -12,7 +12,7 @@
 clear; close all;
 
 %% Parameters
-warmupTimeMinutes = 0;
+warmupTimeMinutes = 20;
 verbose = true;
 MEASURE = true;
 
@@ -20,7 +20,7 @@ MEASURE = true;
 %
 % This is used to match up with parameters run in SpectralCalCompute.
 % Choose one either 'LminusMSmooth' or 'ConeIsolating'.
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -288,4 +288,5 @@ if (MEASURE)
             'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
             'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal');
     end
+    disp('Data has been saved successfully!');
 end
