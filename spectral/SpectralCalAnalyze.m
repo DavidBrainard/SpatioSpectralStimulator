@@ -5,6 +5,7 @@
 
 % History:
 %    11/09/21  dhb  Wrote it.
+%    04/19/22  smo  Added contrast residual plot.
 
 %% Initialize.
 clear; close all;
@@ -203,13 +204,44 @@ for pp = 1:nPrimaries
     plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldContrastNominal(pp,1), 'ko','MarkerSize',18);
 
     plot([-1 1],[-1 1],'k');
-    xlabel('Desired contrast');
-    ylabel('Measured contrast');
     xlim([-axisLim axisLim]);
     ylim([-axisLim axisLim]);
     axis('square');
     xlabel('Desired contrast');
     ylabel('Measured contrast');
+    legend({'Measured','Nominal'},'location','southeast');
+    title(sprintf('Cone class %d',pp));
+end
+
+%% Plot the residual between desired and measured contrasts.
+contrastResidualFig = figure; hold on;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize/3];
+set(gcf,'position',figurePosition);
+
+xAxisLim = 0.03;
+yAxisLim = 0.008;
+theColors = ['r' 'g' 'b'];
+contrastResidual = theCheckData.ptCldScreenContrastMeasuredCheckCal -theCheckData.desiredContrastCheckCal;
+
+for pp = 1:nPrimaries
+    subplot(1,nPrimaries,pp); hold on;
+    % All contrast test points.
+    plot(theCheckData.desiredContrastCheckCal(pp,:),contrastResidual(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(theCheckData.desiredContrastCheckCal(pp,:),zeros(1,size(theCheckData.desiredContrastCheckCal,2)),[theColors(pp) 'o'],'MarkerSize',18);   
+    
+    % Zero contrast.
+    plot(theCheckData.desiredContrastCheckCal(pp,1),contrastResidual(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(theCheckData.desiredContrastCheckCal(pp,1),zeros(1,1),'ko','MarkerSize',18);
+    
+    % Reference horizontal line.
+    plot([-1 1],[0 0],'k');
+    
+    xlim([-xAxisLim xAxisLim]);
+    ylim([-yAxisLim yAxisLim]);
+    axis('square');
+    xlabel('Desired contrast');
+    ylabel('Contrast Residual (Measured - Desired)');
     legend({'Measured','Nominal'},'location','southeast');
     title(sprintf('Cone class %d',pp));
 end
