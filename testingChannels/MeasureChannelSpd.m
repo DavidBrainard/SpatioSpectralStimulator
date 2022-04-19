@@ -13,6 +13,7 @@
 %                    PR670 or power meter.
 %    03/30/22 smo  - Deleted the option loading the data and added black
 %                    correction for spectrum measurement.
+%    04/19/22 smo  - Updates on setting arbitrary black. 
 
 %% Initialize.
 clear; close all;
@@ -40,25 +41,28 @@ VERBOSE = true;
 % Make a string for save file name.
 switch projectorModeNormal
     case true
-        projectorMode = 'Normal';
+        projectorMode = 'NormalMode';
     case false
-        projectorMode = 'SteadyOn';
+        projectorMode = 'SteadyOnMode';
 end
 
 %% Open the projector screen and measurement device ready.
+%
+% Open the projector with the set screen settings.
 [window, windowRect] = OpenPlainScreen(screenSettings,...
     'projectorMode',projectorModeNormal);
 
+% Get spectroradiometer ready.
 if (strcmp(DEVICE,'PR670'))
     OpenSpectroradiometer;
 end
 
-%% Get ready.
+%% Make a delay before starting measurements to get out of the room.
 initialDealySec = 5;
 fprintf('Measurement will begin in (%d) seconds...\n',initialDealySec);
 WaitSecs(initialDealySec);
 
-%% This part measures full white.
+%% Measure full white.
 channelSettingsWhite = ones(nChannels,nPrimaries);
 SetChannelSettings(channelSettingsWhite);
 GetChannelSettings;
@@ -73,33 +77,9 @@ switch DEVICE
 end
 disp('White measurement has been complete!');
 
-%% This part measures arbitrary black.
-switch DEVICE
-    case 'PR670'
-        if (~arbitraryBlack == 0)
-            channelSettingsBlack = ones(nChannels,nPrimaries) .* arbitraryBlack;
-            SetChannelSettings(channelSettingsBlack);
-            GetChannelSettings;
-            spdMeasuredBlack = MeasureSpectroradiometer;
-            disp('Black measurement has been complete!');
-        else
-            % If the black level is not set, just pass the zero spectrum.
-            spdMeasuredBlack = zeros(S(3),1);
-        end
-        
-    case 'powermeter'
-        % Set black back to zero. We don't use arbitrary black for power
-        % meter measurements. Instead, power meter is calibrated to the
-        % screen with all LED lights off.
-        arbitraryBlack = 0.0;
-    otherwise
-        error('Device should be selected either PR670 or powermeter');
-end
-
-%% This part measure singe channels.
+%% Measure single channel spectrum.
 %
-% Set channel settings and measure here. All data will be stored in
-% spdmeasured.
+% All data will be stored in spdmeasured.
 nMeasureChannels = length(targetChannels);
 
 for pp = 1:nPrimaries
@@ -124,8 +104,36 @@ for pp = 1:nPrimaries
                 WaitSecs(powerMeterWaitTimeSec);
             otherwise
         end
+        
+        % This part measures arbitrary black for black correction.
+        switch DEVICE
+            case 'PR670'
+                if (~arbitraryBlack == 0)
+                    % Measure black level if the arbitrary black is set.
+                    channelTurnOff = 0;
+                    channelSettingsBlack = ones(nChannels,nPrimaries) .* arbitraryBlack;
+                    channelSettingsBlack(targetChannel,pp) = channelTurnOff;
+                    SetChannelSettings(channelSettingsBlack);
+                    GetChannelSettings;
+                    spdMeasuredBlack(:,cc) = MeasureSpectroradiometer;
+                    disp('Black measurement has been complete!');
+                else
+                    % If the black level is not set, just pass the zero spectrum.
+                    spdMeasuredBlack = zeros(S(3),1);
+                end
+                
+            case 'powermeter'
+                % Set black back to zero. We don't use arbitrary black for power
+                % meter measurements. Instead, power meter is calibrated to the
+                % screen with all LED lights off.
+                clear arbitraryBlack;
+                arbitraryBlack = 0.0;
+            otherwise
+                error('Device should be selected either PR670 or powermeter');
+        end
     end
     
+    % Black correction here.
     if(strcmp(DEVICE,'PR670'))
         spdMeasured{pp} = spdChannelSingles - spdMeasuredBlack;
     end
