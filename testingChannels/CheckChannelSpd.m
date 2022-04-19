@@ -30,6 +30,9 @@ switch projectorModeNormal
 end
 
 % Load the data here.
+%
+% Note that the measurement date 3/28 is no black correction,
+% 3/30 and 4/19 are black corrected.
 olderDate = 0;
 if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
@@ -124,7 +127,14 @@ if (VERBOSE)
         plot(SToWls(S),prData.spdMeasured{pp});
         title(append('Screen Primary: ',num2str(pp),' ',projectorMode),'FontSize',15);
         xlabel('Wavelength (nm)','FontSize',15);
-        ylabel('Spectral Irradiance','FontSize',15);
+        ylabel('Relative Spectral Power','FontSize',15);
+        
+        % Make strings for graph legend.
+        for cc = 1:nTargetChannels
+            targetChannel = prData.targetChannels(cc);
+            legendSinglePeaks{cc} = append('Ch ',num2str(targetChannel));
+        end
+        legend(legendSinglePeaks);
     end
     
     % White.
@@ -132,7 +142,7 @@ if (VERBOSE)
     plot(SToWls(S),prData.spdMeasuredWhite);
     title(append('White ',projectorMode),'FontSize',15);
     xlabel('Wavelength (nm)','FontSize',15);
-    ylabel('Spectral Irradiance','FontSize',15);
+    ylabel('Relative Spectral Power','FontSize',15);
 end
 
 %% Find scale factors for each measurement
@@ -159,11 +169,13 @@ end
 % Plot it.
 if (VERBOSE)
     figure; clf; hold on;
-    plot(kWhite,'bo','MarkerSize',12,'MarkerFaceColor','b');
-    plot(k,'ro','MarkerSize',12,'MarkerFaceColor','r');
-    xlabel('Target Channels','FontSize',15);
-    ylabel('Coefficient k','FontSize',15);
-    ylim([0 1.2*max(k(:))]);
+    targetChannelsWhite = targetChannels(1:length(kWhite));
+    plot(targetChannelsWhite,kWhite,'bo','MarkerSize',12,'MarkerFaceColor','b');
+    plot(targetChannels,k,'ro','MarkerSize',12,'MarkerFaceColor','r');
+    xlabel('Target Channel','FontSize',15);
+    ylabel('Conversion Coefficient k','FontSize',15);
+    xticks(targetChannels);
+    ylim([0 0.03]);
     legend('White','Single peak','FontSize',13);
     title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
 end
