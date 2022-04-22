@@ -32,8 +32,9 @@ wls = SToWls(S);
 projectName = 'SpatioSpectralStimulator';
 % LEDMeasDateStr = '2021-07-08';
 % LEDSpectraDir = fullfile(getpref(projectName,'LEDSpectraDir'),LEDMeasDateStr);
-LEDInFileName = 'FullWhiteSteadyOnSPD';
-LEDOutFileName = 'FullWhiteSteadOnSPD_UW';
+mode = 'Normal';
+LEDInFileName = ['FullWhite' mode 'SPD'];
+LEDOutFileName = ['FullWhite' mode 'SPD_UW'];
 LEDMeasDateStr = '2022-04-19';
 LEDSpectraDir = fullfile(getpref(projectName,'CheckDataFolder'));
 inFilename = fullfile(LEDSpectraDir,append(LEDInFileName,'_',LEDMeasDateStr,'.mat'));
@@ -41,7 +42,7 @@ outFilename = fullfile(LEDSpectraDir,append(LEDOutFileName,'_',LEDMeasDateStr,'.
 
 %% Get full on spectrum
 white = load(inFilename);
-spd_w = SplineSpd(white.S,white.FullWhiteSteadyOn,S);
+spd_w = SplineSpd(white.S,white.FullWhiteNormal,S);
 spd_blk = zeros(size(spd_w));
 figure; clf; hold on
 plot(wls,spd_w,'r');
