@@ -18,7 +18,7 @@ function [k] = SpdToPower(spd,powerWatt,options)
 %                                 in Watt units. 
 %
 % Outputs:
-%   k                           - The conversion factor.  This converts
+%    k                          - The conversion factor.  This converts
 %                                 the raw radiometer values to power in
 %                                 units defined by the wattToMWatt
 %                                 key/value pair.  By default, this has
