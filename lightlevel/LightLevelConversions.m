@@ -13,10 +13,13 @@
 %
 %     Derek calculation.  6.7 uW entering eye for 4 deg square stimulus for
 %     some broadband stimulus.  Gets 100-160 cd/m2 luminance.
-%
-% 10/29/15  dhb  Wrote (again, since I lost the first version) from OLLightLevelCheck
-% 11/02/18  dhb  Added isomerization rate and fraction bleached calculations.
-% 01/02/20  dhb  Version for LED based stimulator
+
+% History:
+%    10/29/15  dhb         Wrote (again, since I lost the first version)
+%                          from OLLightLevelCheck
+%    11/02/18  dhb         Added isomerization rate and fraction bleached calculations.
+%    01/02/20  dhb         Version for LED based stimulator
+%    04/22/22  dhb, smo    Edited it for SACC project.
 
 %% Clear and close
 clear; close all
@@ -42,7 +45,7 @@ outFilename = fullfile(LEDSpectraDir,append(LEDOutFileName,'_',LEDMeasDateStr,'.
 
 %% Get full on spectrum
 white = load(inFilename);
-spd_w = SplineSpd(white.S,white.FullWhiteNormal,S);
+spd_w = SplineSpd(white.S, white.spd, S);
 spd_blk = zeros(size(spd_w));
 figure; clf; hold on
 plot(wls,spd_w,'r');
