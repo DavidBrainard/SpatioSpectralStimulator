@@ -30,23 +30,33 @@ wls = SToWls(S);
 
 %% Point at directory with spectra
 projectName = 'SpatioSpectralStimulator';
-LEDMeasDateStr = '2021-07-08';
-LEDSpectraDir = fullfile(getpref(projectName,'LEDSpectraDir'),LEDMeasDateStr);
-
+% LEDMeasDateStr = '2021-07-08';
+% LEDSpectraDir = fullfile(getpref(projectName,'LEDSpectraDir'),LEDMeasDateStr);
+LEDInFileName = 'FullWhiteSteadyOnSPD';
+LEDOutFileName = 'FullWhiteSteadOnSPD_UW';
+LEDMeasDateStr = '2022-04-19';
+LEDSpectraDir = fullfile(getpref(projectName,'CheckDataFolder'));
+inFilename = fullfile(LEDSpectraDir,append(LEDInFileName,'_',LEDMeasDateStr,'.mat'));
+outFilename = fullfile(LEDSpectraDir,append(LEDOutFileName,'_',LEDMeasDateStr,'.mat'));
 
 %% Get full on spectrum
-measS = [380 5 81];
-measWls = SToWls(measS);
-white = load(fullfile(LEDSpectraDir,append('white','.mat')));
-black = load(fullfile(LEDSpectraDir,append('black','.mat')));
-spd_w = SplineSpd(measS,white.white,S);
-spd_blk = SplineSpd(measS,black.black,S);
+white = load(inFilename);
+spd_w = SplineSpd(white.S,white.FullWhiteSteadyOn,S);
+spd_blk = zeros(size(spd_w));
 figure; clf; hold on
 plot(wls,spd_w,'r');
 plot(wls,spd_blk,'k');
 xlabel('Wavelength (nm)');
 ylabel('Power');
-maxSpd = spd_w;
+
+%% Convert spectrum to power at the cornea
+k = GetWithDefault('Enter PR-670 to relative to mW corneal power k factor (mW units)',0.0100);
+spd_w = k*spd_w;
+spd_blk = k*spd_blk;
+mWToUW = 1000;
+
+%% Get the maximum spd in uW per wavelength band
+maxSpdUW = mWToUW*(spd_w-spd_blk);
 
 % %% Define LED properties.
 % %
@@ -73,10 +83,10 @@ maxSpd = spd_w;
 % fprintf('Total max power is %0.3f uW\n',maxSpdPowerUW);
 
 % Power in maxSpd *assumes 1 nm spacing enforced above)
-maxSpdPowerUW = sum(maxSpd);
+maxSpdPowerUW = sum(maxSpdUW);
 
 %% Get inputs and put into common format
-pupilDiamMm = GetWithDefault('Enter pupil diameter in mm',3);
+pupilDiamMm = GetWithDefault('Enter pupil diameter in mm',4);
 eyeLengthMm = GetWithDefault('Enter assumed eye length in mm',16.67);
 LENGTHORAREA = GetWithDefault('Enter stimulus side (1), stimulus diameter (2), or stimulus area (3)?',3);
 switch (LENGTHORAREA)
@@ -87,7 +97,7 @@ switch (LENGTHORAREA)
         rawStimulusSideDegIn = GetWithDefault('Enter circular stimulus diameter in deg',1.8);
         stimulusAreaDegrees2 = pi*(rawStimulusSideDegIn/2)^2;
     case 3
-        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',6*10.7);
+        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',7.44*13.30);
 end
 
 % Utility calculations
@@ -119,12 +129,15 @@ switch (RETORCORN)
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);
     case 3
-        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',11);
+        rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',maxSpdPowerUW);
         rawCornIrradianceMicrowattsPerCm2In = rawPowerIntoEyeIn/pupilAreaCm2;
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);  
 end
 clear rawRadianceMicrowattsPerCm2Sr;
+
+%% Save out the corneal power in uW/nm as well as pupil diameter in mm
+save(outFilename,'wls','maxSpdUW','pupilDiamMm','stimulusAreaDegrees2');
 
 %% Pupil adjustment factor for Ansi MPE 
 mpePupilDiamMm = 3;
@@ -143,7 +156,7 @@ end
 %% Get retinal irradiance as spectral function
 %
 % We want sum over wavelength to be equal to the specified value
-retIrradianceMicrowattsPerCm2In = rawRetIrradianceMicrowattsPerCm2In*maxSpd/sum(maxSpd);
+retIrradianceMicrowattsPerCm2In = rawRetIrradianceMicrowattsPerCm2In*maxSpdUW/sum(maxSpdUW);
 
 %% Convert to some other units for convenience
 retIrradianceMilliwattsPerCm2In = retIrradianceMicrowattsPerCm2In*(10^-3);
@@ -246,7 +259,7 @@ fprintf('\n');
 fprintf('  * Analyzing light levels as input\n');
 fprintf('  * Stimulus radiance %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(radianceWattsPerM2Sr)),log10(sum(radianceWattsPerCm2Sr)));
 fprintf('  * Stimulus luminance %0.1f candelas/m2\n',photopicLuminanceCdM2);
-fprintf('    * For comparison, luminance directly from PR spectrum: %01.f cd/m2\n',T_xyz(2,:)*maxSpd);
+fprintf('    * For comparison, luminance directly from PR spectrum: %01.f cd/m2\n',T_xyz(2,:)*maxSpdUW);
 fprintf('    * For comparison, sunlight in Philly: %0.1f cd/m2\n',photopicLuminancePhillyBrightCdM2);
 fprintf('    * For comparison, sunlight in Philly: %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(spd_phillybright)),log10(sum(spd_phillybright/10000)));
 fprintf('    * For comparison, sunlight in Philly near 790 nm: %0.1f log10 watts/[m2-sr], %0.1f log10 watts/[cm2-sr]\n',log10(sum(spd_790bright)),log10(sum(spd_790bright/10000)));
