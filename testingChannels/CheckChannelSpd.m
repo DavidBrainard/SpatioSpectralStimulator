@@ -18,6 +18,8 @@ projectorModeNormal = true;
 powerMeterWl = 550;
 VERBOSE = true;
 
+POWERDATASET = 3;
+
 %% Load spectrum data here.
 DEVICE = 'PR670';
 
@@ -29,11 +31,21 @@ switch projectorModeNormal
         projectorMode = 'SteadyOnMode';
 end
 
-% Load the data here.
+% We will load different (black corrected or not) spd data over the power
+% meter data set.
 %
-% Note that the measurement date 3/28 is no black correction,
+% Measurement date 3/28 is no black correction,
 % 3/30 and 4/19 are black corrected.
-olderDate = 0;
+switch POWERDATASET
+    case 1
+        olderDate = 2;
+    case 2
+        olderDate = 2;
+    case 3
+        olderDate = 0;
+end
+
+% Load the data here.
 if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
     testFilename = GetMostRecentFileName(testFiledir,sprintf('SpdData_%s_%s',DEVICE,projectorMode),'olderDate',olderDate);
@@ -47,6 +59,7 @@ for pp = 1:nPrimaries
     prData.spdMeasured{pp} = max(prData.spdMeasured{pp},0);
 end
 
+% Set some params.
 targetChannels = prData.targetChannels;
 nTargetChannels = length(targetChannels);
 S = prData.S;
@@ -58,9 +71,7 @@ cd(testFiledir);
 DEVICE = 'PowerMeter';
 fileType = '.csv';
 
-DATASET = 3;
-
-switch DATASET
+switch POWERDATASET
     case 1
         % DATASET 1.
         % Fixed wavelength sensitivity (550 nm).
@@ -150,7 +161,7 @@ end
 % Sinlge peaks.
 for pp = 1:nPrimaries
     for cc = 1:nTargetChannels
-        if (DATASET == 2)
+        if (POWERDATASET == 2)
             powerMeterWl = powerMeterWls(cc);
         end
         k(cc,pp) = SpdToPower(prData.spdMeasured{pp}(:,cc), powerMeterWatt(cc,pp), 'targetWl', powerMeterWl)';
@@ -160,7 +171,7 @@ end
 % White.
 nWhites = length(powerMeterWhiteWatt);
 for ww = 1:nWhites
-    if (DATASET == 2)
+    if (POWERDATASET == 2)
         powerMeterWl = powerMeterWls(ww);
     end
     kWhite(ww) = SpdToPower(prData.spdMeasuredWhite, powerMeterWhiteWatt(ww), 'targetWl', powerMeterWl);
@@ -177,5 +188,5 @@ if (VERBOSE)
     xticks(targetChannels);
     ylim([0 0.03]);
     legend('White','Single peak','FontSize',13);
-    title(append('DataSet ',num2str(DATASET),' ',projectorMode),'FontSize',15);
+    title(append('DataSet ',num2str(POWERDATASET),' ',projectorMode),'FontSize',15);
 end
