@@ -15,7 +15,17 @@ function [k] = SpdToPower(spd,powerWatt,options)
 % Inputs:
 %    spd                        - Target spd measured by spectroradiometer.
 %    powerWatt                  - Target power measured using power meter
-%                                 in Watt unit. 
+%                                 in Watt units. 
+%
+% Outputs:
+%   k                           - The conversion factor.  This converts
+%                                 the raw radiometer values to power in
+%                                 units defined by the wattToMWatt
+%                                 key/value pair.  By default, this has
+%                                 value 1000, so that k converts measured
+%                                 spectra to power in mWatt units.  Note
+%                                 that spectra here follow the PTB
+%                                 convention of power per wavelength band.
 %
 % Optional key/value pairs:
 %    S                          - Default to [380 2 201]. Wavelength range.
