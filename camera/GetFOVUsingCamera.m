@@ -1,4 +1,4 @@
-% CalculateDMDFOV.
+% GetFOVUsingCamera.
 %
 % This calculates the FOV of the DMD.
 
