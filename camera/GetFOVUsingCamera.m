@@ -48,26 +48,43 @@ if (VERBOSE)
         rectangle('Position', imgStats(i).BoundingBox, ...
             'Linewidth', 3, 'EdgeColor', 'r', 'LineStyle', '--');
     end
+    title('Target image with its shape found','fontsize',15);
 end
 
 %% Get reference image info.
 %
-% Distance between the camera and the reference target (ruler) in inch.
-distanceInch = 140;
-
 % Reference size in inch.
 %
-% For first try, we used ruler is 24 inches long and the length adds up two
-% different rulers.
+% We meausred both horizontal and vertical measurements.
+%
+% For horizontal measurement, we used two rulers (24 inches each).
+% For vertical measurement, we used elastic ruler (300 inches).
+%
+% The length typed here is the length for the end-to-end of either
+% vertical or horizontal camera captured image.
 refHorizontalInch = (23 + 6/16) + (18 + 6/16);
+refVerticalInch = 94.5 - 10 + 1;
 
-% Reference size in pixel.
+% Reference size in pixel. This is the same with the camera resolution.
+refVerticalPixel = imgSize(1);
 refHorizontalPixel = imgSize(2);
 
-% Get inch per pixel.
-inchPerPixel = refHorizontalInch/refHorizontalPixel;
+% Get inch per pixel. You can choose either vertical or horizontal sides to
+% use.
+whichSide = 'horizontal';
 
-%% Get DMD size in degrees.
+switch whichSide
+    case 'vertical'
+        inchPerPixel = refVerticalInch/refVerticalPixel;
+        % Distance between the camera and the reference ruler in inch.
+        distanceInch = 429;
+    case'horizontal'
+        inchPerPixel = refHorizontalInch/refHorizontalPixel;
+        distanceInch = 140;
+    otherwise
+end
+
+%% Calculate the FOV of the target in degrees.
 %
 % Horizontal.
 targetImgHorizontalLeftInch = targetImgHorizontalLeftPixel * inchPerPixel;
