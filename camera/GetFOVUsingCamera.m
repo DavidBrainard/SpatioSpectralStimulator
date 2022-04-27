@@ -10,6 +10,8 @@
 
 % History
 %    04/26/22   smo   Corrected the calculation method.
+%    04/27/22   smo   Added the complete data of the values for both
+%                     vertical and horizontal references.
 
 %% Initialize.
 clear; close all;
@@ -53,17 +55,23 @@ end
 
 %% Get reference image info.
 %
-% Reference size in inch.
+% Reference size in inch. We meausred both horizontal and vertical
+% measurements.
 %
-% We meausred both horizontal and vertical measurements.
-%
-% For horizontal measurement, we used two rulers (24 inches each).
-% For vertical measurement, we used elastic ruler (300 inches).
-%
-% The length typed here is the length for the end-to-end of either
-% vertical or horizontal camera captured image.
-refHorizontalInch = (23 + 6/16) + (18 + 6/16);
-refVerticalInch = 94.5 - 10 + 1;
+% The length is the end-to-end of either vertical or horizontal camera
+% captured image.
+DATE = '0426';
+
+switch DATE
+    case '0426'
+        % 04/26 data.
+        refHorizontalInch = 41.75;
+        refVerticalInch = 85.50;
+    case '0427'
+        % 04/27 data.
+        refHorizontalInch = 113.40;
+        refVerticalInch = 74.80;
+end
 
 % Reference size in pixel. This is the same with the camera resolution.
 refVerticalPixel = imgSize(1);
@@ -71,17 +79,22 @@ refHorizontalPixel = imgSize(2);
 
 % Get inch per pixel. You can choose either vertical or horizontal sides to
 % use.
-whichSide = 'horizontal';
+whichSideRef = 'horizontal';
 
-switch whichSide
+switch whichSideRef
     case 'vertical'
         inchPerPixel = refVerticalInch/refVerticalPixel;
         % Distance between the camera and the reference ruler in inch.
         distanceInch = 429;
-    case'horizontal'
+        if (DATE == '0427')
+            distanceInch = 370;
+        end
+    case 'horizontal'
         inchPerPixel = refHorizontalInch/refHorizontalPixel;
         distanceInch = 140;
-    otherwise
+        if (DATE == '0427')
+            distanceInch = 370;
+        end
 end
 
 %% Calculate the FOV of the target in degrees.
