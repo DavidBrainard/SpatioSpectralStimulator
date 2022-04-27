@@ -30,6 +30,9 @@
 %                          which takes time and memory a lot.
 %    03/17/22  smo       - Now we set the temporal scene support time
 %                          differently for stimuli and cross fixation point. 
+%    04/27/22  smo       - Added a PTB running option for displaying test
+%                          gabor image in either vertical or horizontal
+%                          direction.
 
 %% Initialization
 clear; close all;
@@ -86,7 +89,9 @@ if (~LOADDATA)
     experimentParams.nQUESTEstimator = 1;
 end
 experimentParams.nTestValidation = 20;
-experimentParams.runningMode = 'PTB';
+% RunningMode can be chosen among three 
+% [PTB-sequential; PTB-directional; simulation].
+experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
@@ -258,7 +263,7 @@ end
 [logContrast, nextFlag] = estimator.nextStimulus();
 
 % Open projector and set the screen primary settings as we found.
-if (strcmp(experimentParams.runningMode,'PTB'))
+if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
    [window windowRect] = OpenPlainScreen([0 0 0]');
    SetChannelSettings(experimentParams.screenPrimarySettings);
    
@@ -274,16 +279,18 @@ end
 % probably want to move this to a place where the test cross
 % is displayed for the first time.  Or display test cross here,
 % or something.
-if (and(strcmp(experimentParams.runningMode,'PTB'),strcmp(experimentParams.expKeyType,'gamepad')))
+if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
     % Display crossbar image.
     DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
         'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
     
-    % Waiting for key to be pressed to start.
-    responseGamePad = GetGamepadResp2AFC('verbose',false);
-    possibleResponseGamePad = [1 2];
-    if (any(responseGamePad == possibleResponseGamePad))
-        disp('Experiment is going to be started!');
+    if (strcmp(experimentParams.expKeyType,'gamepad'))
+        % Waiting for key to be pressed to start.
+        responseGamePad = GetGamepadResp2AFC('verbose',false);
+        possibleResponseGamePad = [1 2];
+        if (any(responseGamePad == possibleResponseGamePad))
+            disp('Experiment is going to be started!');
+        end
     end
 end
 
@@ -335,7 +342,7 @@ while (nextFlag)
 end
 
 % Close projector.
-if (strcmp(experimentParams.runningMode,'PTB'))
+if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
     CloseScreen;
 end
 

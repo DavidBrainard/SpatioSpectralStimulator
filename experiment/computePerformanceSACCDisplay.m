@@ -83,6 +83,9 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %    03/17/22  smo                      - Now we set the temporal scene
 %                                         support time differently for
 %                                         stimuli and cross fixation point.
+%    04/27/22  smo                      - Added a running option in PTB to
+%                                         display the test image either
+%                                         vertical or horizontal.
 
 %% Set parameters.
 arguments
@@ -103,9 +106,9 @@ end
 
 %% Displaying the images.
 switch (options.runningMode)
-    case 'PTB'
-        % This part will be used for the actual experiment displaying the test
-        % image on the projector using PTB.
+    case 'PTB-sequential'
+        % It displays the images on the projector using PTB. The null and
+        % test images will be presented sequentially.
         %
         % Randomize the displaying order of null and test images.
         displayFirstTest = 1;
@@ -159,6 +162,56 @@ switch (options.runningMode)
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
+        
+        
+    case 'PTB-directional'
+        % This part will be used for the actual experiment displaying the test
+        % image on the projector using PTB. It displays a test image either
+        % vertical or horizontal to make an evaluation, so null image is
+        % not displayed during the session after the initial presentation.
+        displayVertical   = 1;
+        displayHorizontal = 2;
+        displayDirections = [displayVertical displayHorizontal];
+        whichDirectionToDisplay = randi(displayDirections);
+        
+        % Display image here.
+        %
+        % Cross-fixation image before displaying the images. This is useful
+        % when audible cue is not working.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
+        
+        % Make a time delay.
+        WaitSecs(theSceneTemporalSupportSeconds);
+        
+        % Make a rotation image here.
+        switch whichDirectionToDisplay
+            case displayVertical
+                % If it's vertical image to display, just pass the original
+                % image as the images were modulated in vertical patterns.
+                displayTestImage = testRGBImage;
+            case displayHorizontal
+                % If it's horizontal image to display, rotate the original
+                % test image 90 degrees.
+                imgRotationDeg = 90;
+                displayTestImage = imrotate(testRGBImage, imgRotationDeg);
+        end
+        
+        % Display test image here.
+        SetScreenImage(displayTestImage, window, windowRect,'verbose',options.verbose);
+        
+        % Make a beep sound as an audible cue.
+        if (options.beepSound)
+            MakeBeepSound;
+        end
+        
+        % Make a time delay.
+        WaitSecs(theSceneTemporalSupportSeconds);
+        
+        % Cross-fixation image again.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false); 
+        
         
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on
@@ -261,10 +314,14 @@ if (isempty(options.autoResponse))
     incorrectResponse = 0;
     
     % Match the variable names prior to response conversion.
-    if (strcmp(options.runningMode,'PTB'))
+    if (strcmp(options.runningMode,'PTB-sequential'))
         whichSideTestImage = whichOneToStart;
         imageSideLeft = displayFirstTest;
         imageSideRight = displayFirstNull;
+    elseif (strcmp(options.runningMode,'PTB-directional'))
+        whichSideTestImage = whichDirectionToDisplay;
+        imageSideLeft  = displayVertical;
+        imageSideRight = displayHorizontal;
     end
     
     % Convert the numbers here.
@@ -298,7 +355,8 @@ end
 
 %% Close.
 switch (options.runningMode)
-    case 'PTB'
+    case 'PTB-sequential'
+    case 'PTB-directional'
     case 'simulation'
         close all;
 end
