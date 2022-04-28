@@ -283,10 +283,16 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
     % Display crossbar image.
     DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
         'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
-    
+
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         % Waiting for key to be pressed to start.
-        responseGamePad = GetGamepadResp2AFC('verbose',false);
+        switch (experimentParams.runningMode)
+            case 'PTB-sequential'
+                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+            case 'PTB-directional'
+                numButtonRight = 3;
+                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+        end
         possibleResponseGamePad = [1 2];
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Experiment is going to be started!');

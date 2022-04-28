@@ -261,10 +261,7 @@ switch (options.runningMode)
 end
 
 %% Getting a key response.
-if (options.verbose)
-    fprintf('Waiting for a key is pressed... \n');
-end
-
+%
 % Key press response is saved in a single number based on the ASCII
 % allocated number for the keyboards.
 % [28 = leftarrow / 29 = rightarrow].
@@ -298,7 +295,17 @@ if (isempty(options.autoResponse))
         case 'gamepad'
             gamepadRespFirst  = 1;
             gamepadRespSecond = 2;
-            responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+            
+            % We will use different gamepad keys depending on how we present
+            % the stimuli.
+            switch (options.runningMode)
+                case 'PTB-sequential'
+                    responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+                case 'PTB-directional'
+                    numButtonRight = 3;
+                    responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+            end
+            
             if (responseGamePad == gamepadRespFirst)
                 response = leftArrow;
             elseif (responseGamePad == gamepadRespSecond)
