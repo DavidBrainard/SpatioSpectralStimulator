@@ -35,7 +35,7 @@ function [buttonPress] = GetGamepadResp2AFC(options)
 %% Set parameters.
 arguments
     options.numButtonUp (1,1) = 4
-    options.numBurronDown (1,1) = 2
+    options.numButtonDown (1,1) = 2
     options.pause (1,1) = 0.5
     options.verbose (1,1) = true
 end
@@ -55,7 +55,7 @@ buttonStateUp = false;
 buttonStateDown = false;
 while (buttonStateUp == false && buttonStateDown == false)
     buttonStateUp   = Gamepad('GetButton', gamepadIndex, options.numButtonUp);
-    buttonStateDown = Gamepad('GetButton', gamepadIndex, options.numBurronDown);
+    buttonStateDown = Gamepad('GetButton', gamepadIndex, options.numButtonDown);
 end
 
 % Convert the logical to number either 1 or 2 based on the button press.
