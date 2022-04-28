@@ -5,37 +5,39 @@ function [buttonPress] = GetGamepadResp2AFC(options)
 %    [buttonPress] = GetGamepadResp2AFC()
 %
 % Description:
-%    This function get responses from 2 buttons from the gamepad and
-%    returns a 1 or 2 output response. The buttons can be defined as
-%    key/value pairs. Default is set to 1 for (Y) button / 2 for (A) button.
-%
-%    The output result 1 means the first sequence image was selected, and 2
-%    means the second was selected.
+%    This function get a response from 2 buttons on the gamepad and returns
+%    a response either 1 or 2 based on the selection. You can set which
+%    buttons to use on the gamepad. Default is set to 1 for (Y) button / 2
+%    for (A) button.
 %
 % Inputs:
 %    N/A
 %
 % Output:
-%    buttonPress -       The recorded button press corresponding to the button
+%    buttonPress       - The recorded button press corresponding to the button
 %                        mapping. It either gives 1 or 2.
 %
 % Optional key/value pairs:
-%    numButtonUp -       The button number on the gamepad corresponding to
-%                        the first interval. Default "Y" on Longitech F310.
-%    numButtonDown -     The button number on the gamepad corresponding to
-%                        the second interval. Default "A" on Longitech F310.
-%    pause -             Default to 0. You can set the time delay after the
+%    numButtonA        - Default to 4 which is "Y" on Longitech F310. The
+%                        button number on the gamepad corresponding to the
+%                        first interval.
+%    numButtonB        - Default to 2 which is "A" on Longitech F310. The
+%                        button number on the gamepad corresponding to the
+%                        second interval.
+%    pause             - Default to 0. You can set the time delay after the
 %                        evaluation. Unit is in second.
-%    verbose -           Default to true. Print out more status messages.
+%    verbose           - Default to true. Print out more status messages.
 
 % History:
-%    01/20/22  MAB       Started.
-%    02/08/22  smo       Modified it to use for SACC project.
+%    01/20/22  MAB     - Started.
+%    02/08/22  smo     - Modified it to use for SACC project.
+%    04/28/22  smo     - Updated variable names which can be applicable for
+%                        the task choosing either vertical or horizontal.
 
 %% Set parameters.
 arguments
-    options.numButtonUp (1,1) = 4
-    options.numButtonDown (1,1) = 2
+    options.numButtonA (1,1) = 4
+    options.numButtonB (1,1) = 2
     options.pause (1,1) = 0.5
     options.verbose (1,1) = true
 end
@@ -51,29 +53,29 @@ end
 gamepadIndex = Gamepad('GetNumGamepads');
 
 % Get a button press here till either Up or Down button is pressed.
-buttonStateUp = false;
-buttonStateDown = false;
-while (buttonStateUp == false && buttonStateDown == false)
-    buttonStateUp   = Gamepad('GetButton', gamepadIndex, options.numButtonUp);
-    buttonStateDown = Gamepad('GetButton', gamepadIndex, options.numButtonDown);
+stateButtonA = false;
+stateButtonB = false;
+while (stateButtonA == false && stateButtonB == false)
+    stateButtonA = Gamepad('GetButton', gamepadIndex, options.numButtonA);
+    stateButtonB = Gamepad('GetButton', gamepadIndex, options.numButtonB);
 end
 
 % Convert the logical to number either 1 or 2 based on the button press.
-selectImgFirst  = 1;
-selectImgSecond = 2;
-if (buttonStateUp == true)
-    buttonPress = selectImgFirst;
-    selectImg = 'First';
-elseif (buttonStateDown == true)
-    buttonPress = selectImgSecond;
-    selectImg = 'Second';
+pressButtonA = 1;
+pressButtonB = 2;
+if (stateButtonA == true)
+    buttonPress = pressButtonA;
+    pressedButton = 'First';
+elseif (stateButtonB == true)
+    buttonPress = pressButtonB;
+    pressedButton = 'Second';
 else
-    error('Button should be pressed either first (1) or second (2) image!');
+    error('Button should be pressed either first(1) or second(2) interval key');
 end
 
-% Print out which image was selected.
+% Print out which key was pressed.
 if (options.verbose)
-    fprintf('(%s) image has been selected!',selectImg);
+    fprintf('(%s) key has been pressed!',pressedButton);
 end
 
 % Pause if you want.
