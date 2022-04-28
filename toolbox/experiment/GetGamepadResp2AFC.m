@@ -75,7 +75,7 @@ end
 
 % Print out which key was pressed.
 if (options.verbose)
-    fprintf('(%s) key has been pressed!',pressedButton);
+    fprintf('(%s) key has been pressed! \n',pressedButton);
 end
 
 % Pause if you want.

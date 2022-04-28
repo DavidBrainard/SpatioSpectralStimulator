@@ -156,7 +156,7 @@ switch options.patternType
                 % Vertical part of the crossbar.
                 crossbarImage(crossbarCoords,imageLineWidth,ii) = options.patternColor(ii);
             end
-            SetScreenImage(crossbarImage, window, windowRect);
+            SetScreenImage(crossbarImage, window, windowRect, 'verbose', options.verbose);
             
         else
             % Display crossbar on the plain screen.

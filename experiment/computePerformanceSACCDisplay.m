@@ -181,9 +181,6 @@ switch (options.runningMode)
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
-        % Make a time delay.
-        WaitSecs(theSceneTemporalSupportSeconds);
-        
         % Make a rotation image here.
         switch whichDirectionToDisplay
             case displayVertical
@@ -198,7 +195,7 @@ switch (options.runningMode)
         end
         
         % Display test image here.
-        SetScreenImage(displayTestImage, window, windowRect,'verbose',options.verbose);
+        SetScreenImage(displayTestImage, window, windowRect,'verbose',false);
         
         % Make a beep sound as an audible cue.
         if (options.beepSound)
@@ -312,9 +309,6 @@ if (isempty(options.autoResponse))
                 response = rightArrow;
             end
     end
-    if (options.verbose)
-        fprintf('     Key input has been received! \n');
-    end
     
     % Convert the key response into a single number either 0 or 1.
     correctResponse   = 1;
@@ -366,9 +360,6 @@ switch (options.runningMode)
     case 'PTB-directional'
     case 'simulation'
         close all;
-end
-if (options.verbose)
-    fprintf('Key input has been received! \n');
 end
 
 % Print out the results.
