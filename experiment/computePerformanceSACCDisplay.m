@@ -128,7 +128,7 @@ switch (options.runningMode)
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
         % Make a time delay.
-        WaitSecs(theSceneTemporalSupportSeconds);
+        WaitSecs(theCrossbarTemporalSupportSeconds);
         
         % First image.
         SetScreenImage(firstDisplayImage, window, windowRect,'verbose',options.verbose);
@@ -196,11 +196,6 @@ switch (options.runningMode)
         
         % Display test image here.
         SetScreenImage(displayTestImage, window, windowRect,'verbose',false);
-        
-        % Make a beep sound as an audible cue.
-        if (options.beepSound)
-            MakeBeepSound;
-        end
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
