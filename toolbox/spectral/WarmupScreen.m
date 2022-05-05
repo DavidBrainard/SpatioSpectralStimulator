@@ -34,11 +34,14 @@ function [] = WarmupScreen(options)
 
 % History:
 %    03/23/22  smo              - Started on it
+%    05/05/22  smo              - Added an option to choose the projector
+%                                 mode.
 
 %% Set parameters.
 arguments
     options.nScreenPrimaries (1,1) = 3
     options.nChannels (1,1) = 16
+    options.projectorMode = true
     options.warmupTimeMin = []
     options.verbose (1,1) = true
 end
@@ -47,7 +50,7 @@ end
 %
 % Open screen here.
 screenSettings = ones(options.nScreenPrimaries,1);
-OpenPlainScreen(screenSettings);
+OpenPlainScreen(screenSettings,'projectorMode',options.projectorMode);
 
 % Set channel settings here.
 channelSettings = ones(options.nChannels, options.nScreenPrimaries);
@@ -62,7 +65,7 @@ end
 if (~isempty(options.warmupTimeMin))
     minToSec = 60;
     warmupTimeSec = options.warmupTimeMin * minToSec;
-    WaitSecs(warmupTimeSec);
+    pause(warmupTimeSec);
     
     if (options.verbose)
         fprintf('Screen has been warmed up for (%d) minutes! \n',options.warmupTimeMin);
