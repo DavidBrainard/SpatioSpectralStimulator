@@ -13,7 +13,9 @@
 %                    PR670 or power meter.
 %    03/30/22 smo  - Deleted the option loading the data and added black
 %                    correction for spectrum measurement.
-%    04/19/22 smo  - Updates on setting arbitrary black. 
+%    04/19/22 smo  - Updates on setting arbitrary black.
+%    05/05/22 smo  - Added an option to warm up the screen before starting
+%                    the measurements.
 
 %% Initialize.
 clear; close all;
@@ -23,6 +25,7 @@ S = [380 2 201];
 nPrimaries = 3;
 nChannels = 16;
 screenSettings = [1 1 1]';
+warmupTimeMin = 0;
 
 % Channel settings.
 targetChannels = [2 4 6 8 10 12];
@@ -33,9 +36,9 @@ logicalToPhysical = [0:15];
 arbitraryBlack = 0.05;
 
 % Choose which device to use within [PR670, powermeter].
-DEVICE = 'PR670';
+DEVICE = 'powermeter';
 projectorModeNormal = false;
-powerMeterWaitTimeSec = 5;
+powerMeterWaitTimeSec = 10;
 VERBOSE = true;
 
 % Make a string for save file name.
@@ -44,6 +47,12 @@ switch projectorModeNormal
         projectorMode = 'NormalMode';
     case false
         projectorMode = 'SteadyOnMode';
+end
+
+%% Warmup the screen if you want.
+if (~warmupTimeMin == 0)
+    WarmupScreen('projectorMode',projectorModeNormal,...
+        'warmupTimeMin',warmupTimeMin,'verbose',VERBOSE);
 end
 
 %% Open the projector screen and measurement device ready.
@@ -58,9 +67,25 @@ if (strcmp(DEVICE,'PR670'))
 end
 
 %% Make a delay before starting measurements to get out of the room.
-initialDealySec = 5;
-fprintf('Measurement will begin in (%d) seconds...\n',initialDealySec);
-WaitSecs(initialDealySec);
+initialDelaySec = 3;
+fprintf('Measurement will begin in (%d) seconds...\n',initialDelaySec);
+if (strcmp(DEVICE,'powermeter'))
+    disp('You should run the power meter program when the timer is done!');
+end
+
+% Display timer progress.
+for tt = 1:initialDelaySec
+    fprintf('Timer counting: (%d/%d) seconds...\n',tt,initialDelaySec);
+    pause(1);
+end
+
+if (strcmp(DEVICE,'powermeter'))
+    disp('Now start power meter measurement on the program!');
+    halfPowerMeterWaitTimeSec = powerMeterWaitTimeSec
+    for tt = 1:halfPowerMeterWaitTimeSec
+        pause(1);
+    end
+end
 
 %% Measure full white.
 channelSettingsWhite = ones(nChannels,nPrimaries);
@@ -72,7 +97,7 @@ switch DEVICE
     case 'PR670'
         spdMeasuredWhite = MeasureSpectroradiometer;
     case 'powermeter'
-        WaitSecs(powerMeterWaitTimeSec);
+        pause(powerMeterWaitTimeSec);
     otherwise
 end
 disp('White measurement has been complete!');
@@ -85,6 +110,10 @@ nMeasureChannels = length(targetChannels);
 for pp = 1:nPrimaries
     for cc = 1:nMeasureChannels
         % Set channel settings here.
+        if (strcmp(DEVICE,'powermeter'))
+            clear arbitraryBlack;
+            arbitraryBlack = 0;
+        end
         targetChannel = targetChannels(cc);
         channelSettings = ones(nChannels,nPrimaries) .* arbitraryBlack;
         channelSettings(targetChannel, pp) = targetChannelSettingValue;
@@ -101,35 +130,25 @@ for pp = 1:nPrimaries
             case 'PR670'
                 spdChannelSingles(:,cc) = MeasureSpectroradiometer;
             case 'powermeter'
-                WaitSecs(powerMeterWaitTimeSec);
+                pause(powerMeterWaitTimeSec);
             otherwise
         end
         
         % This part measures arbitrary black for black correction.
-        switch DEVICE
-            case 'PR670'
-                if (~arbitraryBlack == 0)
-                    % Measure black level if the arbitrary black is set.
-                    channelTurnOff = 0;
-                    channelSettingsBlack = ones(nChannels,nPrimaries) .* arbitraryBlack;
-                    channelSettingsBlack(targetChannel,pp) = channelTurnOff;
-                    SetChannelSettings(channelSettingsBlack);
-                    GetChannelSettings;
-                    spdMeasuredBlack(:,cc) = MeasureSpectroradiometer;
-                    disp('Black measurement has been complete!');
-                else
-                    % If the black level is not set, just pass the zero spectrum.
-                    spdMeasuredBlack = zeros(S(3),1);
-                end
-                
-            case 'powermeter'
-                % Set black back to zero. We don't use arbitrary black for power
-                % meter measurements. Instead, power meter is calibrated to the
-                % screen with all LED lights off.
-                clear arbitraryBlack;
-                arbitraryBlack = 0.0;
-            otherwise
-                error('Device should be selected either PR670 or powermeter');
+        if (strcmp(DEVICE,'PR670'))
+            if (~arbitraryBlack == 0)
+                % Measure black level if the arbitrary black is set.
+                channelTurnOff = 0;
+                channelSettingsBlack = ones(nChannels,nPrimaries) .* arbitraryBlack;
+                channelSettingsBlack(targetChannel,pp) = channelTurnOff;
+                SetChannelSettings(channelSettingsBlack);
+                GetChannelSettings;
+                spdMeasuredBlack(:,cc) = MeasureSpectroradiometer;
+                disp('Black measurement has been complete!');
+            else
+                % If the black level is not set, just pass the zero spectrum.
+                spdMeasuredBlack = zeros(S(3),1);
+            end
         end
     end
     
