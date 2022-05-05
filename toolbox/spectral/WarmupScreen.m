@@ -62,7 +62,7 @@ end
 if (~isempty(options.warmupTimeMin))
     minToSec = 60;
     warmupTimeSec = options.warmupTimeMin * minToSec;
-    WaitSecs(warmupTimeSec);
+    pause(warmupTimeSec);
     
     if (options.verbose)
         fprintf('Screen has been warmed up for (%d) minutes! \n',options.warmupTimeMin);
