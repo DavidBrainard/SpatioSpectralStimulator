@@ -8,6 +8,8 @@
 % History:
 %    03/29/22 dhb, smo  - Add in analysis.
 %    03/31/22 smo       - Made the part of calculation of k as a function.
+%    05/05/22 smo       - Added an option to load power meter data in a
+%                         general file name.
 
 %% Initialize.
 clear; close all;
@@ -18,7 +20,8 @@ projectorModeNormal = true;
 powerMeterWl = 550;
 VERBOSE = true;
 
-POWERDATASET = 3;
+% Set this number to 0 if you are not willing to use Dataset 1,2,3. 
+POWERDATASET = 0;
 
 %% Load spectrum data here.
 DEVICE = 'PR670';
@@ -42,6 +45,8 @@ switch POWERDATASET
     case 2
         olderDate = 2;
     case 3
+        olderDate = 0;
+    otherwise
         olderDate = 0;
 end
 
@@ -125,6 +130,17 @@ switch POWERDATASET
         powerMeterAllWatt = readFile;
         powerMeterWhiteWatt = powerMeterAllWatt(1,:);
         powerMeterWatt = powerMeterAllWatt(2:end,:);
+        
+    otherwise
+        % Load the power meter data in general file name.
+        if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
+            testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
+            testFilename = GetMostRecentFileName(testFiledir,sprintf('PowerMeterData_%s_%s',DEVICE,projectorMode),'olderDate',olderDate);
+            powerData = load(testFilename);
+            powerMeterWatt = powerData.~~;
+        else
+            error('Cannot find data file');
+        end
 end
 
 % Match the power meter array size.
