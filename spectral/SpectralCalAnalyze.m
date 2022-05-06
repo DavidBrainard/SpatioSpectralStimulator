@@ -23,7 +23,7 @@ end
 
 %% Load output of SpectralCalCheck
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    olderDate = 1;
+    olderDate = 0;
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
     theCheckData = load(testFilename);
@@ -226,15 +226,23 @@ contrastResidual = theCheckData.ptCldScreenContrastMeasuredCheckCal -theCheckDat
 
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
+    
     % All contrast test points.
-    plot(theCheckData.desiredContrastCheckCal(pp,:),contrastResidual(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(theCheckData.desiredContrastCheckCal(pp,:),zeros(1,size(theCheckData.desiredContrastCheckCal,2)),[theColors(pp) 'o'],'MarkerSize',18);   
+    desiredContrast = theCheckData.desiredContrastCheckCal;
     
-    % Zero contrast.
-    plot(theCheckData.desiredContrastCheckCal(pp,1),contrastResidual(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(theCheckData.desiredContrastCheckCal(pp,1),zeros(1,1),'ko','MarkerSize',18);
+    % As the desired S cone contrasts are all zeros, so we set this field
+    % with desired L cone contrast.
+    desiredContrast(3,:) = desiredContrast(1,:);
     
-    % Reference horizontal line.
+    % Plot the contrast residual here.
+    plot(desiredContrast(pp,:),contrastResidual(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(desiredContrast(pp,:),zeros(1,size(theCheckData.desiredContrastCheckCal,2)),[theColors(pp) 'o'],'MarkerSize',18);   
+    
+    % Plot the zero contrast for the reference here.
+    plot(desiredContrast(pp,1),contrastResidual(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(desiredContrast(pp,1),zeros(1,1),'ko','MarkerSize',18);
+    
+    % Draw the reference horizontal line.
     plot([-1 1],[0 0],'k');
     
     xlim([-xAxisLim xAxisLim]);
