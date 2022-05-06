@@ -38,7 +38,7 @@ arbitraryBlack = 0.05;
 % Choose which device to use within [PR670, powermeter].
 DEVICE = 'powermeter';
 projectorModeNormal = false;
-powerMeterWaitTimeSec = 10;
+powerMeterWaitTimeSec = 20;
 VERBOSE = true;
 
 % Make a string for save file name.
@@ -75,19 +75,8 @@ end
 
 % Display timer progress.
 for tt = 1:initialDelaySec
-    fprintf('Timer counting: (%d/%d) seconds...\n',tt,initialDelaySec);
+    fprintf('Measurement starts in (%d/%d) seconds...\n',tt,initialDelaySec);
     pause(1);
-end
-
-% Power meter turn on timer. You should turn on the power meter program as
-% soon as this timer count starts.
-if (strcmp(DEVICE,'powermeter'))
-    disp('Now start power meter measurement on the program!');
-    halfPowerMeterWaitTimeSec = powerMeterWaitTimeSec/2;
-    for tt = 1:halfPowerMeterWaitTimeSec
-        fprintf('Timer counting: (%d/%d) seconds...\n',tt,halfPowerMeterWaitTimeSec);
-        pause(1);
-    end
 end
 
 %% Measure full white.
@@ -100,7 +89,18 @@ switch DEVICE
     case 'PR670'
         spdMeasuredWhite = MeasureSpectroradiometer;
     case 'powermeter'
-        pause(powerMeterWaitTimeSec);
+        % Initial delay to start the power meter program.
+        %
+        % You should turn on the power meter program right after this timer
+        % ends.
+        halfPowerMeterWaitTimeSec = powerMeterWaitTimeSec/2;
+        for tt = 1:halfPowerMeterWaitTimeSec
+            fprintf('Get ready to start power meter program in (%d/%d) seconds...\n',tt,halfPowerMeterWaitTimeSec);
+            pause(1);
+        end
+        
+        disp('Now start power meter measurement on the program!');
+        pause(halfPowerMeterWaitTimeSec);
     otherwise
 end
 disp('White measurement has been complete!');
