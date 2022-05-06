@@ -16,7 +16,7 @@ clear; close all;
 
 %% Set parameters.
 nPrimaries = 3;
-projectorModeNormal = true;
+projectorModeNormal = false;
 powerMeterWl = 550;
 VERBOSE = true;
 
@@ -133,14 +133,15 @@ switch POWERDATASET
         
     otherwise
         % Load the power meter data in general file name.
-        if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
-            testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
-            testFilename = GetMostRecentFileName(testFiledir,sprintf('PowerMeterData_%s_%s',DEVICE,projectorMode),'olderDate',olderDate);
-            powerData = load(testFilename);
-            powerMeterWatt = powerData.~~;
-        else
-            error('Cannot find data file');
-        end
+        nMeasurements = 19;
+        dataRange = append('D16:D',num2str(16+nMeasurements-1));
+        date = '0506';
+        fileName = append(DEVICE,'_',projectorMode,'_',...
+            num2str(powerMeterWl),'nm_',num2str(date),fileType);
+        readFile = readmatrix(fileName, 'Range', dataRange);
+        powerMeterWhiteWatt = readFile(1,:);
+        powerMeterWatt = readFile(2:end,:);
+        
 end
 
 % Match the power meter array size.

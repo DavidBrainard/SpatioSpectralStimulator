@@ -79,10 +79,13 @@ for tt = 1:initialDelaySec
     pause(1);
 end
 
+% Power meter turn on timer. You should turn on the power meter program as
+% soon as this timer count starts.
 if (strcmp(DEVICE,'powermeter'))
     disp('Now start power meter measurement on the program!');
-    halfPowerMeterWaitTimeSec = powerMeterWaitTimeSec
+    halfPowerMeterWaitTimeSec = powerMeterWaitTimeSec/2;
     for tt = 1:halfPowerMeterWaitTimeSec
+        fprintf('Timer counting: (%d/%d) seconds...\n',tt,halfPowerMeterWaitTimeSec);
         pause(1);
     end
 end
