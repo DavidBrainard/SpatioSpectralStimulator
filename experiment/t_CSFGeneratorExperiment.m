@@ -41,7 +41,7 @@ clear; close all;
 
 %% Load data if you want to skip making the images.
 conditionName = 'LminusMSmooth';
-LOADDATA = false;
+LOADDATA = true;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -252,7 +252,7 @@ nullContrast = 0.0;
 theCrossbarTemporalSupportSeconds = sceneParamsStruct.predefinedTemporalSupportCrossbar;
 
 if (noISETBio)
-    nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1};
+    nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1,1};
 end
 
 %% Threshold estimation with QUEST+.
