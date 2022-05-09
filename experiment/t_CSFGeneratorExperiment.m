@@ -39,7 +39,7 @@ clear; close all;
 
 %% Load data if you want to skip making the images.
 conditionName = 'LminusMSmooth';
-LOADDATA = true;
+LOADDATA = false;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -64,9 +64,10 @@ if (~LOADDATA)
     %
     % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
     % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
-    spatialTemporalParams.sineFreqCyclesPerDeg = 18;
+    spatialTemporalParams.sineFreqCyclesPerDeg = 1;
     spatialTemporalParams.gaborSdDeg = 1.5;
     spatialTemporalParams.stimulusSizeDeg = 7;
+    spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
     
     %% Instantiate a sceneEngine
     %
