@@ -101,6 +101,7 @@ experimentParams.autoResponse = false;
 
 sceneParamsStruct.predefinedTemporalSupport = 0.5;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
+sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 
 if (experimentParams.autoResponse)
     autoResponseParams.psiFunc = @qpPFWeibullLog;

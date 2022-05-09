@@ -87,8 +87,10 @@ function dataOut = sceSACCDisplay(sceneEngineOBJ,testContrast,sceneParamsStruct)
 %     t_sceneGeneration, t_thresholdEngine
 
 % History:
-%    01/25/22  dhb, smo  Started on this.
-%    01/26/22  dhb, smo  Wrote version 1.
+%    01/25/22  dhb, smo  - Started on this.
+%    01/26/22  dhb, smo  - Wrote version 1.
+%    05/09/22  smo       - Added an option to make phase shift on gabor
+%                          image.
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
@@ -107,11 +109,15 @@ function dataOut = sceSACCDisplay(sceneEngineOBJ,testContrast,sceneParamsStruct)
     if (isempty(whichContrast))
         error('Contrast requested is not in predefined list');
     end
-
+    
+    % Phase shift.
+    nPhaseShifts = length(sceneParamsStruct.sineImagePhaseShiftDeg);
+    whichPhase = randi(nPhaseShifts,1);    
+    
     % Pick out precomputed items for return
     dataOut.sceneSequence = sceneParamsStruct.predefinedSceneSequences{whichContrast};
     dataOut.temporalSupport = sceneParamsStruct.predefinedTemporalSupport;
-    dataOut.statusReport.RGBimage = sceneParamsStruct.predefinedRGBImages{whichContrast};
+    dataOut.statusReport.RGBimage = sceneParamsStruct.predefinedRGBImages{whichPhase,whichContrast};
 end
 
 function p = generateDefaultParams()
@@ -119,6 +125,7 @@ function p = generateDefaultParams()
         'predefinedContrasts', [], ...              % This can only generate scenes for these contrasts
         'predefinedRGBImages', {}, ...              % Precomputed RGB images for each contrast
         'predefinedSceneSequences', {}, ...         % Precomputed scenes for each contrast           
-        'predefinedTemporalSupport', [] ...         % Common precomputed temporal support
+        'predefinedTemporalSupport', [], ...         % Common precomputed temporal support
+        'sineImagePhaseShiftDeg', [] ...                 % Phase shift on gabor image
     );
 end
