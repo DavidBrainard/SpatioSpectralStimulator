@@ -43,6 +43,8 @@ function [gaborImageObject] = MakeImageSettingsFromPtCld(ptCldObject,screenCalOb
 %                                function.
 %   02/08/22  smo              - Added an option to print out less variable
 %                                saved in the final structure.
+%   05/09/22  smo              - Added an option to make a phase shift on
+%                                sine image.
 
 %% Set parameters.
 arguments
@@ -61,37 +63,40 @@ end
 % max contrast we set up, when it makes the image.  We will call this
 % multiple times to make stimuli of different contrasts.
 nContrastPoints = size(standardGaborCalObject.desiredContrastGaborCal,2);
+nPhaseShifts = size(standardGaborCalObject.desiredContrastGaborCal,1);
 
-for cc = 1:nContrastPoints
-    uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,standardGaborCalObject.desiredContrastGaborCal{cc},ptCldObject.ptCldSettingsCal);
-    
-    % Print out min/max of settings
-    if (options.verbose)
-        fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
+for ss = 1:nPhaseShifts
+    for cc = 1:nContrastPoints
+        uniqueQuantizedSettingsGaborCal = SettingsFromPointCloud(ptCldObject.contrastPtCld,...
+            standardGaborCalObject.desiredContrastGaborCal{ss,cc},ptCldObject.ptCldSettingsCal);
+        
+        % Print out min/max of settings
+        if (options.verbose)
+            fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettingsGaborCal(:)), max(uniqueQuantizedSettingsGaborCal(:)));
+        end
+        
+        % Get contrasts we think we have obtianed
+        uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
+        uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,screenBgExcitations);
+        
+        % Plot of how well point cloud method does in obtaining desired contrats
+        if (options.verbose)
+            figure; clf;
+            desiredContrastGaborCal = cell2mat(standardGaborCalObject.desiredContrastGaborCal);
+            plot(desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
+            axis('square');
+            xlabel('Desired L, M or S contrast');
+            ylabel('Predicted L, M, or S contrast');
+            title('Quantized unique point cloud image method');
+        end
+        
+        % Convert representations we want to take forward to image format. Also, save the results in a structure.
+        if(~options.lightVer)
+            gaborImageObject.uniqueQuantizedContrastGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+            gaborImageObject.desiredContrastGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{ss,cc},stimulusN,stimulusN);
+            gaborImageObject.standardPredictedContrastImage{ss,cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc},stimulusN,stimulusN);
+        end
+        gaborImageObject.standardSettingsGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal{ss,cc},stimulusN,stimulusN);
     end
-    
-    % Get contrasts we think we have obtianed
-    uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
-    uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,screenBgExcitations);
-    
-    % Plot of how well point cloud method does in obtaining desired contrats
-    if (options.verbose)
-        figure; clf;
-        desiredContrastGaborCal = cell2mat(standardGaborCalObject.desiredContrastGaborCal);
-        plot(desiredContrastGaborCal(:),uniqueQuantizedContrastGaborCal(:),'r+');
-        axis('square');
-        xlabel('Desired L, M or S contrast');
-        ylabel('Predicted L, M, or S contrast');
-        title('Quantized unique point cloud image method');
-    end
-    
-    % Convert representations we want to take forward to image format. Also, save the results in a structure.
-    if(~options.lightVer)
-        gaborImageObject.uniqueQuantizedContrastGaborImage{cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
-        gaborImageObject.desiredContrastGaborImage{cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{cc},stimulusN,stimulusN);
-        gaborImageObject.standardPredictedContrastImage{cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{cc},stimulusN,stimulusN);
-    end
-    gaborImageObject.standardSettingsGaborImage{cc} = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal{cc},stimulusN,stimulusN);
 end
-
 end

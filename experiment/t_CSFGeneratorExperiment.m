@@ -33,6 +33,8 @@
 %    04/27/22  smo       - Added a PTB running option for displaying test
 %                          gabor image in either vertical or horizontal
 %                          direction.
+%    05/09/22  smo       - Added an option to make phase shift on gabor 
+%                          image.
 
 %% Initialization
 clear; close all;
@@ -78,7 +80,7 @@ if (~LOADDATA)
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
-    experimentParams.nContrasts = 40;
+    experimentParams.nContrasts = 10;
     experimentParams.measure = false;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;

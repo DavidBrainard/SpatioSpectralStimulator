@@ -81,6 +81,8 @@ function [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimar
 %                                     cloud.
 %   02/08/22  smo                   - Added an option to print out less variable
 %                                     saved in the final structure.
+%   05/09/22  smo                   - Added an option to make a phase shift
+%                                     on sine image.
 
 %% Set parameters.
 arguments
@@ -189,37 +191,43 @@ end
 % factor.  We work cal format here as that makes color transforms
 % efficient.
 nContrastPoints = size(colorDirectionParams.spatialGaborTargetContrast,2);
+nPhaseShifts = length(rawMonochromeContrastGaborCal);
 
-% Make a loop for the number of target gabor contrasts.
-for cc = 1:nContrastPoints
-    desiredContrastGaborCal = colorDirectionParams.spatialGaborTargetContrast(cc) * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastGaborCal;
+% Make a loop for the number of target gabor contrasts and also the number
+% of phase shifts.
+for ss = 1:nPhaseShifts
+    rawMonochromeContrastGaborCalSingle = rawMonochromeContrastGaborCal{ss};
     
-    % Convert cone contrast to excitations
-    desiredExcitationsGaborCal = ContrastToExcitation(desiredContrastGaborCal,screenBgExcitations);
-    
-    % Get primaries using standard calibration code, and desired spd without
-    % quantizing.
-    standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsGaborCal);
-    desiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
-    
-    % Gamma correct and quantize (if gamma method set to 2 above; with gamma
-    % method set to zero there is no quantization).  Then convert back from
-    % the gamma corrected settings.
-    standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
-    standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
-    standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
-    standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
-    
-    % Save the results in a struct.
-    standardGaborCalObject.desiredContrastGaborCal{cc} = desiredContrastGaborCal;
-    standardGaborCalObject.standardSettingsGaborCal{cc} = standardSettingsGaborCal;
-    if (~options.lightVer)
-        standardGaborCalObject.desiredExcitationsGaborCal{cc} = desiredExcitationsGaborCal;
-        standardGaborCalObject.standardPrimariesGaborCal{cc} = standardPrimariesGaborCal;
-        standardGaborCalObject.desiredSpdGaborCal{cc} = desiredSpdGaborCal;
-        standardGaborCalObject.standardPredictedPrimariesGaborCal{cc} = standardPredictedPrimariesGaborCal;
-        standardGaborCalObject.standardPredictedExcitationsGaborCal{cc} = standardPredictedExcitationsGaborCal;
-        standardGaborCalObject.standardPredictedContrastGaborCal{cc} = standardPredictedContrastGaborCal;
+    for cc = 1:nContrastPoints
+        desiredContrastGaborCal = colorDirectionParams.spatialGaborTargetContrast(cc) * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastGaborCalSingle;
+        
+        % Convert cone contrast to excitations
+        desiredExcitationsGaborCal = ContrastToExcitation(desiredContrastGaborCal,screenBgExcitations);
+        
+        % Get primaries using standard calibration code, and desired spd without
+        % quantizing.
+        standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsGaborCal);
+        desiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
+        
+        % Gamma correct and quantize (if gamma method set to 2 above; with gamma
+        % method set to zero there is no quantization).  Then convert back from
+        % the gamma corrected settings.
+        standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
+        standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
+        standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
+        standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
+        
+        % Save the results in a struct.
+        standardGaborCalObject.desiredContrastGaborCal{ss,cc} = desiredContrastGaborCal;
+        standardGaborCalObject.standardSettingsGaborCal{ss,cc} = standardSettingsGaborCal;
+        if (~options.lightVer)
+            standardGaborCalObject.desiredExcitationsGaborCal{ss,cc} = desiredExcitationsGaborCal;
+            standardGaborCalObject.standardPrimariesGaborCal{ss,cc} = standardPrimariesGaborCal;
+            standardGaborCalObject.desiredSpdGaborCal{ss,cc} = desiredSpdGaborCal;
+            standardGaborCalObject.standardPredictedPrimariesGaborCal{ss,cc} = standardPredictedPrimariesGaborCal;
+            standardGaborCalObject.standardPredictedExcitationsGaborCal{ss,cc} = standardPredictedExcitationsGaborCal;
+            standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc} = standardPredictedContrastGaborCal;
+        end
     end
 end
 end

@@ -65,6 +65,8 @@ function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioCo
 %                         which takes time and memory a lot. Also, Added an
 %                         option to print out less variable saved in the
 %                         final structure.
+%    05/09/22  smo        Added an option to make a phase shift on gabor
+%                         image.
 
 %% Set parameters.
 arguments
