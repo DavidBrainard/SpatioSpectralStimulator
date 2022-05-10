@@ -12,12 +12,15 @@
 %    04/26/22   smo   Corrected the calculation method.
 %    04/27/22   smo   Added the complete data of the values for both
 %                     vertical and horizontal references.
+%    05/10/22   smo   Added an option to calculate the FOV by reading the
+%                     scale on the referece (ruler) directly.
 
 %% Initialize.
 clear; close all;
 
 %% Set parameters.
 VERBOSE = true;
+CALCULATIONMETHOD = 'direct';
 
 %% Load target image and get size in pixels.
 imgFileName = 'infinity_DMD.tiff';
@@ -60,7 +63,7 @@ end
 %
 % The length is the end-to-end of either vertical or horizontal camera
 % captured image.
-DATE = '0426';
+DATE = '0427';
 
 switch DATE
     case '0426'
@@ -97,24 +100,57 @@ switch whichSideRef
         end
 end
 
+% Target image length in inch.
+if (strcmp(CALCULATIONMETHOD,'indirect'))
+    targetImgHorizontalLeftInch = targetImgHorizontalLeftPixel * inchPerPixel;
+    targetImgHorizontalRightInch = targetImgHorizontalRightPixel * inchPerPixel;
+    
+    targetImgVerticalTopInch = targetImgVerticalLeftPixel * inchPerPixel;
+    targetImgVerticalBottomInch = targetImgVerticalRightPixel * inchPerPixel;
+end
+
+%% Read the scale directly from the reference image.
+%
+% Read the reference image here.
+refDir = 'horizontal';
+refDate = '2022-04-27';
+fileType = '.tiff';
+fileName = append(refDir,'_',refDate,fileType);
+refImg = imread(fileName);
+
+% Plot it.
+figure;
+imshow(refImg); hold on;
+
+% Mark the DMD outline on the reference image.
+rectangle('Position', targetImgCords, 'EdgeColor','r', 'LineWidth', 3);
+
+% Mark the center of image.
+plot(imgCenter(2),imgCenter(1),'yo','MarkerFaceColor','y','MarkerSize',12);
+line([0 imgSize(2)],[imgCenter(1) imgCenter(1)],'color','yellow','linewidth',2)
+line([imgCenter(2) imgCenter(2)],[0 imgSize(1)],'color','yellow','linewidth',2)
+legend('Center of the image','fontsize',15);
+
+% Target image length in inch. You can read the scale on the ruler directly
+% in the reference image.
+if (strcmp(CALCULATIONMETHOD,'direct'))
+    targetImgHorizontalLeftInch = 74 - 32.3;
+    targetImgHorizontalRightInch = 121.4 - 74;
+    
+    targetImgVerticalTopInch = 46.5 - 18.6;
+    targetImgVerticalBottomInch = 68.6 - 46.5;
+end
+
 %% Calculate the FOV of the target in degrees.
 %
 % Horizontal.
-targetImgHorizontalLeftInch = targetImgHorizontalLeftPixel * inchPerPixel;
-targetImgHorizontalRightInch = targetImgHorizontalRightPixel * inchPerPixel;
-
 targetImgHorizontalDegLeft = rad2deg(atan(targetImgHorizontalLeftInch/distanceInch));
 targetImgHorizontalDegRight = rad2deg(atan(targetImgHorizontalRightInch/distanceInch));
-
 targetImgHorizontalDeg = targetImgHorizontalDegLeft + targetImgHorizontalDegRight;
 
 % Vertical.
-targetImgVerticalLeftInch = targetImgVerticalLeftPixel * inchPerPixel;
-targetImgVerticalRightInch = targetImgVerticalRightPixel * inchPerPixel;
-
-targetImgVerticalDegLeft = rad2deg(atan(targetImgVerticalLeftInch/distanceInch));
-targetImgVerticalDegRight = rad2deg(atan(targetImgVerticalRightInch/distanceInch));
-
+targetImgVerticalDegLeft = rad2deg(atan(targetImgVerticalTopInch/distanceInch));
+targetImgVerticalDegRight = rad2deg(atan(targetImgVerticalBottomInch/distanceInch));
 targetImgVerticalDeg = targetImgVerticalDegLeft + targetImgVerticalDegRight;
 
 % Combined.
