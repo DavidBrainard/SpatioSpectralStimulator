@@ -37,8 +37,8 @@ arbitraryBlack = 0.05;
 
 % Choose which device to use within [PR670, powermeter].
 DEVICE = 'powermeter';
-projectorModeNormal = false;
-powerMeterWaitTimeSec = 20;
+projectorModeNormal = true;
+powerMeterWaitTimeSec = 3;
 VERBOSE = true;
 
 % Make a string for save file name.
@@ -98,9 +98,10 @@ switch DEVICE
             fprintf('Get ready to start power meter program in (%d/%d) seconds...\n',tt,halfPowerMeterWaitTimeSec);
             pause(1);
         end
-        
         disp('Now start power meter measurement on the program!');
-        pause(halfPowerMeterWaitTimeSec);
+        
+        % Make a delay for white measurement.
+        pause(powerMeterWaitTimeSec);
     otherwise
 end
 disp('White measurement has been complete!');

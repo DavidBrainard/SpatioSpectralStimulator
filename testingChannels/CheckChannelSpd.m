@@ -16,7 +16,7 @@ clear; close all;
 
 %% Set parameters.
 nPrimaries = 3;
-projectorModeNormal = false;
+projectorModeNormal = true;
 powerMeterWl = 550;
 VERBOSE = true;
 
@@ -135,7 +135,7 @@ switch POWERDATASET
         % Load the power meter data in general file name.
         nMeasurements = 19;
         dataRange = append('D16:D',num2str(16+nMeasurements-1));
-        date = '0506';
+        date = '0510';
         fileName = append(DEVICE,'_',projectorMode,'_',...
             num2str(powerMeterWl),'nm_',num2str(date),fileType);
         readFile = readmatrix(fileName, 'Range', dataRange);
@@ -172,6 +172,9 @@ if (VERBOSE)
     xlabel('Wavelength (nm)','FontSize',15);
     ylabel('Relative Spectral Power','FontSize',15);
 end
+
+
+powerMeterWatt = [0.141 0.156 0.026 0.200 0.128 0.193; 0.114 0.120 0.019 0.202 0.122 0.180; 0.110 0.119 0.013 0.185 0.110 0.180]' .* 10^(-6);
 
 %% Find scale factors for each measurement
 %
