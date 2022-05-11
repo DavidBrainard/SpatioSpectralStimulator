@@ -135,13 +135,12 @@ switch POWERDATASET
         % Load the power meter data in general file name.
         nMeasurements = 19;
         dataRange = append('D16:D',num2str(16+nMeasurements-1));
-        date = '0510';
+        date = '0511';
         fileName = append(DEVICE,'_',projectorMode,'_',...
             num2str(powerMeterWl),'nm_',num2str(date),fileType);
         readFile = readmatrix(fileName, 'Range', dataRange);
         powerMeterWhiteWatt = readFile(1,:);
         powerMeterWatt = readFile(2:end,:);
-        
 end
 
 % Match the power meter array size.
@@ -173,8 +172,41 @@ if (VERBOSE)
     ylabel('Relative Spectral Power','FontSize',15);
 end
 
-
+% Hand-written for now. Power meter is somehow measures different value
+% when it was measured on automatic mode (as of 05/11/22).
+%
+% Measured each channel every 5 seconds interval display time.
+% 
+% 0510 Normal mode / 550 nm / ch 2 4 6 8 10 12
 powerMeterWatt = [0.141 0.156 0.026 0.200 0.128 0.193; 0.114 0.120 0.019 0.202 0.122 0.180; 0.110 0.119 0.013 0.185 0.110 0.180]' .* 10^(-6);
+
+% 0511 Normal mode / 550 nm / ch 2 4 6 8 10 12 - 1st
+powerMeterWatt = [0.139 0.151 0.023 0.195 0.112 0.184; 0.111 0.115 0.017 0.200 0.105 0.170; 0.105 0.114 0.010 0.180 0.095 0.170]' .* 10^(-6);
+    
+% 0511 Normal mode / 550 nm / ch 2 4 6 8 10 12 - 2nd
+powerMeterWatt = [0.140 0.153 0.023 0.194 0.113 0.185 ;0.111 0.115 0.016 0.200 0.105 0.173; 0.106 0.114 0.010 0.180 0.097 0.172]' .* 10^(-6);
+
+% 0511 Normal mode / 550 nm / ch 2 4 6 8 10 12 - 3rd
+powerMeterWatt = [0.138 0.153 0.022 0.194 0.123 0.190 ; 0.111 0.115 0.015 0.200 0.117 0.175; 0.105 0.115 0.010 0.180 0.103 0.175]' .* 10^(-6);
+powerMeterWhiteWatt = 6.42 * 10^(-6);
+
+% 0511 Steady-on mode / 550 nm / ch 2 4 6 8 10 12 - 1st
+powerMeterWatt = [0.425 0.463 0.081 0.587 0.310 0.557; 0.349 0.358 0.060 0.611 0.274 0.505; 0.334 0.356 0.040 0.550 0.255 0.500]' .* 10^(-6);
+powerMeterWhiteWatt = 18.6 * 10^(-6);
+
+% 0511 Steady-on mode / 550 nm / ch 2 4 6 8 10 12 -2nd
+powerMeterWatt = [0.428 0.468 0.081 0.591 0.345 0.572; 0.348 0.359 0.060 0.612 0.321 0.525; 0.333 0.357 0.040 0.547 0.288 0.518]' .* 10^(-6);
+powerMeterWhiteWatt = 20.0 * 10^(-6); % After measuring the single channels
+
+% 0511 Steady-on mode / 550 nm / ch 2 4 6 8 10 12 -3rd
+powerMeterWatt = [0.420 0.454 0.082 0.570 0.256 0.520; 0.345 0.353 0.060 0.610 0.230 0.468; 0.330 0.353 0.040 0.550 0.232 0.482]' .* 10^(-6);
+powerMeterWhiteWatt = 18.6 * 10^(-6); % It is 19.4 micro watt right after measuring the single channels. Which means it increased. 
+
+% After warming up with steady-on mode, back to normal mode and measure it
+% to see if we need additional warm-up time when we switch the projector
+% mode between normal and steady-on modes.
+powerMeterWatt = [0.140 0.153 0.027 0.193 0.095 0.180; 0.115 0.116 0.020 0.203 0.086 0.164; 0.110 0.118 0.013 0.183 0.082 0.165]' .* 10^(-6);
+powerMeterWhiteWatt = 6.3 * 10^(-6);
 
 %% Find scale factors for each measurement
 %
@@ -187,6 +219,10 @@ for pp = 1:nPrimaries
         k(cc,pp) = SpdToPower(prData.spdMeasured{pp}(:,cc), powerMeterWatt(cc,pp), 'targetWl', powerMeterWl)';
     end
 end
+
+% Mean k values.
+kAverage = mean2(k);
+fprintf('Average k value is %.4f \n',kAverage);
 
 % White.
 nWhites = length(powerMeterWhiteWatt);
