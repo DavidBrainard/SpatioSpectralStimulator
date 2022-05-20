@@ -58,7 +58,11 @@ xlabel('Wavelength (nm)');
 ylabel('Power');
 
 %% Convert spectrum to power at the cornea
-k = GetWithDefault('Enter PR-670 to relative to mW corneal power k factor (mW units)',0.0100);
+%
+% Default k-factor here is for 3 mm pupil. Slightly smaller
+% than the 0.01 we got for the 4 mm pupil.  A pupil size
+% dependence seems plausible.
+k = GetWithDefault('Enter PR-670 to relative to mW corneal power k factor (mW units)',0.0089);
 spd_w = k*spd_w;
 spd_blk = k*spd_blk;
 mWToUW = 1000;
