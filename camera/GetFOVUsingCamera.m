@@ -112,7 +112,7 @@ end
 %% Read the scale directly from the reference image.
 %
 % Read the reference image here.
-refDir = 'horizontal';
+refDir = whichSideRef;
 refDate = '2022-04-27';
 fileType = '.tiff';
 fileName = append(refDir,'_',refDate,fileType);
