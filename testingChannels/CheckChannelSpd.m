@@ -183,13 +183,15 @@ switch POWERDATASET
         powerMeterWatt = readFile(2:end,:);
 end
 
-
+% These are some dummy data, but I want to keep it for now.
+%
 % 0510 Normal mode / 550 nm / ch 2 4 6 8 10 12
 % powerMeterWatt = [0.141 0.156 0.026 0.200 0.128 0.193; 0.114 0.120 0.019 0.202 0.122 0.180; 0.110 0.119 0.013 0.185 0.110 0.180]' .* 10^(-6);
-
-% % After warming up with steady-on mode, back to normal mode and measure it
-% % to see if we need additional warm-up time when we switch the projector
-% % mode between normal and steady-on modes.
+%
+% After warming up with steady-on mode, back to normal mode and measure it
+% to see if we need additional warm-up time when we switch the projector
+% mode between normal and steady-on modes.
+%
 % powerMeterWatt = [0.140 0.153 0.027 0.193 0.095 0.180; 0.115 0.116 0.020 0.203 0.086 0.164; 0.110 0.118 0.013 0.183 0.082 0.165]' .* 10^(-6);
 % powerMeterWhiteWatt = 6.3 * 10^(-6);
 
