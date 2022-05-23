@@ -25,7 +25,7 @@
 clear; close all
 
 %% Define the wavelength spacing that we will work with
-S = [380 1 600];
+S = [380 1 401];
 if (S(2) ~= 1)
     error('We are assuming 1 nm spacing');
 end
@@ -38,10 +38,12 @@ projectName = 'SpatioSpectralStimulator';
 mode = 'Normal';
 LEDInFileName = ['FullWhite' mode 'SPD'];
 LEDOutFileName = ['FullWhite' mode 'SPD_UW'];
+XLSOutFileName = ['FullWhite' mode];
 LEDMeasDateStr = '2022-04-19';
 LEDSpectraDir = fullfile(getpref(projectName,'CheckDataFolder'));
 inFilename = fullfile(LEDSpectraDir,append(LEDInFileName,'_',LEDMeasDateStr,'.mat'));
 outFilename = fullfile(LEDSpectraDir,append(LEDOutFileName,'_',LEDMeasDateStr,'.mat'));
+xlsFilename = fullfile(LEDSpectraDir,append(XLSOutFileName,'_',LEDMeasDateStr,'.xlsx'));
 
 %% Get full on spectrum
 white = load(inFilename);
@@ -101,7 +103,9 @@ switch (LENGTHORAREA)
         rawStimulusSideDegIn = GetWithDefault('Enter circular stimulus diameter in deg',1.8);
         stimulusAreaDegrees2 = pi*(rawStimulusSideDegIn/2)^2;
     case 3
-        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',7.44*13.30);
+        %stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',7.44*13.30);
+        %stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',7.6344*13.592);
+        stimulusAreaDegrees2 = GetWithDefault('Enter stimulus area in square degrees',7.6*13.511);
 end
 
 % Utility calculations
@@ -136,12 +140,14 @@ switch (RETORCORN)
         rawPowerIntoEyeIn = GetWithDefault('Enter power entering eye in microwatts',maxSpdPowerUW);
         rawCornIrradianceMicrowattsPerCm2In = rawPowerIntoEyeIn/pupilAreaCm2;
         rawRadianceMicrowattsPerCm2Sr = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In,stimulusAreaDegrees2);
+        %rawRadianceMicrowattsPerCm2Sr1 = CornIrradianceAndDegrees2ToRadiance(rawCornIrradianceMicrowattsPerCm2In/stimulusAreaDegrees2,1);
         rawRetIrradianceMicrowattsPerCm2In = RadianceAndPupilAreaEyeLengthToRetIrradiance(rawRadianceMicrowattsPerCm2Sr,S,pupilAreaCm2,eyeLengthCm);  
 end
 clear rawRadianceMicrowattsPerCm2Sr;
 
 %% Save out the corneal power in uW/nm as well as pupil diameter in mm
-save(outFilename,'wls','maxSpdUW','pupilDiamMm','stimulusAreaDegrees2');
+maxSpdUWPerCm2 = maxSpdUW/(pi*(pupilDiamMm/20)^2);
+save(outFilename,'wls','maxSpdUW','maxSpdUWPerCm2','pupilDiamMm','stimulusAreaDegrees2');
 
 %% Pupil adjustment factor for Ansi MPE 
 mpePupilDiamMm = 3;
@@ -161,6 +167,8 @@ end
 %
 % We want sum over wavelength to be equal to the specified value
 retIrradianceMicrowattsPerCm2In = rawRetIrradianceMicrowattsPerCm2In*maxSpdUW/sum(maxSpdUW);
+retIrradianceMicrowattsPerDeg2In = retIrradianceMicrowattsPerDeg2Check*maxSpdUW/sum(maxSpdUW);
+retIrradianceWattsPerDeg2In = retIrradianceMicrowattsPerDeg2In/1e6;
 
 %% Convert to some other units for convenience
 retIrradianceMilliwattsPerCm2In = retIrradianceMicrowattsPerCm2In*(10^-3);
@@ -170,6 +178,12 @@ retIrradianceWattsPerUm2In = retIrradianceWattsPerCm2In*(10^-8);
 %% Load CIE functions.   
 load T_xyz1931
 T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
+
+% Compute photopic trolands from retinal irradiance
+for ii = 1:length(wls)
+    trolandsCheckSpd(ii) = PowerToTrolands(wls(ii),retIrradianceWattsPerDeg2In(ii),S,T_xyz/683);
+end
+trolandsCheck = sum(trolandsCheckSpd);
 
 %% Load cone spectral sensitivities
 load T_cones_ss2
@@ -256,7 +270,11 @@ switch (RETORCORN)
 end
 cornealIrradianceWattsPerM2 = cornealIrradianceMicrowattsPerCm2*(10^-6)*(10^4);
 cornealIrradianceWattsPerCm2 = (10.^-4)*cornealIrradianceWattsPerM2;
+cornealIrradianceUWattsPerCm2 = (10.^6)*cornealIrradianceWattsPerCm2;
 cornealIrradianceQuantaPerCm2Sec = EnergyToQuanta(S,cornealIrradianceWattsPerCm2);
+if (max(abs(maxSpdUWPerCm2-cornealIrradianceUWattsPerCm2)) > 1e-10)
+    error('Inconsistency in corneal irradiance');
+end
 
 %% Report on stimulus
 fprintf('\n');
@@ -463,4 +481,7 @@ stimulusDurationForISOMPESecs = 60*120;
 fprintf('  * ISO MPE Analysis\n');
 ISO2007MPEPrintAnalysis(IsOverLimit,ISO2007MPEStruct);
 fprintf('  * Assumed duration seconds %0.1f, hours %0.1f\n',stimulusDurationForISOMPESecs,stimulusDurationForISOMPESecs/3600);
+
+%% Write xlsx file
+writematrix([wls maxSpdUW maxSpdUWPerCm2],xlsFilename);
 
