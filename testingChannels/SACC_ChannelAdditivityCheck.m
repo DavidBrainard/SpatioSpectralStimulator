@@ -9,7 +9,7 @@
 %    12/15/21 smo   Add measurement part. It used to contain only read
 %                   the data and plot it.
 %    12/20/21 smo   Make it clearer and simpler.
-%    01/07/22 smo   Added the option skipping the measurement. 
+%    01/07/22 smo   Added the option skipping the measurement.
 
 %% Initialize.
 clear all; close all;
@@ -42,13 +42,13 @@ MEASURE = false;
 if (MEASURE)
     OpenPlainScreen([1 1 1]);
     OpenSpectroradiometer;
-    
+
     %% Measure an dark ambient setting for black correction.
     channelSettingsBlack = ones(nChannels,nPrimaries) * arbitraryBlack;
     SetChannelSettings(channelSettingsBlack);
     darkAmbient = MeasureSpectroradiometer;
     disp('Dark ambient measurement complete!');
-    
+
     %% Further measurement happens from here.
     %
     % Set the TESTTYPE either 'within' or 'across' from the above.
@@ -62,15 +62,15 @@ if (MEASURE)
                 channelSettingsSingle = ones(nChannels,nPrimaries) .* arbitraryBlack;
                 channelSettingsSingle(cc,:) = channelIntensity;
                 SetChannelSettings(channelSettingsSingle);
-                
+
                 % Measure it.
                 spdSingle(:,cc) = MeasureSpectroradiometer;
                 fprintf('Single channel measurement complete! - (%d/%d)\n',cc,nChannels);
-                
+
                 % Black correction here.
                 spdSingle(:,cc) = spdSingle(:,cc) - darkAmbient;
             end
-            
+
             %% Generate and measure test random spectrum.
             %
             % Make index for creating random spectrum.
@@ -78,7 +78,7 @@ if (MEASURE)
                 % Randomize the channels to turn on.
                 idxTestSamplePeaks(:,ii) = randsample([1:1:nChannels],nTestSamplePeaks);
             end
-            
+
             % Measure it.
             for ii = 1:nTestSamples
                 channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
@@ -88,11 +88,11 @@ if (MEASURE)
                 SetChannelSettings(channelSettingsTestSample);
                 spdTestSample(:,ii) = MeasureSpectroradiometer;
                 fprintf('Test sample measurement complete! - (%d/%d)\n',ii,nTestSamples);
-                
+
                 % Black correction here.
                 spdTestSample(:,ii) = spdTestSample(:,ii) - darkAmbient;
             end
-            
+
             % Calculate the sum of spectra matching the combinations of test samples.
             for ii = 1:nTestSamples
                 for pp = 1:nTestSamplePeaks
@@ -100,7 +100,7 @@ if (MEASURE)
                 end
                 spdTestSampleSum(:,ii) = sum(spdTestSampleSumTemp,2);
             end
-            
+
         case 'across'
             %% Measure single spectrum.
             for pp = 1:nPrimaries
@@ -110,16 +110,16 @@ if (MEASURE)
                     channelSettingsSingle = ones(nChannels,nPrimaries) * arbitraryBlack;
                     channelSettingsSingle(cc,pp) = channelIntensity;
                     SetChannelSettings(channelSettingsSingle);
-                    
+
                     % Measure it.
                     spdSingleTemp = MeasureSpectroradiometer;
                     fprintf('Single channel measurement complete! - screen primary:%d / channel:(%d/%d)\n',pp,cc,nChannels);
-                    
+
                     % Black correction here.
                     spdSingle(pp,cc,:) = spdSingleTemp - darkAmbient;
                 end
             end
-            
+
             %% Generate and measure test random spectrum.
             %
             % Make index for creating random spectrum.
@@ -127,24 +127,24 @@ if (MEASURE)
                 % Randomize the channels to turn on.
                 idxTestSamplePeaks(:,ii) = randsample([1:1:nChannels],nTestSamplePeaks);
             end
-            
+
             % Measure it.
             for ii = 1:nTestSamples
                 channelSettingsTestSample = ones(nChannels, nPrimaries) * arbitraryBlack;
-                
+
                 % Set the peak here.
                 for pp = 1:nPrimaries
                     channelSettingsTestSample(idxTestSamplePeaks(pp,ii),pp) = channelIntensity;
                 end
-                
+
                 SetChannelSettings(channelSettingsTestSample);
                 spdTestSample(:,ii) = MeasureSpectroradiometer;
                 fprintf('Test sample measurement complete! - (%d/%d)\n',ii,nTestSamples);
-                
+
                 % Black correction here.
                 spdTestSample(:,ii) = spdTestSample(:,ii) - darkAmbient;
             end
-            
+
             % Calculate the sum of spectra matching the combinations of test samples.
             for ii = 1:nTestSamples
                 for pp = 1:nPrimaries
@@ -186,14 +186,22 @@ spectralLocus = XYZToxyY(T_xyz);
 spectralLocus(:,end+1) = spectralLocus(:,1);
 
 %% Plot it.
+%
+% All test colors spectra.
 figure;
 for tt = 1:nTestSamples
     subplot(5,nTestSamples/5,tt); hold on;
-    plot(wls,spdTestSample(:,tt),'k-','LineWidth',3)
+    plot(wls,spdTestSample(:,tt),'k-','LineWidth',2)
     plot(wls,spdTestSampleSum(:,tt),'r--','LineWidth',2)
     title(append('Test',num2str(tt)));
     ylim([0 max(max([spdTestSample spdTestSampleSum]))]);
 end
+
+% One spectrum.
+numTestSpectrum = 1;
+figure; hold on;
+plot(wls,spdTestSample(:,numTestSpectrum),'k-','LineWidth',2)
+plot(wls,spdTestSampleSum(:,numTestSpectrum),'r--','LineWidth',2)
 xlabel('Wavelength (nm)')
 ylabel('Spectral irradiance')
 legend('Measurement','Sum result','location','northeast')
@@ -201,12 +209,18 @@ legend('Measurement','Sum result','location','northeast')
 % Luminance.
 figure; hold on;
 numTestSamples = linspace(1,nTestSamples,nTestSamples);
-plot(numTestSamples,xyYTestSample(3,:),'k.','markersize',13);
-plot(numTestSamples,xyYTestSampleSum(3,:),'r+','markersize',12,'linewidth',1);
-xlabel('Test point')
-ylabel('Luminance (cd/m2)')
-title('Luminance level comparison between measurement and sum result')
-legend('Measurement','Sum result','location','southeast');
+axisLimit = round(max([xyYTestSample(3,:) xyYTestSampleSum(3,:)], [], 'all'))+1;
+plot(xyYTestSample(3,:), xyYTestSampleSum(3,:),'r.','markersize',15);
+plot([0 axisLimit],[0 axisLimit],'k-');
+xlabel('Luminance - Measurement (cd/m2)')
+ylabel('Luminance - Sum result (cd/m2)')
+ylim([0 axisLimit]);
+xlim([0 axisLimit]);
+yticks([0:1:axisLimit]);
+xticks([0:1:axisLimit]);
+axis('square');
+% title('Luminance level comparison between measurement and sum result')
+legend('Test spectra','45-deg line','location','southeast');
 
 % CIE (x,y) chromaticity
 figure; hold on;
@@ -217,7 +231,10 @@ xlabel('CIE x')
 ylabel('CIE y')
 xlim([0 1]);
 ylim([0 1]);
-title('Comparison between measured and sum result on the x,y chromaticity')
+yticks([0:0.2:1]);
+xticks([0:0.2:1]);
+axis('square');
+% title('Comparison between measured and sum result on the x,y chromaticity')
 legend('Measurement','Sum result');
 
 %% Save the data.
@@ -226,7 +243,7 @@ legend('Measurement','Sum result');
 if (MEASURE)
     CloseScreen;
     CloseSpectroradiometer;
-    
+
     % Save data with the name containing dayTimestr.
     if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
