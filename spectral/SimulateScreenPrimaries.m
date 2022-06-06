@@ -13,9 +13,10 @@
 clear; close all;
 
 %% Load the spectum data here.
+calFilename = 'SACCPrimary3';
 if (ispref('BrainardLabToolbox','CalDataFolder'))
     testFiledir = getpref('BrainardLabToolbox','CalDataFolder');
-    allCalData = load(fullfile(testFiledir,'SACCPrimary1'));
+    allCalData = load(fullfile(testFiledir,calFilename));
 else
     error('Cannot find data file');
 end
@@ -28,6 +29,13 @@ calData = allCalData.cals{mostRecentIndex};
 B_channels = calData.processedData.P_device;
 S = calData.rawData.S;
 wls = SToWls(S);
+
+% Plot all channels.
+figure; hold on;
+plot(wls,B_channels);
+xlabel('Wavelength (nm)');
+ylabel('Spectral power distribution');
+xlim([380 780]);
 
 %% Load CMFs here.
 %
@@ -47,7 +55,7 @@ B_monitor = SplineSpd(SToWls(S_monitor),B_monitor,wls);
 
 %% Make a test display with modulated primaries.
 nChannels = size(B_channels,2);
-testDisplayNum = 3;
+testDisplayNum = 1;
 switch testDisplayNum
     case 1
         primary1Channels = [12 13 15 16]; % No 14
@@ -61,6 +69,7 @@ switch testDisplayNum
         primary1Channels = [8 9 10 11 12 13 15 16]; % No 14
         primary2Channels = [4 5 6 7];
         primary3Channels = [1 2 3];
+    otherwise
 end
 
 % Set test display primaries.
@@ -68,6 +77,17 @@ B_primary1 = sum(B_channels(:,primary1Channels),2);
 B_primary2 = sum(B_channels(:,primary2Channels),2);
 B_primary3 = sum(B_channels(:,primary3Channels),2);
 B_testDisplay = [B_primary1 B_primary2 B_primary3];
+
+% Plot the modulated primaries.
+figure; hold on;
+plot(wls,B_testDisplay(:,1),'r-');
+plot(wls,B_testDisplay(:,2),'g-');
+plot(wls,B_testDisplay(:,3),'b-');
+xlabel('Wavelength (nm)');
+ylabel('Spectral power distribution');
+xlim([380 780]);
+legend('Primary1','Primary2','Primary3');
+% title('Test display primaries');
 
 %% Find a desired spectrum.
 %
@@ -85,6 +105,15 @@ targetSpd = M_XYZtoRGB * B_testDisplay';
 % Check if XYZ values were calculated back okay.
 checkXYZ = targetSpd * T_XYZ;
 
+% Plot the spectrum of desired XYZ values.
+figure;
+plot(wls,targetSpd);
+xlabel('Wavelength (nm)');
+ylabel('Spectral power distribution');
+xlim([380 780]);
+ylim([0 8]);
+title('A spectrum found matching XYZ');
+
 %% ipRGCs example.
 numChannelPeak = 3;
 offChannels = [4,7:12,14:16]
@@ -95,36 +124,30 @@ B_onPeak = sum(B_channels(:,onChannels),2)
 
 figure; hold on;
 plot(wls,B_offPeak,'k-','LineWidth',1)
-plot(wls,B_onPeak,'b--','LineWidth',1)
+plot(wls,B_onPeak,'g--','LineWidth',1)
 xlabel('Wavelength (nm)');
 ylabel('Spectral power distribution');
 legend('Off-peak','On-peak')
 
-%% Plot it.
+%% Addtivity example.
 %
-% Plot all channels.
-figure; hold on;
-plot(wls,B_channels);
-xlabel('Wavelength (nm)');
-ylabel('Spectral power distribution');
-xlim([380 780]);
+% Set which channels to test.
+additivityChannels = [2 7 13];
 
-% Plot the modulated primaries.
-figure; hold on;
-plot(wls,B_testDisplay(:,1),'r-');
-plot(wls,B_testDisplay(:,2),'g-');
-plot(wls,B_testDisplay(:,3),'b-');
-xlabel('Wavelength (nm)');
-ylabel('Spectral power distribution');
-xlim([380 780]);
-legend('Primary1','Primary2','Primary3');
-% title('Test display primaries');
+% Make spectra here.
+B_addtivity = B_channels(:,additivityChannels);
+B_addtivitySum = sum(B_addtivity,2);
 
-% Plot the spectrum of desired XYZ values.
+% Plot separate single peaks.
 figure;
-plot(wls,targetSpd);
+plot(wls,B_addtivity)
 xlabel('Wavelength (nm)');
 ylabel('Spectral power distribution');
 xlim([380 780]);
-ylim([0 8]);
-title('A spectrum found matching XYZ');
+
+% Plot sum of single peaks.
+figure;
+plot(wls,B_addtivitySum);
+xlabel('Wavelength (nm)');
+ylabel('Spectral power distribution');
+xlim([380 780]);
