@@ -39,6 +39,7 @@ projectName = 'SpatioSpectralStimulator';
 % Spectral data.
 %
 % May 5, 2022 is 3 mm pupil data.
+% Options for mode are 'Normal' and 'SteadyOn'
 mode = 'Normal';
 LEDInFileName = ['FullWhite' mode 'SPD'];
 LEDOutFileName = ['FullWhite' mode 'SPD_UW'];
