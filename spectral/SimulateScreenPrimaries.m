@@ -55,7 +55,7 @@ B_monitor = SplineSpd(SToWls(S_monitor),B_monitor,wls);
 
 %% Make a test display with modulated primaries.
 nChannels = size(B_channels,2);
-testDisplayNum = 1;
+testDisplayNum = 4;
 switch testDisplayNum
     case 1
         primary1Channels = [12 13 15 16]; % No 14
@@ -70,6 +70,9 @@ switch testDisplayNum
         primary2Channels = [4 5 6 7];
         primary3Channels = [1 2 3];
     otherwise
+        primary1Channels = [5:14];
+        primary2Channels = [4:16];
+        primary3Channels = [1:8];
 end
 
 % Set test display primaries.
