@@ -20,7 +20,7 @@ clear; close all;
 %
 % Set measurement time length and interval. The time is set in minute unit,
 % which will be converted into second unit later in this code.
-totalMeasureTimeMin = 80;
+totalMeasureTimeMin = 120;
 timeDelayBeforeEachMeasurementMin = 0.1;
 timeDelayBeforeMeasurementSec = timeDelayBeforeEachMeasurementMin * 60;
 
@@ -29,7 +29,7 @@ S = [380 2 201];
 
 % Verbose.
 VERBOSE = true;
-MEASURE = true;
+MEASURE = false;
 
 %% Make a bit of time delay before the measurement starts.
 % You can go out before it's done.
@@ -79,9 +79,10 @@ if (MEASURE)
     end
 else
     % Load the data if the measurement is skipped.
+    olderDate = 1;
     if (ispref('SpatioSpectralStimulator','CheckDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','CheckDataFolder');
-        testFilename = GetMostRecentFileName(testFiledir,sprintf('stabilityCheck'),'olderDate',0);
+        testFilename = GetMostRecentFileName(testFiledir,sprintf('stabilityCheck'),'olderDate',olderDate);
         load(testFilename);
     end
 end
@@ -110,8 +111,10 @@ if (VERBOSE)
     legend('Measurements');
 
     % Luminance.
+    if (~exist('nMeasurements'))
+        nMeasurments = size(allSpdMeasured,2);
+    end 
     figure; clf;
-    subplot(2,2,1);
     measurementTime = linspace(0, totalMeasureTimeMin, nMeasurments);
     plot(measurementTime, XYZ(3,:),'r.','markersize',10);
     xlabel('Measurement time (min)','fontsize',15);
@@ -121,7 +124,7 @@ if (VERBOSE)
     title('Luminance','fontsize',15);
     
     % xy coordiantes.
-    subplot(2,2,2); hold on;
+    figure; hold on;
     plot(xyY(1,:), xyY(2,:), 'r.','markersize',10);
     plot(colorGamut(1,:),colorGamut(2,:),'k-');
     xlabel('CIE x','fontsize',15);
@@ -130,7 +133,7 @@ if (VERBOSE)
     title('CIE xy chromaticity','fontsize',15);
     
     % CIE x over the time.
-    subplot(2,2,3); hold on;
+    figure;
     plot(measurementTime,xyY(1,:),'r.','markersize',10);
     xlabel('Measurement time (min)','fontsize',15);
     ylabel('CIE x','fontsize',15);
@@ -138,7 +141,7 @@ if (VERBOSE)
     title('CIE x','fontsize',15);
     
     % CIE y over the time.
-    subplot(2,2,4); hold on;
+    figure;
     plot(measurementTime,xyY(2,:),'r.','markersize',10);
     xlabel('Measurement time (min)','fontsize',15);
     ylabel('CIE y','fontsize',15);
