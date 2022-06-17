@@ -49,9 +49,9 @@ if (MEASURE)
     SetScreenImage(nullImage,window,windowRect);
     
     % Set channel settings.
-%     nChannels = 16;
-%     nPrimaries = 3;
-%     channelSettings = ones(nChannels,nPrimaries);
+    %     nChannels = 16;
+    %     nPrimaries = 3;
+    %     channelSettings = ones(nChannels,nPrimaries);
     load('screenPrimarySettings.mat');
     channelSettings = screenPrimarySettings;
     SetChannelSettings(channelSettings);
@@ -103,50 +103,49 @@ colorGamut(:,end+1) = colorGamut(:,1);
 
 %% Plot the data.
 if (VERBOSE)
+    labelFontSize = 25;
+    titleFontSize = 25;
+    
     % Spds.
     figure; clf; hold on;
     plot(SToWls(S),allSpdMeasured);
-    xlabel('Wavelenth (nm)','fontsize',15);
-    ylabel('Spectral power distribution','fontsize',15);
-    legend('Measurements');
-
+    xlabel('Wavelenth (nm)','fontsize',labelFontSize);
+    ylabel('Spectral power distribution','fontsize',labelFontSize);
+    
     % Luminance.
     if (~exist('nMeasurements'))
         nMeasurments = size(allSpdMeasured,2);
-    end 
+    end
     figure; clf;
     measurementTime = linspace(0, totalMeasureTimeMin, nMeasurments);
-    plot(measurementTime, XYZ(3,:),'r.','markersize',10);
-    xlabel('Measurement time (min)','fontsize',15);
-    ylabel('Luminance (cd/m2)','fontsize',15);
+    plot(measurementTime, XYZ(3,:),'b.','markersize',10);
+    xlabel('Time (min)', 'fontsize',labelFontSize);
+    ylabel('Luminance (arb unit)', 'fontsize',labelFontSize);
     ylim([max(XYZ(3,:))*0.8 max(XYZ(3,:))*1.2]);
-    legend('Measurements');
-    title('Luminance','fontsize',15);
+%     title('Luminance','fontsize',titleFontSize);
     
     % xy coordiantes.
     figure; hold on;
-    plot(xyY(1,:), xyY(2,:), 'r.','markersize',10);
+    plot(xyY(1,:), xyY(2,:), 'b.','markersize',10);
     plot(colorGamut(1,:),colorGamut(2,:),'k-');
-    xlabel('CIE x','fontsize',15);
-    ylabel('CIE y','fontsize',15);
+    xlabel('CIE x','fontsize',labelFontSize);
+    ylabel('CIE y','fontsize',labelFontSize);
     legend('Measurements','Spectral locus');
-    title('CIE xy chromaticity','fontsize',15);
+%     title('CIE xy chromaticity','fontsize',titleFontSize);
     
     % CIE x over the time.
     figure;
-    plot(measurementTime,xyY(1,:),'r.','markersize',10);
-    xlabel('Measurement time (min)','fontsize',15);
-    ylabel('CIE x','fontsize',15);
-    legend('Measurements');
-    title('CIE x','fontsize',15);
+    plot(measurementTime,xyY(1,:),'b.','markersize',10);
+    xlabel('Time (min)','fontsize',labelFontSize);
+    ylabel('CIE x','fontsize',labelFontSize);
+%     title('CIE x','fontsize',titleFontSize);
     
     % CIE y over the time.
     figure;
-    plot(measurementTime,xyY(2,:),'r.','markersize',10);
-    xlabel('Measurement time (min)','fontsize',15);
-    ylabel('CIE y','fontsize',15);
-    legend('Measurements');
-    title('CIE y','fontsize',15);
+    plot(measurementTime,xyY(2,:),'b.','markersize',10);
+    xlabel('Time (min)','fontsize',labelFontSize);
+    ylabel('CIE y','fontsize',labelFontSize);
+%     title('CIE y','fontsize',titleFontSize);
 end
 
 %% Save the data.

@@ -33,7 +33,7 @@ nTestSamples = 20;
 nTestSamplePeaks = 3;
 
 % Set the test type ('within' or 'across' screen primary).
-TESTTYPE = 'across';
+TESTTYPE = 'within';
 MEASURE = false;
 
 %% Open the screen and connect to spectroradiometer.
@@ -191,9 +191,9 @@ spectralLocus(:,end+1) = spectralLocus(:,1);
 figure;
 for tt = 1:nTestSamples
     subplot(5,nTestSamples/5,tt); hold on;
-    plot(wls,spdTestSample(:,tt),'k-','LineWidth',2)
-    plot(wls,spdTestSampleSum(:,tt),'r--','LineWidth',2)
-    title(append('Test',num2str(tt)));
+    plot(wls,spdTestSample(:,tt),'k-','LineWidth',4)
+    plot(wls,spdTestSampleSum(:,tt),'r--','LineWidth',4)
+    title(append('Test',num2str(tt)),'fontsize',20);
     ylim([0 max(max([spdTestSample spdTestSampleSum]))]);
 end
 
@@ -212,8 +212,8 @@ numTestSamples = linspace(1,nTestSamples,nTestSamples);
 axisLimit = round(max([xyYTestSample(3,:) xyYTestSampleSum(3,:)], [], 'all'))+1;
 plot(xyYTestSample(3,:), xyYTestSampleSum(3,:),'r.','markersize',15);
 plot([0 axisLimit],[0 axisLimit],'k-');
-xlabel('Luminance - Measurement (cd/m2)')
-ylabel('Luminance - Sum result (cd/m2)')
+xlabel('Luminance - Measurement (arb unit)','fontsize',15)
+ylabel('Luminance - Sum result (arb unit)','fontsize',15)
 ylim([0 axisLimit]);
 xlim([0 axisLimit]);
 yticks([0:1:axisLimit]);
@@ -227,8 +227,8 @@ figure; hold on;
 plot(xyYTestSample(1,:),xyYTestSample(2,:),'k.','markersize',13);
 plot(xyYTestSampleSum(1,:),xyYTestSampleSum(2,:),'r+','markersize',12,'linewidth',1);
 plot(spectralLocus(1,:),spectralLocus(2,:),'k-');
-xlabel('CIE x')
-ylabel('CIE y')
+xlabel('CIE x','fontsize',15)
+ylabel('CIE y','fontsize',15)
 xlim([0 1]);
 ylim([0 1]);
 yticks([0:0.2:1]);

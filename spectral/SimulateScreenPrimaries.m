@@ -143,14 +143,24 @@ B_addtivitySum = sum(B_addtivity,2);
 
 % Plot separate single peaks.
 figure;
-plot(wls,B_addtivity)
+plot(wls,B_addtivity(:,2),'r--','LineWidth',2);
+xlabel('Wavelength (nm)');
+ylabel('Spectral power distribution');
+xlim([380 780]);
+ylim([0 2.5*10^-3]);
+
+% Plot sum of single peaks.
+figure;
+plot(wls,B_addtivitySum,'k-','LineWidth',2);
 xlabel('Wavelength (nm)');
 ylabel('Spectral power distribution');
 xlim([380 780]);
 
-% Plot sum of single peaks.
-figure;
-plot(wls,B_addtivitySum);
+% Plot two results together.
+figure; hold on;
+plot(wls,B_addtivitySum,'k-','LineWidth',2);
+plot(wls,B_addtivity,'r--','LineWidth',2);
 xlabel('Wavelength (nm)');
 ylabel('Spectral power distribution');
 xlim([380 780]);
+legend('Measurement','Sum result','location','northeast')
