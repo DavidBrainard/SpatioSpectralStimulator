@@ -29,24 +29,24 @@
 %    02/08/22  dhb,smo   - Added an option to skip making the ISETBio scenes
 %                          which takes time and memory a lot.
 %    03/17/22  smo       - Now we set the temporal scene support time
-%                          differently for stimuli and cross fixation point. 
+%                          differently for stimuli and cross fixation point.
 %    04/27/22  smo       - Added a PTB running option for displaying test
 %                          gabor image in either vertical or horizontal
 %                          direction.
-%    05/09/22  smo       - Added an option to make phase shift on gabor 
+%    05/09/22  smo       - Added an option to make phase shift on gabor
 %                          image.
 %    06/23/22  smo       - Now we save the gabor image data (RunExpData) by
 %                          containing its spatial frequency info in its
 %                          file name.
 
-%% Initialization
+%% Initialization.
 clear; close all;
 
 %% Load data if you want to skip making the images.
-LOADDATA = true;
+LOADDATA = false;
 
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 1;
+sineFreqCyclesPerDeg = 3;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -57,13 +57,12 @@ if (LOADDATA)
 end
 
 %% Set up parameters.
-%
 if (~LOADDATA)
     % Set up color direction
     %
     % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    spatialGaborTargetContrast = 0.02;
+    spatialGaborTargetContrast = 0.04;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -71,7 +70,7 @@ if (~LOADDATA)
     %
     % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
     % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
-    spatialTemporalParams.sineFreqCyclesPerDeg = 1;
+    spatialTemporalParams.sineFreqCyclesPerDeg = 18;
     spatialTemporalParams.gaborSdDeg = 1.5;
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
@@ -85,29 +84,35 @@ if (~LOADDATA)
     % psychophysics to work over.  This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
-    experimentParams.nContrasts = 10;
+    experimentParams.nContrasts = 20;
     experimentParams.measure = true;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
     experimentParams.slopeDelta = 0.5;
-    experimentParams.minTrial = 30;
-    experimentParams.maxTrial = 50;
     experimentParams.nTest = 1;
     experimentParams.nQUESTEstimator = 1;
 end
+
+% Set the number of trials here.
+experimentParams.minTrial = 30;
+experimentParams.maxTrial = 50;
 experimentParams.nTestValidation = 20;
-% RunningMode can be chosen among three 
+
+% RunningMode can be chosen among three
 % [PTB-sequential; PTB-directional; simulation].
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
 
+% Set the presentation time for each target and crossbar images in seconds
+% unit.
 sceneParamsStruct.predefinedTemporalSupport = 0.5;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 
+% Set numbers when using auto response.
 if (experimentParams.autoResponse)
     autoResponseParams.psiFunc = @qpPFWeibullLog;
     autoResponseParams.thresh = 0.004;
@@ -118,7 +123,8 @@ if (experimentParams.autoResponse)
 else
     autoResponseParams = [];
 end
-    
+
+%% Make contrast gabor images and save.
 if(~LOADDATA)
     % Now do all the computation to get us ISETBio scenes and RGB images for
     % each predefined contrast, relative to the parameters set up above.
@@ -163,7 +169,7 @@ theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 % psychophysical procedure, QUEST+, to make the computations efficient.
 % You can learn more about QUEST+ at the gitHub site that has our QUEST+
 % Matlab implementation: https://github.com/BrainardLab/mQUESTPlus.
-% 
+%
 % A features of QUEST+ is that you need to specify a discrete list of
 % contrast values that will be tested, which in the wrapper here is also
 % taken as the set of possible thresholds as QUEST+ chooses stimulus values.
@@ -220,7 +226,7 @@ switch experimentMode
             'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
         
     case 'validation'
-        % Set the test contrast domain to validate. 
+        % Set the test contrast domain to validate.
         %
         % lowerLimEstDomain = 0.002 / higherLimEstDomain = 0.009 for 1 cpd
         % lowerLimEstDomain = 0.006 / higherLimEstDomain = 0.020 for 18 cpd
@@ -238,9 +244,6 @@ switch experimentMode
     otherwise
         error('Experiment mode should be set either (adaptive) or (validation).');
 end
-
-%% Initialize display for experiment
-% displayControlStruct = InitializeDisplayForExperiment;
 
 %% Generate the NULL scene sequence
 %
@@ -273,18 +276,18 @@ end
 
 % Open projector and set the screen primary settings as we found.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
-   [window windowRect] = OpenPlainScreen([0 0 0]');
-   SetChannelSettings(experimentParams.screenPrimarySettings);
-   
+    [window windowRect] = OpenPlainScreen([0 0 0]');
+    SetChannelSettings(experimentParams.screenPrimarySettings);
+    
 elseif (strcmp(experimentParams.runningMode,'simulation'))
-   % Set arbitrary numbers to pass and these will not be used in the
-   % further function.
-   window = 1;
-   windowRect = [0 0 1920 1080];
+    % Set arbitrary numbers to pass and these will not be used in the
+    % further function.
+    window = 1;
+    windowRect = [0 0 1920 1080];
 end
 
 % If PTB mode and not simulating response, wait for subject
-% to press a button before starting trials. In the end, 
+% to press a button before starting trials. In the end,
 % probably want to move this to a place where the test cross
 % is displayed for the first time.  Or display test cross here,
 % or something.
@@ -292,7 +295,7 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
     % Display crossbar image.
     DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
         'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
-
+    
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         % Waiting for key to be pressed to start.
         switch (experimentParams.runningMode)
@@ -334,7 +337,7 @@ while (nextFlag)
     % displayControlStruct, which was needed in the previous version. Maybe
     % we can bring it back when it is needed.
     %
-    % Get a response here. Make a loop for the number of trials. 
+    % Get a response here. Make a loop for the number of trials.
     for tt = 1:experimentParams.nTest
         correct(tt) = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
