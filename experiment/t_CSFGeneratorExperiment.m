@@ -35,18 +35,23 @@
 %                          direction.
 %    05/09/22  smo       - Added an option to make phase shift on gabor 
 %                          image.
+%    06/23/22  smo       - Now we save the gabor image data (RunExpData) by
+%                          containing its spatial frequency info in its
+%                          file name.
 
 %% Initialization
 clear; close all;
 
 %% Load data if you want to skip making the images.
-conditionName = 'LminusMSmooth';
 LOADDATA = true;
+
+conditionName = 'LminusMSmooth';
+sineFreqCyclesPerDeg = 1;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s',conditionName));
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd',conditionName,sineFreqCyclesPerDeg));
         load(testFilename);
     end
 end
@@ -58,7 +63,7 @@ if (~LOADDATA)
     %
     % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    spatialGaborTargetContrast = 0.04;
+    spatialGaborTargetContrast = 0.02;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -81,7 +86,7 @@ if (~LOADDATA)
     % to compute for.
     experimentParams.minContrast = 0.0005;
     experimentParams.nContrasts = 10;
-    experimentParams.measure = false;
+    experimentParams.measure = true;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
@@ -142,7 +147,7 @@ if(~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s',conditionName));
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd',conditionName,spatialTemporalParams.sineFreqCyclesPerDeg));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
     end
