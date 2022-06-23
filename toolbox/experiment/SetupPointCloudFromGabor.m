@@ -92,7 +92,7 @@ arguments
     backgroundScreenPrimaryObject
     screenPrimaryChannelObject
     options.measure (1,1) = false
-    options.warmupTimeMinutes (1,1) = 30
+    options.warmupTimeMinutes (1,1) = 0
     options.verbose (1,1) = true
     options.lightVer (1,1) = true
 end
@@ -107,7 +107,7 @@ screenBgSettings    = backgroundScreenPrimaryObject.screenBgSettings;
 % nominal primaries, this part will be skipped.
 if (options.measure)
     % Set target screen spd which will be compared with the measured results.
-    targetScreenSpd = colorDirectionParams.screenCalObj.get('P_device');
+    targetScreenSpd = screenCalObj.get('P_device');
     
     % Loop and measure all primaries here.
     %
@@ -128,8 +128,9 @@ if (options.measure)
     end
     
     % Measure it.
-    for pp = 1:colorDirectionParams.nPrimaries
-        theScreenOnePrimarySettings = zeros(colorDirectionParams.nPrimaries,1);
+    nPrimaries = screenCalObj.cal.nDevices;
+    for pp = 1:nPrimaries
+        theScreenOnePrimarySettings = zeros(nPrimaries,1);
         theScreenOnePrimarySettings(pp) = 1;
         targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
             colorDirectionParams.S, window, windowRect, 'measurementOption', options.measure, 'verbose', options.verbose);
