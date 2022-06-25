@@ -43,10 +43,10 @@
 clear; close all;
 
 %% Load data if you want to skip making the images.
-LOADDATA = false;
+LOADDATA = true;
 
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 3;
+sineFreqCyclesPerDeg = 1;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -390,7 +390,8 @@ if (SAVETHERESULTS)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,sprintf('RunExpResults_%s_%s',conditionName,dayTimestr));
+        testFilename = fullfile(testFiledir,sprintf('RunExpResults_%s_%d_cpd_%s',...
+            conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'estimator');
     end
 end
