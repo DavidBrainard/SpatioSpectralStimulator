@@ -30,9 +30,10 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-CHECKADAPTIVEMODE = true;
+CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
+sineFreqCyclesPerDeg = 3;
 
 %% Load the data and PF fitting.
 %
@@ -41,15 +42,16 @@ conditionName = 'LminusMSmooth';
 %
 % Set startData to 0 if you want to read the data from the most recent.
 startData = 0;
-nData = 9;
-SUBPLOT = true;
+nData = 3;
+SUBPLOT = false;
 sizeSubplot = [round(nData/2) 4];
 
 for dd = 1:nData
     % Load the data.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpResults_%s',conditionName),'olderDate',startData+dd-1);
+        testFilename = GetMostRecentFileName(testFiledir,...
+            sprintf('RunExpResults_%s_%d_cpd',conditionName,sineFreqCyclesPerDeg),'olderDate',startData+dd-1);
         theData = load(testFilename);
     else
         error('Cannot find data file');

@@ -228,10 +228,16 @@ switch experimentMode
     case 'validation'
         % Set the test contrast domain to validate.
         %
+        % With pupil size of 4.0 mm
         % lowerLimEstDomain = 0.002 / higherLimEstDomain = 0.009 for 1 cpd
         % lowerLimEstDomain = 0.006 / higherLimEstDomain = 0.020 for 18 cpd
-        lowerLimEstDomain = 0.0032;
-        higherLimEstDomain = 0.0158;
+        %
+        % With pupil size of 3.0 mm (as of 6/25/22)
+        % 18 cpd / 0.0005 0.013
+        % 3 cpd / -3.3010 -2.7959 -2.5686 -2.4202 -2.3188 -2.2291 / 0.0005,
+        % 0.006
+        lowerLimEstDomain = 0.0005;
+        higherLimEstDomain = 0.006;
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
