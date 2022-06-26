@@ -19,11 +19,12 @@
 %    t_CSFGeneratorExperiment.
 
 % History:
-%    02/28/22  smo            Started on it.
-%    03/14/22  smo            Added a plotting option to make different
+%    02/28/22  smo          - Started on it.
+%    03/14/22  smo          - Added a plotting option to make different
 %                             marker size over different number of trials.
-%    03/16/22  smo            Added an option to check if Adaptive mode
+%    03/16/22  smo          - Added an option to check if Adaptive mode
 %                             works fine.
+%    06/26/22  smo          - Added a part plotting CSF curves.
 
 %% Start over.
 clear; close all;
@@ -33,7 +34,7 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 3;
+sineFreqCyclesPerDeg = 18;
 
 %% Load the data and PF fitting.
 %
@@ -42,7 +43,7 @@ sineFreqCyclesPerDeg = 3;
 %
 % Set startData to 0 if you want to read the data from the most recent.
 startData = 0;
-nData = 3;
+nData = 1;
 SUBPLOT = false;
 sizeSubplot = [round(nData/2) 4];
 
@@ -143,4 +144,24 @@ if (ADDMEANTHRESHOLD)
     plot(meanThreshold, thresholdCriterion, 'ko','MarkerFaceColor','b','MarkerSize',12);
     e = errorbar(meanThreshold,thresholdCriterion,stdThreshold,'horizontal');
     e.Color = 'blue';
+end
+
+%% Plot the CSF curve here.
+CSFCURVE = true;
+
+if (CSFCURVE)
+    % Set target spatial frequency and threshold values. We type manually
+    % here for now, but we can elaborate it later.
+    spatialFrequency = [1 3 6 9 12 18];
+    threshold = [0.0017 0.0032 0.0040 0.0043 0.0046 0.0072];
+    sensitivity = 1./threshold;
+    logSensitivity = log10(sensitivity);
+    
+    % Plot it.
+    figure; clf;
+    plot(spatialFrequency, sensitivity, 'g.-','markersize',20,'linewidth',2);
+    xlabel('Spatial frequency (cpd)','fontsize',15);
+    ylabel('Contrast Sensitivity','fontsize',15); 
+    xticks(spatialFrequency); 
+    legend('Semin','fontsize',15);
 end
