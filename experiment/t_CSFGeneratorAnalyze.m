@@ -31,7 +31,7 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-CHECKADAPTIVEMODE = false;
+CHECKADAPTIVEMODE = true;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
 sineFreqCyclesPerDeg = 18;
@@ -67,6 +67,7 @@ for dd = 1:nData
         if (SUBPLOT)
             subplot(sizeSubplot(1),sizeSubplot(2),2*dd-1); hold on;
         end
+        figure; clf;
         % Set variables here.
         nTrial = theData.estimator.nTrial;
         testTrials = linspace(1,nTrial,nTrial);
@@ -147,7 +148,7 @@ if (ADDMEANTHRESHOLD)
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = true;
+CSFCURVE = false;
 
 if (CSFCURVE)
     % Set target spatial frequency and threshold values. We type manually
