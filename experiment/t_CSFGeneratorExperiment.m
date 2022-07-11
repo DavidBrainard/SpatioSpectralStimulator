@@ -38,6 +38,8 @@
 %    06/23/22  smo       - Now we save the gabor image data (RunExpData) by
 %                          containing its spatial frequency info in its
 %                          file name.
+%    07/11/22  smo       - Added an option to display stimuli in debug mode
+%                          to keep displaying images until button pressed.
 
 %% Initialization.
 clear; close all;
