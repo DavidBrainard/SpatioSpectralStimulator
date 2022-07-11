@@ -63,6 +63,11 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %    autoResponse                       - If it is set to true, make an
 %                                         automatic response based on the
 %                                         probability
+%    debugMode                          - Default to false. If it is set to
+%                                         true, a gabor image will be
+%                                         displayed until subject press a
+%                                         button. It is useful to check the
+%                                         stimuli when debugging.
 %    verbose                            - Boolean. Default true. Controls
 %                                         printout.
 %
@@ -86,6 +91,9 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %    04/27/22  smo                      - Added a running option in PTB to
 %                                         display the test image either
 %                                         vertical or horizontal.
+%    07/11/22  smo                      - Added debug mode option to
+%                                         keep displaying a stimulus until
+%                                         button pressed.
 
 %% Set parameters.
 arguments
@@ -101,6 +109,7 @@ arguments
     options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
     options.autoResponse = []
+    options.debugMode (1,1) = false
     options.verbose (1,1) = true
 end
 
@@ -200,9 +209,19 @@ switch (options.runningMode)
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
         
+        % For debug only, keep displaying the stimulus until the button
+        % pressed.
+        if (options.debugMode)
+            switch (options.expKeyType)
+                case 'gamepad'
+                    numButtonRight = 3;
+                    responseDebug = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+            end
+        end
+        
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false); 
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
         
     case 'simulation'
@@ -290,14 +309,19 @@ if (isempty(options.autoResponse))
             
             % We will use different gamepad keys depending on how we present
             % the stimuli.
-            switch (options.runningMode)
-                case 'PTB-sequential'
-                    responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
-                case 'PTB-directional'
-                    numButtonRight = 3;
-                    responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+            if (options.debugMode)
+                responseGamePad = responseDebug;
+            else
+                switch (options.runningMode)
+                    case 'PTB-sequential'
+                        responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+                    case 'PTB-directional'
+                        numButtonRight = 3;
+                        responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+                end
             end
             
+            % Converts the response here.
             if (responseGamePad == gamepadRespFirst)
                 response = leftArrow;
             elseif (responseGamePad == gamepadRespSecond)

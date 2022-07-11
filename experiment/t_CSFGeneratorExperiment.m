@@ -105,6 +105,7 @@ experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
+experimentParams.debugMode = false;
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
@@ -349,7 +350,8 @@ while (nextFlag)
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
-            'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,'verbose',true);
+            'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
+            'debugMode',experimentParams.debugMode,'verbose',true);
     end
     
     % Report what happened
