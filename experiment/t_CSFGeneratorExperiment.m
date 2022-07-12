@@ -40,13 +40,17 @@
 %                          file name.
 %    07/11/22  smo       - Added an option to display stimuli in debug mode
 %                          to keep displaying images until button pressed.
+%    07/12/22  smo       - Now we can print out the spds of gabor images
+%                          which is useful to create sRGB images if we
+%                          want.
 
 %% Initialization.
 clear; close all;
 
 %% Load data if you want to skip making the images.
-LOADDATA = true;
+LOADDATA = false;
 
+% Set which data you want to load.
 conditionName = 'LminusMSmooth';
 sineFreqCyclesPerDeg = 1;
 SAVETHERESULTS = true;
@@ -143,12 +147,13 @@ if(~LOADDATA)
     % can save a lot of memory and time. What we get is the same.
     noISETBio = true;
     lightVer = true;
+    printGaborSpds = false;
     
     % Make contrast gabor images here.
-    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages experimentParams.screenPrimarySettings] = ...
+    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages, experimentParams.screenPrimarySettings desiredSpdGaborCal] = ...
         MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
         colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
-        'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer);
+        'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer,'printGaborSpds',printGaborSpds);
     
     % Set some of the scene parameters.
     sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
@@ -156,7 +161,7 @@ if(~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd',conditionName,spatialTemporalParams.sineFreqCyclesPerDeg));
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_temp',conditionName,spatialTemporalParams.sineFreqCyclesPerDeg));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
     end

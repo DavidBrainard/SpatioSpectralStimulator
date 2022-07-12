@@ -63,6 +63,9 @@ function [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimar
 %                                     saved in the structure. It does not affect
 %                                     making final gabor images, but saving some
 %                                     time and memory.
+%    printGaborSpds                 - Default to false. Print out the spds
+%                                     of gabor images so that we can create
+%                                     sRGB images easily if we want.
 %    verbose                        - Boolean. Default true. Controls
 %                                     plotting and printout.
 %
@@ -71,18 +74,21 @@ function [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimar
 %    SpectralCalISETBio
 
 % History:
-%   01/21/22  dhb,gka,smo           - Wrote it.
-%   01/24/22  smo                   - Made it work.
-%   01/31/22  smo                   - It is possible to make multiple
-%                                     target contrast gabors inside this
-%                                     function.
-%   02/01/22  smo                   - Added the part measuring the channel
-%                                     primaries before creating point
-%                                     cloud.
-%   02/08/22  smo                   - Added an option to print out less variable
-%                                     saved in the final structure.
-%   05/09/22  smo                   - Added an option to make a phase shift
-%                                     on sine image.
+%    01/21/22  dhb,gka,smo           - Wrote it.
+%    01/24/22  smo                   - Made it work.
+%    01/31/22  smo                   - It is possible to make multiple
+%                                      target contrast gabors inside this
+%                                      function.
+%    02/01/22  smo                   - Added the part measuring the channel
+%                                      primaries before creating point
+%                                      cloud.
+%    02/08/22  smo                   - Added an option to print out less variable
+%                                      saved in the final structure.
+%    05/09/22  smo                   - Added an option to make a phase shift
+%                                      on sine image.
+%    07/12/22  smo                   - We print out spds of gabor images in
+%                                      cal format so that we can create
+%                                      sRGB images easily if we want.
 
 %% Set parameters.
 arguments
@@ -95,6 +101,7 @@ arguments
     options.warmupTimeMinutes (1,1) = 0
     options.verbose (1,1) = true
     options.lightVer (1,1) = true
+    options.printGaborSpds (1,1) = false
 end
 
 %% Take some parameters out from the structure.
@@ -221,10 +228,16 @@ for ss = 1:nPhaseShifts
         % Save the results in a struct.
         standardGaborCalObject.desiredContrastGaborCal{ss,cc} = desiredContrastGaborCal;
         standardGaborCalObject.standardSettingsGaborCal{ss,cc} = standardSettingsGaborCal;
+        
+        % Print out Spd if you want to make sRGB gabor image.
+        if (options.printGaborSpds)
+            standardGaborCalObject.desiredSpdGaborCal{ss,cc} = desiredSpdGaborCal;
+        end
+        
+        % We will not print out these if it is run lightver.
         if (~options.lightVer)
             standardGaborCalObject.desiredExcitationsGaborCal{ss,cc} = desiredExcitationsGaborCal;
             standardGaborCalObject.standardPrimariesGaborCal{ss,cc} = standardPrimariesGaborCal;
-            standardGaborCalObject.desiredSpdGaborCal{ss,cc} = desiredSpdGaborCal;
             standardGaborCalObject.standardPredictedPrimariesGaborCal{ss,cc} = standardPredictedPrimariesGaborCal;
             standardGaborCalObject.standardPredictedExcitationsGaborCal{ss,cc} = standardPredictedExcitationsGaborCal;
             standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc} = standardPredictedContrastGaborCal;

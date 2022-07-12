@@ -1,5 +1,5 @@
-function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioContrastGaborImage(...
-    targetContrast,colorDirectionParams,spatialTemporalParams,options)
+function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings,desiredSpdGaborCal] ...
+    = MakeISETBioContrastGaborImage(targetContrast,colorDirectionParams,spatialTemporalParams,options)
 % Make a contrast gabor image in both image and ISETBio scene formats.
 %
 % Syntax:
@@ -34,6 +34,9 @@ function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioCo
 %    gaborRGBImage                - Created gabor image in RGB format.
 %    screenPrimarySettings        - Screen primary settings that reproduces
 %                                   the desired cone contrasts.
+%    desiredSpdGaborCal           - The Spds of the created gabor images in
+%                                   cal format. You can use it to create
+%                                   sRGB images.
 %
 % Optional key/value pairs:
 %    measure                      - Default to false. If it sets
@@ -53,6 +56,9 @@ function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioCo
 %                                   saved in the structure. It does not affect
 %                                   making final gabor images, but saving some
 %                                   time and memory.
+%    printGaborSpds               - Default to false. Print out the spds
+%                                   of gabor images so that we can create
+%                                   sRGB images easily if we want.
 %
 % See also: SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
 %           SpectralCalISETBioUsingSubroutinesV2, t_CSFGeneratorExperiment
@@ -67,6 +73,9 @@ function [gaborISETBioScene,gaborRGBImage,screenPrimarySettings] = MakeISETBioCo
 %                         final structure.
 %    05/09/22  smo        Added an option to make a phase shift on gabor
 %                         image.
+%    07/12/22  smo        We print out spds of gabor images in cal format
+%                         so that we can create sRGB images easily if we
+%                         want.
 
 %% Set parameters.
 arguments
@@ -78,6 +87,7 @@ arguments
     options.verboseDetail (1,1) = false
     options.noISETBio (1,1) = true
     options.lightVer (1,1) = true
+    options.printGaborSpds (1,1) = false
 end
 
 %% Say hello.
@@ -151,7 +161,8 @@ nQuantizeBits = 14;
 [ptCldObject,standardGaborCalObject,screenCalObj,backgroundScreenPrimaryObject] = ...
     SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
     screenCalObj,backgroundScreenPrimaryObject,screenPrimaryChannelObject,...
-    'measure',options.measure,'warmupTimeMinutes',0,'verbose',options.verboseDetail);
+    'measure',options.measure,'warmupTimeMinutes',0,...
+    'printGaborSpds', options.printGaborSpds,'verbose',options.verboseDetail);
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
@@ -170,6 +181,13 @@ end
 
 %% Save out the images in a single variable.
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
+
+%% Print out gaborcalspd if you want. You can use it when you want to make sRGB images.
+if (options.printGaborSpds)
+    desiredSpdGaborCal = standardGaborCalObject.desiredSpdGaborCal;
+else 
+    desiredSpdGaborCal = [];
+end
 
 %% Save out the screen primary settings too.
 screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
