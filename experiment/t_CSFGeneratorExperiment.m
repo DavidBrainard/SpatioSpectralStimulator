@@ -43,6 +43,8 @@
 %    07/12/22  smo       - Now we can print out the spds of gabor images
 %                          which is useful to create sRGB images if we
 %                          want.
+%    07/13/22  smo       - Added an option to make stimuli
+%                          presentation gradually ramping on and off.
 
 %% Initialization.
 clear; close all;
@@ -112,6 +114,8 @@ experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
+experimentParams.movieStimuli = false;
+experimentParams.movieImageDelaySec = 0.5;
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
@@ -358,7 +362,8 @@ while (nextFlag)
             theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
-            'debugMode',experimentParams.debugMode,'verbose',true);
+            'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
+            'movieImageDelaySec',experimentParams.movieImageDelaySec,'verbose',true);
     end
     
     % Report what happened

@@ -68,6 +68,15 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                         displayed until subject press a
 %                                         button. It is useful to check the
 %                                         stimuli when debugging.
+%    movieStimuli                       - Default to false. If it is set to
+%                                         true, the stimuli will be
+%                                         displayed as gradually ramping of
+%                                         and off.
+%    movieImageDelaySec                 - Default to 0.5. When using the
+%                                         option of 'movieStimuli', this
+%                                         decides the duration of the
+%                                         gradation of the stimuli changes
+%                                         in sec.
 %    verbose                            - Boolean. Default true. Controls
 %                                         printout.
 %
@@ -94,6 +103,9 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %    07/11/22  smo                      - Added debug mode option to
 %                                         keep displaying a stimulus until
 %                                         button pressed.
+%    07/13/22  smo                      - Added an option to make stimuli
+%                                         presentation gradually ramping
+%                                         on and off.
 
 %% Set parameters.
 arguments
@@ -110,6 +122,8 @@ arguments
     options.beepSound (1,1) = false
     options.autoResponse = []
     options.debugMode (1,1) = false
+    options.movieStimuli (1,1) = false
+    options.movieImageDelaySec (1,1) = 0.5
     options.verbose (1,1) = true
 end
 
@@ -203,8 +217,36 @@ switch (options.runningMode)
                 displayTestImage = imrotate(testRGBImage, imgRotationDeg);
         end
         
+        % We can make stimuli gradually ramping on and off if we want.
+        % Strategy used here is to make four more images having different
+        % contrasts between null (zero contrast) and test (target contrast)
+        % images, and present them sequentially before displaying the test
+        % image so that it can be perceived as the image is appeared
+        % gradually. We may want to decided how fast/slow the gradation
+        % should be.
+        %
+        % Here we make four images between null and test images that has
+        % 20, 40, 60, and 80 percent of the contrast of the test image.
+        if (options.movieStimuli)
+            % Set the ratio to the target contrast.
+            movieContrastRatio = [0.2 0.4 0.6 0.8];
+            nMovieContrastRatio = length(movieContrastRatio);
+            
+            % Make images here.
+            for ii = 1:nMovieContrastRatio
+                movieMediumImages{ii} = displayTestImage * movieContrastRatio(ii) + nullRGBImage * (1-movieContrastRatio(ii));
+            end
+            
+            % Display medium images here before displaying the target test image.
+            movieDelayEachImageSec = options.movieImageDelaySec/nMovieContrastRatio;
+            for ii = nMovieContrastRatio
+                SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
+                waitsecs(movieDelayEachImageSec);
+            end
+        end
+        
         % Display test image here.
-        SetScreenImage(displayTestImage, window, windowRect,'verbose',false);
+        SetScreenImage(displayTestImage,window,windowRect,'verbose',false);
         
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
@@ -219,11 +261,19 @@ switch (options.runningMode)
             end
         end
         
+        % Fade out the images to cross-bar image if you choose the movie stimuli option.
+        if (options.movieStimuli)
+            for ii = nMovieContrastRatio
+                SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,'verbose',false);
+                waitsecs(movieDelayEachImageSec);
+            end
+        end
+        
         % Cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
-        
+
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on
         % the figure and record key stroke responses, which would be helpful to
