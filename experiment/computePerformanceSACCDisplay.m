@@ -239,9 +239,9 @@ switch (options.runningMode)
             
             % Display medium images here before displaying the target test image.
             movieDelayEachImageSec = options.movieImageDelaySec/nMovieContrastRatio;
-            for ii = nMovieContrastRatio
+            for ii = 1:nMovieContrastRatio
                 SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
-                waitsecs(movieDelayEachImageSec);
+                WaitSecs(movieDelayEachImageSec);
             end
         end
         
@@ -263,9 +263,9 @@ switch (options.runningMode)
         
         % Fade out the images to cross-bar image if you choose the movie stimuli option.
         if (options.movieStimuli)
-            for ii = nMovieContrastRatio
+            for ii = 1:nMovieContrastRatio
                 SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,'verbose',false);
-                waitsecs(movieDelayEachImageSec);
+                WaitSecs(movieDelayEachImageSec);
             end
         end
         

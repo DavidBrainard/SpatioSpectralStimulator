@@ -50,11 +50,11 @@
 clear; close all;
 
 %% Load data if you want to skip making the images.
-LOADDATA = false;
+LOADDATA = true;
 
 % Set which data you want to load.
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 1;
+sineFreqCyclesPerDeg = 3;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -114,7 +114,7 @@ experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
-experimentParams.movieStimuli = false;
+experimentParams.movieStimuli = true;
 experimentParams.movieImageDelaySec = 0.5;
 
 % Set the presentation time for each target and crossbar images in seconds
