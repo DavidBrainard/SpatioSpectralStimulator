@@ -54,7 +54,7 @@ LOADDATA = true;
 
 % Set which data you want to load.
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 3;
+sineFreqCyclesPerDeg = 18;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -115,7 +115,7 @@ experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
 experimentParams.movieStimuli = true;
-experimentParams.movieImageDelaySec = 0.5;
+experimentParams.movieImageDelaySec = 0.25;
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
@@ -225,7 +225,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-experimentMode = 'adaptive';
+experimentMode = 'validation';
 
 switch experimentMode
     case 'adaptive'
@@ -240,16 +240,33 @@ switch experimentMode
     case 'validation'
         % Set the test contrast domain to validate.
         %
-        % With pupil size of 4.0 mm
-        % lowerLimEstDomain = 0.002 / higherLimEstDomain = 0.009 for 1 cpd
-        % lowerLimEstDomain = 0.006 / higherLimEstDomain = 0.020 for 18 cpd
-        %
-        % With pupil size of 3.0 mm (as of 6/25/22)
-        % 18 cpd / 0.0005 0.013
-        % 3 cpd / -3.3010 -2.7959 -2.5686 -2.4202 -2.3188 -2.2291 / 0.0005,
-        % 0.006
-        lowerLimEstDomain = 0.0005;
-        higherLimEstDomain = 0.006;
+        % We set the contrast range differently according to spatial
+        % frequencies.
+        % These ranges are with the size of pupil 3.0 mm, which works fine
+        % for Semin and David.
+        switch sineFreqCyclesPerDeg
+            case 1
+                lowerLimEstDomain = 0.0005;
+                higherLimEstDomain = 0.0059;
+            case 3
+                lowerLimEstDomain = 0.0005;
+                higherLimEstDomain = 0.0059;
+            case 6
+                lowerLimEstDomain = 0.0016;
+                higherLimEstDomain = 0.0070;
+            case 9
+                lowerLimEstDomain = 0.0016;
+                higherLimEstDomain = 0.0070;
+            case 12
+                lowerLimEstDomain = 0.0027;
+                higherLimEstDomain = 0.0092;
+            case 18
+                lowerLimEstDomain = 0.0027;
+                higherLimEstDomain = 0.0137;
+            otherwise
+        end
+        
+        % Set the contrast range here.
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
