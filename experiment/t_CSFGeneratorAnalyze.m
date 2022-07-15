@@ -148,21 +148,28 @@ if (ADDMEANTHRESHOLD)
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = false;
+CSFCURVE = true;
 
 if (CSFCURVE)
     % Set target spatial frequency and threshold values. We type manually
     % here for now, but we can elaborate it later.
-    spatialFrequency = [1 3 6 9 12 18];
-    threshold = [0.0017 0.0032 0.0040 0.0043 0.0046 0.0072];
-    sensitivity = 1./threshold;
-    logSensitivity = log10(sensitivity);
+    
+    % Semin
+    spatialFrequency_Semin = [1 3 6 9 12 18];
+    threshold_Semin = [0.0017 0.0032 0.0040 0.0043 0.0046 0.0072];
+    sensitivity_Semin = 1./threshold_Semin;
+    
+    % David (as of 07/15/22)
+    spatialFrequency_David = [3 6 9 12];
+    threshold_David = [0.0015 0.0033 0.0043 0.0065];
+    sensitivity_David = 1./threshold_David;
     
     % Plot it.
-    figure; clf;
-    plot(spatialFrequency, sensitivity, 'g.-','markersize',20,'linewidth',2);
+    figure; clf; hold on;
+    plot(spatialFrequency_Semin, sensitivity_Semin, 'g.-','markersize',20,'linewidth',2);
+    plot(spatialFrequency_David, sensitivity_David, 'b.-','markersize',20,'linewidth',2);
     xlabel('Spatial frequency (cpd)','fontsize',15);
     ylabel('Contrast Sensitivity','fontsize',15); 
-    xticks(spatialFrequency); 
-    legend('Semin','fontsize',15);
+    xticks(spatialFrequency_Semin);  
+    legend('Semin','David','fontsize',15);
 end
