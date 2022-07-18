@@ -200,17 +200,12 @@ switch (options.runningMode)
         % image on the projector using PTB. It displays a test image either
         % vertical or horizontal to make an evaluation, so null image is
         % not displayed during the session after the initial presentation.
+        
+        % Randomize which direction of the image to display.
         displayVertical   = 1;
         displayHorizontal = 2;
         displayDirections = [displayVertical displayHorizontal];
         whichDirectionToDisplay = randi(displayDirections);
-        
-        % Display image here.
-        %
-        % Cross-fixation image before displaying the images. This is useful
-        % when audible cue is not working.
-        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
         % Make a rotation image here.
         switch whichDirectionToDisplay
@@ -225,42 +220,52 @@ switch (options.runningMode)
                 displayTestImage = imrotate(testRGBImage, imgRotationDeg);
         end
         
+        % Display crossbar image.
+        %
+        % Cross-fixation image before displaying the images.
+        DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
+        
+        % Display null image without crossbar.
+        %
+        % This part can control the time delay before presenting the test
+        % contrast image. It is optional and default set to zero.
+        if (~options.preStimuliDelaySec == 0)
+            SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
+            WaitSecs(options.preStimuliDelaySec);
+        end
+        
+        % Display a test image gradually on.
+        % 
         % We can make stimuli gradually ramping on and off if we want.
         % Strategy used here is to make four more images having different
         % contrasts between null (zero contrast) and test (target contrast)
         % images, and present them sequentially before displaying the test
-        % image so that it can be perceived as the image is appeared
-        % gradually. We may want to decided how fast/slow the gradation
-        % should be.
+        % image so that it can be perceived as the target image is appeared
+        % gradually. 
         %
-        % Here we make four images between null and test images that has
+        % Here we make four images between null and test image that has
         % 20, 40, 60, and 80 percent of the contrast of the test image.
         if (options.movieStimuli)
             % Set the ratio to the target contrast.
             movieContrastRatio = [0.2 0.4 0.6 0.8];
             nMovieContrastRatio = length(movieContrastRatio);
             
-            % Make images here.
+            % Make medium images here.
             for ii = 1:nMovieContrastRatio
                 movieMediumImages{ii} = displayTestImage * movieContrastRatio(ii) + nullRGBImage * (1-movieContrastRatio(ii));
             end
             
-            % Display medium images here before displaying the target test image.
-            movieDelayEachImageSec = options.movieImageDelaySec/nMovieContrastRatio;
+            % Display medium images here before displaying the test image.
+            movieEachImageDelaySec = options.movieImageDelaySec/nMovieContrastRatio;
             for ii = 1:nMovieContrastRatio
                 SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
-                WaitSecs(movieDelayEachImageSec);
+                WaitSecs(movieEachImageDelaySec);
             end
         end
         
-        % Display null image without the crossbar and make a delay if you
-        % want. It is optional and default set to zero.
-        SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
-        WaitSecs(options.preStimuliDelaySec);
-        
         % Display test image here.
-        SetScreenImage(displayTestImage,window,windowRect,'verbose',false);
-        
+        SetScreenImage(displayTestImage,window,windowRect,'verbose',false);      
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
         
@@ -274,15 +279,15 @@ switch (options.runningMode)
             end
         end
         
-        % Fade out the images to cross-bar image if you choose the movie stimuli option.
+        % Display stimuli gradually off.
         if (options.movieStimuli)
             for ii = 1:nMovieContrastRatio
                 SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,'verbose',false);
-                WaitSecs(movieDelayEachImageSec);
+                WaitSecs(movieEachImageDelaySec);
             end
         end
         
-        % Cross-fixation image again.
+        % Display the cross-fixation image again.
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
