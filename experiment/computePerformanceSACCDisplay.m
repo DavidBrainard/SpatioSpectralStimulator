@@ -77,6 +77,10 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %                                         decides the duration of the
 %                                         gradation of the stimuli changes
 %                                         in sec.
+%    preStimuliDelaySec                 - Default to 0. Make a time delay
+%                                         on null stimulus without a
+%                                         crossbar before showing the test
+%                                         contrast image.
 %    verbose                            - Boolean. Default true. Controls
 %                                         printout.
 %
@@ -106,6 +110,9 @@ function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
 %    07/13/22  smo                      - Added an option to make stimuli
 %                                         presentation gradually ramping
 %                                         on and off.
+%    07/18/22  smo                      - Added an option to make a time
+%                                         delay on null image before
+%                                         showing the test contrast image.
 
 %% Set parameters.
 arguments
@@ -124,6 +131,7 @@ arguments
     options.debugMode (1,1) = false
     options.movieStimuli (1,1) = false
     options.movieImageDelaySec (1,1) = 0.5
+    options.preStimuliDelaySec (1,1) = 0
     options.verbose (1,1) = true
 end
 
@@ -244,6 +252,11 @@ switch (options.runningMode)
                 WaitSecs(movieDelayEachImageSec);
             end
         end
+        
+        % Display null image without the crossbar and make a delay if you
+        % want. It is optional and default set to zero.
+        SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
+        WaitSecs(options.preStimuliDelaySec);
         
         % Display test image here.
         SetScreenImage(displayTestImage,window,windowRect,'verbose',false);

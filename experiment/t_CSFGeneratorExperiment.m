@@ -45,6 +45,8 @@
 %                          want.
 %    07/13/22  smo       - Added an option to make stimuli
 %                          presentation gradually ramping on and off.
+%    07/18/22  smo       - Added an option to make a time delay on null
+%                          image before showing the test contrast image.
 
 %% Initialization.
 clear; close all;
@@ -54,7 +56,7 @@ LOADDATA = true;
 
 % Set which data you want to load.
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 18;
+sineFreqCyclesPerDeg = 3;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -114,6 +116,7 @@ experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
 experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
+experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
 experimentParams.movieImageDelaySec = 0.25;
 
@@ -380,7 +383,8 @@ while (nextFlag)
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
-            'movieImageDelaySec',experimentParams.movieImageDelaySec,'verbose',true);
+            'movieImageDelaySec',experimentParams.movieImageDelaySec,...
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'verbose',true);
     end
     
     % Report what happened

@@ -123,7 +123,7 @@ switch options.patternType
         [xCenter, yCenter] = RectCenter(windowRect);
         
         % Here we set the size of the arms of our fixation cross
-        fixCrossDimPix = 50;
+        fixCrossDimPix = 30;
         
         % Now we set the coordinates (these are all relative to zero we
         % will let the drawing routine center the cross in the center of
@@ -133,7 +133,7 @@ switch options.patternType
         allCoords = [xCoords; yCoords];
         
         % Set the line width for our fixation cross.
-        lineWidthPix = 5;
+        lineWidthPix = 2;
         
         % Draw the fixation cross here at the center of the screen.
         nInputLevels = 256;
