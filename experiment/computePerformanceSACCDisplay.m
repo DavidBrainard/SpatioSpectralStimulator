@@ -1,4 +1,4 @@
-function [correct] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
+function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
     theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,...
     testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
@@ -231,8 +231,10 @@ switch (options.runningMode)
         % This part can control the time delay before presenting the test
         % contrast image. It is optional and default set to zero.
         if (~options.preStimuliDelaySec == 0)
-            SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
+            flipTimeNull = SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
             WaitSecs(options.preStimuliDelaySec);
+        else
+            flipTimeNull = 0;
         end
         
         % Display a test image gradually on.
@@ -259,13 +261,13 @@ switch (options.runningMode)
             % Display medium images here before displaying the test image.
             movieEachImageDelaySec = options.movieImageDelaySec/nMovieContrastRatio;
             for ii = 1:nMovieContrastRatio
-                SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
+                flipTimeMovieOn(ii,1) = SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
                 WaitSecs(movieEachImageDelaySec);
             end
         end
         
         % Display test image here.
-        SetScreenImage(displayTestImage,window,windowRect,'verbose',false);      
+        flipTimeTest = SetScreenImage(displayTestImage,window,windowRect,'verbose',false);      
         % Make a time delay.
         WaitSecs(theSceneTemporalSupportSeconds);
         
@@ -282,7 +284,7 @@ switch (options.runningMode)
         % Display stimuli gradually off.
         if (options.movieStimuli)
             for ii = 1:nMovieContrastRatio
-                SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,'verbose',false);
+                flipTimeMovieOff(ii,1) = SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,'verbose',false);
                 WaitSecs(movieEachImageDelaySec);
             end
         end
@@ -291,6 +293,8 @@ switch (options.runningMode)
         DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
             'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
         
+        % Collect all flip time here.
+        flipTime = [flipTimeNull; flipTimeMovieOn; flipTimeTest; flipTimeMovieOff];
 
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on

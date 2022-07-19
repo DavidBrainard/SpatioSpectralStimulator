@@ -350,6 +350,7 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
     end
 end
 
+flipTime = [];
 while (nextFlag)
     % Convert log contrast -> contrast.
     %
@@ -377,7 +378,7 @@ while (nextFlag)
     %
     % Get a response here. Make a loop for the number of trials.
     for tt = 1:experimentParams.nTest
-        correct(tt) = computePerformanceSACCDisplay(...
+        [correct(tt) flipTimeTemp(:,tt)] = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
@@ -386,6 +387,9 @@ while (nextFlag)
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'verbose',true);
     end
+    
+    % Collect the flip time here.
+    flipTime(:,end+1) = flipTimeTemp;
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
