@@ -1,8 +1,8 @@
-function [] = SetScreenImage(image,window,windowRect,options)
+function [flipTime] = SetScreenImage(image,window,windowRect,options)
 % This displays images on the screen using PTB.
 %
 % Syntax: 
-%    [] = SetScreenImage(image,window,windowRect)
+%    [flipTime] = SetScreenImage(image,window,windowRect)
 %
 % Description: 
 %    This is to display test images in the experiment for the SACC project
@@ -17,7 +17,7 @@ function [] = SetScreenImage(image,window,windowRect,options)
 %    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
-%    N/A
+%    flipTime                     System time of screen flip in seconds.
 %
 % Optional key/value pairs:
 %    'verbose' -                  Boolean. Default true.  Controls plotting
@@ -27,6 +27,7 @@ function [] = SetScreenImage(image,window,windowRect,options)
 %    01/06/22  smo                Started on it
 %    02/07/22  smo                Now the image is displayed in its size 
 %                                 at the center of the screen.  
+%    07/19/22  dhb, smo           We take flip time as an output.
 
 %% Set parameters.
 arguments
@@ -63,6 +64,9 @@ imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHal
 % Display image here.
 Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
 Screen('Flip', window);
+
+% Get flip time here.
+flipTime = GetSecs;
 
 % Show the verbose message.
 if (options.verbose)
