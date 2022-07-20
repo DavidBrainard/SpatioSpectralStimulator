@@ -47,6 +47,8 @@
 %                          presentation gradually ramping on and off.
 %    07/18/22  smo       - Added an option to make a time delay on null
 %                          image before showing the test contrast image.
+%    07/20/22  smo       - Added a practice trials before the main
+%                          experiment. 
 
 %% Initialization.
 clear; close all;
