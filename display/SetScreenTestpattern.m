@@ -24,7 +24,7 @@ nPrimaries = 3;
 nChannels = 16;
 
 channelSettings = ones(nChannels, nPrimaries);
-channelIntensity = 0.1;
+channelIntensity = 0.3;
 channelSettings = channelIntensity * channelSettings;
 
 SetChannelSettings(channelSettings);
@@ -32,7 +32,7 @@ SetChannelSettings(channelSettings);
 %% Set which type of screen to display here.
 % 
 % Set one among [Circle, Contrast, SingleLine]
-ScreenPatternType = 'SingleLine';
+ScreenPatternType = 'Contrast';
 
 switch ScreenPatternType
      case 'Circle'
@@ -105,5 +105,5 @@ switch ScreenPatternType
 end
 
 %% Activate the following commands if you want to quit the screen with key stroke
-KbStrokeWait;
-CloseScreen;
+% KbStrokeWait;
+% CloseScreen;
