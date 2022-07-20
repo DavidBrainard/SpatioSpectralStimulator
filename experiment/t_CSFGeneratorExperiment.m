@@ -57,11 +57,13 @@ LOADDATA = true;
 % Set which data you want to load.
 conditionName = 'LminusMSmooth';
 sineFreqCyclesPerDeg = 3;
+gaborSdDeg = 0.75;
 SAVETHERESULTS = true;
 if (LOADDATA)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd',conditionName,sineFreqCyclesPerDeg));
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg.mat',...
+            conditionName,sineFreqCyclesPerDeg,gaborSdDeg));
         load(testFilename);
     end
 end
@@ -80,8 +82,11 @@ if (~LOADDATA)
     %
     % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
     % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
+    %
+    % We used to make the contrast gabor size in 1.5 gaborSdDeg, and now we
+    % are trying to test the size of 0.75.
     spatialTemporalParams.sineFreqCyclesPerDeg = 18;
-    spatialTemporalParams.gaborSdDeg = 1.5;
+    spatialTemporalParams.gaborSdDeg = 0.75;
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
     
@@ -168,7 +173,8 @@ if(~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_temp',conditionName,spatialTemporalParams.sineFreqCyclesPerDeg));
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg',...
+            conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,spatialTemporalParams.gaborSdDeg));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
     end
