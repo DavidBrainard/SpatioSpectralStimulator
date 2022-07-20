@@ -47,30 +47,36 @@
 %                          presentation gradually ramping on and off.
 %    07/18/22  smo       - Added an option to make a time delay on null
 %                          image before showing the test contrast image.
+%    07/20/22  smo       - Added a practice trials before the main
+%                          experiment. 
 
 %% Initialization.
 clear; close all;
 
-%% Load data if you want to skip making the images.
+%% Set up parameters for making gabor images.
+%
+% You can load the data if you saved the images. We will load the images when
+% we run the main experiment to save the time for making the images.
 LOADDATA = true;
+PRACTICETRIALS = true;
 
-% Set which data you want to load.
-conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 3;
-gaborSdDeg = 0.75;
-SAVETHERESULTS = true;
 if (LOADDATA)
+    % Set the condition of the images.
+    conditionName = 'LminusMSmooth';
+    sineFreqCyclesPerDeg = 3;
+    gaborSdDeg = 0.75;
+    SAVETHERESULTS = true;
+    
+    % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg.mat',...
             conditionName,sineFreqCyclesPerDeg,gaborSdDeg));
         load(testFilename);
     end
-end
-
-%% Set up parameters.
-if (~LOADDATA)
-    % Set up color direction
+    
+elseif (~LOADDATA)
+    %% Set up color direction
     %
     % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
@@ -90,32 +96,37 @@ if (~LOADDATA)
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
     
-    %% Instantiate a sceneEngine
+    %% Instantiate a sceneEngine.
     %
     % First set up the scene parameters that will be needed by
     % the sceSACCDisplay.
     %
     % First step is to predefine the contrasts that we will allow the
-    % psychophysics to work over.  This gives us a finite list of scenes
+    % psychophysics to work over. This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0005;
     experimentParams.nContrasts = 20;
-    experimentParams.measure = true;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
+    
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
     experimentParams.slopeDelta = 0.5;
     experimentParams.nTest = 1;
     experimentParams.nQUESTEstimator = 1;
+    
+    % If this is set to true, we will measure primaries and use them.
+    experimentParams.measure = true;
 end
 
+%% Set up experimental parameters here.
+%
 % Set the number of trials here.
+%
+% RunningMode can be chosen among three
+% [PTB-sequential; PTB-directional; simulation].
 experimentParams.minTrial = 30;
 experimentParams.maxTrial = 50;
 experimentParams.nTestValidation = 20;
-
-% RunningMode can be chosen among three
-% [PTB-sequential; PTB-directional; simulation].
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
@@ -144,7 +155,7 @@ else
 end
 
 %% Make contrast gabor images and save.
-if(~LOADDATA)
+if (~LOADDATA)
     % Now do all the computation to get us ISETBio scenes and RGB images for
     % each predefined contrast, relative to the parameters set up above.
     %
@@ -279,6 +290,7 @@ switch experimentMode
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
+        estDomainValidationLinear = 10.^estDomainValidation;
         
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
@@ -306,6 +318,93 @@ theCrossbarTemporalSupportSeconds = sceneParamsStruct.predefinedTemporalSupportC
 
 if (noISETBio)
     nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1,1};
+end
+
+%% Practice trials before the main experiment if you want.
+%
+% Set the images to use for practice trials.
+if (PRACTICETRIALS)
+    
+    %% Make images of the practice trials.
+    %
+    % We make initial, finishing images  for disply and load the contrast
+    % image for practice trials.
+    %
+    % Make initial screen image.
+    imageSize = size(nullStatusReportStruct.RGBimage,2);
+    messageInitialRGBImage_1stLine = 'Practice trial will begin';
+    messageInitialRGBImage_2ndLine = 'If you press any button';
+    initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
+        'fontsize',65,'BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+    
+    % Make finishing screen image.
+    messageFinishingRGBImage_1stLine = 'Practice has been finished';
+    messageFinishingRGBImage_2ndLine = 'Press any button to proceed';
+    finishingRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageFinishingRGBImage_1stLine messageFinishingRGBImage_2ndLine},...
+        'fontsize',65,'BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+      
+    % Set the contrast image for practice.
+    practiceTestContrast = max(sceneParamsStruct.predefinedContrasts);
+    practiceTestContrastIndex = find(sceneParamsStruct.predefinedContrasts == practiceTestContrast);
+    practiceRGBImage = sceneParamsStruct.predefinedRGBImages{1,practiceTestContrastIndex};
+    
+    %% Display the initial screen of the practice trials.
+    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',options.verbose);
+        
+    % Press any button to proceed.
+    if (strcmp(experimentParams.expKeyType,'gamepad'))
+        switch (experimentParams.runningMode)
+            case 'PTB-sequential'
+                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+            case 'PTB-directional'
+                numButtonRight = 3;
+                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+        end
+        possibleResponseGamePad = [1 2];
+        if (any(responseGamePad == possibleResponseGamePad))
+            disp('Practice trial is going to be started!');
+        end
+    end
+    
+    %% Start the practice trials here.
+    %
+    % Here we will display the highest contrast image five times. It
+    % should be easily visible. This is for subjects to get used to how
+    % they evaluate stimuli and to expect what's going to happen during the
+    % experiment. Here we set 5 times, but we can increase the number of
+    % the trials if needed.
+    nPracticeTrials = 5;
+    for pp = 1:nPracticeTrials
+        
+        % Print out the progress.
+        fprintf('Starting practice trial (%d/%d) \n', pp, nPracticeTrials);
+        
+        [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, practiceRGBImage, ...
+            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,practiceTestContrast,window,windowRect,...
+            'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
+            'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
+            'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
+            'movieImageDelaySec',experimentParams.movieImageDelaySec,...
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'verbose',true);
+    end
+    
+    %% Display the finishing screen of the practice trials.
+       SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',options.verbose);
+        
+    % Press any button to proceed.
+    if (strcmp(experimentParams.expKeyType,'gamepad'))
+        switch (experimentParams.runningMode)
+            case 'PTB-sequential'
+                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+            case 'PTB-directional'
+                numButtonRight = 3;
+                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+        end
+        possibleResponseGamePad = [1 2];
+        if (any(responseGamePad == possibleResponseGamePad))
+            disp('Practice trial has been ended!');
+        end
+    end
 end
 
 %% Threshold estimation with QUEST+.
@@ -356,6 +455,10 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
     end
 end
 
+% All experimental trials happen here that include displaying test images
+% and getting responses.
+%
+% And we are collecting flip time whenever the displaying image changes.
 flipTime = [];
 while (nextFlag)
     % Convert log contrast -> contrast.
