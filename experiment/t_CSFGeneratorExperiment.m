@@ -320,6 +320,28 @@ if (noISETBio)
     nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1,1};
 end
 
+%% Threshold estimation with QUEST+.
+%
+% There is some logic here to cache scenes and classifiers for each
+% contrast tested, so that things will run faster if a contrast is repeated
+% a second time.  This can use up space, so for real problems you may need
+% to think about space-time tradeoffs, caching things to disk, etc.
+%
+% Get the initial stimulus contrast from QUEST+
+[logContrast, nextFlag] = estimator.nextStimulus();
+
+% Open projector and set the screen primary settings as we found.
+if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
+    [window windowRect] = OpenPlainScreen([0 0 0]');
+    SetChannelSettings(experimentParams.screenPrimarySettings);
+    
+elseif (strcmp(experimentParams.runningMode,'simulation'))
+    % Set arbitrary numbers to pass and these will not be used in the
+    % further function.
+    window = 1;
+    windowRect = [0 0 1920 1080];
+end
+
 %% Practice trials before the main experiment if you want.
 %
 % Set the images to use for practice trials.
@@ -327,35 +349,41 @@ if (PRACTICETRIALS)
     
     %% Make images of the practice trials.
     %
-    % We make initial, finishing images  for disply and load the contrast
+    % We make initial, finishing images for disply and load the contrast
     % image for practice trials.
+    %
+    % Note that our DMD displays the vertical symmetry image of the
+    % original images, so here we make vertical symmetry image to look fine
+    % on the DMD.
     %
     % Make initial screen image.
     imageSize = size(nullStatusReportStruct.RGBimage,2);
     messageInitialRGBImage_1stLine = 'Practice trial will begin';
     messageInitialRGBImage_2ndLine = 'If you press any button';
     initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
-        'fontsize',65,'BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+        'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+    initialRGBImagePractice = fliplr(initialRGBImagePractice);
     
     % Make finishing screen image.
-    messageFinishingRGBImage_1stLine = 'Practice has been finished';
+    messageFinishingRGBImage_1stLine = 'Practice has been done';
     messageFinishingRGBImage_2ndLine = 'Press any button to proceed';
     finishingRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageFinishingRGBImage_1stLine messageFinishingRGBImage_2ndLine},...
-        'fontsize',65,'BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
-      
+        'fontsize',65,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+    finishingRGBImagePractice = fliplr(finishingRGBImagePractice);
+    
     % Set the contrast image for practice.
     practiceTestContrast = max(sceneParamsStruct.predefinedContrasts);
     practiceTestContrastIndex = find(sceneParamsStruct.predefinedContrasts == practiceTestContrast);
     practiceRGBImage = sceneParamsStruct.predefinedRGBImages{1,practiceTestContrastIndex};
     
     %% Display the initial screen of the practice trials.
-    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',options.verbose);
+    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
         
     % Press any button to proceed.
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+                responseGamePad = GetGamepadResp2AFC('verbose',true);
             case 'PTB-directional'
                 numButtonRight = 3;
                 responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
@@ -363,6 +391,24 @@ if (PRACTICETRIALS)
         possibleResponseGamePad = [1 2];
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Practice trial is going to be started!');
+        end
+    end
+    
+    %% Display crossbar image.
+    DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
+        'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
+    
+    if (strcmp(experimentParams.expKeyType,'gamepad'))
+        switch (experimentParams.runningMode)
+            case 'PTB-sequential'
+                responseGamePad = GetGamepadResp2AFC('verbose',true);
+            case 'PTB-directional'
+                numButtonRight = 3;
+                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+        end
+        possibleResponseGamePad = [1 2];
+        if (any(responseGamePad == possibleResponseGamePad))
+            disp('Experiment is going to be started!');
         end
     end
     
@@ -389,7 +435,7 @@ if (PRACTICETRIALS)
     end
     
     %% Display the finishing screen of the practice trials.
-       SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',options.verbose);
+       SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',true);
         
     % Press any button to proceed.
     if (strcmp(experimentParams.expKeyType,'gamepad'))
@@ -407,28 +453,8 @@ if (PRACTICETRIALS)
     end
 end
 
-%% Threshold estimation with QUEST+.
+%% Back to the main experiment here.
 %
-% There is some logic here to cache scenes and classifiers for each
-% contrast tested, so that things will run faster if a contrast is repeated
-% a second time.  This can use up space, so for real problems you may need
-% to think about space-time tradeoffs, caching things to disk, etc.
-%
-% Get the initial stimulus contrast from QUEST+
-[logContrast, nextFlag] = estimator.nextStimulus();
-
-% Open projector and set the screen primary settings as we found.
-if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
-    [window windowRect] = OpenPlainScreen([0 0 0]');
-    SetChannelSettings(experimentParams.screenPrimarySettings);
-    
-elseif (strcmp(experimentParams.runningMode,'simulation'))
-    % Set arbitrary numbers to pass and these will not be used in the
-    % further function.
-    window = 1;
-    windowRect = [0 0 1920 1080];
-end
-
 % If PTB mode and not simulating response, wait for subject
 % to press a button before starting trials. In the end,
 % probably want to move this to a place where the test cross
@@ -443,7 +469,7 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
         % Waiting for key to be pressed to start.
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
+                responseGamePad = GetGamepadResp2AFC('verbose',true);
             case 'PTB-directional'
                 numButtonRight = 3;
                 responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
