@@ -59,10 +59,10 @@ clear; close all;
 % we run the main experiment to save the time for making the images.
 LOADDATA = true;
 PRACTICETRIALS = true;
-
+conditionName = 'LminusMSmooth';
+   
 if (LOADDATA)
     % Set the condition of the images.
-    conditionName = 'LminusMSmooth';
     sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
@@ -78,9 +78,12 @@ if (LOADDATA)
 elseif (~LOADDATA)
     %% Set up color direction
     %
-    % Set spatialGaborTargetContrast = 0.04 for the spatial frequency 18
+    % Set spatialGaborTargetContrast = 0.03 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    spatialGaborTargetContrast = 0.04;
+    % 1 cpd = 0.01
+    % the others = 0.02
+    % 18 cpd = 0.03
+    spatialGaborTargetContrast = 0.03;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -264,25 +267,27 @@ switch experimentMode
         % frequencies.
         % These ranges are with the size of pupil 3.0 mm, which works fine
         % for Semin and David.
+        %
+        %  Contrast range if you made the stumuli up to contrast of 0.02.
+        %  [0 0.0005 0.0016 0.0027 0.0038 0.0048 0.0059 0.0070 0.0081
+        %  0.0092 0.0103 0.0113 0.0124 0.0135 0.0146 0.0157 0.0168 0.0178
+        %  0.0189 0.0200];
         switch sineFreqCyclesPerDeg
-            case 1
-                lowerLimEstDomain = 0.0005;
-                higherLimEstDomain = 0.0059;
             case 3
-                lowerLimEstDomain = 0.0005;
-                higherLimEstDomain = 0.0059;
+                lowerLimEstDomain  = 0.0003;
+                higherLimEstDomain = 0.0030;
             case 6
-                lowerLimEstDomain = 0.0016;
-                higherLimEstDomain = 0.0070;
+                lowerLimEstDomain  = 0.0005;
+                higherLimEstDomain = 0.0059;
             case 9
-                lowerLimEstDomain = 0.0016;
-                higherLimEstDomain = 0.0070;
+                lowerLimEstDomain  = 0.0027;
+                higherLimEstDomain = 0.0081;
             case 12
-                lowerLimEstDomain = 0.0027;
+                lowerLimEstDomain  = 0.0038;
                 higherLimEstDomain = 0.0092;
             case 18
-                lowerLimEstDomain = 0.0027;
-                higherLimEstDomain = 0.0137;
+                lowerLimEstDomain  = 0.0038;
+                higherLimEstDomain = 0.0120;
             otherwise
         end
         
