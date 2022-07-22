@@ -58,7 +58,7 @@ clear; close all;
 % You can load the data if you saved the images. We will load the images when
 % we run the main experiment to save the time for making the images.
 LOADDATA = true;
-PRACTICETRIALS = true;
+PRACTICETRIALS = false;
 conditionName = 'LminusMSmooth';
    
 if (LOADDATA)
@@ -137,12 +137,12 @@ experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
-experimentParams.movieImageDelaySec = 0.25;
+experimentParams.movieImageDelaySec = MatchScreenFrameTime(0.25);
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
-sceneParamsStruct.predefinedTemporalSupport = 0.5;
-sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
+sceneParamsStruct.predefinedTemporalSupport = MatchScreenFrameTime(0.5);
+sceneParamsStruct.predefinedTemporalSupportCrossbar = MatchScreenFrameTime(1.0);
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 
 % Set numbers when using auto response.

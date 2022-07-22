@@ -259,7 +259,7 @@ switch (options.runningMode)
             end
             
             % Display medium images here before displaying the test image.
-            movieEachImageDelaySec = options.movieImageDelaySec/nMovieContrastRatio;
+            movieEachImageDelaySec = MatchScreenFrameTime(options.movieImageDelaySec/nMovieContrastRatio);
             for ii = 1:nMovieContrastRatio
                 flipTimeMovieOn(ii,1) = SetScreenImage(movieMediumImages{ii},window,windowRect,'verbose',false);
                 WaitSecs(movieEachImageDelaySec);
