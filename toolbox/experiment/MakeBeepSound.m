@@ -40,8 +40,9 @@ function [] = MakeBeepSound(options)
 %% Set parameters.
 arguments
     options.preset = []
-    options.frequency (1,1) = 5000
-    options.duration (1,1) = 0.3
+    options.frequency (1,1) = 2000
+    options.duration (1,1) = 0.05
+    options.samplingRate (1,1) = 44100
     options.verbose (1,1) = true
 end
 
@@ -58,7 +59,8 @@ if (~isempty(options.preset))
 end
 
 % Make a beep sound here.
-beepSound = MakeBeep(options.frequency, options.duration);
+% beepSound = MakeBeep(options.frequency, options.duration);
+beepSound = sin(2 * pi * options.frequency * (0:options.duration*options.samplingRate-1)/options.samplingRate);
 
 % Play sound here.
 % 
