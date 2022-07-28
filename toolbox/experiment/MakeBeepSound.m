@@ -23,8 +23,6 @@ function [] = MakeBeepSound(options)
 %    frequency                  - Default to 400. Set the frequency of the
 %                                 beep sound. The higher the value is, the
 %                                 higher the beep sound becomes.
-%    volume                     - Default to 0.4. It can be set within the
-%                                 range of 0-1.
 %    duration                   - Default to 0.2. Set duration of the beep
 %                                 sound in second.
 %    verbose                    - Default true. Controls printout.
@@ -43,8 +41,7 @@ function [] = MakeBeepSound(options)
 arguments
     options.preset = []
     options.frequency (1,1) = 5000
-    options.volume (1,1) = 0.4
-    options.duration (1,1) = 0.1
+    options.duration (1,1) = 0.3
     options.verbose (1,1) = true
 end
 
