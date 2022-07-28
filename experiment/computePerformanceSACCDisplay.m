@@ -234,7 +234,7 @@ switch (options.runningMode)
             flipTimeNull = SetScreenImage(nullRGBImage,window,windowRect,'verbose',false);
             WaitSecs(options.preStimuliDelaySec);
         else
-            flipTimeNull = 0;
+            flipTimeNull = [];
         end
         
         % Display a test image gradually on.
@@ -455,6 +455,11 @@ end
 
 % Print out the results.
 correct = response;
+
+if (~isempty(options.autoResponse))
+    correctResponse   = 1;
+    incorrectResponse = 0;
+end
 
 % Play the sound based on the evaluations.
 if (options.beepSound)
