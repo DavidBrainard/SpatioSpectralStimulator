@@ -46,6 +46,13 @@ arguments
     options.verbose (1,1) = true
 end
 
+%% Before using this function.
+%
+% It seems this function is only working on Linux when you call Beeper
+% function first. Something in Beeper function opens or connects to the
+% device to make things ready to play. Anyways, this function uses the
+% function 'sound' internally and it works well.
+
 %% Play sound here.
 %
 % You can play preset sound if you want.
