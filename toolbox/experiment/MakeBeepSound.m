@@ -34,13 +34,17 @@ function [] = MakeBeepSound(options)
 %    03/23/22  smo              - Made it simpler and now using Beeper
 %                                 command. Also, made an option to choose
 %                                 playing preset sounds.
+%    07/28/22  smo              - We switched the function to play the
+%                                 sound from Beeper to sound as it crashed
+%                                 while running the experiment. It still
+%                                 need to be tested if it works fine.
 
 %% Set parameters.
 arguments
     options.preset = []
-    options.frequency (1,1) = 400
+    options.frequency (1,1) = 5000
     options.volume (1,1) = 0.4
-    options.duration (1,1) = 0.2
+    options.duration (1,1) = 0.1
     options.verbose (1,1) = true
 end
 
@@ -50,13 +54,19 @@ end
 if (~isempty(options.preset))
     switch options.preset
         case 'correct'
-            options.frequency = 'high';
+            options.frequency = 5000;
         case 'incorrect'
-            options.frequency = 'low';
+            options.frequency = 900;
     end    
 end
 
+% Make a beep sound here.
+beepSound = MakeBeep(options.frequency, options.duration);
+
 % Play sound here.
-Beeper(options.frequency, options.volume, options.duration);
+% 
+% We changed the function from 'Beeper' to 'sound'.
+% Beeper(options.frequency, options.volume, options.duration);
+sound(beepSound);
 
 end
