@@ -6,6 +6,8 @@
 % History:
 %    03/25/22  dhb, smo     - Measured the data and plotted the graph.
 %    07/19/22  dhb, smo     - Added data using different lense diopters.
+%    07/29/22  smo, rsh     - Added data using different lenese within the
+%                             range of -6 to +2.
 
 %% Measurement data.
 %
@@ -14,7 +16,7 @@
 %
 % Note that we are planning to calibrate for the lens diopeters from -6.0
 % to +2.0 for SACC project.
-whichData = 1;
+whichData = 18;
 
 switch whichData
     case 0
@@ -47,6 +49,40 @@ switch whichData
         lensDiopters = -5.0;
         positionTrombone = [-19.53 -18.55];
         contrast         = [ 0.930  0.911];
+        
+        %% From here, da4ta was collected on the day of 07/29/22.
+    case 11
+        lensDiopters = -6.0;
+        positionTrombone = [115 114 112.5 111 110 109 107.5 105];
+        contrast         = [0.92 0.947 0.947 0.959 0.96 0.946 0.931 0.914];
+    case 12
+        lensDiopters = -5.0;
+        positionTrombone = [124 121.5 120.5 120 119 117.5 115.5 114.5 112.5];
+        contrast         = [0.92 0.96 0.96 0.959 0.959 0.958 0.958 0.928 0.898];
+    case 13
+        lensDiopters = -4.0;
+        positionTrombone = [130.5 129.5 127.5 126 125 122.5 121];
+        contrast         = [0.909 0.927 0.938 0.939 0.938 0.924 0.883];
+    case 14
+        lensDiopters = -3.0;
+        positionTrombone = [138.5 137 136 135 134 132.5 131 129 128];
+        contrast         = [0.91 0.94 0.941 0.949 0.95 0.95 0.9 0.901 0.856];
+    case 15
+        lensDiopters = -2.0;
+        positionTrombone = [146 145 144 143 141 140 139 138 135.5];
+        contrast         = [0.88 0.931 0.94 0.95 0.951 0.959 0.949 0.939 0.855];
+    case 16
+        lensDiopters = -1.0;
+        positionTrombone = [152.5 151.5 150.5 149.5 148.5 147 145.5 144 143];
+        contrast         = [0.893 0.929 0.946 0.946 0.947 0.955 0.955 0.946 0.927];
+    case 17
+        lensDiopters = +1.0;
+        positionTrombone = [165 164 162.5 161.5 160.5 160 159 157.5 156 155];
+        contrast         = [0.901 0.942 0.95 0.959 0.959 0.959 0.958 0.95 0.941 0.872];
+    case 18
+        lensDiopters = +2.0;
+        positionTrombone = [170.5 169.5 168.5 168 166 165 164 162 161 159.5];
+        contrast         = [0.908 0.938 0.953 0.953 0.961 0.961 0.953 0.937 0.896 0.8];
     otherwise
 end
         
