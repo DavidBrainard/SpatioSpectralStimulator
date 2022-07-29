@@ -1,12 +1,17 @@
 function [] = MakeBeepSound(options)
 % This plays a short tone as an audible cue.
 %
-% Syntax: [] = MakeBeepSound(options)
+% Syntax: [] = MakeBeepSound()
 %
 % Description:
 %    This is for playing a short beep sound to play as an audible cue.
 %    Especially, it is written for the SACC project to give an alarm for
 %    the patients during the experiment.
+%
+%    It seems this function is only working on Linux when you call Beeper
+%    function first. Something in Beeper function opens or connects to the
+%    device to make things ready to play. Anyways, this function uses the
+%    function 'sound' internally and it works well.
 %
 % Inputs:
 %    N/A
@@ -46,13 +51,6 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Before using this function.
-%
-% It seems this function is only working on Linux when you call Beeper
-% function first. Something in Beeper function opens or connects to the
-% device to make things ready to play. Anyways, this function uses the
-% function 'sound' internally and it works well.
-
 %% Play sound here.
 %
 % You can play preset sound if you want.
@@ -61,10 +59,10 @@ if (~isempty(options.preset))
         case 'correct'
             options.frequency = 5000;
         case 'incorrect'
-            options.frequency = 900;
+            options.frequency = 1200;
     end    
 end
-
+ 
 % Make a beep sound here.
 % beepSound = MakeBeep(options.frequency, options.duration);
 beepSound = sin(2 * pi * options.frequency * (0:options.duration*options.samplingRate-1)/options.samplingRate);
