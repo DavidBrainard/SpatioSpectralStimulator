@@ -16,7 +16,7 @@
 %
 % Note that we are planning to calibrate for the lens diopeters from -6.0
 % to +2.0 for SACC project.
-whichData = 18;
+whichData = 11;
 
 switch whichData
     case 0
@@ -50,7 +50,13 @@ switch whichData
         positionTrombone = [-19.53 -18.55];
         contrast         = [ 0.930  0.911];
         
-        %% From here, da4ta was collected on the day of 07/29/22.
+        %% From here, data was collected on the day of 07/29/22.
+        %
+        % Note that the position trombone here is the number on the
+        % measuring tape that is attached to the Trombone. Therefore, this
+        % is different range of unit from the measurements conducted
+        % before. The unit for the position is still mm though.
+        
     case 11
         lensDiopters = -6.0;
         positionTrombone = [115 114 112.5 111 110 109 107.5 105];
@@ -75,7 +81,7 @@ switch whichData
         lensDiopters = -1.0;
         positionTrombone = [152.5 151.5 150.5 149.5 148.5 147 145.5 144 143];
         contrast         = [0.893 0.929 0.946 0.946 0.947 0.955 0.955 0.946 0.927];
-    case 17
+    case 1718
         lensDiopters = +1.0;
         positionTrombone = [165 164 162.5 161.5 160.5 160 159 157.5 156 155];
         contrast         = [0.901 0.942 0.95 0.959 0.959 0.959 0.958 0.95 0.941 0.872];
@@ -95,6 +101,6 @@ plot(positionTrombone, contrast, 'ko--', 'MarkerFaceColor', [0.5 0.5 0.5], 'Mark
 plot(positionContrastMax, contrastMax, 'o', 'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', zeros(1,3), 'MarkerSize', 8);
 xlabel('Position Trombone (mm)','FontSize',13);
 ylabel('Contrast','FontSize',13);
-ylim([0.871 0.965]);
+ylim([0.86 0.965]);
 legend('All data','Max Contrast','location','southeast');
 title(append('Lens diopters: ',num2str(lensDiopters),' / Max contrast = ',num2str(contrastMax)));
