@@ -1,7 +1,7 @@
 % ContrastOverTrombonePositionData
 %
 % This is the measurement of contrast over the Tromobone position by
-% controlling it by its own software. 
+% controlling it by its own software.
 
 % History:
 %    03/25/22  dhb, smo     - Measured the data and plotted the graph.
@@ -16,15 +16,15 @@
 %
 % Note that we are planning to calibrate for the lens diopeters from -6.0
 % to +2.0 for SACC project.
-whichData = 11;
+whichData = 18;
 
 switch whichData
     case 0
         lensDiopters = 0;
         positionTrombone = [2.799 2.299 1.772 1.522 1.272 1.022 0.772 0.522 0.272 0.022 -0.530 -1.449 -2.193 -2.665 ];
         contrast         = [0.931 0.946 0.954 0.954 0.954 0.954 0.955 0.954 0.954 0.954  0.954  0.954  0.947  0.939 ];
-    % Following data no. 1 to 6 were collected using different lens
-    % diopeters on the date of 07/19/22.
+        % Following data no. 1 to 6 were collected using different lens
+        % diopeters on the date of 07/19/22.
     case 1
         lensDiopters = -3;
         positionTrombone = [-15.17 -14.64 -14.06 -13.54 -12.99 -12.52 -12.05 -11.52 -11.01 -10.54 -9.99 -9.48];
@@ -50,13 +50,12 @@ switch whichData
         positionTrombone = [-19.53 -18.55];
         contrast         = [ 0.930  0.911];
         
-        %% From here, data was collected on the day of 07/29/22.
+        % From here, data was collected on the day of 07/29/22.
         %
         % Note that the position trombone here is the number on the
         % measuring tape that is attached to the Trombone. Therefore, this
         % is different range of unit from the measurements conducted
         % before. The unit for the position is still mm though.
-        
     case 11
         lensDiopters = -6.0;
         positionTrombone = [115 114 112.5 111 110 109 107.5 105];
@@ -87,11 +86,11 @@ switch whichData
         contrast         = [0.901 0.942 0.95 0.959 0.959 0.959 0.958 0.95 0.941 0.872];
     case 18
         lensDiopters = +2.0;
-        positionTrombone = [170.5 169.5 168.5 168 166 165 164 162 161 159.5];
-        contrast         = [0.908 0.938 0.953 0.953 0.961 0.961 0.953 0.937 0.896 0.8];
+        positionTrombone = [170.5 169.5 168.5 168 166 165 164 162 161];
+        contrast         = [0.908 0.938 0.953 0.953 0.961 0.961 0.953 0.937 0.896];
     otherwise
 end
-        
+
 contrastMax = max(contrast);
 positionContrastMax = positionTrombone(find(contrast(:) == contrastMax));
 
@@ -101,6 +100,7 @@ plot(positionTrombone, contrast, 'ko--', 'MarkerFaceColor', [0.5 0.5 0.5], 'Mark
 plot(positionContrastMax, contrastMax, 'o', 'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', zeros(1,3), 'MarkerSize', 8);
 xlabel('Position Trombone (mm)','FontSize',13);
 ylabel('Contrast','FontSize',13);
-ylim([0.86 0.965]);
+xticks([round(min(positionTrombone)):1:round(max(positionTrombone))]);
+ylim([0.855 0.965]);
 legend('All data','Max Contrast','location','southeast');
 title(append('Lens diopters: ',num2str(lensDiopters),' / Max contrast = ',num2str(contrastMax)));
