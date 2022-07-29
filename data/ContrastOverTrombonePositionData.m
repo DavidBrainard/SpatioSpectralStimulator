@@ -16,7 +16,7 @@
 %
 % Note that we are planning to calibrate for the lens diopeters from -6.0
 % to +2.0 for SACC project.
-whichData = 18;
+whichData = 13;
 
 switch whichData
     case 0
@@ -66,8 +66,13 @@ switch whichData
         contrast         = [0.92 0.96 0.96 0.959 0.959 0.958 0.958 0.928 0.898];
     case 13
         lensDiopters = -4.0;
-        positionTrombone = [130.5 129.5 127.5 126 125 122.5 121];
-        contrast         = [0.909 0.927 0.938 0.939 0.938 0.924 0.883];
+%         positionTrombone = [130.5 129.5 127.5 126 125 122.5 121];
+%         contrast         = [0.909 0.927 0.938 0.939 0.938 0.924 0.883];
+% Data has been corrected. Somehow first measurement gave the lower
+% contrast than expected. Following is the newly measured one.
+        positionTrombone = [130.5 129.5 128 127 126 125 124 122.5 121.5 120.5];
+        contrast         = [0.901 0.923 0.933 0.946 0.955 0.944 0.943 0.933 0.92 0.894];
+
     case 14
         lensDiopters = -3.0;
         positionTrombone = [138.5 137 136 135 134 132.5 131 129 128];
