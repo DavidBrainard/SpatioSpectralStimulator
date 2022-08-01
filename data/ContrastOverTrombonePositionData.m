@@ -148,8 +148,11 @@ end
 targetLensDiopters = -2.5;
 
 % Calculate optimal Trombone position here using interpolation.
+% You can choose interpolation type within ['linear', 'nearest', 'spline',
+% 'cubic', 'makima'].
+interpolationType = 'linear';
 positionContrastMaxEst = interpn(lensDioptersSet, positionContrastMax, ...
-    targetLensDiopters, 'linear');
+    targetLensDiopters, interpolationType);
 
 % Print out the results.
 fprintf('Optimal Trombone position for lens diopter = (%.1f) is %.0f (mm) \n', ...
