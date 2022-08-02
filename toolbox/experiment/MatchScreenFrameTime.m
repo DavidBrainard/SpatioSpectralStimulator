@@ -36,10 +36,10 @@ arguments
 end
 
 %% Calculate the corrected time.
-oneUnitFrameTime = 1/options.frameRate;
-nUnitsFrameTime = round(time/oneUnitFrameTime);
+ifi = 1/options.frameRate;
+nUnitsFrameTime = round(time/ifi);
 
 % Print out the corrected time.
-correctTime = oneUnitFrameTime * nUnitsFrameTime;
+correctTime = ifi * nUnitsFrameTime;
 
 end 
