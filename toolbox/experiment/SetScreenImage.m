@@ -20,7 +20,9 @@ function [flipTime] = SetScreenImage(image,window,windowRect,options)
 %    flipTime                     System time of screen flip in seconds.
 %
 % Optional key/value pairs:
-%    'verbose' -                  Boolean. Default true.  Controls plotting
+%    timeDelay                    Default to 0. Make a time delay before
+%                                 making a flip of the image.
+%    verbose -                    Boolean. Default true.  Controls plotting
 %                                 and printout.
 
 % History:
@@ -34,6 +36,7 @@ arguments
     image
     window (1,1)
     windowRect (1,4)
+    options.timeDelay (1,1) = 0
     options.verbose (1,1) = true
 end
 
@@ -61,12 +64,26 @@ imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
 imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
     centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
 
-% Display image here.
+% Display image here. 
+%
+% We are getting flip time in two different ways and the function 'GetSecs'
+% is just for comparison. The Screen one should be more accurate.
+%
+% Make a texture.
 Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
-Screen('Flip', window);
 
-% Get flip time here.
-flipTime = GetSecs;
+% Flip the screen here. You have an option to make a time delay before
+% flipping it to prevent frame break-up.
+%
+% When we make a time delay, we want to set the time as multiple of
+% Inner Frame Interval (ifi), so we convert the time here.
+if (~isempty(options.timeDelay))
+   timeDelay = MatchScreenFrameTime(options.timeDelay);
+else
+    timeDelay = 0.0;
+end
+flipTime = Screen('Flip', window, timeDelay);
+flipTimeGetSecs = GetSecs;
 
 % Show the verbose message.
 if (options.verbose)

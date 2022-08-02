@@ -28,7 +28,10 @@ function [correctTime] = MatchScreenFrameTime(time,options)
 
 % History:
 %    07/22/22  smo                  - Wrote it.
-
+%    08/02/22  smo                  - Corrected time is set as half frame
+%                                     earlier to make sure it is not
+%                                     overlapping with the next frame.
+ 
 %% Set parameters.
 arguments
     time (1,1) 
@@ -37,9 +40,10 @@ end
 
 %% Calculate the corrected time.
 ifi = 1/options.frameRate;
-nUnitsFrameTime = round(time/ifi);
+nFrames = round(time/ifi);
 
 % Print out the corrected time.
-correctTime = ifi * nUnitsFrameTime;
+halfFrame = 0.5;
+correctTime = ifi * (nFrames - halfFrame);
 
 end 
