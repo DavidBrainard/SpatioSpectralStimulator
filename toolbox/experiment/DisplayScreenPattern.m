@@ -1,4 +1,4 @@
-function [] = DisplayScreenPattern(window,windowRect,options)
+function [flipTime flipTimeGetSecs] = DisplayScreenPattern(window,windowRect,options)
 % Display a pattern on the screen using PTB.
 %
 % Syntax:
@@ -26,6 +26,8 @@ function [] = DisplayScreenPattern(window,windowRect,options)
 %    imageBackground -            Image to use as a background instead of
 %                                 plain screen. Input should be in format
 %                                 either double or uint8.
+%    timeDelay -                  Default to 0. Make a time delay before
+%                                 making a flip of the image.
 %    verbose -                    Boolean. Default true. Controls
 %                                 printout.
 %
@@ -34,8 +36,10 @@ function [] = DisplayScreenPattern(window,windowRect,options)
 
 % History:
 %   02/10/22 smo                  Started on it.
-%   02/15/22 smo                  Now it is possible to display crossbar 
+%   02/15/22 smo                  Now it is possible to display crossbar
 %                                 pattern on image.
+%   08/03/22 smo                  Added an option to make a time delay
+%                                 before displaying an image.
 
 %% Set parameters.
 arguments
@@ -44,6 +48,7 @@ arguments
     options.patternColor (1,3) = [1 1 1]
     options.patternType = 'crossbar'
     options.imageBackground = []
+    options.timeDelay (1,1) = 0
     options.verbose (1,1) = true
 end
 
@@ -156,7 +161,8 @@ switch options.patternType
                 % Vertical part of the crossbar.
                 crossbarImage(crossbarCoords,imageLineWidth,ii) = options.patternColor(ii);
             end
-            SetScreenImage(crossbarImage, window, windowRect, 'verbose', options.verbose);
+            [flipTime flipTimeGetSecs] = SetScreenImage(crossbarImage, window, windowRect, ...
+                'timeDelay', options.timeDelay, 'verbose', options.verbose);
             
         else
             % Display crossbar on the plain screen.
@@ -166,7 +172,7 @@ switch options.patternType
             % Flip to the screen.
             Screen('Flip', window);
         end
-          
+        
     otherwise
 end
 

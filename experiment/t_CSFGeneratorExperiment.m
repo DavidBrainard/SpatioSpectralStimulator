@@ -137,12 +137,12 @@ experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
-experimentParams.movieImageDelaySec = MatchScreenFrameTime(0.25);
+experimentParams.movieImageDelaySec = 0.25;
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
-sceneParamsStruct.predefinedTemporalSupport = MatchScreenFrameTime(0.5);
-sceneParamsStruct.predefinedTemporalSupportCrossbar = MatchScreenFrameTime(1.0);
+sceneParamsStruct.predefinedTemporalSupport = 0.5;
+sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 
 % Set numbers when using auto response.
