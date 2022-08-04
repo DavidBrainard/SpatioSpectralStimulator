@@ -65,7 +65,7 @@ if (LOADDATA)
     % Set the condition of the images.
     sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
-    SAVETHERESULTS = true;
+    SAVETHERESULTS = false;
     
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -133,7 +133,7 @@ experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
-experimentParams.autoResponse = false;
+experimentParams.autoResponse = true;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
@@ -543,6 +543,9 @@ while (nextFlag)
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
 end
+
+% Get the flip time difference here.
+flipTimeInterval = diff(flipTime);
 
 % Close projector.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))

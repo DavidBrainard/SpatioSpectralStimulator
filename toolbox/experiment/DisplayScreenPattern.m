@@ -1,4 +1,4 @@
-function [flipTime flipTimeGetSecs] = DisplayScreenPattern(window,windowRect,options)
+function [flipTime] = DisplayScreenPattern(window,windowRect,options)
 % Display a pattern on the screen using PTB.
 %
 % Syntax:
@@ -14,7 +14,7 @@ function [flipTime flipTimeGetSecs] = DisplayScreenPattern(window,windowRect,opt
 %    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
-%     N/A
+%    flipTime -                   System time of screen flip in seconds.
 %
 % Optional key/value pairs:
 %    patternType -                Default to 'crossbar'. Choose a desired
@@ -48,7 +48,8 @@ arguments
     options.patternColor (1,3) = [1 1 1]
     options.patternType = 'crossbar'
     options.imageBackground = []
-    options.timeDelay (1,1) = 0
+    options.preFlipTimeDelay (1,1) = 0
+    options.afterFlipTimeDelay (1,1) = 0
     options.verbose (1,1) = true
 end
 
@@ -161,8 +162,9 @@ switch options.patternType
                 % Vertical part of the crossbar.
                 crossbarImage(crossbarCoords,imageLineWidth,ii) = options.patternColor(ii);
             end
-            [flipTime flipTimeGetSecs] = SetScreenImage(crossbarImage, window, windowRect, ...
-                'timeDelay', options.timeDelay, 'verbose', options.verbose);
+            [flipTime] = SetScreenImage(crossbarImage, window, windowRect, ...
+                'preFlipTimeDelay', options.preFlipTimeDelay, 'afterFlipTimeDelay', options.afterFlipTimeDelay, ...
+                'verbose', options.verbose);
             
         else
             % Display crossbar on the plain screen.
