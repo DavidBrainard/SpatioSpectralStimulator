@@ -8,10 +8,13 @@ function [] = MakeBeepSound(options)
 %    Especially, it is written for the SACC project to give an alarm for
 %    the patients during the experiment.
 %
-%    It seems this function is only working on Linux when you call Beeper
-%    function first. Something in Beeper function opens or connects to the
-%    device to make things ready to play. Anyways, this function uses the
-%    function 'sound' internally and it works well.
+%    Now we are using the function audioplayer to play the sound. We used
+%    to use 'Beeper' or 'sound', but both of them either crashed or showed
+%    errors when playing the sounds in a loop.
+%
+%    We make audioplayer object to play the sound and clear it after the
+%    play not to stack up the objects. It showed the errors when the
+%    objects were collected up to the number of 55.
 %
 % Inputs:
 %    N/A
@@ -25,11 +28,15 @@ function [] = MakeBeepSound(options)
 %                                 'incorrect' to give an audible cue for
 %                                 each evaluation in psychophysical
 %                                 experiment.
-%    frequency                  - Default to 400. Set the frequency of the
+%    frequency                  - Default to 5000. Set the frequency of the
 %                                 beep sound. The higher the value is, the
 %                                 higher the beep sound becomes.
-%    duration                   - Default to 0.2. Set duration of the beep
-%                                 sound in second.
+%    duration                   - Default to 0.25. Set duration of the beep
+%                                 sound in seconds. It also controls the
+%                                 time delay after making the sound as this
+%                                 function did not work without making a
+%                                 bit of time delay after playing the
+%                                 sound.
 %    verbose                    - Default true. Controls printout.
 
 % History:
@@ -41,12 +48,16 @@ function [] = MakeBeepSound(options)
 %                                 sound from Beeper to sound as it crashed
 %                                 while running the experiment. It still
 %                                 need to be tested if it works fine.
+%    08/05/22  dhb, smo         - Now we use the function audioplayer out
+%                                 of the sound function, and it is working
+%                                 fine without errors when we run it
+%                                 multiple times.
 
 %% Set parameters.
 arguments
     options.preset = []
-    options.frequency (1,1) = 2000
-    options.duration (1,1) = 0.05
+    options.frequency (1,1) = 5000
+    options.duration (1,1) = 0.25
     options.samplingRate (1,1) = 44100
     options.verbose (1,1) = true
 end
@@ -64,16 +75,13 @@ if (~isempty(options.preset))
 end
  
 % Make a beep sound here.
-% beepSound = MakeBeep(options.frequency, options.duration);
-beepSound = sin(2 * pi * options.frequency * (0:options.duration*options.samplingRate-1)/options.samplingRate);
+frequencyDefault = 8192;
+beepSound = sin(2 * pi * frequencyDefault * (0:options.duration*options.samplingRate-1)/options.samplingRate);
 
 % Play sound here.
-% 
-% We changed the function from 'Beeper' to 'sound'.
-% Beeper(options.frequency, options.volume, options.duration);
-a = audioplayer(beepSound,8192);
+a = audioplayer(beepSound, options.frequency);
 a.play;
-WaitSecs(0.25);
+WaitSecs(options.duration);
 clear a;
 
 end
