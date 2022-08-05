@@ -117,6 +117,9 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         showing the test contrast image.
 %    08/04/22  smo                      - Collecting flip time as an
 %                                         output.
+%    08/05/22  smo                      - Now we make medium images on the
+%                                         cosine function for ramping
+%                                         on/off stimuli.
 
 %% Set parameters.
 arguments
@@ -242,19 +245,25 @@ switch (options.runningMode)
         end
         
         % Display a test image gradually on.
-        % 
+        %
         % We can make stimuli gradually ramping on and off if we want.
         % Strategy used here is to make four more images having different
         % contrasts between null (zero contrast) and test (target contrast)
         % images, and present them sequentially before displaying the test
         % image so that it can be perceived as the target image is appeared
-        % gradually. 
+        % gradually.
         %
-        % Here we make four images between null and test image that has
-        % 20, 40, 60, and 80 percent of the contrast of the test image.
+        % Here we make four medium images between null and test image that
+        % has 20, 40, 60, and 80 percent of the contrast of the test image.
+        %
+        % Now we make the medium images on the cosine function.
         if (options.movieStimuli)
-            % Set the ratio to the target contrast.
-            movieContrastRatio = [0.2 0.4 0.6 0.8];
+            
+            % Set the contrast ratio of the medium images on the cosine
+            % function.
+            horizontalLocationIntervalRatio = 0.2;
+            movieContrastRatio = mat2gray(cos([pi : horizontalLocationIntervalRatio*pi : 2*pi]));
+            movieContrastRatio = setdiff(movieContrastRatio, [0 1]);
             nMovieContrastRatio = length(movieContrastRatio);
             
             % Make medium images here.
@@ -272,7 +281,7 @@ switch (options.runningMode)
         
         % Display test image here.
         flipTimeTest = SetScreenImage(displayTestImage,window,windowRect,...
-            'afterFlipTimeDelay',theSceneTemporalSupportSeconds,'verbose',false);      
+            'afterFlipTimeDelay',theSceneTemporalSupportSeconds,'verbose',false);
         
         % For debug mode only, keep displaying the stimulus until the button
         % pressed.
@@ -298,7 +307,7 @@ switch (options.runningMode)
         
         % Collect all flip time here.
         flipTime = [flipTimeInitial; flipTimeNull; flipTimeMovieOn; flipTimeTest; flipTimeMovieOff; flipTimeFinal];
-
+        
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on
         % the figure and record key stroke responses, which would be helpful to
