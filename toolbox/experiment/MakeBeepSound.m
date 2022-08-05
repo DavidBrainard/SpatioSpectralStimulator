@@ -71,6 +71,18 @@ beepSound = sin(2 * pi * options.frequency * (0:options.duration*options.samplin
 % 
 % We changed the function from 'Beeper' to 'sound'.
 % Beeper(options.frequency, options.volume, options.duration);
-sound(beepSound);
+a = audioplayer(beepSound,8192);
+% a.StopFcn = @localRemoveAudioObj;
+a.play;
+WaitSecs(0.25);
+clear a
+
+
+function localRemoveAudioObj(obj, ~)
+    % clear the objects audio data
+    % to reduce memory usage.
+    obj.clearAudioData();
+    clear obj
+end
 
 end
