@@ -238,13 +238,14 @@ switch (options.runningMode)
         % optional on the test contrast image.
         %
         % Set the type of fixation point.
-        fixPatternType = '+';
+        fixPatternType = 'line';
         fixPatternColor = [0 0 0];
-        fixSizePixel = 10;
+        fixSizePixel = 8;
+        fixPatternWidth = 5;
         
         % Add it on the null image.
         nullRGBImage = AddFixPointImage(nullRGBImage, 'patternType', fixPatternType, ...
-            'patternColor',fixPatternColor, 'patternSize', fixSizePixel);
+            'patternColor',fixPatternColor, 'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
         
         % Add it on the test contrast image too if you want.
         if (options.imageFixationPoint)   

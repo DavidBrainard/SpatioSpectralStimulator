@@ -18,9 +18,8 @@ function [imageEdit] = AddFixPointImage(image, options)
 %    imageEdit                  - Edited image with fixation point
 %
 % Optional key/value pairs:
-%    patternType                - Default to '+'. Choose a desired
-%                                 pattern type to display within 
-%                                 [+, x, o, *, s (square)].
+%    patternType                - Default to 'line'. Choose a desired
+%                                 pattern type to display.
 %    patternColor               - Deafult to black ([0 0 0]). Set color of
 %                                 the pattern. Each value should be ranged
 %                                 within 0-1.
@@ -38,18 +37,23 @@ function [imageEdit] = AddFixPointImage(image, options)
 %% Set parameters.
 arguments
     image
-    options.patternType = '+'
+    options.patternType = 'line'
     options.patternColor (1,3) = [0 0 0]
-    options.patternSize (1,1) = 10
-    verbose (1,1) = false
+    options.patternSize (1,1) = 8
+    options.patternWidth (1,1) = 5
+    options.verbose (1,1) = false
 end
 
 %% Set the position of the fixation point.
 imageSize = size(image);
 imageCenter = imageSize(1) * 0.5;
 
+fixHorizontalPosition = [imageCenter-options.patternSize imageCenter imageCenter+options.patternSize imageCenter];
+fixVerticalPosition = [imageCenter imageCenter-options.patternSize imageCenter imageCenter+options.patternSize];
+fixPosition = [fixHorizontalPosition; fixVerticalPosition];
+
 % Set fixation point on the image here.
-imageEdit = insertMarker(image, [imageCenter imageCenter], ...
-    options.patternType, 'color',options.patternColor, 'size',options.patternSize);
+imageEdit = insertShape(image, 'Line', fixPosition, ...
+    'Color', options.patternColor, 'LineWidth', options.patternWidth);
 
 end
