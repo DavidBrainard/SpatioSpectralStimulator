@@ -49,6 +49,9 @@
 %                          image before showing the test contrast image.
 %    07/20/22  smo       - Added a practice trials before the main
 %                          experiment. 
+%    08/08/22  smo       - Added an option to display a small focusing
+%                          point on the test contrast images to minimize
+%                          the artifacts.
 
 %% Initialization.
 clear; close all;
@@ -144,6 +147,7 @@ experimentParams.movieImageDelaySec = 0.25;
 sceneParamsStruct.predefinedTemporalSupport = 0.5;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
+sceneParamsStruct.imageFixationPoint = true;
 
 % Set numbers when using auto response.
 if (experimentParams.autoResponse)
@@ -525,7 +529,8 @@ while (nextFlag)
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
-            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'verbose',true);
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,...
+            'imageFixationPoint', sceneParamsStruct.imageFixationPoint, 'verbose',true);
     end
     
     % Collect the flip time here.

@@ -120,7 +120,11 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %    08/05/22  smo                      - Now we make medium images on the
 %                                         cosine function for ramping
 %                                         on/off stimuli.
-
+%    08/08/22  smo                      - Added an option to display a
+%                                         small focusing point on the test
+%                                         contrast images to minimize the
+%                                         artifacts.
+ 
 %% Set parameters.
 arguments
     nullRGBImage
@@ -136,6 +140,7 @@ arguments
     options.beepSound (1,1) = false
     options.autoResponse = []
     options.debugMode (1,1) = false
+    options.imageFixationPoint (1,1) = true
     options.movieStimuli (1,1) = false
     options.movieImageDelaySec (1,1) = 0.5
     options.preStimuliDelaySec (1,1) = 0
@@ -227,11 +232,30 @@ switch (options.runningMode)
                 displayTestImage = imrotate(testRGBImage, imgRotationDeg);
         end
         
+        % Add a fixation point on the images. 
+        %
+        % We will always add a fixation point on the null image, and it's
+        % optional on the test contrast image.
+        %
+        % Set the type of fixation point.
+        fixPatternType = '+';
+        fixPatternColor = [0 0 0];
+        fixSizePixel = 10;
+        
+        % Add it on the null image.
+        nullRGBImage = AddFixPointImage(nullRGBImage, 'patternType', fixPatternType, ...
+            'patternColor',fixPatternColor, 'patternSize', fixSizePixel);
+        
+        % Add it on the test contrast image too if you want.
+        if (options.imageFixationPoint)   
+            displayTestImage = AddFixPointImage(displayTestImage, 'patternType', fixPatternType, ...
+            'patternColor',fixPatternColor, 'patternSize', fixSizePixel);
+        end
+        
         % Display crossbar image.
         %
         % Cross-fixation image before displaying the images.
-        flipTimeInitial = DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
+        flipTimeInitial = SetScreenImage(nullRGBImage, window, windowRect);
         
         % Display null image without crossbar.
         %
