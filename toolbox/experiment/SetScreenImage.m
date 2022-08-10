@@ -65,7 +65,7 @@ else
     error('Input image should be in the format either double or uint8');
 end
 
-% Add fixation point at the center of image if you want.
+%% Add fixation point at the center of image if you want.
 if (options.addFixationPointImage)
     fixPatternType = 'line';
     fixPatternColor = [0 0 0];
@@ -76,9 +76,11 @@ if (options.addFixationPointImage)
         'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
 end
 
-% Display image here as a texture. This is faster and more flexible way to
-% display images using PTB than the function screen('PutImage'). We will
-% display the images at the center of the screen in its image size.
+%% Set the size of the image in PTB texture. 
+%
+% This is faster and more flexible way to display images using PTB than the
+% function screen('PutImage'). We will display the images at the center of
+% the screen in its image size.
 %
 % Make image texture.
 imageTexture = Screen('MakeTexture', window, image);
@@ -89,7 +91,7 @@ imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
 imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
     centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
 
-%% Flip the texture image here.
+%% Flip screen and display the image here.
 %
 % Draw a texture here.
 Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
