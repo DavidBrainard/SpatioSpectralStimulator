@@ -48,7 +48,7 @@
 %    07/18/22  smo       - Added an option to make a time delay on null
 %                          image before showing the test contrast image.
 %    07/20/22  smo       - Added a practice trials before the main
-%                          experiment. 
+%                          experiment.
 %    08/08/22  smo       - Added an option to display a small focusing
 %                          point on the test contrast images to minimize
 %                          the artifacts.
@@ -63,7 +63,7 @@ clear; close all;
 LOADDATA = true;
 PRACTICETRIALS = false;
 conditionName = 'LminusMSmooth';
-   
+
 if (LOADDATA)
     % Set the condition of the images.
     sineFreqCyclesPerDeg = 3;
@@ -387,7 +387,7 @@ if (PRACTICETRIALS)
     
     %% Display the initial screen of the practice trials.
     SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
-        
+    
     % Press any button to proceed.
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
@@ -439,12 +439,13 @@ if (PRACTICETRIALS)
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
-            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'verbose',true);
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,...
+            'addFixationPointImage', sceneParamsStruct.addFixationPointImage,'verbose',true);
     end
     
     %% Display the finishing screen of the practice trials.
-       SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',true);
-        
+    SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',true);
+    
     % Press any button to proceed.
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
