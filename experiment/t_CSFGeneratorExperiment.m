@@ -404,8 +404,7 @@ if (PRACTICETRIALS)
     end
     
     %% Display crossbar image.
-    DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-        'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
+    SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
@@ -470,9 +469,9 @@ end
 % is displayed for the first time.  Or display test cross here,
 % or something.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
+    
     % Display crossbar image.
-    DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-        'patternColor',[0 0 0],'imageBackground',nullStatusReportStruct.RGBimage,'verbose',true);
+    SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         % Waiting for key to be pressed to start.

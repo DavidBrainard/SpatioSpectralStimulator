@@ -70,6 +70,9 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         displayed until subject press a
 %                                         button. It is useful to check the
 %                                         stimuli when debugging.
+%    addFixationPointImage              - Default to false. Add a fixation
+%                                         point at the center of the image
+%                                         when it sets to true.
 %    movieStimuli                       - Default to false. If it is set to
 %                                         true, the stimuli will be
 %                                         displayed as gradually ramping of
@@ -140,7 +143,7 @@ arguments
     options.beepSound (1,1) = false
     options.autoResponse = []
     options.debugMode (1,1) = false
-    options.imageFixationPoint (1,1) = true
+    options.addFixationPointImage (1,1) = false
     options.movieStimuli (1,1) = false
     options.movieImageDelaySec (1,1) = 0.5
     options.preStimuliDelaySec (1,1) = 0
@@ -232,39 +235,19 @@ switch (options.runningMode)
                 displayTestImage = imrotate(testRGBImage, imgRotationDeg);
         end
         
-        % Add a fixation point on the images. 
-        %
-        % We will always add a fixation point on the null image, and it's
-        % optional on the test contrast image.
-        %
-        % Set the type of fixation point.
-        fixPatternType = 'line';
-        fixPatternColor = [0 0 0];
-        fixSizePixel = 8;
-        fixPatternWidth = 5;
-        
-        % Add it on the null image.
-        nullRGBImage = AddFixPointImage(nullRGBImage, 'patternType', fixPatternType, ...
-            'patternColor',fixPatternColor, 'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
-        
-        % Add it on the test contrast image too if you want.
-        if (options.imageFixationPoint)   
-            displayTestImage = AddFixPointImage(displayTestImage, 'patternType', fixPatternType, ...
-            'patternColor',fixPatternColor, 'patternSize', fixSizePixel);
-        end
-        
         % Display crossbar image.
         %
         % Cross-fixation image before displaying the images.
-        flipTimeInitial = SetScreenImage(nullRGBImage, window, windowRect);
+        flipTimeInitial = SetScreenImage(nullRGBImage, window, windowRect , ...
+            'addFixationPoint', true, 'verbose', true);
         
         % Display null image without crossbar.
         %
         % This part can control the time delay before presenting the test
         % contrast image. It is optional and default set to zero.
         if (~options.preStimuliDelaySec == 0)
-            flipTimeNull = SetScreenImage(nullRGBImage,window,windowRect,...
-                'afterFlipTimeDelay',options.preStimuliDelaySec,'verbose',false);
+            flipTimeNull = SetScreenImage(nullRGBImage, window, windowRect,...
+                'addFixationPoint', false, 'afterFlipTimeDelay',options.preStimuliDelaySec,'verbose',false);
         else
             flipTimeNull = [];
         end
@@ -300,12 +283,12 @@ switch (options.runningMode)
             movieEachImageDelaySec = options.movieImageDelaySec/nMovieContrastRatio;
             for ii = 1:nMovieContrastRatio
                 flipTimeMovieOn(ii,1) = SetScreenImage(movieMediumImages{ii},window,windowRect,...
-                    'afterFlipTimeDelay',movieEachImageDelaySec,'verbose',false);
+                    'addFixationPointImage', options.addFixationPointImage, 'afterFlipTimeDelay',movieEachImageDelaySec,'verbose',false);
             end
         end
         
         % Display test image here.
-        flipTimeTest = SetScreenImage(displayTestImage,window,windowRect,...
+        flipTimeTest = SetScreenImage(displayTestImage,window,windowRect, 'addFixationPointImage', options.addFixationPointImage, ...
             'afterFlipTimeDelay',theSceneTemporalSupportSeconds,'verbose',false);
         
         % For debug mode only, keep displaying the stimulus until the button
@@ -322,16 +305,17 @@ switch (options.runningMode)
         if (options.movieStimuli)
             for ii = 1:nMovieContrastRatio
                 flipTimeMovieOff(ii,1) = SetScreenImage(movieMediumImages{nMovieContrastRatio-ii+1},window,windowRect,...
-                    'afterFlipTimeDelay',movieEachImageDelaySec,'verbose',false);
+                    'addFixationPointImage', options.addFixationPointImage, 'afterFlipTimeDelay',movieEachImageDelaySec,'verbose',false);
             end
         end
         
         % Display the cross-fixation image again.
-        flipTimeFinal = DisplayScreenPattern(window,windowRect,'patternType','crossbar',...
-            'patternColor',[0 0 0],'imageBackground',nullRGBImage,'verbose',false);
+        flipTimeFinal = SetScreenImage(nullRGBImage, window, windowRect , ...
+            'addFixationPoint', true, 'verbose', true);
         
         % Collect all flip time here.
         flipTime = [flipTimeInitial; flipTimeNull; flipTimeMovieOn; flipTimeTest; flipTimeMovieOff; flipTimeFinal];
+        
         
     case 'simulation'
         % This part does not use PTB and just diplay test images side-by-side on

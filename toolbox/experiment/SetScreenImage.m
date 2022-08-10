@@ -22,11 +22,15 @@ function [flipTime] = SetScreenImage(image,window,windowRect,options)
 % Optional key/value pairs:
 %    timeDelay                    Default to 0. Make a time delay before
 %                                 making a flip of the image.
+%    addFixationPointImage        Default to false. If it is set to true,
+%                                 add a fixation point at the center of the
+%                                 image. This is useful when you want to
+%                                 add one on the stimuli for SACC project.
 %    preFlipTimeDelay             Default to 0. Make a time delay before
 %                                 the flip of the screen. Unit in seconds.
 %    afterFlipTimeDelay           Default to 0. Make a time delay after the
 %                                 flip of the screen. Unit in seconds.
-%    verbose -                    Boolean. Default true.  Controls plotting
+%    verbose                      Boolean. Default true.  Controls plotting
 %                                 and printout.
 
 % History:
@@ -36,12 +40,15 @@ function [flipTime] = SetScreenImage(image,window,windowRect,options)
 %    07/19/22  dhb, smo           We take flip time as an output.
 %    08/04/22  smo                Added an option to make time delay before
 %                                 and after the flip of the screen.
+%    08/10/22  smo                Added an option to add fixation point at
+%                                 the center of the image.
 
 %% Set parameters.
 arguments
     image
     window (1,1)
     windowRect (1,4)
+    options.addFixationPointImage (1,1) = false
     options.preFlipTimeDelay (1,1) = 0
     options.afterFlipTimeDelay (1,1) = 0
     options.verbose (1,1) = true
@@ -56,6 +63,17 @@ elseif (class(image) == 'uint8')
     image = image;
 else
     error('Input image should be in the format either double or uint8');
+end
+
+% Add fixation point at the center of image if you want.
+if (options.addFixationPointImage)
+    fixPatternType = 'line';
+    fixPatternColor = [0 0 0];
+    fixSizePixel = 8;
+    fixPatternWidth = 5;
+    
+    image = AddFixPointImage(image, 'patternType', fixPatternType, 'patternColor',fixPatternColor, ...
+        'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth););
 end
 
 % Display image here as a texture. This is faster and more flexible way to
