@@ -73,7 +73,7 @@ if (options.addFixationPointImage)
     fixPatternWidth = 5;
     
     image = AddFixPointImage(image, 'patternType', fixPatternType, 'patternColor',fixPatternColor, ...
-        'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth););
+        'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
 end
 
 % Display image here as a texture. This is faster and more flexible way to

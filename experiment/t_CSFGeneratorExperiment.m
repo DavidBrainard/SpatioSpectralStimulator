@@ -147,7 +147,7 @@ experimentParams.movieImageDelaySec = 0.25;
 sceneParamsStruct.predefinedTemporalSupport = 0.5;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
-sceneParamsStruct.imageFixationPoint = true;
+sceneParamsStruct.addFixationPointImage = true;
 
 % Set numbers when using auto response.
 if (experimentParams.autoResponse)
@@ -529,7 +529,7 @@ while (nextFlag)
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec,...
-            'imageFixationPoint', sceneParamsStruct.imageFixationPoint, 'verbose',true);
+            'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'verbose',true);
     end
     
     % Collect the flip time here.
