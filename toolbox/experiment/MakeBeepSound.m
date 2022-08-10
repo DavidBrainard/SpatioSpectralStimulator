@@ -57,7 +57,7 @@ function [] = MakeBeepSound(options)
 arguments
     options.preset = []
     options.frequency (1,1) = 5000
-    options.duration (1,1) = 0.25
+    options.duration (1,1) = 0.1
     options.samplingRate (1,1) = 44100
     options.verbose (1,1) = true
 end
@@ -76,12 +76,12 @@ end
  
 % Make a beep sound here.
 frequencyDefault = 8192;
-beepSound = sin(2 * pi * frequencyDefault * (0:options.duration*options.samplingRate-1)/options.samplingRate);
+beepSound = sin(2 * pi * frequencyDefault * (0:options.samplingRate-1)/options.samplingRate);
 
 % Play sound here.
 a = audioplayer(beepSound, options.frequency);
 a.play;
-WaitSecs(options.duration);
+WaitSecs(MatchScreenFrameTime(options.duration));
 clear a;
 
 end
