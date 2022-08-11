@@ -8,7 +8,7 @@
 %    08/11/22   smo     - Started on it.
 
 %% Initialize.
-Clear; Close all;
+clear; close all;
 
 %% Open the projector.
 initialScreenSettings = [0 0 0]';
@@ -69,7 +69,7 @@ while 1
         randomcolour = rand(1, 3)*255; 
     end
 
-    Screen('FillRect', window, randomcolour, wRect);
+    Screen('FillRect', window, randomcolour, windowRect);
     Screen('Flip', window);
 
     % Increase frame counter
