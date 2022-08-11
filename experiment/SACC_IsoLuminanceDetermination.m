@@ -41,7 +41,7 @@ SetChannelSettings(channelSettings);
 durationSec = 5;  
 
 % Set Hz for stimulus flicker
-frequecnyFlicker = 4; 
+frequecnyFlicker = 20; 
 
 Screen('Flip', window);
 frameRate = 120;
@@ -69,7 +69,15 @@ while 1
         randomcolour = rand(1, 3)*255; 
     end
 
-    Screen('FillRect', window, randomcolour, windowRect);
+    centerScreen = windowRect/2;
+    centerScreenHorz = centerScreen(3);
+    centerScreenVert = centerScreen(4);
+    
+    % ovalRect = [left top right bottom]';
+    ovalSize = 100;
+    ovalRect = [centerScreenHorz-ovalSize/2 centerScreenVert-ovalSize/2 ...
+        centerScreenHorz+ovalSize/2 centerScreenVert+ovalSize/2]';
+    Screen('FillOval', window, randomcolour, ovalRect);
     Screen('Flip', window);
 
     % Increase frame counter
