@@ -79,6 +79,6 @@ if (options.verbose)
 end
 
 % Pause if you want.
-pause(options.pause);
+WaitSecs(options.pause);
 
 end
