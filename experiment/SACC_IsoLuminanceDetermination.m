@@ -20,6 +20,7 @@ projectorMode = true;
 % Make channel settings.
 nPrimaries = 3;
 nChannels = 16;
+nInputLevels = 256;
 
 % Set which channel to use per each primary. We will use only two
 % primaries.
@@ -38,12 +39,10 @@ SetChannelSettings(channelSettings);
 %% Set parameters of the flicker session.
 %
 % Set maximum time for all stimuli to be presented in seconds.
-durationSec = 5;  
+durationSec = 3;  
 
 % Set Hz for stimulus flicker
-frequecnyFlicker = 20; 
-
-Screen('Flip', window);
+frequecnyFlicker = 25; 
 frameRate = 120;
 ifi = 1/frameRate;
 
@@ -54,34 +53,73 @@ framesPerFull = round(durationSec/ifi);
 framesPerStim = round((1/frequecnyFlicker)/ifi); 
 
 %% Make a flicker.
-Framecounter = 0; %Frame counter begins at 0
+%
+% Set the primary colors.
+intensityPrimary1 = nInputLevels-1;
+intensityPrimary2 = nInputLevels-1;
+
+primarySetting1 = [intensityPrimary1 0 0]';
+primarySetting2 = [0 intensityPrimary2 0]';
+fillColors = [primarySetting1 primarySetting2];
+
+% Set the position of the circle on the screen.
+% Note that ovalRect = [left top right bottom]';
+centerScreen = windowRect/2;
+centerScreenHorz = centerScreen(3);
+centerScreenVert = centerScreen(4);
+
+ovalSize = 150;
+ovalRect = [centerScreenHorz-ovalSize/2 centerScreenVert-ovalSize/2 ...
+    centerScreenHorz+ovalSize/2 centerScreenVert+ovalSize/2]';
+
+% Frame counter begins at 0
+framecounter = 0; 
+
+% Set primary index to update to make a flicker.
+fillColorIndexs = [1 2];
+fillColorIndex = 1;
 
 % Start the flicker loop here.
 while 1
-
-    % End session
-    if Framecounter==framesPerFull
-        break; 
-    end
-
-    % Change background stimulus colour
-    if ~mod(Framecounter,framesPerStim)
-        randomcolour = rand(1, 3)*255; 
-    end
-
-    centerScreen = windowRect/2;
-    centerScreenHorz = centerScreen(3);
-    centerScreenVert = centerScreen(4);
     
-    % ovalRect = [left top right bottom]';
-    ovalSize = 100;
-    ovalRect = [centerScreenHorz-ovalSize/2 centerScreenVert-ovalSize/2 ...
-        centerScreenHorz+ovalSize/2 centerScreenVert+ovalSize/2]';
-    Screen('FillOval', window, randomcolour, ovalRect);
+    % End session
+    if framecounter == framesPerFull;
+%         numButtonRight = 3;
+%         responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true); 
+        break;
+    end
+    
+    % Get a response. Here we change the intensity of red light.
+%     if
+%         numButtonUp    = 4;
+%         numButtonDown  = 2;
+%         pressButtonA = 1;
+%         pressButtonB = 2;
+%         responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonDown,'verbose',true);
+%         
+%         switch responseGamePad
+%             case pressButtonA
+%                 % Increase the intensity of red light.
+%                 intensityPrimary1 = intensityPrimary1 + 1;
+%             case pressButtonB
+%                 % Decrease the intensity of red light.
+%                 intensityPrimary1 = intensityPrimary1 - 1;
+%         end
+%         primarySetting1 = [intensityPrimary1 0 0]';
+%         fillColors = [primarySetting1 primarySetting2];
+%     end
+    
+     if ~mod(framecounter, framesPerStim)
+        fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
+        fillColor = fillColors(:,fillColorIndex); 
+     end
+    
+    % Display here.
+    Screen('FillOval', window, fillColor, ovalRect);
     Screen('Flip', window);
 
-    % Increase frame counter
-    Framecounter = Framecounter + 1; 
+    % Increase frame counter.
+    framecounter = framecounter + 1; 
 end
 
 %% Close the screen after the end of the session.
