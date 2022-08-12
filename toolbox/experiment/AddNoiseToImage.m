@@ -58,7 +58,7 @@ whichPrimary = 1:nPrimaries;
 intervalNoiseIntensity = 1;
 intensityNoise = [-options.noiseIntensityMax: intervalNoiseIntensity : options.noiseIntensityMax]./options.nInputLevels;
 nIntensityNoise = length(intensityNoise);
-numelRangeNoise = imageN/nIntensityNoise;
+numelRangeNoise = round(imageN/nIntensityNoise);
 
 % Separate the ranges randomly.
 rangeNoise = 1:imageN;
@@ -73,13 +73,6 @@ for nn = 1:nIntensityNoise
     noiseImage(rangeNoiseSet(:,nn), :, whichPrimary) = intensityNoise(nn);
 end
 
-% Show noise image if you want.
-if (options.verbose)
-    figure;
-    imshow(noiseImage);
-    title('Noise Image', 'FontSize', 15);
-end
-
 %% Add noise to the given image.
 imageConverted = image + noiseImage;
 
@@ -87,7 +80,7 @@ imageConverted = image + noiseImage;
 if (options.verbose)
     figure;
     imshow(imageConverted);
-    title('Base + Noise Image', 'FontSize', 15);
+    title(sprintf('Noise Intensity = %d', options.noiseIntensityMax), 'FontSize', 15);
 end
 
 end
