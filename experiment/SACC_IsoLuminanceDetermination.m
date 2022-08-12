@@ -83,7 +83,7 @@ fillColorIndex = 1;
 while 1
     
     % End session
-    if framecounter == framesPerFull;
+    if framecounter == framesPerFull
 %         numButtonRight = 3;
 %         responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true); 
         break;
@@ -109,6 +109,7 @@ while 1
 %         fillColors = [primarySetting1 primarySetting2];
 %     end
     
+     % Update the fill color at desired frame time.
      if ~mod(framecounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
         fillColor = fillColors(:,fillColorIndex); 
