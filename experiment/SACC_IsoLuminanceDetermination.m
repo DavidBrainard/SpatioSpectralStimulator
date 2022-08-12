@@ -42,7 +42,7 @@ SetChannelSettings(channelSettings);
 durationSec = 3;  
 
 % Set Hz for stimulus flicker
-frequecnyFlicker = 25; 
+frequecnyFlicker = 20; 
 frameRate = 120;
 ifi = 1/frameRate;
 
@@ -83,31 +83,35 @@ fillColorIndex = 1;
 while 1
     
     % End session
-    if framecounter == framesPerFull
-%         numButtonRight = 3;
-%         responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true); 
+%     if framecounter == framesPerFull
+    if
+        numButtonRight = 3;
+        responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true); 
         break;
     end
     
+    
     % Get a response. Here we change the intensity of red light.
-%     if
-%         numButtonUp    = 4;
-%         numButtonDown  = 2;
-%         pressButtonA = 1;
-%         pressButtonB = 2;
-%         responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonDown,'verbose',true);
-%         
-%         switch responseGamePad
-%             case pressButtonA
-%                 % Increase the intensity of red light.
-%                 intensityPrimary1 = intensityPrimary1 + 1;
-%             case pressButtonB
-%                 % Decrease the intensity of red light.
-%                 intensityPrimary1 = intensityPrimary1 - 1;
-%         end
-%         primarySetting1 = [intensityPrimary1 0 0]';
-%         fillColors = [primarySetting1 primarySetting2];
-%     end
+    if 
+        numButtonUp  = 4;
+        numButtonDown= 2;
+        
+        pressButtonA = 1;
+        pressButtonB = 2;
+        
+        responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonDown,'verbose',true);
+        
+        switch responseGamePad
+            case pressButtonA
+                % Increase the intensity of red light.
+                intensityPrimary1 = intensityPrimary1 + 1;
+            case pressButtonB
+                % Decrease the intensity of red light.
+                intensityPrimary1 = intensityPrimary1 - 1;
+        end
+        primarySetting1 = [intensityPrimary1 0 0]';
+        fillColors = [primarySetting1 primarySetting2];
+    end
     
      % Update the fill color at desired frame time.
      if ~mod(framecounter, framesPerStim)
