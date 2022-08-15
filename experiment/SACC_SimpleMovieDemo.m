@@ -105,7 +105,7 @@ try
         
     end
     
-    hist(diff(flipTime));
+    figure; hist(diff(flipTime));
     
     % Stop playback:
     Screen('PlayMovie', movie, 0);
