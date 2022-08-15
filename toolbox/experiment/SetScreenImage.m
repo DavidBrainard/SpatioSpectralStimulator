@@ -108,6 +108,14 @@ end
 % Flip happens here.
 flipTime = Screen('Flip', window);
 
+% % Uncomment to test raw speed using flip
+% nFrames = 100;
+% testTimes = zeros(nFrames,1);
+% for ii = 1:nFrames
+%     testTimes(ii) = Screen('Flip',window);
+% end
+% hist(diff(testTimes));
+
 % Show the verbose message if you want.
 if (options.verbose)
     fprintf('Image is now being displayed on the screen...\n');
