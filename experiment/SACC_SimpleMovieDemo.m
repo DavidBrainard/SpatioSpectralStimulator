@@ -1,4 +1,4 @@
-function SimpleMovieDemo(moviename, windowrect)
+function SACC_SimpleMovieDemo(moviename, windowrect)
 % Most simplistic demo on how to play a movie.
 %
 % SimpleMovieDemo(moviename [, windowrect=[]]);
