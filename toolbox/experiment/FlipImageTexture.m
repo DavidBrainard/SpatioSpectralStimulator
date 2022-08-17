@@ -1,32 +1,27 @@
 function [flipTime] = FlipImageTexture(imageTexture, window, imageWindowRect, options)
-% Make a PTB texture of an image.
+% Flip the screen with given PTB texture.
 %
 % Syntax:
-%    [imageTexture] = MakeImageTexture(image,window,windowRect)
+%    [flipTime] = FlipImageTexture(imageTexture, window, imageWindowRect)
 %
 % Description:
-%    This is to display test images in the experiment for the SACC project
-%    using PTB.
+%    This is to display the image by flipping the screen with the given PTB
+%    texture.
 %
 % Inputs:
-%    image -                      Test images to display on the screen.
-%                                 This should be in a image format, not a
-%                                 cal format. For example, 512 x 512 x 3
-%                                 in double.
-%    window -                     PTB window for opened screen.
-%    windowRect -                 Rect corresonding to window.
+%    imageTexture               - PTB texture that saves the image.
+%    window                     - PTB window for opened screen.
+%    imageWindowRect            - Rect corresonding to image texture size.
 %
 % Outputs:
-%    flipTime                     System flip time of displaying images.
+%    flipTime                   - System flip time of displaying images.
 %
 % Optional key/value pairs:
-%    timeDelay                    Default to 0. Make a time delay before
-%                                 making a flip of the image.
-%    addFixationPointImage        Default to false. If it is set to true,
-%                                 add a fixation point at the center of the
-%                                 image. This is useful when you want to
-%                                 add one on the stimuli for SACC project.
-%    verbose                      Boolean. Default true.  Controls plotting
+%    preFlipTimeDelay           - Default to 0. Make a time delay before
+%                                 the flip of the screen. Unit in seconds.
+%    afterFlipTimeDelay         - Default to 0. Make a time delay after the
+%                                 flip of the screen. Unit in seconds.
+%    verbose                    - Boolean. Default true.  Controls plotting
 %                                 and printout.
 % See also:
 %    SetScreenImage, MakeImageTexture
@@ -36,7 +31,7 @@ function [flipTime] = FlipImageTexture(imageTexture, window, imageWindowRect, op
 
 %% Set parameters.
 arguments
-    imageTexture
+    imageTexture (1,1)
     window (1,1)
     imageWindowRect (1,4)
     options.preFlipTimeDelay (1,1) = 0
@@ -49,16 +44,16 @@ end
 % Draw a texture here.
 Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
 
+%% Make pre-flip time delay if you want.
+%
 % You can make a time delay before and after the flip of the screen. The
 % time is corrected using the function not to break the frame.
-%
-% Make pre-flip time delay.
 if (~isempty(options.preFlipTimeDelay))
     preFlipTimeDelay = MatchScreenFrameTime(options.preFlipTimeDelay);
     WaitSecs(preFlipTimeDelay);
 end
 
-% Flip happens here.
+%% Flip happens here.
 flipTime = Screen('Flip', window);
 
 % % Uncomment to test raw speed using flip
@@ -74,7 +69,7 @@ if (options.verbose)
     fprintf('Image is now being displayed on the screen...\n');
 end
 
-% Make after-flip time delay.
+%% Make after-flip time delay if you want.
 if (~isempty(options.afterFlipTimeDelay))
     afterFlipTimeDelay = MatchScreenFrameTime(options.afterFlipTimeDelay);
     WaitSecs(afterFlipTimeDelay);

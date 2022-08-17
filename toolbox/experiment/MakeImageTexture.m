@@ -2,11 +2,13 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 % Make a PTB texture of an image.
 %
 % Syntax:
-%    [imageTexture] = MakeImageTexture(image,window,windowRect)
+%    [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowRect)
 %
 % Description:
-%    This is to display test images in the experiment for the SACC project
-%    using PTB.
+%    This is to make PTB texture of given image. As we want to display
+%    test stimuli exactly when we want, we separate the old function
+%    (SetScreenImage) into two, building PTB texture (this function) and
+%    flipping texture (FlipImageTexture). 
 %
 % Inputs:
 %    image -                      Test images to display on the screen.
@@ -17,11 +19,10 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 %    windowRect -                 Rect corresonding to window.
 %
 % Outputs:
-%    flipTime                     System flip time of displaying images.
+%    imageTexture               - PTB texture of the image.
+%    imageWindowRect            - Rect corresonding to image texture size.
 %
 % Optional key/value pairs:
-%    timeDelay                    Default to 0. Make a time delay before
-%                                 making a flip of the image.
 %    addFixationPointImage        Default to false. If it is set to true,
 %                                 add a fixation point at the center of the
 %                                 image. This is useful when you want to
@@ -43,7 +44,7 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Make an image in PTB texture format.
+%% Check the image format.
 %
 % Convert the image format to uint8.
 if (class(image) == 'double')
@@ -56,25 +57,23 @@ end
 
 %% Add fixation point at the center of image if you want.
 if (options.addFixationPointImage)
+    % Fixation point parameters.
     fixPatternType = 'line';
     fixPatternColor = [0 0 0];
     fixSizePixel = 8;
     fixPatternWidth = 5;
     
+    % Add fixation point here.
     image = AddFixPointImage(image, 'patternType', fixPatternType, 'patternColor',fixPatternColor, ...
         'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
 end
 
-%% Set the size of the image in PTB texture. 
-%
-% This is faster and more flexible way to display images using PTB than the
-% function screen('PutImage'). We will display the images at the center of
-% the screen in its image size.
+%% Set the size of the PTB texture. 
 %
 % Make image texture.
 imageTexture = Screen('MakeTexture', window, image);
 
-%% Make image windowRect for placing it at the center of the screen.
+% Make image windowRect for placing it at the center of the screen.
 centerScreen = [windowRect(3) windowRect(4)] * 0.5;
 imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
 imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
