@@ -22,7 +22,7 @@ function [imageConverted] = AddNoiseToImage(image, options)
 %                               image.
 %
 % Optional key/value pairs:
-%    noiseIntensityMax        - Default to 1. The maximum noise intensity
+%    noiseLevel               - Default to 1. The maximum noise intensity
 %                               in dRGB unit. The random noise will be
 %                               generated in the range within
 %                               [-this value : 1 : this value]. So, if it
@@ -37,11 +37,13 @@ function [imageConverted] = AddNoiseToImage(image, options)
 
 % History:
 %   08/12/22  smo             - Started on it.
+%   08/17/22  smo             - Updated on sampling. Now we can make noise
+%                               image for any noise intensity.
 
 %% Set parameters.
 arguments
     image
-    options.noiseIntensityMax (1,1) = 2
+    options.noiseLevel (1,1) = 2
     options.nInputLevels (1,1) = 256
     options.verbose (1,1) = false
 end
@@ -56,15 +58,24 @@ whichPrimary = 1:nPrimaries;
 
 % Set the noise intensity parameters.
 intervalNoiseIntensity = 1;
-intensityNoise = [-options.noiseIntensityMax: intervalNoiseIntensity : options.noiseIntensityMax]./options.nInputLevels;
+intensityNoise = [-options.noiseLevel: intervalNoiseIntensity : options.noiseLevel]./options.nInputLevels;
 nIntensityNoise = length(intensityNoise);
 numelRangeNoise = round(imageN/nIntensityNoise);
 
 % Separate the ranges randomly.
 rangeNoise = 1:imageN;
 rangeNoiseTemp = [];
-for nn = 1:nIntensityNoise    
-    rangeNoiseSet(:,nn) = randsample(setdiff(rangeNoise,rangeNoiseTemp), numelRangeNoise);
+for nn = 1:nIntensityNoise
+    noiseSamplingRange = setdiff(rangeNoise,rangeNoiseTemp);
+    
+    % If there are not enough elements left for sampling, just fill out
+    % with the first pixels.
+    if (numelRangeNoise > length(noiseSamplingRange))
+        numElementsToAdd = numelRangeNoise - length(noiseSamplingRange) + 1;
+        noiseSamplingRange = [noiseSamplingRange ones(1, numElementsToAdd)];
+    end
+    
+    rangeNoiseSet(:,nn) = randsample(noiseSamplingRange, numelRangeNoise);
     rangeNoiseTemp = rangeNoiseSet(:);
 end
 
@@ -80,7 +91,7 @@ imageConverted = image + noiseImage;
 if (options.verbose)
     figure;
     imshow(imageConverted);
-    title(sprintf('Noise Intensity = %d', options.noiseIntensityMax), 'FontSize', 15);
+    title(sprintf('Noise Intensity = %d', options.noiseLevel), 'FontSize', 15);
 end
 
 end
