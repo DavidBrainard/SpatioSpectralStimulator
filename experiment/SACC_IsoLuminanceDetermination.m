@@ -6,6 +6,8 @@
 
 % History:
 %    08/11/22   smo     - Started on it.
+%    08/17/22   smo     - Added a control part to update the intensity of
+%                         red light while making red-green flicker.
 
 %% Initialize.
 clear; close all;
@@ -15,7 +17,7 @@ initialScreenSettings = [0 0 0]';
 projectorMode = true;
 [window windowRect] = OpenPlainScreen(initialScreenSettings, 'projectorMode', projectorMode);
 
-%% Set LED channel settings here.
+%% Set the projector LED channel settings.
 %
 % Make channel settings.
 nPrimaries = 3;
@@ -36,23 +38,17 @@ channelSettings(whichChannelPrimary2, 2) = channelIntensityPrimary2;
 % Set channel setting here.
 SetChannelSettings(channelSettings);
 
-%% Set parameters of the flicker session.
+%% Set parameters of the flicker.
 %
-% Set maximum time for all stimuli to be presented in seconds.
-durationSec = 3;  
-
-% Set Hz for stimulus flicker
-frequecnyFlicker = 20; 
+% Set projector frame rate.
 frameRate = 120;
 ifi = 1/frameRate;
 
-% Number of frames for all stimuli
-framesPerFull = round(durationSec/ifi); 
-
-% Number of frames for each stimulus
+% Set the flicker frequency .
+frequecnyFlicker = 20; 
 framesPerStim = round((1/frequecnyFlicker)/ifi); 
 
-%% Make a flicker.
+%% Set the image settings.
 %
 % Set the primary colors.
 intensityPrimary1 = nInputLevels-1;
@@ -72,60 +68,81 @@ ovalSize = 150;
 ovalRect = [centerScreenHorz-ovalSize/2 centerScreenVert-ovalSize/2 ...
     centerScreenHorz+ovalSize/2 centerScreenVert+ovalSize/2]';
 
-% Frame counter begins at 0
-framecounter = 0; 
-
 % Set primary index to update to make a flicker.
 fillColorIndexs = [1 2];
 fillColorIndex = 1;
 
-% Start the flicker loop here.
+%% Set gamepad settings.  
+% 
+% Get the gamepad index for getting response.
+gamepadIndex = Gamepad('GetNumGamepads');
+
+% Set parameters for gamepad.
+stateButtonUp = false;
+stateButtonDown = false;
+stateButtonRight = false;
+
+numButtonUp = 4;
+numButtonDown = 2;
+numButtonRight = 3;
+
+primaryIntensityInterval = 1;
+
+%% Start the flicker loop here.
+framecounter = 0; 
 while 1
     
-    % End session
-%     if framecounter == framesPerFull
-    if
-        numButtonRight = 3;
-        responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true); 
-        break;
-    end
-    
-    
-    % Get a response. Here we change the intensity of red light.
-    if 
-        numButtonUp  = 4;
-        numButtonDown= 2;
-        
-        pressButtonA = 1;
-        pressButtonB = 2;
-        
-        responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonDown,'verbose',true);
-        
-        switch responseGamePad
-            case pressButtonA
-                % Increase the intensity of red light.
-                intensityPrimary1 = intensityPrimary1 + 1;
-            case pressButtonB
-                % Decrease the intensity of red light.
-                intensityPrimary1 = intensityPrimary1 - 1;
+    % End the session if the right button was pressed.
+    if (stateButtonRight == false)
+        stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
+        if (stateButtonRight == true)
+            break;
         end
-        primarySetting1 = [intensityPrimary1 0 0]';
-        fillColors = [primarySetting1 primarySetting2];
     end
     
-     % Update the fill color at desired frame time.
-     if ~mod(framecounter, framesPerStim)
+    % Get a gamepad response here.
+    if (stateButtonUp == false && stateButtonDown == false)
+        stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
+        stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
+    end
+    
+    % Update the intensity of red light based on the key press above.
+    if (stateButtonUp == true)
+        % Increase the intensity of red light.
+        if (intensityPrimary1 < nInputLevels-1)
+            intensityPrimary1 = intensityPrimary1 + primaryIntensityInterval;
+        end 
+        
+        % Set the button state to the initial.
+        stateButtonup = false;
+        
+    elseif (stateButtonDown == true)
+        % Decrease the intensity of red light.
+        if (intensityPrimary1 > 0)
+            intensityPrimary1 = intensityPrimary1 - primaryIntensityInterval;
+        end
+        
+        % Set the button state to the initial.
+        stateButtonDown = false;
+    end
+    
+    % Update the intensity of the red light here.
+    primarySetting1 = [intensityPrimary1 0 0]';
+    fillColors = [primarySetting1 primarySetting2];
+    
+    % Update the fill color at desired frame time.
+    if ~mod(framecounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-        fillColor = fillColors(:,fillColorIndex); 
-     end
+        fillColor = fillColors(:,fillColorIndex);
+    end
     
     % Display here.
     Screen('FillOval', window, fillColor, ovalRect);
     Screen('Flip', window);
-
+    
     % Increase frame counter.
-    framecounter = framecounter + 1; 
+    framecounter = framecounter + 1;
 end
 
-%% Close the screen after the end of the session.
+%% Close the screen.
 CloseScreen;
