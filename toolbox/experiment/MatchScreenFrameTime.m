@@ -19,7 +19,7 @@ function [correctTime] = MatchScreenFrameTime(time,options)
 %                                     1/(frame rate).
 %
 % Optional key/value pairs:
-%    frameRate                      - Default to 119.9573 hz. We use 120 hz
+%    frameRate                      - Default to 120 hz. We use 120 hz
 %                                     display for SACC project, whose
 %                                     1/(frame rate) is about 0.0083 seconds.
 %
@@ -35,7 +35,7 @@ function [correctTime] = MatchScreenFrameTime(time,options)
 %% Set parameters.
 arguments
     time (1,1) 
-    options.frameRate (1,1) = 119.9573
+    options.frameRate (1,1) = 120
 end
 
 %% Calculate the corrected time.
