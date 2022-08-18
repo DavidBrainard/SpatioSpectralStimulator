@@ -86,7 +86,7 @@ numButtonUp = 4;
 numButtonDown = 2;
 numButtonRight = 3;
 
-primaryIntensityInterval = 1;
+primaryControlInterval = 1;
 
 %% Start the flicker loop here.
 framecounter = 0; 
@@ -96,22 +96,22 @@ while 1
     if (stateButtonRight == false)
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
         if (stateButtonRight == true)
+            fprintf('End the session... \n');
             break;
         end
     end
     
     % Get a gamepad response here.
-    if (stateButtonUp == false && stateButtonDown == false)
-        stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
-        stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
-    end
+    stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
+    stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
     
     % Update the intensity of red light based on the key press above.
     if (stateButtonUp == true)
         % Increase the intensity of red light.
         if (intensityPrimary1 < nInputLevels-1)
-            intensityPrimary1 = intensityPrimary1 + primaryIntensityInterval;
+            intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
         end 
+        fprintf('Button pressed: UP \n');
         
         % Set the button state to the initial.
         stateButtonup = false;
@@ -119,8 +119,9 @@ while 1
     elseif (stateButtonDown == true)
         % Decrease the intensity of red light.
         if (intensityPrimary1 > 0)
-            intensityPrimary1 = intensityPrimary1 - primaryIntensityInterval;
+            intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
         end
+        fprintf('Button pressed: Down \n');
         
         % Set the button state to the initial.
         stateButtonDown = false;
@@ -128,7 +129,7 @@ while 1
     
     % Update the intensity of the red light here.
     primarySetting1 = [intensityPrimary1 0 0]';
-    fillColors = [primarySetting1 primarySetting2];
+    fillColors(:,1) = primarySetting1;
     
     % Update the fill color at desired frame time.
     if ~mod(framecounter, framesPerStim)
