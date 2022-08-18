@@ -5,9 +5,10 @@
 % of red until the flicker disappears.
 
 % History:
-%    08/11/22   smo     - Started on it.
-%    08/17/22   smo     - Added a control part to update the intensity of
-%                         red light while making red-green flicker.
+%    08/11/22   smo        - Started on it.
+%    08/17/22   smo        - Added a control part to update the intensity of
+%                            red light while making red-green flicker.
+%    08/18/22   dhb, smo   - Now code is working fine. 
 
 %% Initialize.
 clear; close all;
@@ -26,10 +27,10 @@ nInputLevels = 256;
 
 % Set which channel to use per each primary. We will use only two
 % primaries.
-whichChannelPrimary1 = 14;
-whichChannelPrimary2 = 7;
+whichChannelPrimary1 = 15;
+whichChannelPrimary2 = 5;
 channelIntensityPrimary1 = 1;
-channelIntensityPrimary2 = 1;
+channelIntensityPrimary2 = 0.5;
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
@@ -45,7 +46,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 20; 
+frequecnyFlicker = 40; 
 framesPerStim = round((1/frequecnyFlicker)/ifi); 
 
 %% Set the image settings.
@@ -81,6 +82,8 @@ gamepadIndex = Gamepad('GetNumGamepads');
 stateButtonUp = false;
 stateButtonDown = false;
 stateButtonRight = false;
+actedUp = false;
+actedDown = false;
 
 numButtonUp = 4;
 numButtonDown = 2;
@@ -89,7 +92,7 @@ numButtonRight = 3;
 primaryControlInterval = 1;
 
 %% Start the flicker loop here.
-framecounter = 0; 
+frameCounter = 0; 
 while 1
     
     % End the session if the right button was pressed.
@@ -105,26 +108,30 @@ while 1
     stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
     stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
     
+    % Reset acted on state when button comes back up.
+    if (actedUp && ~stateButtonUp)
+        actedUp = false;
+    end
+    if (actedDown && ~stateButtonDown)
+        actedDown = false;
+    end
+    
     % Update the intensity of red light based on the key press above.
-    if (stateButtonUp == true)
+    if (stateButtonUp && ~actedUp)
         % Increase the intensity of red light.
         if (intensityPrimary1 < nInputLevels-1)
             intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
-        end 
-        fprintf('Button pressed: UP \n');
+        end
+        actedUp = true;
+        fprintf('Button pressed: UP %d \n', frameCounter);
         
-        % Set the button state to the initial.
-        stateButtonup = false;
-        
-    elseif (stateButtonDown == true)
+    elseif (stateButtonDown && ~actedDown)
         % Decrease the intensity of red light.
         if (intensityPrimary1 > 0)
             intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
         end
-        fprintf('Button pressed: Down \n');
-        
-        % Set the button state to the initial.
-        stateButtonDown = false;
+        actedDown = true;
+        fprintf('Button pressed: Down %d \n', frameCounter);
     end
     
     % Update the intensity of the red light here.
@@ -132,7 +139,7 @@ while 1
     fillColors(:,1) = primarySetting1;
     
     % Update the fill color at desired frame time.
-    if ~mod(framecounter, framesPerStim)
+    if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
         fillColor = fillColors(:,fillColorIndex);
     end
@@ -142,7 +149,7 @@ while 1
     Screen('Flip', window);
     
     % Increase frame counter.
-    framecounter = framecounter + 1;
+    frameCounter = frameCounter + 1;
 end
 
 %% Close the screen.

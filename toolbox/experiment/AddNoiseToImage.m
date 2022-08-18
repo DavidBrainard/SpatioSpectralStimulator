@@ -39,55 +39,62 @@ function [imageConverted] = AddNoiseToImage(image, options)
 %   08/12/22  smo             - Started on it.
 %   08/17/22  smo             - Updated on sampling. Now we can make noise
 %                               image for any noise intensity.
+%   08/18/22  dhb, smo        - Now we add the noise without the specific
+%                               pattern to all pixels.
 
 %% Set parameters.
 arguments
     image
-    options.noiseLevel (1,1) = 2
+    options.noiseLevel (1,1) = 1
     options.nInputLevels (1,1) = 256
     options.verbose (1,1) = false
 end
 
-%% Get the size of the image. 
-imageN = size(image,1);
-nPrimaries = size(image,3);
+%% Make noise image, add to input, and handle out of range.
+%
+% Make a noise image.
+noiseImage = randi([-options.noiseLevel options.noiseLevel], size(image));
 
-%% Make noise image.
-noiseImage = zeros(imageN, imageN, nPrimaries);
-whichPrimary = 1:nPrimaries;
+% Add noise to image.
+imageConverted = image + noiseImage./options.nInputLevels;
 
-% Set the noise intensity parameters.
-intervalNoiseIntensity = 1;
-intensityNoise = [-options.noiseLevel: intervalNoiseIntensity : options.noiseLevel]./options.nInputLevels;
-nIntensityNoise = length(intensityNoise);
-numelRangeNoise = round(imageN/nIntensityNoise);
+% Handle out of range.
+imageConverted(imageConverted < 0) = 0;
+imageConverted(imageConverted > 1) = 1;
 
-% Separate the ranges randomly.
-rangeNoise = 1:imageN;
-rangeNoiseTemp = [];
-for nn = 1:nIntensityNoise
-    noiseSamplingRange = setdiff(rangeNoise,rangeNoiseTemp);
-    
-    % If there are not enough elements left for sampling, just fill out
-    % with the first pixels.
-    if (numelRangeNoise > length(noiseSamplingRange))
-        numElementsToAdd = numelRangeNoise - length(noiseSamplingRange) + 1;
-        noiseSamplingRange = [noiseSamplingRange ones(1, numElementsToAdd)];
-    end
-    
-    rangeNoiseSet(:,nn) = randsample(noiseSamplingRange, numelRangeNoise);
-    rangeNoiseTemp = rangeNoiseSet(:);
-end
+%% OLD LINES.
+% % Set the noise intensity parameters.
+% intervalNoiseIntensity = 1;
+% intensityNoise = [-options.noiseLevel: intervalNoiseIntensity : options.noiseLevel]./options.nInputLevels;
+% nIntensityNoise = length(intensityNoise);
+% numelRangeNoise = round(imageN/nIntensityNoise);
+% 
+% % Separate the ranges randomly.
+% rangeNoise = 1:imageN;
+% rangeNoiseTemp = [];
+% for nn = 1:nIntensityNoise
+%     noiseSamplingRange = setdiff(rangeNoise,rangeNoiseTemp);
+%     
+%     % If there are not enough elements left for sampling, just fill out
+%     % with the first pixels.
+%     if (numelRangeNoise > length(noiseSamplingRange))
+%         numElementsToAdd = numelRangeNoise - length(noiseSamplingRange) + 1;
+%         noiseSamplingRange = [noiseSamplingRange ones(1, numElementsToAdd)];
+%     end
+%     
+%     rangeNoiseSet(:,nn) = randsample(noiseSamplingRange, numelRangeNoise);
+%     rangeNoiseTemp = rangeNoiseSet(:);
+% end
+% 
+% % Color the noise image.
+% for nn = 1:nIntensityNoise
+%     noiseImage(rangeNoiseSet(:,nn), :, whichPrimary) = intensityNoise(nn);
+% end
+% 
+% %% Add noise to the given image.
+% imageConverted = image + noiseImage;
 
-% Color the noise image.
-for nn = 1:nIntensityNoise
-    noiseImage(rangeNoiseSet(:,nn), :, whichPrimary) = intensityNoise(nn);
-end
-
-%% Add noise to the given image.
-imageConverted = image + noiseImage;
-
-% Show the image added noise.
+%% Show the image added noise.
 if (options.verbose)
     figure;
     imshow(imageConverted);
