@@ -30,7 +30,7 @@ nInputLevels = 256;
 whichChannelPrimary1 = 15;
 whichChannelPrimary2 = 5;
 channelIntensityPrimary1 = 1;
-channelIntensityPrimary2 = 0.5;
+channelIntensityPrimary2 = 1;
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
@@ -53,7 +53,7 @@ framesPerStim = round((1/frequecnyFlicker)/ifi);
 %
 % Set the primary colors.
 intensityPrimary1 = nInputLevels-1;
-intensityPrimary2 = nInputLevels-1;
+intensityPrimary2 = nInputLevels/2;
 
 primarySetting1 = [intensityPrimary1 0 0]';
 primarySetting2 = [0 intensityPrimary2 0]';
@@ -99,7 +99,7 @@ while 1
     if (stateButtonRight == false)
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
         if (stateButtonRight == true)
-            fprintf('End the session... \n');
+            fprintf('Finishing up the session... \n');
             break;
         end
     end
@@ -123,7 +123,7 @@ while 1
             intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
         end
         actedUp = true;
-        fprintf('Button pressed: UP %d \n', frameCounter);
+        fprintf('Button pressed: (UP)   / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
         
     elseif (stateButtonDown && ~actedDown)
         % Decrease the intensity of red light.
@@ -131,7 +131,7 @@ while 1
             intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
         end
         actedDown = true;
-        fprintf('Button pressed: Down %d \n', frameCounter);
+        fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
     end
     
     % Update the intensity of the red light here.
