@@ -34,12 +34,16 @@ nInputLevels = 256;
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 whichChannelPrimary1 = 15;
 whichChannelPrimary2 = 5;
+whichChannelPrimary3 = [1:16];
+
 channelIntensityPrimary1 = 1;
 channelIntensityPrimary2 = 1;
+channelIntensityPrimary3 = 1;
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
 channelSettings(whichChannelPrimary2, 2) = channelIntensityPrimary2;
+channelSettings(whichChannelPrimary3, 3) = channelIntensityPrimary3;
 
 % Set channel setting here.
 SetChannelSettings(channelSettings);
