@@ -79,12 +79,12 @@ plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
 plainImageRed = plainImageBase;
-intensityPrimary1 = 1;
+intensityPrimary1 = nInputLevels-1;
 plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
 plainImageGreen = plainImageBase;
-intensityPrimary2 = 0.5;
+intensityPrimary2 = nInputLevels/2;
 plainImageGreen(:,:,2) = intensityPrimary2;
 
 % Set primary index to update to make a flicker.
@@ -161,7 +161,7 @@ while 1
     end
     
     % Update the intensity of the red light here.
-    fillColors{1}(:,:,1) = primarySetting1;
+    fillColors{1}(:,:,1) = intensityPrimary1./(nInputLevels-1);
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
