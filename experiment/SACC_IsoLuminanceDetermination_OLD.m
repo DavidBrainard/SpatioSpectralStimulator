@@ -9,7 +9,6 @@
 %    08/17/22   smo        - Added a control part to update the intensity of
 %                            red light while making red-green flicker.
 %    08/18/22   dhb, smo   - Now code is working fine.
-%    08/19/22   smo        - Added Gaussian noise on the white background.
 
 %% Initialize.
 clear; close all;
@@ -54,37 +53,27 @@ ifi = 1/frameRate;
 frequecnyFlicker = 40;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 
-%% Make Gaussian window and normalize its max to one.
+%% Set the image settings.
 %
-% Set the window parameters. ScreenPixelsPerDeg is based on the Maxwellian
-% view settings for SACC project.
-stimulusN = 996;
-centerN = stimulusN/2;
-gaborSdDeg = 0.75;
-screenPixelsPerDeg = 142.1230;
-gaborSdPixels = gaborSdDeg * screenPixelsPerDeg;
+% Set the primary colors.
+intensityPrimary1 = nInputLevels-1;
+intensityPrimary2 = nInputLevels/2;
 
-% Make a gaussian window here.
-gaussianWindowBase = zeros(stimulusN, stimulusN, 3);
-gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,gaborSdPixels);
-gaussianWindowBGBlack = gaussianWindow/max(gaussianWindow(:));
-gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
+primarySetting1 = [intensityPrimary1 0 0]';
+primarySetting2 = [0 intensityPrimary2 0]';
+fillColors = [primarySetting1 primarySetting2];
 
-% Make plain red/green images here.
-plainImageBase = zeros(stimulusN, stimulusN, 3);
+% Set the position of the circle on the screen.
+% Note that ovalRect = [left top right bottom]';
+centerScreen = windowRect/2;
+centerScreenHorz = centerScreen(3);
+centerScreenVert = centerScreen(4);
 
-% Red plain image.
-plainImageRed = plainImageBase;
-intensityPrimary1 = 1;
-plainImageRed(:,:,1) = intensityPrimary1;
-
-% Green plain image.
-plainImageGreen = plainImageBase;
-intensityPrimary2 = 0.5;
-plainImageGreen(:,:,2) = intensityPrimary2;
+ovalSize = 150;
+ovalRect = [centerScreenHorz-ovalSize/2 centerScreenVert-ovalSize/2 ...
+    centerScreenHorz+ovalSize/2 centerScreenVert+ovalSize/2]';
 
 % Set primary index to update to make a flicker.
-fillColors = {plainImageRed plainImageGreen};
 fillColorIndexs = [1 2];
 fillColorIndex = 1;
 
@@ -108,12 +97,6 @@ primaryControlInterval = 1;
 
 %% Start the flicker loop here.
 frameCounter = 0;
-
-% Get image windowRect.
-centerScreen = [windowRect(3) windowRect(4)] * 0.5;
-imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
-imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
-    centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
 
 while 1
     
@@ -157,18 +140,17 @@ while 1
     end
     
     % Update the intensity of the red light here.
-    fillColors{1}(:,:,1) = primarySetting1;
+    primarySetting1 = [intensityPrimary1 0 0]';
+    fillColors(:,1) = primarySetting1;
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-        fillColor = fillColors{fillColorIndex};
+        fillColor = fillColors(:,fillColorIndex);
     end
     
-    % Make and draw image texture.
-    fillColor = fillColor + gaussianWindowBGWhite;
-    imageTexture = Screen('MakeTexture', window, fillColor);
-    Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
+    % Display here.
+    Screen('FillOval', window, fillColor, ovalRect);
     
     % Make a flip.
     Screen('Flip', window);
