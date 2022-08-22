@@ -74,6 +74,7 @@ gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,ga
 gaussianWindowBGBlack = gaussianWindow/max(gaussianWindow(:));
 gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 
+
 % Make plain red/green images here.
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
@@ -103,6 +104,7 @@ stateButtonDown = false;
 stateButtonRight = false;
 actedUp = false;
 actedDown = false;
+drewTexture = false; 
 
 numButtonUp = 4;
 numButtonDown = 2;
@@ -161,7 +163,7 @@ while 1
     end
     
     % Update the intensity of the red light here.
-    fillColors{1}(:,:,1) = intensityPrimary1./(nInputLevels-1);
+    fillColors{1}(:,:,1) = intensityPrimary1;
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
@@ -170,9 +172,18 @@ while 1
     end
     
     % Make and draw image texture.
+    fillColor = fillColor./(nInputLevels-1);
     fillColor = fillColor + gaussianWindowBGWhite;
-    imageTexture = Screen('MakeTexture', window, fillColor);
+    
+%     imageTexture = Screen('MakeTexture', window, fillColor);
+    imageTexture = MakeImageTexture(fillColor, window, windowRect,'verbose',true);
     Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
+    drewTexture = true;
+    
+    % Reset acted on state when button comes back up.
+    if (drewTexture)
+        drewTexture = false;
+    end
     
     % Make a flip.
     Screen('Flip', window);
