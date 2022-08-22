@@ -23,6 +23,8 @@ desiredTime = desiredTimeSet(1);
 whichRange = 2;
 
 %% Plot it.
+PLOTREFERENCE = true;
+
 figure; hold on;
 
 % Measured time.
@@ -30,13 +32,15 @@ histogram(flipTimeInterval(whichRange,:),'LineWidth',3,'facecolor','b','edgecolo
 xlabel('Flip time (sec)', 'fontsize', 15);
 ylabel('Counts', 'fontsize', 15);
 
-% Desired time.
-numMaxCount = 120;
-plot([desiredTime desiredTime],[0 numMaxCount],'r-','linewidth',3);
-
-% Desired time +/- one ifi.
-ratioIFI = 0.5;
-plot([desiredTime-ratioIFI*ifi desiredTime-ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
-plot([desiredTime+ratioIFI*ifi desiredTime+ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
-xlim([desiredTime-ratioIFI*ifi desiredTime+ratioIFI*ifi]);
-legend('Measured', 'Desired', sprintf('Desired +/- %.1f ifi \n',ratioIFI), 'FontSize', 15);
+if (PLOTREFERENCE)
+    % Desired time.
+    numMaxCount = 120;
+    plot([desiredTime desiredTime],[0 numMaxCount],'r-','linewidth',3);
+    
+    % Desired time +/- one ifi.
+    ratioIFI = 0.5;
+    plot([desiredTime-ratioIFI*ifi desiredTime-ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
+    plot([desiredTime+ratioIFI*ifi desiredTime+ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
+    xlim([desiredTime-ratioIFI*ifi desiredTime+ratioIFI*ifi]);
+    legend('Measured', 'Desired', sprintf('Desired +/- %.1f ifi \n',ratioIFI), 'FontSize', 15);
+end
