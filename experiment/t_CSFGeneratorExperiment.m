@@ -148,6 +148,7 @@ sceneParamsStruct.predefinedTemporalSupport = 0.5;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
+sceneParamsStruct.addNoiseToImage = true;
 
 % Set numbers when using auto response.
 if (experimentParams.autoResponse)
@@ -439,7 +440,7 @@ if (PRACTICETRIALS)
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
-            'preStimuliDelaySec',experimentParams.preStimuliDelaySec,...
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
             'addFixationPointImage', sceneParamsStruct.addFixationPointImage,'verbose',true);
     end
     

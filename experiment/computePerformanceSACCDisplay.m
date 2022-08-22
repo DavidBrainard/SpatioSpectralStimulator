@@ -70,6 +70,11 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         displayed until subject press a
 %                                         button. It is useful to check the
 %                                         stimuli when debugging.
+%    addNoiseToImage                    - Default to false. If it is set to
+%                                         true, add noise to image. We
+%                                         added this part to minimize the
+%                                         artifacts when we see the image
+%                                         on SACCSFA.
 %    addFixationPointImage              - Default to false. Add a fixation
 %                                         point at the center of the image
 %                                         when it sets to true.
@@ -132,7 +137,9 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         now we separate functions for
 %                                         making and displaying the image
 %                                         texture.
- 
+%    08/22/22  smo                      - Added an option adding noise to
+%                                         image.
+
 %% Set parameters.
 arguments
     nullRGBImage
@@ -148,6 +155,7 @@ arguments
     options.beepSound (1,1) = false
     options.autoResponse = []
     options.debugMode (1,1) = false
+    options.addNoiseToImage (1,1) = false
     options.addFixationPointImage (1,1) = false
     options.movieStimuli (1,1) = false
     options.movieImageDelaySec (1,1) = 0.5
@@ -188,11 +196,11 @@ end
 %
 % Cross-bar image.
 [imageTextureCrossbar imageWindowRect] = MakeImageTexture(nullRGBImage, window, windowRect, ...
-    'addFixationPoint', true, 'verbose', false);
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', true, 'verbose', false);
 
 % Null image without cross-bar.
 [imageTextureNull imageWindowRect] = MakeImageTexture(nullRGBImage, window, windowRect, ...
-    'addFixationPoint', false, 'verbose', false);
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', false, 'verbose', false);
 
 % Ramping on/off medium images.
 %
@@ -219,13 +227,13 @@ if (options.movieStimuli)
     for ii = 1:nMovieContrastRatio
         movieMediumImageTemp = displayTestImage * movieContrastRatio(ii) + nullRGBImage * (1-movieContrastRatio(ii));
         [imageTextureMovie(ii) imageWindowRect] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
-            'addFixationPoint', options.addFixationPointImage, 'verbose', false);
+            'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
     end
 end
 
 % Test contrast image.
 [imageTextureTest imageWindowRect] = MakeImageTexture(displayTestImage, window, windowRect, ...
-    'addFixationPoint', options.addFixationPointImage, 'verbose', false);
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
 
 %% Displaying the image texture.
 %

@@ -23,7 +23,11 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 %    imageWindowRect            - Rect corresonding to image texture size.
 %
 % Optional key/value pairs:
-%    addFixationPointImage        Default to false. If it is set to true,
+%    addNoiseToImage            - Default to false. If it is set to true,
+%                                 add noise to image. We added this part to
+%                                 minimize the artifacts when we see the
+%                                 image on SACCSFA.
+%    addFixationPointImage      - Default to false. If it is set to true,
 %                                 add a fixation point at the center of the
 %                                 image. This is useful when you want to
 %                                 add one on the stimuli for SACC project.
@@ -34,12 +38,14 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 
 % History:
 %    08/17/22      smo          - Wrote it.
+%    08/22/22      smo          - Added an option adding noise to image.
 
 %% Set parameters.
 arguments
     image
     window (1,1)
     windowRect (1,4)
+    options.addNoiseToImage (1,1) = false
     options.addFixationPointImage (1,1) = false
     options.verbose (1,1) = true
 end
@@ -53,6 +59,12 @@ elseif (class(image) == 'uint8')
     image = image;
 else
     error('Input image should be in the format either double or uint8');
+end
+
+%% Add noise to image if you want.
+if (options.addNoiseToImage)
+   noiseLevel = 3;
+   image = AddNoiseToImage(image,'noiseLevel',noiseLevel);
 end
 
 %% Add fixation point at the center of image if you want.
