@@ -50,17 +50,6 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Check the image format.
-%
-% Convert the image format to uint8.
-if (class(image) == 'double')
-    image = im2uint8(image);
-elseif (class(image) == 'uint8')
-    image = image;
-else
-    error('Input image should be in the format either double or uint8');
-end
-
 %% Add noise to image if you want.
 if (options.addNoiseToImage)
    noiseLevel = 3;
@@ -78,6 +67,17 @@ if (options.addFixationPointImage)
     % Add fixation point here.
     image = AddFixPointImage(image, 'patternType', fixPatternType, 'patternColor',fixPatternColor, ...
         'patternSize', fixSizePixel, 'patternWidth', fixPatternWidth);
+end
+
+%% Convert image format in uint8.
+%
+% Convert the image format to uint8.
+if (class(image) == 'double')
+    image = im2uint8(image);
+elseif (class(image) == 'uint8')
+    image = image;
+else
+    error('Input image should be in the format either double or uint8');
 end
 
 %% Set the size of the PTB texture. 
