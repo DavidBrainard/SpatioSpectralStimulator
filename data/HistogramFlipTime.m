@@ -17,13 +17,17 @@ load(fullfile(fileDir,fileName));
 frequency = 120;
 ifi = 1/frequency;
 
-desiredTimeSet = [0.0664 0.4980];
-desiredTime = desiredTimeSet(1);
-
 whichRange = 2;
 
+desiredTimeSet = [0.0664 0.4980];
+if (whichRange == 6)
+    desiredTime = desiredTimeSet(2);
+else
+    desiredTime = desiredTimeSet(1);
+end
+
 %% Plot it.
-PLOTREFERENCE = true;
+PLOTREFERENCE = false;
 
 figure; hold on;
 
