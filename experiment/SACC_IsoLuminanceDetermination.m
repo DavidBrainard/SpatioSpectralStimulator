@@ -38,7 +38,7 @@ whichChannelPrimary3 = [1:16];
 
 channelIntensityPrimary1 = 1;
 channelIntensityPrimary2 = 1;
-channelIntensityPrimary3 = 1;
+channelIntensityPrimary3 = 0;
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
@@ -55,7 +55,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 40;
+frequecnyFlicker = 20;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 
 %% Make Gaussian window and normalize its max to one.
@@ -114,12 +114,12 @@ primaryControlInterval = 1;
 
 %% Start the flicker loop here.
 frameCounter = 0;
-
+BACKGROUND = 'black';
 % Get image windowRect.
-centerScreen = [windowRect(3) windowRect(4)] * 0.5;
-imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
-imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
-    centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
+% centerScreen = [windowRect(3) windowRect(4)] * 0.5;
+% imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
+% imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
+%     centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
 
 while 1
     
@@ -169,18 +169,22 @@ while 1
     if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
         fillColor = fillColors{fillColorIndex};
+        
+        % Add gaussian noise to image.
+        fillColor = fillColor./(nInputLevels-1);
+        switch BACKGROUND
+            case 'white'
+                fillColor = fillColor + gaussianWindowBGWhite;
+            case 'black'
+                fillColor = fillColor .* gaussianWindowBGBlack;
+        end
     end
     
     % Make and draw image texture.
-    fillColor = fillColor./(nInputLevels-1);
-    fillColor = fillColor + gaussianWindowBGWhite;
-    
-%     imageTexture = Screen('MakeTexture', window, fillColor);
-    imageTexture = MakeImageTexture(fillColor, window, windowRect,'verbose',true);
+    [imageTexture, imageWindowRect] = MakeImageTexture(fillColor, window, windowRect,'verbose',false);
     Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
-    drewTexture = true;
     
-    % Reset acted on state when button comes back up.
+    % Initiate the drew texture state.
     if (drewTexture)
         drewTexture = false;
     end
