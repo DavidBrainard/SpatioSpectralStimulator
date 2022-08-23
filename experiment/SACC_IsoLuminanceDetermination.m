@@ -114,7 +114,7 @@ primaryControlInterval = 1;
 
 %% Start the flicker loop here.
 frameCounter = 0;
-BACKGROUND = 'black';
+BACKGROUND = 'white';
 % Get image windowRect.
 % centerScreen = [windowRect(3) windowRect(4)] * 0.5;
 % imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
@@ -178,16 +178,14 @@ while 1
             case 'black'
                 fillColor = fillColor .* gaussianWindowBGBlack;
         end
+        
+        % Make an image texture only when switching the image.
+        [imageTexture, imageWindowRect] = ...
+            MakeImageTexture(fillColor, window, windowRect,'verbose',false);
     end
     
-    % Make and draw image texture.
-    [imageTexture, imageWindowRect] = MakeImageTexture(fillColor, window, windowRect,'verbose',false);
+    % Draw image texture.
     Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
-    
-    % Initiate the drew texture state.
-    if (drewTexture)
-        drewTexture = false;
-    end
     
     % Make a flip.
     Screen('Flip', window);
@@ -198,3 +196,6 @@ end
 
 %% Close the screen.
 CloseScreen;
+
+% Print out the matching results.
+fprintf('The matching intensity of red = (%d) \n', intensityPrimary1);
