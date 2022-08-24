@@ -66,7 +66,7 @@ conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 18;
+    sineFreqCyclesPerDeg = 6;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -282,11 +282,11 @@ switch experimentMode
                 lowerLimEstDomain  = 0.0019;
                 higherLimEstDomain = 0.0046;
             case 6
-                lowerLimEstDomain  = 0.0016;
-                higherLimEstDomain = 0.0070;
-            case 9
                 lowerLimEstDomain  = 0.0027;
                 higherLimEstDomain = 0.0081;
+            case 9
+                lowerLimEstDomain  = 0.0038;
+                higherLimEstDomain = 0.0092;
             case 12
                 lowerLimEstDomain  = 0.0038;
                 higherLimEstDomain = 0.0092;
