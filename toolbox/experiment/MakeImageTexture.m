@@ -61,7 +61,7 @@ if (options.addFixationPointImage)
     % Fixation point parameters.
     fixPatternType = 'line';
     fixPatternColor = [0 0 0];
-    fixSizePixel = 8;
+    fixSizePixel = 12;
     fixPatternWidth = 5;
     
     % Add fixation point here.

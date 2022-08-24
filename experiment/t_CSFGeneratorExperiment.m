@@ -66,9 +66,9 @@ conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 3;
+    sineFreqCyclesPerDeg = 18;
     gaborSdDeg = 0.75;
-    SAVETHERESULTS = false;
+    SAVETHERESULTS = true;
     
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -279,11 +279,11 @@ switch experimentMode
         %  0.0189 0.0200];
         switch sineFreqCyclesPerDeg
             case 3
-                lowerLimEstDomain  = 0.0003;
-                higherLimEstDomain = 0.0030;
+                lowerLimEstDomain  = 0.0019;
+                higherLimEstDomain = 0.0046;
             case 6
-                lowerLimEstDomain  = 0.0005;
-                higherLimEstDomain = 0.0059;
+                lowerLimEstDomain  = 0.0016;
+                higherLimEstDomain = 0.0070;
             case 9
                 lowerLimEstDomain  = 0.0027;
                 higherLimEstDomain = 0.0081;
@@ -291,8 +291,8 @@ switch experimentMode
                 lowerLimEstDomain  = 0.0038;
                 higherLimEstDomain = 0.0092;
             case 18
-                lowerLimEstDomain  = 0.0038;
-                higherLimEstDomain = 0.0120;
+                lowerLimEstDomain  = 0.0071;
+                higherLimEstDomain = 0.0152;
             otherwise
         end
         
@@ -473,7 +473,9 @@ end
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
     
     % Display crossbar image.
-    SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
+    [imageTextureNull, imageWindowRectNull] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect,...
+        'addFixationPoint', true, 'verbose', true);
+    FlipImageTexture(imageTextureNull, window, imageWindowRectNull);
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         % Waiting for key to be pressed to start.
