@@ -31,10 +31,10 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-CHECKADAPTIVEMODE = true;
+CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 18;
+sineFreqCyclesPerDeg = 3;
 
 %% Load the data and PF fitting.
 %
@@ -148,7 +148,7 @@ if (ADDMEANTHRESHOLD)
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = true;
+CSFCURVE = false;
 
 if (CSFCURVE)
     % Set target spatial frequency and threshold values. We type manually
