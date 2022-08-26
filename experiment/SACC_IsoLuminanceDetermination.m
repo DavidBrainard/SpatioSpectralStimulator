@@ -55,7 +55,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 20;
+frequecnyFlicker = 30;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 
 %% Make Gaussian window and normalize its max to one.
@@ -64,7 +64,7 @@ framesPerStim = round((1/frequecnyFlicker)/ifi);
 % view settings for SACC project.
 stimulusN = 996;
 centerN = stimulusN/2;
-gaborSdDeg = 0.75;
+gaborSdDeg = 0.5;
 screenPixelsPerDeg = 142.1230;
 gaborSdPixels = gaborSdDeg * screenPixelsPerDeg;
 
@@ -114,7 +114,7 @@ primaryControlInterval = 1;
 
 %% Start the flicker loop here.
 frameCounter = 0;
-BACKGROUND = 'white';
+BACKGROUND = 'black';
 % Get image windowRect.
 % centerScreen = [windowRect(3) windowRect(4)] * 0.5;
 % imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
