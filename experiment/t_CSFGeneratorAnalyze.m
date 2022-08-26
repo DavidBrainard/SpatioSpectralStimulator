@@ -34,7 +34,7 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 3;
+sineFreqCyclesPerDeg = 18;
 
 %% Load the data and PF fitting.
 %
@@ -134,42 +134,50 @@ for dd = 1:nData
     clear pointSize;
 end
 
-%% Add the mean threshold from Adaptive method if you want to compare it with the result from Validation method.
-%
-% This is temporary, we may make this part more elaborate later on.
-ADDMEANTHRESHOLD = false;
+% Save the graph if you want.
+SAVEFITTING = false;
 
-if (ADDMEANTHRESHOLD)
-    meanThreshold = 0.0030;
-    stdThreshold = 0.0010;
-    plot(meanThreshold, thresholdCriterion, 'ko','MarkerFaceColor','b','MarkerSize',12);
-    e = errorbar(meanThreshold,thresholdCriterion,stdThreshold,'horizontal');
-    e.Color = 'blue';
+if (SAVEFITTING)
+    fileDir = '/Users/seminoh/Aguirre-Brainard Lab Dropbox/Semin Oh/SACC_materials/Experiment'; 
+    cd(fileDir);
+    fileName = sprintf('%d_deg.tiff', sineFreqCyclesPerDeg);
+    saveas(gcf, fileName);
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = false;
+CSFCURVE = true;
 
 if (CSFCURVE)
     % Set target spatial frequency and threshold values. We type manually
     % here for now, but we can elaborate it later.
     
     % Semin
-    spatialFrequency_Semin = [1 3 6 9 12 18];
-    threshold_Semin = [0.0017 0.0032 0.0040 0.0043 0.0046 0.0072];
-    sensitivity_Semin = 1./threshold_Semin;
+    testSpatialFrequency = [3 6 9 12 18];
+    logTestSpatialFrequency = log10(testSpatialFrequency);
+%     threshold_Semin = [0.0017 0.0032 0.0040 0.0043 0.0046 0.0072];
+    threshold_Semin = [0.0031 0.0055 0.0059 0.0053 0.0139];
+    sensitivity_Semin = log10(1./threshold_Semin);
     
-    % David (as of 07/15/22)
-    spatialFrequency_David = [3 6 9 12];
-    threshold_David = [0.0015 0.0033 0.0043 0.0065];
-    sensitivity_David = 1./threshold_David;
+%     threshold_David = [0.0015 0.0033 0.0043 0.0065];
+    threshold_David = [0.0027 0.0050 0.0062 0.0052 0];
+    sensitivity_David = log10(1./threshold_David);
     
     % Plot it.
     figure; clf; hold on;
-    plot(spatialFrequency_Semin, sensitivity_Semin, 'g.-','markersize',20,'linewidth',2);
-    plot(spatialFrequency_David, sensitivity_David, 'b.-','markersize',20,'linewidth',2);
-    xlabel('Spatial frequency (cpd)','fontsize',15);
-    ylabel('Contrast Sensitivity','fontsize',15); 
-    xticks(spatialFrequency_Semin);  
+    plot(logTestSpatialFrequency, sensitivity_Semin, 'g.-','markersize',20,'linewidth',2);
+    plot(logTestSpatialFrequency, sensitivity_David, 'b.-','markersize',20,'linewidth',2);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Log Contrast Sensitivity','fontsize',15); 
+    xticks(logTestSpatialFrequency);
+    xticklabels(testSpatialFrequency);  
     legend('Semin','David','fontsize',15);
+end
+
+% Save the graph if you want.
+SAVEFITTING = true;
+if (SAVEFITTING)
+    fileDir = '/Users/seminoh/Aguirre-Brainard Lab Dropbox/Semin Oh/SACC_materials/Experiment'; 
+    cd(fileDir);
+    fileName = sprintf('CSF_curves.tiff', sineFreqCyclesPerDeg);
+    saveas(gcf, fileName);
 end

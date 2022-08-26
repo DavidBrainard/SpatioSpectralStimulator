@@ -1,9 +1,10 @@
-% HistogramFlipTime.
+% MakeHistogramFlipTime.
 %
 % This to make a histogram plot using flip time data.
 %
 % History:
 %    08/19/22    smo    - Wrote it.
+%    08/26/22    smo    - File name changed.
 
 %% Initialize.
 clear; close all;
@@ -17,7 +18,7 @@ load(fullfile(fileDir,fileName));
 frequency = 120;
 ifi = 1/frequency;
 
-whichRange = 2;
+whichRange = 7;
 
 desiredTimeSet = [0.0664 0.4980];
 if (whichRange == 6)
@@ -27,7 +28,7 @@ else
 end
 
 %% Plot it.
-PLOTREFERENCE = false;
+PLOTREFERENCE = true;
 
 figure; hold on;
 
@@ -42,9 +43,10 @@ if (PLOTREFERENCE)
     plot([desiredTime desiredTime],[0 numMaxCount],'r-','linewidth',3);
     
     % Desired time +/- one ifi.
-    ratioIFI = 0.5;
+    ratioIFI = 1;
+    axisIFI = 2.5;
     plot([desiredTime-ratioIFI*ifi desiredTime-ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
     plot([desiredTime+ratioIFI*ifi desiredTime+ratioIFI*ifi], [0 numMaxCount], 'g--', 'linewidth', 3);
-    xlim([desiredTime-ratioIFI*ifi desiredTime+ratioIFI*ifi]);
+    xlim([desiredTime-axisIFI*ifi desiredTime+axisIFI*ifi]);
     legend('Measured', 'Desired', sprintf('Desired +/- %.1f ifi \n',ratioIFI), 'FontSize', 15);
 end
