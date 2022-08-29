@@ -184,13 +184,10 @@ while 1
             MakeImageTexture(fillColor, window, windowRect,'verbose',false);
     end
     
-    % Draw image texture.
-    Screen('DrawTexture', window, imageTexture, [], imageWindowRect);
-    
     % Make a flip.
-    Screen('Flip', window);
+    flipTime(frameCounter+1) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     
-    % Increase frame counter.
+    % Count the frame.
     frameCounter = frameCounter + 1;
 end
 
