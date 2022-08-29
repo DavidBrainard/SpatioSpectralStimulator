@@ -167,7 +167,7 @@ arguments
     options.verbose (1,1) = true
 end
 
-%% Set the test image to display.
+%% Set the test image and make a rotation if needed.
 %
 % This part will be used for the actual experiment displaying the test
 % image on the projector using PTB. It displays a test image either
@@ -180,21 +180,39 @@ displayHorizontal = 2;
 displayDirections = [displayVertical displayHorizontal];
 whichDirectionToDisplay = randi(displayDirections);
 
-% Make a rotation image here.
+% Make a rotation on image.
+if (~options.rotateImageDeg == 0)
+    rotationImageType = 'crop';
+end
+
 switch whichDirectionToDisplay
     case displayVertical
         % If it's vertical image to display, just pass the original
         % image unless you want to rotate it.
         if (~options.rotateImageDeg == 0)
-            displayTestImage = imrotate(testRGBImage, - options.rotateImageDeg);
+            displayTestImage = imrotate(testRGBImage, -options.rotateImageDeg, rotationImageType);
         else
             displayTestImage = testRGBImage;
         end
     case displayHorizontal
         % If it's horizontal image to display, rotate the original
         % test image 90 degrees. However, you can rotate more or less.
-        imgRotationDeg = 90;
-        displayTestImage = imrotate(testRGBImage, imgRotationDeg - options.rotateImageDeg);
+        rotateImageHorizontalDeg = 90;
+        displayTestImage = imrotate(testRGBImage, rotateImageHorizontalDeg-options.rotateImageDeg, rotationImageType);
+end
+
+% Fill out the cropped part of the image with null image as background.
+%
+% When we make a rotation on the image besides multiples of 90-deg, it
+% makes the image cropped by leaving the rest part of the image in black.
+% So, here we fill out the area with the same pixel as null image so that
+% the image will look natural.
+pixelCroppedBlack = 0;
+pixelNullImage = squeeze(nullRGBImage(1,1,:));
+nPrimaries = size(nullRGBImage,3);
+
+for pp = 1:nPrimaries
+    displayTestImage(:,:,pp) = changem(displayTestImage(:,:,pp), pixelNullImage(pp), pixelCroppedBlack);
 end
 
 %% Make displaying image texture.
@@ -232,9 +250,9 @@ if (options.movieStimuli)
     nMovieContrastRatio = length(movieContrastRatio);
     
     % Make medium images here.
-    for ii = 1:nMovieContrastRatio
-        movieMediumImageTemp = displayTestImage * movieContrastRatio(ii) + nullRGBImage * (1-movieContrastRatio(ii));
-        [imageTextureMovie(ii) imageWindowRect] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
+    for pp = 1:nMovieContrastRatio
+        movieMediumImageTemp = displayTestImage * movieContrastRatio(pp) + nullRGBImage * (1-movieContrastRatio(pp));
+        [imageTextureMovie(pp) imageWindowRect] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
             'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
     end
 end
@@ -262,8 +280,8 @@ end
 % Display a test image gradually on.
 if (options.movieStimuli)
     movieEachImageDelaySec = options.movieImageDelaySec/nMovieContrastRatio;
-    for ii = 1:nMovieContrastRatio
-        flipTimeMovieOn(ii,1) = FlipImageTexture(imageTextureMovie(ii), window, imageWindowRect,...
+    for pp = 1:nMovieContrastRatio
+        flipTimeMovieOn(pp,1) = FlipImageTexture(imageTextureMovie(pp), window, imageWindowRect,...
             'afterFlipTimeDelay', movieEachImageDelaySec, 'verbose', false);
     end
 end
@@ -284,8 +302,8 @@ end
 
 % Display stimuli gradually off.
 if (options.movieStimuli)
-    for ii = 1:nMovieContrastRatio
-        flipTimeMovieOff(ii,1) = FlipImageTexture(imageTextureMovie(nMovieContrastRatio-ii+1), window, imageWindowRect,...
+    for pp = 1:nMovieContrastRatio
+        flipTimeMovieOff(pp,1) = FlipImageTexture(imageTextureMovie(nMovieContrastRatio-pp+1), window, imageWindowRect,...
             'afterFlipTimeDelay', movieEachImageDelaySec, 'verbose', false);
     end
 end
