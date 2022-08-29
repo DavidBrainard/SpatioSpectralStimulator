@@ -52,6 +52,7 @@
 %    08/08/22  smo       - Added an option to display a small focusing
 %                          point on the test contrast images to minimize
 %                          the artifacts.
+%    08/29/22  smo       - Added an option to rotate the images.
 
 %% Initialization.
 clear; close all;
@@ -149,6 +150,7 @@ sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
 sceneParamsStruct.addNoiseToImage = true;
+sceneParamsStruct.rotateImageDeg = 45;
 
 % Set numbers when using auto response.
 if (experimentParams.autoResponse)
@@ -533,7 +535,7 @@ while (nextFlag)
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'addNoiseToImage',sceneParamsStruct.addNoiseToImage, ...
-            'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'verbose',true);
+            'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'rotateImageDeg', sceneParamsStruct.rotateImageDeg, 'verbose',true);
     end
     
     % Collect the flip time here.

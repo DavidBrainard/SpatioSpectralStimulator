@@ -54,10 +54,6 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         'keyboard' or 'gamepad' to get a
 %                                         response when running the
 %                                         experiment.
-%    imageMagnificationFactor           - When simulation was set to true,
-%                                         this decides the size of the null
-%                                         and test images. If it is set to 1,
-%                                         it displays the original image size.
 %    beepSound                          - If it is set to true, make a beep
 %                                         sound every when an image is
 %                                         displaying as an audible cue for
@@ -70,6 +66,12 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         displayed until subject press a
 %                                         button. It is useful to check the
 %                                         stimuli when debugging.
+%    rotateImageDeg                     - Default to zero. Rotate the test
+%                                         contrast images as much as this
+%                                         number is set. Note that it is
+%                                         always 90-deg difference between
+%                                         two rotations for 2-AFC
+%                                         experiment.
 %    addNoiseToImage                    - Default to false. If it is set to
 %                                         true, add noise to image. We
 %                                         added this part to minimize the
@@ -139,6 +141,8 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         texture.
 %    08/22/22  smo                      - Added an option adding noise to
 %                                         image.
+%    08/29/22  smo                      - Added an option to rotate the
+%                                         images.
 
 %% Set parameters.
 arguments
@@ -151,10 +155,10 @@ arguments
     windowRect (1,4)
     options.runningMode = 'simulation'
     options.expKeyType = 'keyboard'
-    options.imageMagnificationFactor (1,1) = 1.3
     options.beepSound (1,1) = false
     options.autoResponse = []
     options.debugMode (1,1) = false
+    options.rotateImageDeg (1,1) = 0
     options.addNoiseToImage (1,1) = false
     options.addFixationPointImage (1,1) = false
     options.movieStimuli (1,1) = false
@@ -180,13 +184,17 @@ whichDirectionToDisplay = randi(displayDirections);
 switch whichDirectionToDisplay
     case displayVertical
         % If it's vertical image to display, just pass the original
-        % image as the images were modulated in vertical patterns.
-        displayTestImage = testRGBImage;
+        % image unless you want to rotate it.
+        if (~options.rotateImageDeg == 0)
+            displayTestImage = imrotate(testRGBImage, - options.rotateImageDeg);
+        else
+            displayTestImage = testRGBImage;
+        end
     case displayHorizontal
         % If it's horizontal image to display, rotate the original
-        % test image 90 degrees.
+        % test image 90 degrees. However, you can rotate more or less.
         imgRotationDeg = 90;
-        displayTestImage = imrotate(testRGBImage, imgRotationDeg);
+        displayTestImage = imrotate(testRGBImage, imgRotationDeg - options.rotateImageDeg);
 end
 
 %% Make displaying image texture.
