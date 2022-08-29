@@ -392,15 +392,22 @@ if (PRACTICETRIALS)
     SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
     
     % Press any button to proceed.
+    numButtonUp    = 4;
+    numButtonRight = 3;
+    numButtonLeft  = 1;
+                    
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
                 responseGamePad = GetGamepadResp2AFC('verbose',true);
             case 'PTB-directional'
-                numButtonRight = 3;
-                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+                if (sceneParamsStruct.rotateImageDeg == 0)
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                else
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                end
         end
-        possibleResponseGamePad = [1 2];
+        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Practice trial is going to be started!');
         end
@@ -408,16 +415,19 @@ if (PRACTICETRIALS)
     
     %% Display crossbar image.
     SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
-    
+       
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
                 responseGamePad = GetGamepadResp2AFC('verbose',true);
             case 'PTB-directional'
-                numButtonRight = 3;
-                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+                if (sceneParamsStruct.rotateImageDeg == 0)
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                else
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                end
         end
-        possibleResponseGamePad = [1 2];
+        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Experiment is going to be started!');
         end
@@ -455,10 +465,13 @@ if (PRACTICETRIALS)
             case 'PTB-sequential'
                 responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
             case 'PTB-directional'
-                numButtonRight = 3;
-                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+                if (sceneParamsStruct.rotateImageDeg == 0)
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                else
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                end
         end
-        possibleResponseGamePad = [1 2];
+
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Practice trial has been ended!');
         end
@@ -481,14 +494,21 @@ if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentPa
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         % Waiting for key to be pressed to start.
+        numButtonUp    = 4;
+        numButtonRight = 3;
+        numButtonLeft  = 1;
+        
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
                 responseGamePad = GetGamepadResp2AFC('verbose',true);
             case 'PTB-directional'
-                numButtonRight = 3;
-                responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',true);
+                if (sceneParamsStruct.rotateImageDeg == 0)
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                else
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                end
         end
-        possibleResponseGamePad = [1 2];
+        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
         if (any(responseGamePad == possibleResponseGamePad))
             disp('Experiment is going to be started!');
         end

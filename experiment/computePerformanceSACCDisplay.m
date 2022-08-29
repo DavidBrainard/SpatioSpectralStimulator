@@ -190,7 +190,7 @@ switch whichDirectionToDisplay
         % If it's vertical image to display, just pass the original
         % image unless you want to rotate it.
         if (~options.rotateImageDeg == 0)
-            displayTestImage = imrotate(testRGBImage, -options.rotateImageDeg, rotationImageType);
+            displayTestImage = imrotate(testRGBImage, +options.rotateImageDeg, rotationImageType);
         else
             displayTestImage = testRGBImage;
         end
@@ -198,15 +198,15 @@ switch whichDirectionToDisplay
         % If it's horizontal image to display, rotate the original
         % test image 90 degrees. However, you can rotate more or less.
         rotateImageHorizontalDeg = 90;
-        displayTestImage = imrotate(testRGBImage, rotateImageHorizontalDeg-options.rotateImageDeg, rotationImageType);
+        displayTestImage = imrotate(testRGBImage, rotateImageHorizontalDeg+options.rotateImageDeg, rotationImageType);
 end
 
 % Fill out the cropped part of the image with null image as background.
 %
 % When we make a rotation on the image besides multiples of 90-deg, it
 % makes the image cropped by leaving the rest part of the image in black.
-% So, here we fill out the area with the same pixel as null image so that
-% the image will look natural.
+% So, here we fill out the area with the same pixel as null image so
+% that the image will look natural.
 pixelCroppedBlack = 0;
 pixelNullImage = squeeze(nullRGBImage(1,1,:));
 nPrimaries = size(nullRGBImage,3);
@@ -295,8 +295,15 @@ flipTimeTest = FlipImageTexture(imageTextureTest, window, imageWindowRect, ...
 if (options.debugMode)
     switch (options.expKeyType)
         case 'gamepad'
-            numButtonRight = 3;
-            responseDebug = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+            if (options.rotateImageDeg == 0)
+                numButtonUp    = 4;
+                numButtonRight = 3;
+                responseDebug  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',options.verbose);
+            else
+                numButtonLeft  = 1;
+                numButtonRight = 3;
+                responseDebug  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
+            end
     end
 end
 
@@ -342,8 +349,16 @@ if (isempty(options.autoResponse))
             else
                 switch (options.runningMode)
                     case 'PTB-directional'
-                        numButtonRight = 3;
-                        responseGamePad = GetGamepadResp2AFC('numButtonB',numButtonRight,'verbose',options.verbose);
+                        if (options.rotateImageDeg == 0)
+                            numButtonUp    = 4;
+                            numButtonRight = 3;
+                            responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',options.verbose);
+                        else
+                            numButtonLeft = 1;
+                            numButtonRight = 3;
+                            responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
+                        end
+                        
                 end
             end
             
