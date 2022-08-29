@@ -141,11 +141,11 @@ experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
-experimentParams.movieImageDelaySec = 0.25;
+experimentParams.movieImageDelaySec = 0.2;
 
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
-sceneParamsStruct.predefinedTemporalSupport = 0.5;
+sceneParamsStruct.predefinedTemporalSupport = 0.4;
 sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
