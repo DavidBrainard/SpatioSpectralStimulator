@@ -55,7 +55,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 30;
+frequecnyFlicker = 35;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 
 %% Make Gaussian window and normalize its max to one.
@@ -104,13 +104,12 @@ stateButtonDown = false;
 stateButtonRight = false;
 actedUp = false;
 actedDown = false;
-drewTexture = false; 
 
 numButtonUp = 4;
 numButtonDown = 2;
 numButtonRight = 3;
 
-primaryControlInterval = 1;
+primaryControlInterval = 2;
 
 %% Make PTB texture for all possible settings.
 %
