@@ -190,15 +190,15 @@ switch whichDirectionToDisplay
         % If it's vertical image to display, just pass the original
         % image unless you want to rotate it.
         if (~options.rotateImageDeg == 0)
-            displayTestImage = imrotate(testRGBImage, +options.rotateImageDeg, rotationImageType);
+            displayTestImage = fliplr(imrotate(testRGBImage, +options.rotateImageDeg, rotationImageType));
         else
-            displayTestImage = testRGBImage;
+            displayTestImage = fliplr(testRGBImage);
         end
     case displayHorizontal
         % If it's horizontal image to display, rotate the original
         % test image 90 degrees. However, you can rotate more or less.
         rotateImageHorizontalDeg = 90;
-        displayTestImage = imrotate(testRGBImage, rotateImageHorizontalDeg+options.rotateImageDeg, rotationImageType);
+        displayTestImage = fliplr(imrotate(testRGBImage, rotateImageHorizontalDeg+options.rotateImageDeg, rotationImageType));
 end
 
 % Fill out the cropped part of the image with null image as background.
