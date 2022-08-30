@@ -135,15 +135,24 @@ for pp = 1:nInputLevels
     end
     
     [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorTemp, window, windowRect,'verbose',false);
-    fprintf('Image texture has been created - (%d/%d)', pp, nInputLevels);
+    fprintf('Image texture has been created - (%d/%d) \n', pp, nInputLevels);
 end
 
 % Green.
-imageTextureGreen = MakeImageTexture(plainImageGreen, window, windowRect,'verbose',false);
+%
+% Add Gaussian window here.
+plainImageGreen = plainImageGreen./(nInputLevels-1);
+switch BACKGROUND
+    case 'white'
+        fillColorGreen = plainImageGreen + gaussianWindowBGWhite;
+    case 'black'
+        fillColorGreen = plainImageGreen .* gaussianWindowBGBlack;
+end
+imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,'verbose',false);
 
 %% Start the flicker loop here.
 frameCounter = 0;
-BACKGROUND = 'black';
+% BACKGROUND = 'black';
 % Get image windowRect.
 % centerScreen = [windowRect(3) windowRect(4)] * 0.5;
 % imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
@@ -190,27 +199,30 @@ while 1
         actedDown = true;
         fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
     end
-    
-%     % Update the intensity of the red light here.
+   
+     % Update the intensity of the red light here.
 %     fillColors{1}(:,:,1) = intensityPrimary1;
+    imageTextures = [imageTextureRed(intensityPrimary1) imageTextureGreen];
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-        fillColor = fillColors{fillColorIndex};
-        
+%         fillColor = fillColors{fillColorIndex};
+        imageTexture = imageTextures(fillColorIndex);
+
         % Add gaussian noise to image.
-        fillColor = fillColor./(nInputLevels-1);
-        switch BACKGROUND
-            case 'white'
-                fillColor = fillColor + gaussianWindowBGWhite;
-            case 'black'
-                fillColor = fillColor .* gaussianWindowBGBlack;
-        end
+%         fillColor = fillColor./(nInputLevels-1);
+%         switch BACKGROUND
+%             case 'white'
+%                 fillColor = fillColor + gaussianWindowBGWhite;
+%             case 'black'
+%                 fillColor = fillColor .* gaussianWindowBGBlack;
+%         end
         
+%         imageTexture = 
         % Make an image texture only when switching the image.
-        [imageTexture, imageWindowRect] = ...
-            MakeImageTexture(fillColor, window, windowRect,'verbose',false);
+%         [imageTexture, imageWindowRect] = ...
+%             MakeImageTexture(fillColor, window, windowRect,'verbose',false);
     end
     
     % Make a flip.
