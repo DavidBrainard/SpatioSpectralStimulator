@@ -112,6 +112,35 @@ numButtonRight = 3;
 
 primaryControlInterval = 1;
 
+%% Make PTB texture for all possible settings.
+%
+% As making texture takes an extra time which could cause delay for
+% diplaying a texture on desired time, so here we make all textures before
+% starting the loop.
+%
+% Red.
+fillColorTemp = plainImageBase;
+BACKGROUND = 'black';
+
+for pp = 1:nInputLevels
+    fillColorTemp(:,:,1) = pp-1;
+    fillColorTemp = fillColorTemp./(nInputLevels-1);
+    
+    % Add Gaussian window here.
+    switch BACKGROUND
+        case 'white'
+            fillColorTemp = fillColorTemp + gaussianWindowBGWhite;
+        case 'black'
+            fillColorTemp = fillColorTemp .* gaussianWindowBGBlack;
+    end
+    
+    [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorTemp, window, windowRect,'verbose',false);
+    fprintf('Image texture has been created - (%d/%d)', pp, nInputLevels);
+end
+
+% Green.
+imageTextureGreen = MakeImageTexture(plainImageGreen, window, windowRect,'verbose',false);
+
 %% Start the flicker loop here.
 frameCounter = 0;
 BACKGROUND = 'black';
@@ -162,8 +191,8 @@ while 1
         fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
     end
     
-    % Update the intensity of the red light here.
-    fillColors{1}(:,:,1) = intensityPrimary1;
+%     % Update the intensity of the red light here.
+%     fillColors{1}(:,:,1) = intensityPrimary1;
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
