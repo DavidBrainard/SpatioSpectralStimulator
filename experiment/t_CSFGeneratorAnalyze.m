@@ -34,7 +34,7 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 conditionName = 'LminusMSmooth';
-sineFreqCyclesPerDeg = 18;
+sineFreqCyclesPerDeg = 3;
 
 %% Load the data and PF fitting.
 %
@@ -43,7 +43,7 @@ sineFreqCyclesPerDeg = 18;
 %
 % Set startData to 0 if you want to read the data from the most recent.
 startData = 0;
-nData = 1;
+nData = 3;
 SUBPLOT = false;
 sizeSubplot = [round(nData/2) 4];
 
@@ -167,9 +167,11 @@ if (CSFCURVE)
     plot(logTestSpatialFrequency, sensitivity_Semin, 'g.-','markersize',20,'linewidth',2);
     plot(logTestSpatialFrequency, sensitivity_David, 'b.-','markersize',20,'linewidth',2);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Log Contrast Sensitivity','fontsize',15); 
+    ylabel('Contrast Sensitivity','fontsize',15); 
     xticks(logTestSpatialFrequency);
-    xticklabels(testSpatialFrequency);  
+    xticklabels(testSpatialFrequency);
+    yticks(sort([sensitivity_David sensitivity_Semin]));
+    yticklabels(round(10.^sort([sensitivity_David sensitivity_Semin])));
     legend('Semin','David','fontsize',15);
 end
 
