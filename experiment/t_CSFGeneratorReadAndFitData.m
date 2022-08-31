@@ -55,9 +55,17 @@ thresholdCriterion = 0.81606;
 [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
+
+
 % Set the contrast levels in linear unit.
 examinedContrastsLinear = 10.^dataOut.examinedContrasts;
 
 % PF fitting happens here.
 [paramsFitted] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
     'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE);
+
+% Get QuestPlus prediction and add to plot
+nFineStimLevels = 1000;
+fineStimLevels = linspace(0, max(examinedContrastsLinear), nFineStimLevels)';
+predictedQuestPlus = qpPFWeibullLog(log10(fineStimLevels),para);
+plot(fineStimLevels,predictedQuestPlus(:,2),'k.');
