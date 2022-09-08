@@ -1,4 +1,4 @@
-function [imageConverted] = AddNoiseToImage(image, options)
+function [imageConverted rngVal] = AddNoiseToImage(image, options)
 % Add noise to given image.
 %
 % Syntax:
@@ -18,8 +18,11 @@ function [imageConverted] = AddNoiseToImage(image, options)
 %    image                    - Image that you want to add noise to.
 %
 % Outputs:
-%    noiseImage               - Output image that added noise to the given
+%    imageConverted           - Output image that added noise to the given
 %                               image.
+%    rngVal                   - Seed of the random noise using rng fucntion
+%                               so that we can recreate the noise pattern
+%                               when we want.
 %
 % Optional key/value pairs:
 %    noiseLevel               - Default to 1. The maximum noise intensity
@@ -36,11 +39,12 @@ function [imageConverted] = AddNoiseToImage(image, options)
 %    N/A
 
 % History:
-%   08/12/22  smo             - Started on it.
-%   08/17/22  smo             - Updated on sampling. Now we can make noise
+%    08/12/22  smo            - Started on it.
+%    08/17/22  smo            - Updated on sampling. Now we can make noise
 %                               image for any noise intensity.
-%   08/18/22  dhb, smo        - Now we add the noise without the specific
+%    08/18/22  dhb, smo       - Now we add the noise without the specific
 %                               pattern to all pixels.
+%    09/08/22  smo            - We save the seed number for random noise.
 
 %% Set parameters.
 arguments
@@ -52,6 +56,9 @@ end
 
 %% Make noise image, add to input, and handle out of range.
 %
+% Save the seed for random noise so that we can recreate it if we want.
+rngVal = rng;
+
 % Make a noise image.
 noiseImage = randi([-options.noiseLevel options.noiseLevel], size(image));
 

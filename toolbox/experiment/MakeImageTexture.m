@@ -1,4 +1,4 @@
-function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowRect,options)
+function [imageTexture, imageWindowRect, rngVal] = MakeImageTexture(image,window,windowRect,options)
 % Make a PTB texture of an image.
 %
 % Syntax:
@@ -21,6 +21,9 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 % Outputs:
 %    imageTexture               - PTB texture of the image.
 %    imageWindowRect            - Rect corresonding to image texture size.
+%    rngVal                     - Seed of the random noise using rng
+%                                 fucntion so that we can recreate the
+%                                 noise pattern when we want.
 %
 % Optional key/value pairs:
 %    addNoiseToImage            - Default to false. If it is set to true,
@@ -39,6 +42,7 @@ function [imageTexture, imageWindowRect] = MakeImageTexture(image,window,windowR
 % History:
 %    08/17/22      smo          - Wrote it.
 %    08/22/22      smo          - Added an option adding noise to image.
+%    09/08/22      smo          - We save the seed number for random noise.
 
 %% Set parameters.
 arguments
@@ -53,7 +57,7 @@ end
 %% Add noise to image if you want.
 if (options.addNoiseToImage)
    noiseLevel = 3;
-   image = AddNoiseToImage(image,'noiseLevel',noiseLevel);
+   [image rngVal] = AddNoiseToImage(image,'noiseLevel',noiseLevel);
 end
 
 %% Add fixation point at the center of image if you want.

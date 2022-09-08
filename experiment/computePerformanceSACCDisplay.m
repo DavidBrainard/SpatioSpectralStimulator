@@ -1,4 +1,4 @@
-function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
+function [correct, flipTime, rngValues] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
     theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,...
     testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
@@ -43,6 +43,11 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %     correct                           - 1 if correct and 0 if incorrect.
 %     flipTime                          - Array of system flip time of
 %                                         displaying images.
+%     rngValues                         - Array of rng values that are the
+%                                         seed numbers of random noise
+%                                         images. We can retrieve the exact
+%                                         same random noise image using this
+%                                         number.
 %
 % Optional key/value pairs:
 %     runningMode                       - If you are not acutally running
@@ -143,6 +148,8 @@ function [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRG
 %                                         image.
 %    08/29/22  smo                      - Added an option to rotate the
 %                                         images.
+%    09/08/22  smo                      - We print out the seed number for
+%                                         random noise images (rngValues).
 
 %% Set parameters.
 arguments
@@ -181,9 +188,7 @@ displayDirections = [displayVertical displayHorizontal];
 whichDirectionToDisplay = randi(displayDirections);
 
 % Make a rotation on image.
-if (~options.rotateImageDeg == 0)
-    rotationImageType = 'crop';
-end
+rotationImageType = 'crop';
 
 switch whichDirectionToDisplay
     case displayVertical
@@ -221,11 +226,11 @@ end
 % time when displaying each image and also minimize the frame break-up.
 %
 % Cross-bar image.
-[imageTextureCrossbar imageWindowRect] = MakeImageTexture(nullRGBImage, window, windowRect, ...
+[imageTextureCrossbar imageWindowRect rngValCrossbar] = MakeImageTexture(nullRGBImage, window, windowRect, ...
     'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', true, 'verbose', false);
 
 % Null image without cross-bar.
-[imageTextureNull imageWindowRect] = MakeImageTexture(nullRGBImage, window, windowRect, ...
+[imageTextureNull imageWindowRect rngValNull] = MakeImageTexture(nullRGBImage, window, windowRect, ...
     'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', false, 'verbose', false);
 
 % Ramping on/off medium images.
@@ -243,7 +248,7 @@ end
 % Now we make the medium images on the cosine function.
 if (options.movieStimuli)
     
-    % Set the contrast ratio of the medium images on the cosine function.
+    % Set the contrast ratio offlipTime the medium images on the cosine function.
     horizontalLocationIntervalRatio = 0.2;
     movieContrastRatio = mat2gray(cos([pi : horizontalLocationIntervalRatio*pi : 2*pi]));
     movieContrastRatio = setdiff(movieContrastRatio, [0 1]);
@@ -252,14 +257,21 @@ if (options.movieStimuli)
     % Make medium images here.
     for pp = 1:nMovieContrastRatio
         movieMediumImageTemp = displayTestImage * movieContrastRatio(pp) + nullRGBImage * (1-movieContrastRatio(pp));
-        [imageTextureMovie(pp) imageWindowRect] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
+        [imageTextureMovie(pp) imageWindowRect rngValMovie(pp,1)] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
             'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
     end
 end
 
 % Test contrast image.
-[imageTextureTest imageWindowRect] = MakeImageTexture(displayTestImage, window, windowRect, ...
+[imageTextureTest imageWindowRect rngValTest] = MakeImageTexture(displayTestImage, window, windowRect, ...
     'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
+
+% Collect rng values here.
+%
+% These are seed numbers for random noise image so that we can retrieve the
+% noise images that we used.
+rngValues = struct('rngValCrossbar',rngValCrossbar,'rngValNull',rngValNull, ...
+    'rngValMovie',rngValMovie,'rngValTest',rngValTest);
 
 %% Displaying the image texture.
 %

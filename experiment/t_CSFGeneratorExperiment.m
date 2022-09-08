@@ -67,7 +67,7 @@ conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 6;
+    sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -131,8 +131,8 @@ end
 %
 % RunningMode can be chosen among three
 % [PTB-sequential; PTB-directional; simulation].
-experimentParams.minTrial = 30;
-experimentParams.maxTrial = 50;
+experimentParams.minTrial = 120;
+experimentParams.maxTrial = 120;
 experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
@@ -150,7 +150,7 @@ sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
 sceneParamsStruct.addNoiseToImage = true;
-sceneParamsStruct.rotateImageDeg = 45;
+sceneParamsStruct.rotateImageDeg = 0;
 
 % Set numbers when using auto response.
 if (experimentParams.autoResponse)
@@ -521,6 +521,8 @@ end
 %
 % And we are collecting flip time whenever the displaying image changes.
 flipTime = [];
+rngVal = {};
+
 while (nextFlag)
     % Convert log contrast -> contrast.
     %
@@ -548,7 +550,7 @@ while (nextFlag)
     %
     % Get a response here. Make a loop for the number of trials.
     for tt = 1:experimentParams.nTest
-        [correct(tt) flipTimeTemp(:,tt)] = computePerformanceSACCDisplay(...
+        [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt}] = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
@@ -556,11 +558,12 @@ while (nextFlag)
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec,'addNoiseToImage',sceneParamsStruct.addNoiseToImage, ...
-            'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'rotateImageDeg', sceneParamsStruct.rotateImageDeg, 'verbose',true);
+            'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'rotateImageDeg', sceneParamsStruct.rotateImageDeg,'verbose',true);
     end
     
-    % Collect the flip time here.
+    % Collect the flip time and rng values here.
     flipTime(:,end+1) = flipTimeTemp;
+    rngVal(end+1) = rngValTemp;
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
@@ -575,7 +578,7 @@ while (nextFlag)
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
 end
 
-% Get the flip time difference here.
+% Get flip time difference here.
 flipTimeInterval = diff(flipTime);
 
 % Close projector.
@@ -611,6 +614,6 @@ if (SAVETHERESULTS)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,sprintf('RunExpResults_%s_%d_cpd_%s',...
             conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,dayTimestr));
-        save(testFilename,'estimator');
+        save(testFilename,'estimator','flipTime','flipTimeInterval','rngVal');
     end
 end
