@@ -102,14 +102,22 @@ gamepadIndex = Gamepad('GetNumGamepads');
 stateButtonUp = false;
 stateButtonDown = false;
 stateButtonRight = false;
+stateButtonLeft = false;
+
 actedUp = false;
 actedDown = false;
+actedLeft = false;
 
 numButtonUp = 4;
 numButtonDown = 2;
 numButtonRight = 3;
+numButtonLeft = 1;
 
-primaryControlInterval = 2;
+primaryControlIntervals = [1 10];
+primaryControlIntervalIndexs = [1 2];
+primaryControlIntervalIndex = 1;
+
+primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
 
 %% Make PTB texture for all possible settings.
 %
@@ -121,6 +129,7 @@ primaryControlInterval = 2;
 fillColorTemp = plainImageBase;
 BACKGROUND = 'black';
 
+% Make a loop to make all possible image textures here.
 for pp = 1:nInputLevels
     fillColorTemp(:,:,1) = pp-1;
     fillColorTemp = fillColorTemp./(nInputLevels-1);
@@ -138,8 +147,6 @@ for pp = 1:nInputLevels
 end
 
 % Green.
-%
-% Add Gaussian window here.
 plainImageGreen = plainImageGreen./(nInputLevels-1);
 switch BACKGROUND
     case 'white'
@@ -151,13 +158,8 @@ imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,'verbose
 
 %% Start the flicker loop here.
 frameCounter = 0;
-% BACKGROUND = 'black';
-% Get image windowRect.
-% centerScreen = [windowRect(3) windowRect(4)] * 0.5;
-% imageSizeHalf = [size(image,1) size(image,2)] * 0.5;
-% imageWindowRect = [centerScreen(1)-imageSizeHalf(1) centerScreen(2)-imageSizeHalf(2) ...
-%     centerScreen(1)+imageSizeHalf(1) centerScreen(2)+imageSizeHalf(2)];
 
+% Start a flicker loop here.
 while 1
     
     % End the session if the right button was pressed.
@@ -172,6 +174,7 @@ while 1
     % Get a gamepad response here.
     stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
     stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
+    stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
     
     % Reset acted on state when button comes back up.
     if (actedUp && ~stateButtonUp)
@@ -179,6 +182,9 @@ while 1
     end
     if (actedDown && ~stateButtonDown)
         actedDown = false;
+    end
+    if (actedLeft && ~stateButtonLeft)
+        actedLeft = false;
     end
     
     % Update the intensity of red light based on the key press above.
@@ -197,31 +203,22 @@ while 1
         end
         actedDown = true;
         fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
+        
+    elseif (stateButtonLeft && ~actedLeft)
+        % Update the interval as desired.
+        primaryControlIntervalIndex = setdiff(primaryControlIntervalIndexs, primaryControlIntervalIndex);
+        primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
+        actedLeft = true;
+        fprintf('Button pressed: (LEFT) / Control interval is now = (%d) \n', primaryControlInterval);
     end
    
      % Update the intensity of the red light here.
-%     fillColors{1}(:,:,1) = intensityPrimary1;
     imageTextures = [imageTextureRed(intensityPrimary1) imageTextureGreen];
     
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-%         fillColor = fillColors{fillColorIndex};
         imageTexture = imageTextures(fillColorIndex);
-
-        % Add gaussian noise to image.
-%         fillColor = fillColor./(nInputLevels-1);
-%         switch BACKGROUND
-%             case 'white'
-%                 fillColor = fillColor + gaussianWindowBGWhite;
-%             case 'black'
-%                 fillColor = fillColor .* gaussianWindowBGBlack;
-%         end
-        
-%         imageTexture = 
-        % Make an image texture only when switching the image.
-%         [imageTexture, imageWindowRect] = ...
-%             MakeImageTexture(fillColor, window, windowRect,'verbose',false);
     end
     
     % Make a flip.
