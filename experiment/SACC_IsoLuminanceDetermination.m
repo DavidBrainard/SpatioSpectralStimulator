@@ -55,7 +55,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 35;
+frequecnyFlicker = 30;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 
 %% Make Gaussian window and normalize its max to one.
