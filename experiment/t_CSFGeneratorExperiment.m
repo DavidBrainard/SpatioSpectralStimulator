@@ -275,10 +275,15 @@ switch experimentMode
         % These ranges are with the size of pupil 3.0 mm, which works fine
         % for Semin and David.
         %
-        %  Contrast range if you made the stumuli up to contrast of 0.02.
-        %  [0 0.0005 0.0016 0.0027 0.0038 0.0048 0.0059 0.0070 0.0081
+        % Contrast range if you made the stumuli up to contrast of 0.02.
+        % [0 0.0005 0.0016 0.0027 0.0038 0.0048 0.0059 0.0070 0.0081
         %  0.0092 0.0103 0.0113 0.0124 0.0135 0.0146 0.0157 0.0168 0.0178
         %  0.0189 0.0200];
+        % 
+        % Contast range of maximum contrast 0.03.
+        % [ 0 0.0005 0.0021 0.0038 0.0054 0.0071 0.0087 0.0103 0.0120
+        % 0.0136 0.0152 0.0169 0.0185 0.0202 0.0218 0.0234 0.0251 0.0267
+        % 0.0284 0.0300];
         switch sineFreqCyclesPerDeg
             case 3
                 lowerLimEstDomain  = 0.0019;
@@ -293,8 +298,12 @@ switch experimentMode
                 lowerLimEstDomain  = 0.0038;
                 higherLimEstDomain = 0.0092;
             case 18
-                lowerLimEstDomain  = 0.0071;
-                higherLimEstDomain = 0.0152;
+%                 lowerLimEstDomain  = 0.0071;
+%                 higherLimEstDomain = 0.0152;
+                
+                % Reset it for David
+                lowerLimEstDomain  = 0.0038;
+                higherLimEstDomain = 0.0120;
             otherwise
         end
         
