@@ -4,29 +4,45 @@
 % display contrast pattern, circle on the plain screen, etc.
 
 % History:
-%    12/6/21 smo   Cleaned up.
+%    12/06/21 smo    - Cleaned up.
+%    09/14/22 smo    - Added an option to control projector LED channel
+%                      settings.
 
 %% Start over.
 sca;
 close all;
 clear all;
 
-%% Initialize.
-%
-% Open the screen.
+%% Open the projector.
 initialScreenSettings = [1 1 1];
 [window, windowRect] = OpenPlainScreen(initialScreenSettings);
 screenXpixels = windowRect(3);
 screenYpixels = windowRect(4);
 
-% Set the channel settings.
+%% Set the projector LED channel settings.
 nPrimaries = 3;
 nChannels = 16;
 
-channelSettings = ones(nChannels, nPrimaries);
-channelIntensity = 0.3;
-channelSettings = channelIntensity * channelSettings;
+% Set which channel to use per each primary. We will use only two
+% primaries.
+%
+% Peak wavelength in order of channel number. Note that it is not ascending
+% order.
+% [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
+whichChannelPrimary1 = 1;
+whichChannelPrimary2 = [];
+whichChannelPrimary3 = [];
 
+channelIntensityPrimary1 = 1;
+channelIntensityPrimary2 = 0;
+channelIntensityPrimary3 = 0;
+
+channelSettings = zeros(nChannels, nPrimaries);
+channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
+channelSettings(whichChannelPrimary2, 2) = channelIntensityPrimary2;
+channelSettings(whichChannelPrimary3, 3) = channelIntensityPrimary3;
+
+% Set channel setting here.
 SetChannelSettings(channelSettings);
 
 %% Set which type of screen to display here.
@@ -51,7 +67,7 @@ switch ScreenPatternType
 
         % Set the barwidth and directions.
         rectColor = [0 0 0];
-        barWidthPixel = 20; 
+        barWidthPixel = 120; 
         whichSideBar = 'vertical'; 
 
         % Set stripe pattern.    
@@ -105,5 +121,8 @@ switch ScreenPatternType
 end
 
 %% Activate the following commands if you want to quit the screen with key stroke
-% KbStrokeWait;
-% CloseScreen;
+KEYPRESSTOCLOSE = false;
+if (KEYPRESSTOCLOSE)
+    KbStrokeWait;
+    CloseScreen;
+end
