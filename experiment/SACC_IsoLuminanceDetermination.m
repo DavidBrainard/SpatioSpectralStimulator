@@ -10,6 +10,8 @@
 %                            red light while making red-green flicker.
 %    08/18/22   dhb, smo   - Now code is working fine.
 %    08/19/22   smo        - Added Gaussian noise on the white background.
+%    09/14/22   dhb, smo   - Flicker frequency (frame numbers) has been
+%                            corrected.
 
 %% Initialize.
 clear; close all;
@@ -57,6 +59,10 @@ ifi = 1/frameRate;
 % Set the flicker frequency .
 frequecnyFlicker = 30;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
+framesPerStim = framesPerStim/2;
+if (framesPerStim ~= round(framesPerStim))
+    error('framesPerStim is not an integer');
+end
 
 %% Make Gaussian window and normalize its max to one.
 %
@@ -73,7 +79,6 @@ gaussianWindowBase = zeros(stimulusN, stimulusN, 3);
 gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,gaborSdPixels);
 gaussianWindowBGBlack = gaussianWindow/max(gaussianWindow(:));
 gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
-
 
 % Make plain red/green images here.
 plainImageBase = zeros(stimulusN, stimulusN, 3);
