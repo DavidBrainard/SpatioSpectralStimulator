@@ -50,7 +50,7 @@ arguments
     window (1,1)
     windowRect (1,4)
     options.addNoiseToImage (1,1) = false
-    options.addFixationPointImage
+    options.addFixationPointImage = []
     options.verbose (1,1) = true
 end
 
