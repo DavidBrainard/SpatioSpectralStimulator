@@ -44,6 +44,7 @@ channelSettings(whichChannelPrimary3, 3) = channelIntensityPrimary3;
 
 % Set channel setting here.
 SetChannelSettings(channelSettings);
+GetChannelSettings;
 
 %% Set which type of screen to display here.
 % 
