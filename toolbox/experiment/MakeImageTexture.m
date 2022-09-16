@@ -50,7 +50,7 @@ arguments
     window (1,1)
     windowRect (1,4)
     options.addNoiseToImage (1,1) = false
-    options.addFixationPointImage (1,1) = false
+    options.addFixationPointImage
     options.verbose (1,1) = true
 end
 
@@ -61,9 +61,15 @@ if (options.addNoiseToImage)
 end
 
 %% Add fixation point at the center of image if you want.
-if (options.addFixationPointImage)
-    % Fixation point parameters.
-    fixPatternType = 'line';
+if (~isempty(options.addFixationPointImage))
+    % Set the type of the fixation point.
+    switch options.addFixationPointImage
+        case 'crossbar'
+            fixPatternType = 'line';
+        case 'circle'
+            fixPatternType = 'circle';
+    end
+    
     fixPatternColor = [0 0 0];
     fixSizePixel = 12;
     fixPatternWidth = 5;

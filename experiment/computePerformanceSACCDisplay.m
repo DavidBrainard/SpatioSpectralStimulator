@@ -225,13 +225,22 @@ end
 % Here we make all displaying images in PTB texture so that we can save
 % time when displaying each image and also minimize the frame break-up.
 %
-% Cross-bar image.
-[imageTextureCrossbar imageWindowRect rngValCrossbar] = MakeImageTexture(nullRGBImage, window, windowRect, ...
-    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', true, 'verbose', false);
+% Decide the fixation pattern type if you want to add it on stimuli.
+if (options.addFixationPointImage)
+    addFixationPointCrossbar = 'crossbar';
+    addFixationPointCircle = 'circle';
+else
+    addFixationpointCrossbar = [];
+    addFixationPointCircle = [];
+end
 
-% Null image without cross-bar.
+% Null image with fixation point.
+[imageTextureCrossbar imageWindowRect rngValCrossbar] = MakeImageTexture(nullRGBImage, window, windowRect, ...
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
+
+% Null image without fixation point.
 [imageTextureNull imageWindowRect rngValNull] = MakeImageTexture(nullRGBImage, window, windowRect, ...
-    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', false, 'verbose', false);
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', [], 'verbose', false);
 
 % Ramping on/off medium images.
 %
@@ -258,13 +267,13 @@ if (options.movieStimuli)
     for pp = 1:nMovieContrastRatio
         movieMediumImageTemp = displayTestImage * movieContrastRatio(pp) + nullRGBImage * (1-movieContrastRatio(pp));
         [imageTextureMovie(pp) imageWindowRect rngValMovie(pp,1)] = MakeImageTexture(movieMediumImageTemp, window, windowRect, ...
-            'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
+            'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', addFixationPointCrossbar, 'verbose', false);
     end
 end
 
 % Test contrast image.
 [imageTextureTest imageWindowRect rngValTest] = MakeImageTexture(displayTestImage, window, windowRect, ...
-    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', options.addFixationPointImage, 'verbose', false);
+    'addNoiseToImage', options.addNoiseToImage, 'addFixationPoint', addFixationPointCrossbar, 'verbose', false);
 
 % Collect rng values here.
 %

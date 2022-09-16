@@ -37,7 +37,7 @@ function [imageEdit] = AddFixPointImage(image, options)
 %% Set parameters.
 arguments
     image
-    options.patternType = 'line'
+    options.patternType = 'Line'
     options.patternColor (1,3) = [0 0 0]
     options.patternSize (1,1) = 8
     options.patternWidth (1,1) = 5
@@ -50,10 +50,16 @@ imageCenter = imageSize(1) * 0.5;
 
 fixHorizontalPosition = [imageCenter-options.patternSize imageCenter imageCenter+options.patternSize imageCenter];
 fixVerticalPosition = [imageCenter imageCenter-options.patternSize imageCenter imageCenter+options.patternSize];
-fixPosition = [fixHorizontalPosition; fixVerticalPosition];
+
+switch (options.patternType)
+    case 'line'
+        patternPosition = [fixHorizontalPosition; fixVerticalPosition];
+    case 'circle'
+        patternPosition = [imageCenter imageCenter options.patternSize];
+end
 
 % Set fixation point on the image here.
-imageEdit = insertShape(image, 'Line', fixPosition, ...
+imageEdit = insertShape(image, options.patternType, patternPosition, ...
     'Color', options.patternColor, 'LineWidth', options.patternWidth);
 
 end

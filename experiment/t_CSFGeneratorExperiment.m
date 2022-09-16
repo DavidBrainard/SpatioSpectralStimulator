@@ -419,8 +419,11 @@ if (PRACTICETRIALS)
         end
     end
     
-    %% Display crossbar image.
-    SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
+    %% Display the null image.
+    addFixationPointCircle = 'circle';
+    [imageTextureNull imageWindowRect] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect, ...
+    'addNoiseToImage', sceneParamsStruct.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
+    FlipImageTexture(imageTextureNull, window, imageWindowRect,'verbose', false);
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
