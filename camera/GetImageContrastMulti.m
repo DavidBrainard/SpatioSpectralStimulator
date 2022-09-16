@@ -89,7 +89,7 @@ end
 %% Plot it.
 figure; hold on;
 plot(imageCrop50, 'LineWidth',1);
-xlabel('Pixel position (horizontal)');
-ylabel('dRGB');
+xlabel('Pixel position (horizontal)','fontsize',15);
+ylabel('dRGB','fontsize',15);
 leg = string([1:16]);
-legend(leg);
+legend(leg,'fontsize',12);
