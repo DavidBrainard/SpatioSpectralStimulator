@@ -111,7 +111,7 @@ elseif (~LOADDATA)
     % First step is to predefine the contrasts that we will allow the
     % psychophysics to work over. This gives us a finite list of scenes
     % to compute for.
-    experimentParams.minContrast = 0.0005;
+    experimentParams.minContrast = 0.0003;
     experimentParams.nContrasts = 20;
     experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
     
@@ -131,8 +131,8 @@ end
 %
 % RunningMode can be chosen among three
 % [PTB-sequential; PTB-directional; simulation].
-experimentParams.minTrial = 120;
-experimentParams.maxTrial = 120;
+experimentParams.minTrial = 40;
+experimentParams.maxTrial = 40;
 experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
@@ -194,7 +194,7 @@ if (~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg',...
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg.mat',...
             conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,spatialTemporalParams.gaborSdDeg));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
