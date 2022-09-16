@@ -57,7 +57,7 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 30;
+frequecnyFlicker = 20;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 framesPerStim = framesPerStim/2;
 if (framesPerStim ~= round(framesPerStim))
@@ -197,6 +197,10 @@ while 1
         % Increase the intensity of red light.
         if (intensityPrimary1 < nInputLevels-1)
             intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
+        end
+        % Cut the value over the maximum.
+        if (intensityPrimary1 > nInputLevels-1)
+            intensityPrimary1 = nInputLevels-1;
         end
         actedUp = true;
         fprintf('Button pressed: (UP)   / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
