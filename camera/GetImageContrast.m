@@ -12,8 +12,8 @@ clear; close all;
 fileDir = '~/Aguirre-Brainard Lab Dropbox/Semin Oh/SACC_materials/Camera/091622_Check_Chromatic_Abberration';
 cd(fileDir);
 
-numChannel = 16;
-fileName = sprintf('ch%d_FocusNot',numChannel);
+numChannel = 13;
+fileName = sprintf('ch%d_FocusNotFixed',numChannel);
 imageFileName = GetMostRecentFileName(fileDir,fileName);
 image = imread(imageFileName);
 [Ypixel Xpixel] = size(image); 
@@ -73,6 +73,9 @@ imageCrop25 = imageCrop(round(0.25*YpixelCrop),:);
 imageCrop50 = imageCrop(round(0.50*YpixelCrop),:);
 imageCrop75 = imageCrop(round(0.75*YpixelCrop),:);
 imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
+
+% Show image.
+figure; imshow(imageCrop);
 
 % Plot it.
 figure; hold on;
