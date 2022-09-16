@@ -62,12 +62,12 @@ clear; close all;
 % You can load the data if you saved the images. We will load the images when
 % we run the main experiment to save the time for making the images.
 LOADDATA = true;
-PRACTICETRIALS = false;
+PRACTICETRIALS = true;
 conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 3;
+    sineFreqCyclesPerDeg = 18;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -255,7 +255,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-experimentMode = 'validation';
+experimentMode = 'adaptive';
 
 switch experimentMode
     case 'adaptive'
@@ -288,6 +288,10 @@ switch experimentMode
             case 3
                 lowerLimEstDomain  = 0.0019;
                 higherLimEstDomain = 0.0046;
+                
+                % Reset it for Geoff.
+                lowerLimEstDomain  = 0.0035;
+                higherLimEstDomain = 0.0062;
             case 6
                 lowerLimEstDomain  = 0.0027;
                 higherLimEstDomain = 0.0081;
@@ -379,18 +383,11 @@ if (PRACTICETRIALS)
     %
     % Make initial screen image.
     imageSize = size(nullStatusReportStruct.RGBimage,2);
-    messageInitialRGBImage_1stLine = 'Practice trial will begin';
-    messageInitialRGBImage_2ndLine = 'If you press any button';
+    messageInitialRGBImage_1stLine = 'Press any button to start';
+    messageInitialRGBImage_2ndLine = '';
     initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
         'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
     initialRGBImagePractice = fliplr(initialRGBImagePractice);
-    
-    % Make finishing screen image.
-    messageFinishingRGBImage_1stLine = 'Practice has been done';
-    messageFinishingRGBImage_2ndLine = 'Press any button to proceed';
-    finishingRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageFinishingRGBImage_1stLine messageFinishingRGBImage_2ndLine},...
-        'fontsize',65,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
-    finishingRGBImagePractice = fliplr(finishingRGBImagePractice);
     
     % Set the contrast image for practice.
     practiceTestContrast = max(sceneParamsStruct.predefinedContrasts);
@@ -404,7 +401,7 @@ if (PRACTICETRIALS)
     numButtonUp    = 4;
     numButtonRight = 3;
     numButtonLeft  = 1;
-                    
+    
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
@@ -424,7 +421,7 @@ if (PRACTICETRIALS)
     
     %% Display crossbar image.
     SetScreenImage(nullStatusReportStruct.RGBimage, window, windowRect,'addFixationPoint', true, 'verbose', true);
-       
+    
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
             case 'PTB-sequential'
@@ -466,26 +463,7 @@ if (PRACTICETRIALS)
             'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',true);
     end
     
-    %% Display the finishing screen of the practice trials.
-    SetScreenImage(finishingRGBImagePractice, window, windowRect,'verbose',true);
-    
-    % Press any button to proceed.
-    if (strcmp(experimentParams.expKeyType,'gamepad'))
-        switch (experimentParams.runningMode)
-            case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',options.verbose);
-            case 'PTB-directional'
-                if (sceneParamsStruct.rotateImageDeg == 0)
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
-                else
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
-                end
-        end
-
-        if (any(responseGamePad == possibleResponseGamePad))
-            disp('Practice trial has been ended!');
-        end
-    end
+    disp('Practice trial has been ended!');
 end
 
 %% Back to the main experiment here.
@@ -495,7 +473,7 @@ end
 % probably want to move this to a place where the test cross
 % is displayed for the first time.  Or display test cross here,
 % or something.
-if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
+if (~PRACTICETRIALS)
     
     % Display crossbar image.
     [imageTextureNull, imageWindowRectNull] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect,...
