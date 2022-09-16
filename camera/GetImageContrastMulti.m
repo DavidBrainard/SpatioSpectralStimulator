@@ -1,6 +1,7 @@
-% GetImageContrast
+% GetImageContrastMulti
 %
-% This is to calculate the contrast of the image taken by camera.
+% This is to calculate the contrast of the image taken by camera. This is
+% to calculate multiple images at once.
 
 % History:
 %    09/16/22  smo   Wrote it.
@@ -80,14 +81,15 @@ for ii = 1:16
     imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
     
     % Calculate the contrast here.
-    whiteCropImage = max(imageCrop50(:,ii));
-    blackCropImage = min(imageCrop50(:,ii));
+    whiteCropImage = max(im2double(imageCrop50(:,ii)));
+    blackCropImage = min(im2double(imageCrop50(:,ii)));
     contrast(ii) = (whiteCropImage-blackCropImage) / (whiteCropImage+blackCropImage);
 end
 
-% Plot it.
+%% Plot it.
 figure; hold on;
 plot(imageCrop50, 'LineWidth',1);
 xlabel('Pixel position (horizontal)');
 ylabel('dRGB');
-legend('');
+leg = string([1:16]);
+legend(leg);
