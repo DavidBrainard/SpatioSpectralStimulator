@@ -215,6 +215,15 @@ while 1
         primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
         actedLeft = true;
         fprintf('Button pressed: (LEFT) / Control interval is now = (%d) \n', primaryControlInterval);
+        
+        % Play a sound when the interval changes.
+        switch primaryControlInterval
+            case primaryControlIntervals(1)
+                beepSound = 'incorrect';
+            case primaryControlIntervals(2)
+                beepSound = 'correct';
+        end
+        MakeBeepSound('preset',beepSound);
     end
    
      % Update the intensity of the red light here.
