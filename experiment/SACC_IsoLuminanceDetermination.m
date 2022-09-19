@@ -57,12 +57,21 @@ frameRate = 120;
 ifi = 1/frameRate;
 
 % Set the flicker frequency .
-frequecnyFlicker = 20;
+frequecnyFlicker = 25;
 framesPerStim = round((1/frequecnyFlicker)/ifi);
 framesPerStim = framesPerStim/2;
-if (framesPerStim ~= round(framesPerStim))
-    error('framesPerStim is not an integer');
+
+% If the frame number is not integer, take two closest from the number.
+if ~(framesPerStim == ceil(framesPerStim))
+    framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
+    framesPerStim = framesPerStimSet(1);
+else
+    framesPerStimSet = [];
 end
+
+% if (framesPerStim ~= round(framesPerStim))
+%     error('framesPerStim is not an integer');
+% end
 
 %% Make Gaussian window and normalize its max to one.
 %
@@ -231,12 +240,17 @@ while 1
     end
    
      % Update the intensity of the red light here.
-    imageTextures = [imageTextureRed(intensityPrimary1) imageTextureGreen];
-    
+    imageTextures = [imageTextureRed(intensityPrimary1) imageTextureGreen];   
+            
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
         fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
         imageTexture = imageTextures(fillColorIndex);
+        
+        % Change the frames per stim if there are more than one target frames.
+        if ~isempty(framesPerStimSet)
+            framesPerStim = framesPerStimSet(fillColorIndex);
+        end
     end
     
     % Make a flip.
