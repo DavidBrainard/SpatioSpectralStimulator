@@ -67,7 +67,7 @@ conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 18;
+    sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -255,7 +255,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-experimentMode = 'adaptive';
+experimentMode = 'validation';
 
 switch experimentMode
     case 'adaptive'
@@ -315,8 +315,10 @@ switch experimentMode
         estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
             experimentParams.stimContrastsToTest <= higherLimEstDomain));
         estDomainValidation = estDomain(estDomainIndex-1);
-        estDomainValidationLinear = 10.^estDomainValidation;
-        
+
+        estDomainValidation =  log10([0.0003 0.0025 0.0047  0.0091 0.0200]); 
+              estDomainValidationLinear = 10.^estDomainValidation;
+              
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
             'nRepeat',experimentParams.nTestValidation, 'estDomain', estDomainValidation, ...
@@ -367,6 +369,112 @@ elseif (strcmp(experimentParams.runningMode,'simulation'))
     windowRect = [0 0 1920 1080];
 end
 
+%% Measure subject's sensitivity here.
+%
+% We will use method of adjustments to make an initial measure of each
+% subject's contrast sensitivity. We will set the contrast range based on
+% this response.
+INITIALSENSITIVITYMEASURE = true;
+
+if (INITIALSENSITIVITYMEASURE)
+    %% Set the instruction screen.
+    imageSize = size(nullStatusReportStruct.RGBimage,2);
+    messageInitialRGBImage_1stLine = 'Press any button to start measuring';
+    messageInitialRGBImage_2ndLine = 'Initial contrast sensitivity';
+    initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
+        'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+    initialRGBImagePractice = fliplr(initialRGBImagePractice);
+    
+    %% Display the initial screen.
+    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
+    
+    % Press any button to proceed.
+    numButtonUp    = 4;
+    numButtonRight = 3;
+    numButtonLeft  = 1;
+    numButtonDown  = 2;
+    
+    if (strcmp(experimentParams.expKeyType,'gamepad'))
+        switch (experimentParams.runningMode)
+            case 'PTB-sequential'
+                responseGamePad = GetGamepadResp2AFC('verbose',true);
+            case 'PTB-directional'
+                if (sceneParamsStruct.rotateImageDeg == 0)
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                else
+                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                end
+        end
+        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
+        if (any(responseGamePad == possibleResponseGamePad))
+            disp('Practice trial is going to be started!');
+        end
+    end
+    
+    %% Set the contrast image for sensitivity measure.
+    initialMeasureRGBImages = sceneParamsStruct.predefinedRGBImages(1,:);
+    
+    % Get the gamepad index for getting response.
+    gamepadIndex = Gamepad('GetNumGamepads');
+    
+    % Start from the image with the highest contrast.
+    testImageContrastLevel = 20;
+    stateButtonDown = false;
+     
+    % Show starting message. 
+    fprintf('Starting initial contrast sensitivity measure \n');
+    
+    while 1
+       
+        % Set the contrast level.
+        initialMeasureTestContrast = sceneParamsStruct.predefinedContrasts(testImageContrastLevel);
+        
+        % Set auto response params.
+        autoResponseParams.psiFunc = @qpPFWeibullLog;
+        autoResponseParams.thresh = 0.004;
+        autoResponseParams.slope = 2;
+        autoResponseParams.guess = 0.5;
+        autoResponseParams.lapse = 0.01;
+        autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
+
+        % Display contrast image here.
+        [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, initialMeasureRGBImages{testImageContrastLevel}, ...
+            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,initialMeasureTestContrast,window,windowRect,...
+            'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
+            'expKeyType',experimentParams.expKeyType,'beepSound',false,...
+            'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
+            'movieImageDelaySec',experimentParams.movieImageDelaySec,...
+            'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
+            'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
+            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',true);
+                
+        % Waiting for a button press to continue or finish the session.
+        % End the session if the right button was pressed.
+        buttonPress = GetGamepadResp2AFC('numButtonA', numButtonRight, 'numButtonB', numButtonUp);
+        if (buttonPress == 1)
+            fprintf('Finishing up the session... \n');
+            break;
+        elseif (buttonPress == 2)
+            % Lower the contrast level for next display.
+            testImageContrastLevel = testImageContrastLevel - 1;
+        end
+        
+    end
+    
+    % Back to empty array.
+    autoResponseParams = [];
+    
+    % Print out the contrast level we found.
+    contrastFound = sceneParamsStruct.predefinedContrasts(testImageContrastLevel);
+    fprintf('Contrast was stopped at (%.3f) \n', contrastFound);
+    disp('Initial contast sensitivity measure has been ended!'); 
+end
+
+
+
+
+
+
 %% Practice trials before the main experiment if you want.
 %
 % Set the images to use for practice trials.
@@ -401,6 +509,7 @@ if (PRACTICETRIALS)
     numButtonUp    = 4;
     numButtonRight = 3;
     numButtonLeft  = 1;
+    numButtonDown  = 2;
     
     if (strcmp(experimentParams.expKeyType,'gamepad'))
         switch (experimentParams.runningMode)
