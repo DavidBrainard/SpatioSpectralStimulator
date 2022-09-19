@@ -7,10 +7,10 @@
 %    09/16/22  smo   Wrote it.
 
 %% Initialize.
-clear; close all; 
+clear; close all;
 
 %% Load image.
-% 
+%
 % Direct to the folder.
 fileDir = '~/Aguirre-Brainard Lab Dropbox/Semin Oh/SACC_materials/Camera/091622_Check_Chromatic_Abberration';
 cd(fileDir);
@@ -20,14 +20,14 @@ for ii = 1:16
     fileName = sprintf('ch%d_FocusFixed',ii);
     imageFileName = GetMostRecentFileName(fileDir,fileName);
     image{ii} = imread(imageFileName);
-end 
+end
 
 %% Find the rectangle on the image.
 FINDRECTANGLE = false;
 
 if (FINDRECTANGLE)
     % Get the size of the image.
-    [Ypixel Xpixel] = size(image); 
+    [Ypixel Xpixel] = size(image);
     
     % find both black and white regions
     stats = [regionprops(image); regionprops(not(image))]; % Find the objects on the image
@@ -74,6 +74,9 @@ for ii = 1:16
     imageCropTemp = imageTemp(fromY:toY,fromX:toX);
     [YpixelCrop XpixelCrop] = size(imageCropTemp);
     
+    % Show the cropped image.
+    figure; imshow(imageCropTemp);
+    
     % We will use the average of the 25% / 50% / 75% positions of the cropped image.
     imageCrop25(:,ii) = imageCropTemp(round(0.25*YpixelCrop),:);
     imageCrop50(:,ii) = imageCropTemp(round(0.50*YpixelCrop),:);
@@ -86,10 +89,36 @@ for ii = 1:16
     contrast(ii) = (whiteCropImage-blackCropImage) / (whiteCropImage+blackCropImage);
 end
 
-%% Plot it.
+%% Plot individual normalized results on subplot.
 figure; hold on;
-plot(imageCrop50, 'LineWidth',1);
+for ii = 1:16
+    subplot(4,4,ii); hold on;
+    plot(im2double(imageCrop50(:,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
+    title(append('Ch',num2str(ii)),'fontsize',15);
+end
 xlabel('Pixel position (horizontal)','fontsize',15);
 ylabel('dRGB','fontsize',15);
-leg = string([1:16]);
+
+%% Plot all graph drawn together. 
+figure; hold on;
+for ii = 1:16
+    plot(im2double(imageCrop50(2:18,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
+end
+xlabel('Pixel position (horizontal)','fontsize',15);
+ylabel('dRGB','fontsize',15);
+leg = [append('Ch',string([1:16]))];
 legend(leg,'fontsize',12);
+
+%% Find peak/valley value and index.
+numPeaks = 5;
+for ii = 1:16
+    % Find peaks.
+    [peakValuesTemp peakIndexesTemp] = findpeaks(im2double(imageCrop50(:,ii)));
+    peakValues(:,ii) = peakValuesTemp(1:numPeaks);
+    peakIndexes(:,ii) = peakIndexesTemp(1:numPeaks);
+    
+    % Find valleys.
+    [valleyValuesTemp valleyIndexesTemp] = findpeaks(max(im2double(imageCrop50(:,ii))) - im2double(imageCrop50(:,ii)));
+    valleyValues(:,ii) = valleyValuesTemp(1:numPeaks);
+    valleyIndexes(:,ii) = valleyIndexesTemp(1:numPeaks);
+end
