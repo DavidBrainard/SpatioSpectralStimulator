@@ -69,13 +69,16 @@ cropYPixel = 31;
 toX = fromX+70;
 toY = fromY+31;
 
+figure; hold on;
 for ii = 1:16
     imageTemp = image{ii};
     imageCropTemp = imageTemp(fromY:toY,fromX:toX);
     [YpixelCrop XpixelCrop] = size(imageCropTemp);
     
     % Show the cropped image.
-    figure; imshow(imageCropTemp);
+    subplot(4,4,ii); 
+    imshow(imageCropTemp);
+    title(append('Ch ',num2str(ii)),'fontsize',13);
     
     % We will use the average of the 25% / 50% / 75% positions of the cropped image.
     imageCrop25(:,ii) = imageCropTemp(round(0.25*YpixelCrop),:);
@@ -94,9 +97,9 @@ figure; hold on;
 for ii = 1:16
     subplot(4,4,ii); hold on;
     plot(im2double(imageCrop50(:,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
-    title(append('Ch',num2str(ii)),'fontsize',15);
+    title(append('Ch',num2str(ii)),'fontsize',13);
 end
-xlabel('Pixel position (horizontal)','fontsize',15);
+xlabel('Pixel position (horizontal)','fontsize',13);
 ylabel('dRGB','fontsize',15);
 
 %% Plot all graph drawn together. 
@@ -104,8 +107,8 @@ figure; hold on;
 for ii = 1:16
     plot(im2double(imageCrop50(2:18,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
 end
-xlabel('Pixel position (horizontal)','fontsize',15);
-ylabel('dRGB','fontsize',15);
+xlabel('Pixel position (horizontal)','fontsize',13);
+ylabel('dRGB','fontsize',13);
 leg = [append('Ch',string([1:16]))];
 legend(leg,'fontsize',12);
 
