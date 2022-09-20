@@ -69,10 +69,6 @@ else
     framesPerStimSet = [];
 end
 
-% if (framesPerStim ~= round(framesPerStim))
-%     error('framesPerStim is not an integer');
-% end
-
 %% Make Gaussian window and normalize its max to one.
 %
 % Set the window parameters. ScreenPixelsPerDeg is based on the Maxwellian
@@ -99,7 +95,7 @@ plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
 plainImageGreen = plainImageBase;
-intensityPrimary2 = nInputLevels/2;
+intensityPrimary2 = round(nInputLevels * 0.5);
 plainImageGreen(:,:,2) = intensityPrimary2;
 
 % Set primary index to update to make a flicker.
@@ -129,7 +125,7 @@ numButtonLeft = 1;
 
 primaryControlIntervals = [1 10];
 primaryControlIntervalIndexs = [1 2];
-primaryControlIntervalIndex = 1;
+primaryControlIntervalIndex = 2;
 
 primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
 
