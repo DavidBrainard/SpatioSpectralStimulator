@@ -219,6 +219,12 @@ while 1
         if (intensityPrimary1 > 0)
             intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
         end
+       
+        % Cut the value on the range.
+        if (intensityPrimary1 < 1)
+            intensityPrimary1 = 1;
+        end
+        
         actedDown = true;
         fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
         
