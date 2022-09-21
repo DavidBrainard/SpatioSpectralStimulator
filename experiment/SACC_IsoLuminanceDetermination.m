@@ -65,6 +65,7 @@ framesPerStim = framesPerStim/2;
 if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
+    
     framesPerStimIndexs = [1 2 2 1];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
@@ -91,8 +92,15 @@ gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
+redStartingPoint = 'bottom';
+
 plainImageRed = plainImageBase;
-intensityPrimary1 = nInputLevels-1;
+switch redStartingPoint
+    case 'top'
+        intensityPrimary1 = nInputLevels-1;
+    case 'bottom'
+        intensityPrimary1 = 0;
+end
 plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
@@ -220,8 +228,8 @@ while 1
         end
        
         % Cut the value on the range.
-        if (intensityPrimary1 < 1)
-            intensityPrimary1 = 1;
+        if (intensityPrimary1 < 0)
+            intensityPrimary1 = 0;
         end
         
         actedDown = true;
@@ -245,7 +253,7 @@ while 1
     end
    
      % Update the intensity of the red light here.
-    imageTextures = [imageTextureRed(intensityPrimary1) imageTextureGreen];   
+    imageTextures = [imageTextureRed(intensityPrimary1+1) imageTextureGreen];   
             
     % Update the fill color at desired frame time.
     if ~mod(frameCounter, framesPerStim)
