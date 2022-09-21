@@ -510,6 +510,21 @@ if (INITIALSENSITIVITYMEASURE)
     end
 end
 
+%% Set the contrast range based on the results for constant stimuli method.
+%
+% Make an average of two contrast points as initial guess of threshold.
+thresholdInitialEstLinear = mean(contrastFound);
+thresholdInitialEstLog = log10(thresholdInitialEstLinear);
+
+highLimitContrastLog = thresholdInitialEstLog + 0.3;
+lowLimitContrastLog  = thresholdInitialEstLog - 0.5;
+highLimitContrastLinear = 10^highLimitContrastLog;
+lowLimitContrastLinear  = 10^lowLimitContrastLog;
+
+nContrastPointsBtwHighAndLow = 6;
+contrastPointsForExpLinear = logspace(lowLimitContrastLog, highLimitContrastLog, nContrastPointsBtwHighAndLow);
+contrastPointsForExpLog = log10(contrastPointsForExpLinear);
+
 %% Practice trials before the main experiment if you want.
 %
 % Set the images to use for practice trials.
