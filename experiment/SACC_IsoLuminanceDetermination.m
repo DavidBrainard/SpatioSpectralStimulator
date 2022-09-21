@@ -65,6 +65,8 @@ framesPerStim = framesPerStim/2;
 if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
+    framesPerStimIndexs = [1 2 2 1];
+    framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
 end
@@ -95,7 +97,7 @@ plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
 plainImageGreen = plainImageBase;
-intensityPrimary2 = round(nInputLevels * 0.5);
+intensityPrimary2 = round(nInputLevels * 0.3);
 plainImageGreen(:,:,2) = intensityPrimary2;
 
 % Set primary index to update to make a flicker.
@@ -168,6 +170,7 @@ imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,'verbose
 
 %% Start the flicker loop here.
 frameCounter = 0;
+frameIndexCounter = 1;
 
 % Start a flicker loop here.
 while 1
@@ -251,7 +254,16 @@ while 1
         
         % Change the frames per stim if there are more than one target frames.
         if ~isempty(framesPerStimSet)
-            framesPerStim = framesPerStimSet(fillColorIndex);
+            framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
+            framesPerStim = framesPerStimSet(framesPerStimIndex);
+            
+            % Update the frame counter index here.
+            if (frameIndexCounter < length(framesPerStimIndexs))
+                frameIndexCounter = frameIndexCounter + 1;
+            else
+                % Set the counter back to 1 if it ran one set of cycle.
+                frameIndexCounter = 1;
+            end
         end
     end
     
