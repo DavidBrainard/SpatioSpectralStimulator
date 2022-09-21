@@ -383,120 +383,132 @@ if (INITIALSENSITIVITYMEASURE)
     messageInitialRGBImage_2ndLine = 'Meauring initial sensitivity';
     initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
         'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
-    initialRGBImagePractice = fliplr(initialRGBImagePractice);
-    
-    %% Display the initial screen.
-    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
-    
-    % Press any button to proceed.
-    numButtonUp    = 4;
-    numButtonRight = 3;
-    numButtonLeft  = 1;
-    numButtonDown  = 2;
-    
-    if (strcmp(experimentParams.expKeyType,'gamepad'))
-        switch (experimentParams.runningMode)
-            case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',true);
-            case 'PTB-directional'
-                if (sceneParamsStruct.rotateImageDeg == 0)
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
-                else
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
-                end
-        end
-        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
-        if (any(responseGamePad == possibleResponseGamePad))
-            disp('Practice trial is going to be started!');
-        end
-    end
+    initialRGBImagePractice = fliplr(initialRGBImagePractice);    
     
     %% Set the contrast image for sensitivity measure.
     initialMeasureRGBImages = sceneParamsStruct.predefinedRGBImages(1,:);
     
     % Get the gamepad index for getting response.
     gamepadIndex = Gamepad('GetNumGamepads');
+        
+    % Allocate the button numbers.
+    numButtonUp    = 4;
+    numButtonRight = 3;
+    numButtonLeft  = 1;
+    numButtonDown  = 2;
     
-    % Start from the image with the highest contrast.
-    testImageContrastLevel = 20;
-     
-    % Show starting message. 
-    fprintf('Starting initial contrast sensitivity measure \n');
+    % Make a loop to proceed this procedure, one from the highest contrast
+    % and the other from the lowest contrast.
+    %
+    % Start from the image with the highest contrast. Note that the first
+    % image is null image with out contrast pattern, so we start from
+    % either 2nd or 20th (which is the highest contrast).
+    initialImageContrastLevels = [2 length(initialMeasureRGBImages)];
+    numInitialImageContrastlevels = length(initialImageContrastLevels);
     
-    while 1
-        % Set the initial button press state.
-        stateButtonUp = false;
-        stateButtonDown = false;
-        stateButtonRight = false;
-        stateButtonLeft = false;
+    for cc = 1:numInitialImageContrastlevels
         
-        % Set the contrast level.
-        initialMeasureTestContrast = sceneParamsStruct.predefinedContrasts(testImageContrastLevel);
-        fprintf('Current test contrast is = (%.3f) \n',initialMeasureTestContrast);
+        %% Display the initial screen.
+        SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
         
-        % Set auto response params.
-        autoResponseParams.psiFunc = @qpPFWeibullLog;
-        autoResponseParams.thresh = 0.004;
-        autoResponseParams.slope = 2;
-        autoResponseParams.guess = 0.5;
-        autoResponseParams.lapse = 0.01;
-        autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
-        
-        % Display contrast image here.
-        [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, initialMeasureRGBImages{testImageContrastLevel}, ...
-            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,initialMeasureTestContrast,window,windowRect,...
-            'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
-            'expKeyType',experimentParams.expKeyType,'beepSound',false,...
-            'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
-            'movieImageDelaySec',experimentParams.movieImageDelaySec,...
-            'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
-            'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
-            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
-        
-        % Waiting for a button press to continue or finish the session.
-        % End the session if the right button was pressed.
-        while (stateButtonLeft == false && stateButtonDown == false && stateButtonRight == false)
-            stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
-            stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
-            stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
+        % Get a button press to proceed.
+        if (strcmp(experimentParams.expKeyType,'gamepad'))
+            switch (experimentParams.runningMode)
+                case 'PTB-sequential'
+                    responseGamePad = GetGamepadResp2AFC('verbose',true);
+                case 'PTB-directional'
+                    if (sceneParamsStruct.rotateImageDeg == 0)
+                        responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
+                    else
+                        responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
+                    end
+            end
+            possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
+            if (any(responseGamePad == possibleResponseGamePad))
+                disp('Practice trial is going to be started!');
+            end
         end
         
-        if (stateButtonDown)
-            fprintf('Finishing up the session... \n');
-            break;
-        elseif (stateButtonRight)
-            % Lower the contrast level for next display.
-            testImageContrastLevel = testImageContrastLevel - 1;
+        %% Set the starting contrast level here.
+        initialImageContrastLevel = initialImageContrastLevels(cc);
+        
+        % Show starting message.
+        fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,numInitialImageContrastlevels);
+        
+        while 1
+            % Set the initial button press state.
+            stateButtonUp = false;
+            stateButtonDown = false;
+            stateButtonRight = false;
+            stateButtonLeft = false;
             
-            % Play the sound.
-            MakeBeepSound('preset',correct);
+            % Set the contrast level.
+            initialMeasureTestContrast = sceneParamsStruct.predefinedContrasts(initialImageContrastLevel);
+            fprintf('Current test contrast is = (%.4f) \n',initialMeasureTestContrast);
             
-        elseif (stateButtonLeft)
-            % Show the same contrast level again for next display.
-            testImageContrastLevel = testImageContrastLevel;
+            % Set auto response params.
+            autoResponseParams.psiFunc = @qpPFWeibullLog;
+            autoResponseParams.thresh = 0.004;
+            autoResponseParams.slope = 2;
+            autoResponseParams.guess = 0.5;
+            autoResponseParams.lapse = 0.01;
+            autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
             
-            % Play the feedback sound.
-            numPlaySound = 2;
-            for pp = 1:numPlaySound
-                MakeBeepSound('preset',correct);
+            % Display contrast image here.
+            [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, initialMeasureRGBImages{initialImageContrastLevel}, ...
+                theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,initialMeasureTestContrast,window,windowRect,...
+                'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
+                'expKeyType',experimentParams.expKeyType,'beepSound',false,...
+                'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
+                'movieImageDelaySec',experimentParams.movieImageDelaySec,...
+                'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
+                'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
+                'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
+            
+            % Waiting for a button press to continue or finish the session.
+            % End the session if the right button was pressed.
+            while (stateButtonLeft == false && stateButtonDown == false && stateButtonRight == false)
+                stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
+                stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
+                stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
             end
-        end 
+            
+            if (stateButtonDown)
+                fprintf('Finishing up the session... \n');
+                break;
+                
+            elseif (stateButtonRight)
+                % Change the contrast level for next display.
+                if (cc == 1)
+                    initialImageContrastLevel = initialImageContrastLevel + 1;
+                elseif (cc == 2)
+                    initialImageContrastLevel = initialImageContrastLevel - 1;
+                end
+                
+                % Play the sound.
+                MakeBeepSound('preset',correct);
+                
+            elseif (stateButtonLeft)
+                % Show the same contrast level again for next display.
+                initialImageContrastLevel = initialImageContrastLevel;
+                
+                % Play the feedback sound.
+                numPlaySound = 2;
+                for pp = 1:numPlaySound
+                    MakeBeepSound('preset',correct);
+                end
+            end
+        end
+        
+        % Back to empty array.
+        autoResponseParams = [];
+        
+        % Print out the contrast level we found.
+        contrastFound(cc) = sceneParamsStruct.predefinedContrasts(initialImageContrastLevel);
+        fprintf('Contrast was found at (%.3f) \n', contrastFound(cc));
+        fprintf('Initial contast sensitivity measure has been finished!-(%d/%d) \n', cc, numInitialImageContrastlevels);
     end
-    
-    % Back to empty array.
-    autoResponseParams = [];
-    
-    % Print out the contrast level we found.
-    contrastFound = sceneParamsStruct.predefinedContrasts(testImageContrastLevel);
-    fprintf('Contrast was found at (%.3f) \n', contrastFound);
-    disp('Initial contast sensitivity measure has been ended!'); 
-    
 end
-
-
-
-
-
 
 %% Practice trials before the main experiment if you want.
 %
