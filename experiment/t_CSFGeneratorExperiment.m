@@ -387,6 +387,9 @@ predefinedContrastsLog = log10(sceneParamsStruct.predefinedContrasts);
 for tt = 1:length(estDomainValidationTargetLog)
     [val idx] = min(abs(estDomainValidationTargetLog(tt)-predefinedContrastsLog));
     estDomainValidation(tt) = predefinedContrastsLog(idx);
+    
+    fprintf('Contrast range for Contant stimuli (%d/%d): %.3f \n',...
+        tt, length(estDomainValidationTargetLog), estDomainValidation(tt));
 end 
 
 %% Create the scene engine.
