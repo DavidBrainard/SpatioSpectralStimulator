@@ -61,7 +61,7 @@ if (FINDRECTANGLE)
     rectangle('Position',stats(targetStat).BoundingBox,'Linewidth',3,'EdgeColor','r','LineStyle','--');
 end
 
-%% Clip the part of contrast image.
+%% Display the cropped camera image.
 fromX = 1522;
 fromY = 1096;
 cropXPixel = 70;
@@ -92,17 +92,33 @@ for ii = 1:16
     contrast(ii) = (whiteCropImage-blackCropImage) / (whiteCropImage+blackCropImage);
 end
 
-%% Plot individual normalized results on subplot.
+%% Contrast over wavelength.
+channelWls = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
+
+% Plot it.
+figure; hold on;
+plot(channelWls(1), contrast(1), 'r.', 'markersize', 20);
+plot(channelWls(2:end), contrast(2:end), 'k.', 'markersize', 18);
+xlabel('Wavelength (nm)', 'fontsize', 15);
+ylabel('Contrast', 'fontsize', 15);
+ylim([0 1]);
+text(channelWls(1)+5, contrast(1), '\leftarrow Ref (Ch1)', 'fontsize', 15, 'color', 'red');
+legend('Ref (Ch1, focused)', 'Other channels', 'fontsize', 15);
+title('Contrast over channel wavelength', 'fontsize', 15);
+
+%% Plot the dRGB value over the pixel position (horizontal).
 figure; hold on;
 for ii = 1:16
     subplot(4,4,ii); hold on;
-    plot(im2double(imageCrop50(:,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
+    plot(imageCrop50(:,ii), 'LineWidth',1);
     title(append('Ch',num2str(ii)),'fontsize',13);
+    ylim([0 max2(imageCrop50)]);
+    yticks([0:50:max2(imageCrop50)]);
 end
 xlabel('Pixel position (horizontal)','fontsize',13);
-ylabel('dRGB','fontsize',15);
+ylabel('dRGB','fontsize',13);
 
-%% Plot all graph drawn together. 
+%% Plot the above graph for first few pixels all together. 
 figure; hold on;
 for ii = 1:16
     plot(im2double(imageCrop50(2:18,ii))./max(im2double(imageCrop50(:,ii))), 'LineWidth',1);
