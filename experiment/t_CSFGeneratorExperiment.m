@@ -113,7 +113,8 @@ elseif (~LOADDATA)
     % to compute for.
     experimentParams.minContrast = 0.0003;
     experimentParams.nContrasts = 20;
-    experimentParams.stimContrastsToTest = [0 round(linspace(experimentParams.minContrast,colorDirectionParams.spatialGaborTargetContrast,experimentParams.nContrasts-1),4)];
+    experimentParams.stimContrastsToTest = [0 round(logspace(log10(experimentParams.minContrast), ...
+        log10(colorDirectionParams.spatialGaborTargetContrast), experimentParams.nContrasts-1),4)];
     
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
