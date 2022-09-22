@@ -228,7 +228,7 @@ if (INITIALSENSITIVITYMEASURE)
     %% Set the instruction screen.
     imageSize = size(nullStatusReportStruct.RGBimage,2);
     messageInitialRGBImage_1stLine = 'Press any button to start';
-    messageInitialRGBImage_2ndLine = 'Meauring initial sensitivity';
+    messageInitialRGBImage_2ndLine = 'Pre-experiment session';
     initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
         'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
     initialRGBImagePractice = fliplr(initialRGBImagePractice);    
@@ -252,9 +252,9 @@ if (INITIALSENSITIVITYMEASURE)
     % image is null image with out contrast pattern, so we start from
     % either 2nd or 20th (which is the highest contrast).
     initialImageContrastLevels = [2 length(initialMeasureRGBImages)];
-    numInitialImageContrastlevels = length(initialImageContrastLevels);
+    nInitialImageContrastlevels = length(initialImageContrastLevels);
     
-    for cc = 1:numInitialImageContrastlevels
+    for cc = 1:nInitialImageContrastlevels
         
         %% Display the initial screen.
         SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
@@ -278,10 +278,13 @@ if (INITIALSENSITIVITYMEASURE)
         end
         
         %% Set the starting contrast level here.
-        initialImageContrastLevel = initialImageContrastLevels(cc);
+        %
+        % Contrast level starts either highest one or lowest one. Starts
+        % from the lower one.
+        imageContrastLevel = initialImageContrastLevels(cc);
         
         % Show starting message.
-        fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,numInitialImageContrastlevels);
+        fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,nInitialImageContrastlevels);
         
         while 1
             % Set the initial button press state.
@@ -291,7 +294,7 @@ if (INITIALSENSITIVITYMEASURE)
             stateButtonLeft = false;
             
             % Set the contrast level.
-            initialMeasureTestContrast = sceneParamsStruct.predefinedContrasts(initialImageContrastLevel);
+            initialMeasureTestContrast = sceneParamsStruct.predefinedContrasts(imageContrastLevel);
             fprintf('Current test contrast is = (%.4f) \n',initialMeasureTestContrast);
             
             % Set auto response params.
@@ -303,7 +306,7 @@ if (INITIALSENSITIVITYMEASURE)
             autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
             
             % Display contrast image here.
-            [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, initialMeasureRGBImages{initialImageContrastLevel}, ...
+            [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, initialMeasureRGBImages{imageContrastLevel}, ...
                 sceneParamsStruct.predefinedTemporalSupport,sceneParamsStruct.predefinedTemporalSupportCrossbar,initialMeasureTestContrast,window,windowRect,...
                 'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
                 'expKeyType',experimentParams.expKeyType,'beepSound',false,...
@@ -328,9 +331,9 @@ if (INITIALSENSITIVITYMEASURE)
             elseif (stateButtonRight)
                 % Change the contrast level for next display.
                 if (cc == 1)
-                    initialImageContrastLevel = initialImageContrastLevel + 1;
+                    imageContrastLevel = imageContrastLevel + 1;
                 elseif (cc == 2)
-                    initialImageContrastLevel = initialImageContrastLevel - 1;
+                    imageContrastLevel = imageContrastLevel - 1;
                 end
                 
                 % Play the sound.
@@ -338,7 +341,7 @@ if (INITIALSENSITIVITYMEASURE)
                 
             elseif (stateButtonLeft)
                 % Show the same contrast level again for next display.
-                initialImageContrastLevel = initialImageContrastLevel;
+                imageContrastLevel = imageContrastLevel;
                 
                 % Play the feedback sound.
                 numPlaySound = 2;
@@ -351,10 +354,16 @@ if (INITIALSENSITIVITYMEASURE)
         % Back to empty array.
         autoResponseParams = [];
         
+        % Play sound as feedback when the contrast level was decided.
+        numPlaySound = 3;
+        for pp = 1:numPlaySound
+            MakeBeepSound('preset',correct);
+        end
+        
         % Print out the contrast level we found.
-        contrastFound(cc) = sceneParamsStruct.predefinedContrasts(initialImageContrastLevel);
+        contrastFound(cc) = sceneParamsStruct.predefinedContrasts(imageContrastLevel);
         fprintf('Contrast was found at (%.3f) \n', contrastFound(cc));
-        fprintf('Initial contast sensitivity measure has been finished!-(%d/%d) \n', cc, numInitialImageContrastlevels);
+        fprintf('Initial contast sensitivity measure has been finished!-(%d/%d) \n', cc, nInitialImageContrastlevels);
     end
 end
 
@@ -366,12 +375,19 @@ thresholdInitialEstLog = log10(thresholdInitialEstLinear);
 
 highLimitContrastLog = thresholdInitialEstLog + 0.3;
 lowLimitContrastLog  = thresholdInitialEstLog - 0.5;
-highLimitContrastLinear = 10^highLimitContrastLog;
-lowLimitContrastLinear  = 10^lowLimitContrastLog;
 
 nContrastPointsBtwHighAndLow = 6;
-contrastPointsForExpLinear = logspace(lowLimitContrastLog, highLimitContrastLog, nContrastPointsBtwHighAndLow);
-contrastPointsForExpLog = log10(contrastPointsForExpLinear);
+contrastsForValidationLinear = logspace(lowLimitContrastLog, highLimitContrastLog, nContrastPointsBtwHighAndLow);
+
+% Set the contrast range for Constant stimuli (Validation) method.
+estDomainValidationTargetLog = log10(contrastsForValidationLinear); 
+predefinedContrastsLog = log10(sceneParamsStruct.predefinedContrasts);
+
+% Find the nearest contrast within the predefined contrast range.
+for tt = 1:length(estDomainValidationTargetLog)
+    [val idx] = min(abs(estDomainValidationTargetLog(tt)-predefinedContrastsLog));
+    estDomainValidation(tt) = predefinedContrastsLog(idx);
+end 
 
 %% Create the scene engine.
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -483,14 +499,19 @@ switch experimentMode
             otherwise
         end
         
-        % Set the contrast range here.
-        estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
-            experimentParams.stimContrastsToTest <= higherLimEstDomain));
-        estDomainValidation = estDomain(estDomainIndex-1);
-
-        estDomainValidation =  log10([0.0003 0.0025 0.0047  0.0091 0.0200]); 
-              estDomainValidationLinear = 10.^estDomainValidation;
-              
+        % Set the contrast range here. 
+        %
+        % If we performed method of adjustment above, the estimation
+        % contrast range is set based on the results.
+        if (~INITIALSENSITIVITYMEASURE)
+            estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
+                experimentParams.stimContrastsToTest <= higherLimEstDomain));
+            estDomainValidation = estDomain(estDomainIndex-1);
+        end
+        
+        % Estimation domain in linear unit. 
+        estDomainValidationLinear = 10.^estDomainValidation;
+        
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
             'nRepeat',experimentParams.nTestValidation, 'estDomain', estDomainValidation, ...
