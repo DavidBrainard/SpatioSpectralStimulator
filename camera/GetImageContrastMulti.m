@@ -103,6 +103,9 @@ xlabel('Wavelength (nm)', 'fontsize', 15);
 ylabel('Contrast', 'fontsize', 15);
 ylim([0 1]);
 text(channelWls(1)+5, contrast(1), '\leftarrow Ref (Ch1)', 'fontsize', 15, 'color', 'red');
+for cc = 2:16
+    text(channelWls(cc)+5, contrast(cc), append('Ch',num2str(cc)), 'fontsize', 15, 'color', 'black');
+end
 legend('Ref (Ch1, focused)', 'Other channels', 'fontsize', 15);
 title('Contrast over channel wavelength', 'fontsize', 15);
 
