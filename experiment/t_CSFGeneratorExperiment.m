@@ -252,7 +252,7 @@ if (INITIALSENSITIVITYMEASURE)
     % Start from the image with the highest contrast. Note that the first
     % image is null image with out contrast pattern, so we start from
     % either 2nd or 20th (which is the highest contrast).
-    initialImageContrastLevels = [2 length(initialMeasureRGBImages)];
+    initialImageContrastLevels = [length(initialMeasureRGBImages) 2];
     nInitialImageContrastlevels = length(initialImageContrastLevels);
     
     for cc = 1:nInitialImageContrastlevels
@@ -331,9 +331,9 @@ if (INITIALSENSITIVITYMEASURE)
                 
             elseif (stateButtonRight)
                 % Change the contrast level for next display.
-                if (cc == 1)
+                if (cc == 2)
                     imageContrastLevel = imageContrastLevel + 1;
-                elseif (cc == 2)
+                elseif (cc == 1)
                     imageContrastLevel = imageContrastLevel - 1;
                 end
                 
@@ -571,7 +571,7 @@ if (PRACTICETRIALS)
     % Make initial screen image.
     imageSize = size(nullStatusReportStruct.RGBimage,2);
     messageInitialRGBImage_1stLine = 'Press any button to start';
-    messageInitialRGBImage_2ndLine = '';
+    messageInitialRGBImage_2ndLine = 'Main Experiment';
     initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
         'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
     initialRGBImagePractice = fliplr(initialRGBImagePractice);
