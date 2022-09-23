@@ -66,7 +66,7 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
     
-    framesPerStimIndexs = [1 2 2 1];
+    framesPerStimIndexs = [1 1 2 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
@@ -92,7 +92,7 @@ gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
-redStartingPoint = 'bottom';
+redStartingPoint = 'top';
 
 plainImageRed = plainImageBase;
 switch redStartingPoint
