@@ -114,9 +114,10 @@ figure; hold on;
 for ii = 1:16
     subplot(4,4,ii); hold on;
     plot(imageCrop50(:,ii), 'LineWidth',1);
-    title(append('Ch',num2str(ii)),'fontsize',13);
+    title( append('Ch',num2str(ii)),'fontsize',13);
     ylim([0 max2(imageCrop50)]);
     yticks([0:50:max2(imageCrop50)]);
+    legend(append('Contrast ',num2str(round(contrast(ii),2))),'location','northeast');
 end
 xlabel('Pixel position (horizontal)','fontsize',13);
 ylabel('dRGB','fontsize',13);
