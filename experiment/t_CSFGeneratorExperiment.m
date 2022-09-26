@@ -154,16 +154,12 @@ sceneParamsStruct.addNoiseToImage = true;
 sceneParamsStruct.rotateImageDeg = 0;
 
 % Set numbers when using auto response.
-if (experimentParams.autoResponse)
-    autoResponseParams.psiFunc = @qpPFWeibullLog;
-    autoResponseParams.thresh = 0.004;
-    autoResponseParams.slope = 2;
-    autoResponseParams.guess = 0.5;
-    autoResponseParams.lapse = 0.01;
-    autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
-else
-    autoResponseParams = [];
-end
+autoResponseParams.psiFunc = @qpPFWeibullLog;
+autoResponseParams.thresh = 0.004;
+autoResponseParams.slope = 2;
+autoResponseParams.guess = 0.5;
+autoResponseParams.lapse = 0.01;
+autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
 
 %% Make contrast gabor images and save.
 if (~LOADDATA)
@@ -219,9 +215,16 @@ end
 METHODOFADJUSTMENT = true;
 
 if (METHODOFADJUSTMENT)
+    % Method of adjustment happens here and get the contrast range.
     [estDomainValidation] = GetContrastRangeTrials(...
         sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect);
 end 
+
+% Set the auto response params empty if it is not used in the main
+% experiment.
+if (~experimentParams.autoResponse)
+    autoResponseParams = [];
+end
 
 %% Create the scene engine.
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
@@ -337,7 +340,7 @@ switch experimentMode
         %
         % If we performed method of adjustment above, the estimation
         % contrast range is set based on the results.
-        if (~INITIALSENSITIVITYMEASURE)
+        if (~METHODOFADJUSTMENT)
             estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
                 experimentParams.stimContrastsToTest <= higherLimEstDomain));
             estDomainValidation = estDomain(estDomainIndex-1);
