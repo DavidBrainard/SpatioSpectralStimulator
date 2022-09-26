@@ -1,4 +1,5 @@
-function [correct, flipTime, rngValues] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
+function [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
+    computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
     theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,...
     testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
@@ -98,6 +99,9 @@ function [correct, flipTime, rngValues] = computePerformanceSACCDisplay(nullRGBI
 %                                         on null stimulus without a
 %                                         crossbar before showing the test
 %                                         contrast image.
+%    setDirectionToDisplay              - Default to empty. This sets a
+%                                         specific direction of the
+%                                         contrast pattern as desired. 
 %    verbose                            - Boolean. Default true. Controls
 %                                         printout.
 %
@@ -171,6 +175,7 @@ arguments
     options.movieStimuli (1,1) = false
     options.movieImageDelaySec (1,1) = 0.5
     options.preStimuliDelaySec (1,1) = 0
+    options.setDirectionToDisplay = []
     options.verbose (1,1) = true
 end
 
@@ -185,7 +190,12 @@ end
 displayVertical   = 1;
 displayHorizontal = 2;
 displayDirections = [displayVertical displayHorizontal];
-whichDirectionToDisplay = randi(displayDirections);
+
+if isempty(options.setDirectionToDisplay)
+    whichDirectionToDisplay = randi(displayDirections);
+else
+    whichDirectionToDisplay = options.setDirectionToDisplay;
+end
 
 % Make a rotation on image.
 rotationImageType = 'crop';

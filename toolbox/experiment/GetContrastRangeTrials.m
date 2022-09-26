@@ -93,6 +93,7 @@ for cc = 1:nInitialContrasts
     % from the lower one.
     imageContrastLevel = initialContrast(cc);
     fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,nInitialContrasts);
+    setDirectionToDisplay = [];
     
     while 1
         % Set the contrast level.
@@ -100,7 +101,7 @@ for cc = 1:nInitialContrasts
         fprintf('Current test contrast is = (%.4f) \n',testContrast);
         
         % Display contrast image here.
-        [correct] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
+        [correct, flipTime, rngValues, whichDirectionToDisplay] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
             sceneParamsStruct.predefinedTemporalSupport,sceneParamsStruct.predefinedTemporalSupportCrossbar,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',false,...
@@ -108,7 +109,10 @@ for cc = 1:nInitialContrasts
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
             'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
-            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
+            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'setDirectionToDisplay', setDirectionToDisplay, 'verbose',false);
+        
+        % Set this to empty so that it displays the image pattern randomly.
+        setDirectionToDisplay = [];
         
         % Get a button press here.
         buttonPress = GetGamepadResp;
@@ -132,6 +136,9 @@ for cc = 1:nInitialContrasts
         elseif strcmp(buttonPress,'left')
             % Show the same contrast level again for next display.
             imageContrastLevel = imageContrastLevel;
+            
+            % Same direciton of the image will be displayed when repeat. 
+            setDirectionToDisplay = whichDirectionToDisplay;
             
             % Play the feedback sound.
             numPlaySound = 2;
