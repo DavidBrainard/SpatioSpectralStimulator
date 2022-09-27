@@ -62,12 +62,13 @@ clear; close all;
 % You can load the data if you saved the images. We will load the images when
 % we run the main experiment to save the time for making the images.
 LOADDATA = true;
+METHODOFADJUSTMENT = true;
 PRACTICETRIALS = true;
 conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 9;
+    sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -153,7 +154,7 @@ sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
 sceneParamsStruct.addNoiseToImage = true;
-sceneParamsStruct.rotateImageDeg = 0;
+sceneParamsStruct.rotateImageDeg = 45;
 
 % Set numbers when using auto response.
 autoResponseParams.psiFunc = @qpPFWeibullLog;
@@ -222,12 +223,10 @@ elseif (strcmp(experimentParams.runningMode,'simulation'))
 end
 
 %% Method of adjustment.
-METHODOFADJUSTMENT = true;
-
 if (METHODOFADJUSTMENT)
     % Method of adjustment happens here and get the contrast range.
-    [estDomainValidation] = GetContrastRangeTrials(...
-        sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect);
+    [estDomainValidation estDomainValidationNominalLinear contrastFoundLinear thresholdEstLinear] = ...
+        GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect);
 end 
 
 % Set the auto response params empty if it is not used in the main

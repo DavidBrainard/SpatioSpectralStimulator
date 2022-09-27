@@ -1,5 +1,5 @@
-function [estDomainValidation] = GetContrastRangeTrials(...
-    sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect, options)
+function [estDomainValidation estDomainValidationNominalLinear contrastFoundLinear thresholdEstLinear] = ...
+    GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect, options)
 % Get contrast range based on the measured threshold using Method of
 % adjustment.
 %
@@ -18,22 +18,51 @@ function [estDomainValidation] = GetContrastRangeTrials(...
 %    test contrast range is decided based on the results.
 %
 % Inputs:
-%    sceneParamsStruct
-%    experimentParams
-%    autoResponseParams
-%    window
-%    windowRect
+%    sceneParamsStruct                  - Struct containing properties of
+%                                         the scene understood by this
+%                                         function. It contains the RGB
+%                                         null and test contrast images.
+%    experimentParams                   - Struct containing properties of
+%                                         running the experiments. 
+%    autoResponseParams                 - Parameters to get an auto
+%                                         response.
+%    window                             - PTB window for opened screen.
+%    windowRect                         - Rect corresonding to window.
 %
 % Output:
-%    estDomainValidation     -
-%
+%    estDomainValidation                - Contrast range found based on the
+%                                         trials. The number of contrast
+%                                         points can be decided.
+%    estDomainValidationNominalLinear   - Nominal contrast range. Inside
+%                                         this function, it finds the
+%                                         closest possible contrast to
+%                                         this nominal contrast value.
+%    contrastFoundLinear                - Contrast value at threshold
+%                                         point. This function measures
+%                                         threshold twice, so it will
+%                                         contain two numbers.
+%    thresholdEstLinear                 - Contrast of estimated threshold.
+%                                         This is basically an average of
+%                                         two thresholds which are stored
+%                                         in the variable contrastFoundLinear.
+% 
 % Optional key/value pairs:
-%    options.nContrastPoints
-%    options.higherLimThresholdEstLog
-%    options.lowerLimThresholdEstLog
+%    options.nContrastPoints            - Default to 6. Number of contrast
+%                                         points to make for the
+%                                         experiment.
+%    options.higherLimThresholdEstLog   - Default to 0.3. This decides the
+%                                         higher limit of the contrast
+%                                         range. This number will be added
+%                                         to the threshold found in log
+%                                         unit.
+%    options.lowerLimThresholdEstLog    - Default to -0.5. This decides the
+%                                         lower limit of the contrast
+%                                         range. This number will be
+%                                         substracted to the threshold
+%                                         found in log unit.
 
 % History:
-%    09/26/22  smo                     - Wrote it.
+%    09/26/22  smo                      - Wrote it.
 
 %% Set parameters.
 arguments
@@ -93,7 +122,6 @@ for cc = 1:nInitialContrasts
     % from the lower one.
     imageContrastLevel = initialContrast(cc);
     fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,nInitialContrasts);
-    setDirectionToDisplay = [];
     
     while 1
         % Set the contrast level.
@@ -101,7 +129,7 @@ for cc = 1:nInitialContrasts
         fprintf('Current test contrast is = (%.4f) \n',testContrast);
         
         % Display contrast image here.
-        [correct, flipTime, rngValues, whichDirectionToDisplay] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
+        [correct, flipTime, rngValues] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
             sceneParamsStruct.predefinedTemporalSupport,sceneParamsStruct.predefinedTemporalSupportCrossbar,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',false,...
@@ -109,10 +137,7 @@ for cc = 1:nInitialContrasts
             'movieImageDelaySec',experimentParams.movieImageDelaySec,...
             'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
             'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
-            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'setDirectionToDisplay', setDirectionToDisplay, 'verbose',false);
-        
-        % Set this to empty so that it displays the image pattern randomly.
-        setDirectionToDisplay = [];
+            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
         
         % Get a button press here.
         buttonPress = GetGamepadResp;
@@ -136,9 +161,6 @@ for cc = 1:nInitialContrasts
         elseif strcmp(buttonPress,'left')
             % Show the same contrast level again for next display.
             imageContrastLevel = imageContrastLevel;
-            
-            % Same direciton of the image will be displayed when repeat. 
-            setDirectionToDisplay = whichDirectionToDisplay;
             
             % Play the feedback sound.
             numPlaySound = 2;
@@ -171,12 +193,12 @@ higherLimTestContrastLog = thresholdEstLog + options.higherLimThresholdEstLog;
 lowerLimTestContrastLog  = thresholdEstLog - options.lowerLimThresholdEstLog;
 
 % Make contrast range equally spaced on log space.
-estDomainValidationLinear = logspace(lowerLimTestContrastLog, higherLimTestContrastLog, options.nContrastPoints);
-estDomainValidationLogNominal = log10(estDomainValidationLinear);
+estDomainValidationNominalLinear = logspace(lowerLimTestContrastLog, higherLimTestContrastLog, options.nContrastPoints);
+estDomainValidationNominalLog = log10(estDomainValidationNominalLinear);
 
 % Find the neareast point for each target contrast point.
-for tt = 1:length(estDomainValidationLogNominal)
-    [val idx] = min(abs(estDomainValidationLogNominal(tt)-predefinedContrastsLog));
+for tt = 1:length(estDomainValidationNominalLog)
+    [val idx] = min(abs(estDomainValidationNominalLog(tt)-predefinedContrastsLog));
     estDomainValidation(tt) = predefinedContrastsLog(idx);
 end
 
