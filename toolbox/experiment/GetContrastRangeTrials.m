@@ -179,4 +179,8 @@ for tt = 1:length(estDomainValidationLogNominal)
     [val idx] = min(abs(estDomainValidationLogNominal(tt)-predefinedContrastsLog));
     estDomainValidation(tt) = predefinedContrastsLog(idx);
 end
+
+% Delete the same values.
+estDomainValidation = unique(estDomainValidation);
+
 end
