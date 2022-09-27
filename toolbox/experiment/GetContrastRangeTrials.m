@@ -205,4 +205,7 @@ end
 % Delete the same values.
 estDomainValidation = unique(estDomainValidation);
 
+% Save the raw data in struct.
+
+
 end
