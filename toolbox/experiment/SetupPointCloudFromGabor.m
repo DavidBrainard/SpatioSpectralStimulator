@@ -242,6 +242,10 @@ for ss = 1:nPhaseShifts
             standardGaborCalObject.standardPredictedExcitationsGaborCal{ss,cc} = standardPredictedExcitationsGaborCal;
             standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc} = standardPredictedContrastGaborCal;
         end
+        
+        fprintf('Getting gabor image - Contrast point (%d/%d) \n', cc, nContrastPoints);
     end
+    
+    fprintf('Getting gabor image - Phase shift (%d/%d) \n', ss, nPhaseShifts);
 end
 end
