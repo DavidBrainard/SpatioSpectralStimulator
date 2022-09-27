@@ -67,7 +67,7 @@ conditionName = 'LminusMSmooth';
 
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 9;
+    sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -84,10 +84,12 @@ elseif (~LOADDATA)
     %
     % Set spatialGaborTargetContrast = 0.03 for the spatial frequency 18
     % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    % 1 cpd = 0.01
-    % the others = 0.02
-    % 18 cpd = 0.03
-    spatialGaborTargetContrast = 0.03;
+    %
+    % Now we set it as double.
+    % 1 cpd = 0.02
+    % the others = 0.04
+    % 18 cpd = 0.06
+    spatialGaborTargetContrast = 0.06;
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
@@ -102,7 +104,7 @@ elseif (~LOADDATA)
     spatialTemporalParams.gaborSdDeg = 0.75;
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
-    
+        
     %% Instantiate a sceneEngine.
     %
     % First set up the scene parameters that will be needed by
@@ -113,8 +115,8 @@ elseif (~LOADDATA)
     % to compute for.
     experimentParams.minContrast = 0.0003;
     experimentParams.nContrasts = 20;
-    experimentParams.stimContrastsToTest = [0 round(logspace(log10(experimentParams.minContrast), ...
-        log10(colorDirectionParams.spatialGaborTargetContrast), experimentParams.nContrasts-1),4)];
+    experimentParams.stimContrastsToTest = [0 logspace(log10(experimentParams.minContrast), ...
+        log10(colorDirectionParams.spatialGaborTargetContrast), experimentParams.nContrasts)];
     
     experimentParams.slopeRangeLow = 0.5;
     experimentParams.slopeRangeHigh = 6;
@@ -198,6 +200,14 @@ if (~LOADDATA)
     end
 end
 
+%% Match the contrast range scale.
+%
+% Round the contrast to match the scale.
+experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,4);
+
+% Update the scene parameters.
+sceneParamsStruct.predefinedContrasts = round(experimentParams.stimContrastsToTest,4);
+  
 %% Open projector and set the screen primary settings as we found.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
     initialScreenSetting = [0 0 0]';
@@ -212,7 +222,7 @@ elseif (strcmp(experimentParams.runningMode,'simulation'))
 end
 
 %% Method of adjustment.
-METHODOFADJUSTMENT = true;
+METHODOFADJUSTMENT = false;
 
 if (METHODOFADJUSTMENT)
     % Method of adjustment happens here and get the contrast range.
@@ -418,27 +428,8 @@ if (PRACTICETRIALS)
     SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
     
     % Press any button to proceed.
-    numButtonUp    = 4;
-    numButtonRight = 3;
-    numButtonLeft  = 1;
-    numButtonDown  = 2;
-    
-    if (strcmp(experimentParams.expKeyType,'gamepad'))
-        switch (experimentParams.runningMode)
-            case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',true);
-            case 'PTB-directional'
-                if (sceneParamsStruct.rotateImageDeg == 0)
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
-                else
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
-                end
-        end
-        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
-        if (any(responseGamePad == possibleResponseGamePad))
-            disp('Practice trial is going to be started!');
-        end
-    end
+    GetGamepadResp;
+    disp('Practice trial is going to be started!');
     
     %% Display the null image.
     addFixationPointCircle = 'circle';
@@ -446,22 +437,9 @@ if (PRACTICETRIALS)
     'addNoiseToImage', sceneParamsStruct.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
     FlipImageTexture(imageTextureNull, window, imageWindowRect,'verbose', false);
     
-    if (strcmp(experimentParams.expKeyType,'gamepad'))
-        switch (experimentParams.runningMode)
-            case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',true);
-            case 'PTB-directional'
-                if (sceneParamsStruct.rotateImageDeg == 0)
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
-                else
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
-                end
-        end
-        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
-        if (any(responseGamePad == possibleResponseGamePad))
-            disp('Experiment is going to be started!');
-        end
-    end
+    % Press any button to proceed.
+    GetGamepadResp;
+    disp('Experiment is going to be started!');
     
     %% Start the practice trials here.
     %
@@ -501,30 +479,11 @@ if (~PRACTICETRIALS)
     
     % Display crossbar image.
     [imageTextureNull, imageWindowRectNull] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect,...
-        'addFixationPoint', true, 'verbose', true);
+        'addFixationPoint', 'circle', 'verbose', true);
     FlipImageTexture(imageTextureNull, window, imageWindowRectNull);
     
-    if (strcmp(experimentParams.expKeyType,'gamepad'))
-        % Waiting for key to be pressed to start.
-        numButtonUp    = 4;
-        numButtonRight = 3;
-        numButtonLeft  = 1;
-        
-        switch (experimentParams.runningMode)
-            case 'PTB-sequential'
-                responseGamePad = GetGamepadResp2AFC('verbose',true);
-            case 'PTB-directional'
-                if (sceneParamsStruct.rotateImageDeg == 0)
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',true);
-                else
-                    responseGamePad  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',true);
-                end
-        end
-        possibleResponseGamePad = [numButtonUp numButtonRight numButtonLeft];
-        if (any(responseGamePad == possibleResponseGamePad))
-            disp('Experiment is going to be started!');
-        end
-    end
+    % Press any button to proceed.
+    GetGamepadResp;
 end
 
 % All experimental trials happen here that include displaying test images
