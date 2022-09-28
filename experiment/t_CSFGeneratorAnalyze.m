@@ -33,7 +33,8 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
-conditionName = 'LminusMSmooth';
+
+subjectName = 'Semin';
 sineFreqCyclesPerDeg = 3;
 
 %% Load the data and PF fitting.
@@ -43,7 +44,7 @@ sineFreqCyclesPerDeg = 3;
 %
 % Set startData to 0 if you want to read the data from the most recent.
 startData = 0;
-nData = 3;
+nData = 1;
 SUBPLOT = false;
 sizeSubplot = [round(nData/2) 4];
 
@@ -51,8 +52,8 @@ for dd = 1:nData
     % Load the data.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(testFiledir,...
-            sprintf('RunExpResults_%s_%d_cpd',conditionName,sineFreqCyclesPerDeg),'olderDate',startData+dd-1);
+        testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName),...
+            sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg),'olderDate',startData+dd-1);
         theData = load(testFilename);
     else
         error('Cannot find data file');
@@ -145,7 +146,7 @@ if (SAVEFITTING)
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = true;
+CSFCURVE = false;
 
 if (CSFCURVE)
     % Set target spatial frequency and threshold values. We type manually
@@ -176,7 +177,7 @@ if (CSFCURVE)
 end
 
 % Save the graph if you want.
-SAVEFITTING = true;
+SAVEFITTING = false;
 if (SAVEFITTING)
     fileDir = '/Users/seminoh/Aguirre-Brainard Lab Dropbox/Semin Oh/SACC_materials/Experiment'; 
     cd(fileDir);
