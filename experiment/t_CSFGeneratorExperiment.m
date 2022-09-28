@@ -600,9 +600,16 @@ fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %
 if (SAVETHERESULTS)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        
+        % Make folder with subject name if it does not exist.
+        if ~exist(fullfile(testFiledir,subjectName), 'dir')
+            mkdir(testFiledir,subjectName);
+        end
+        
+        % Set the file name and save.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,sprintf('RunExpResults_%s_%d_cpd_%s',...
-            conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,dayTimestr));
+        testFilename = fullfile(testFiledir,subjectName,sprintf('CS_%s_%d_cpd_%s',...
+            subjectName,spatialTemporalParams.sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'estimator','flipTime','flipTimeInterval','rngVal');
     end
 end
