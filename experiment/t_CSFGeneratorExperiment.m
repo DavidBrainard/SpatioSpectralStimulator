@@ -61,14 +61,48 @@ clear; close all;
 %
 % You can load the data if you saved the images. We will load the images when
 % we run the main experiment to save the time for making the images.
+%
+% Set the initial parameters here.
 LOADDATA = true;
 METHODOFADJUSTMENT = true;
 PRACTICETRIALS = true;
 conditionName = 'LminusMSmooth';
 
+%% Some parameters will be typed for convenience.
+%
+% Subject name.
+inputMessageName = 'Enter subject name: ';
+subjectName = input(inputMessageName, 's');
+
+% Spatial frequency.
+while 1
+    inputMessageSpatialFrequency = 'Type spatial frequency [3,6,9,12,18]: ';
+    sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
+    sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
+    
+    if ismember(sineFreqCyclesPerDeg, sineFreqCyclesPerDegOptions)
+        break
+    end
+    
+    disp('Spatial frequency should be within the above range!');
+end
+
+% Experiment mode. 
+while 1
+    inputMessageSpatialExpMode = 'Choose experiment mode [adaptive, valiation]: ';
+    expMode = input(inputMessageSpatialExpMode, 's');
+    expModeOptions = {'adaptive' 'validation'};
+    
+    if ismember(expMode, expModeOptions)
+        break
+    end
+    
+    disp('Experiment mode should be either adaptive or validation!');
+end
+
+%% Load data or make a new one.
 if (LOADDATA)
     % Set the condition of the images.
-    sineFreqCyclesPerDeg = 3;
     gaborSdDeg = 0.75;
     SAVETHERESULTS = true;
     
@@ -101,7 +135,7 @@ elseif (~LOADDATA)
     %
     % We used to make the contrast gabor size in 1.5 gaborSdDeg, and now we
     % are trying to test the size of 0.75.
-    spatialTemporalParams.sineFreqCyclesPerDeg = 18;
+    spatialTemporalParams.sineFreqCyclesPerDeg = sineFreqCyclesPerDeg;
     spatialTemporalParams.gaborSdDeg = 0.75;
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
@@ -289,7 +323,7 @@ slopeRange = experimentParams.slopeRangeLow: experimentParams.slopeDelta : exper
 % criterion in the function handle below can terminate too early if
 % initial threshold values are large.  This can be avoided by
 % appropriate choice of minimum number of trials.
-experimentMode = 'validation';
+experimentMode = expMode;
 
 switch experimentMode
     case 'adaptive'
