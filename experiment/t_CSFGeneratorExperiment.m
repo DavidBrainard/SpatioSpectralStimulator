@@ -387,11 +387,7 @@ switch experimentMode
             switch sineFreqCyclesPerDeg
                 case 3
                     lowerLimEstDomain  = 0.0019;
-                    higherLimEstDomain = 0.0046;
-                    
-                    % Reset it for Geoff.
-                    lowerLimEstDomain  = 0.0035;
-                    higherLimEstDomain = 0.0062;
+                    higherLimEstDomain = 0.0046;                  
                 case 6
                     lowerLimEstDomain  = 0.0027;
                     higherLimEstDomain = 0.0081;
@@ -404,10 +400,6 @@ switch experimentMode
                 case 18
                     lowerLimEstDomain  = 0.0071;
                     higherLimEstDomain = 0.0152;
-                    
-                    % Reset it for David
-                    lowerLimEstDomain  = 0.0038;
-                    higherLimEstDomain = 0.0120;
                 otherwise
             end
             
