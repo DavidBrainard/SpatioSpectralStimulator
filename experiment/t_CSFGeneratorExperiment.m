@@ -378,39 +378,32 @@ switch experimentMode
             'stopCriterion', stopCriterion, 'qpPF',@qpPFWeibullLog);
         
     case 'validation'
-        % Set the test contrast domain to validate.
-        %
-        % We set the contrast range differently according to spatial
-        % frequencies. These ranges are with the size of pupil 3.0 mm,
-        % which works fine for Semin and David.
-        if (~METHODOFADJUSTMENT)
-            switch sineFreqCyclesPerDeg
-                case 3
-                    lowerLimEstDomain  = 0.0019;
-                    higherLimEstDomain = 0.0046;                  
-                case 6
-                    lowerLimEstDomain  = 0.0027;
-                    higherLimEstDomain = 0.0081;
-                case 9
-                    lowerLimEstDomain  = 0.0038;
-                    higherLimEstDomain = 0.0092;
-                case 12
-                    lowerLimEstDomain  = 0.0038;
-                    higherLimEstDomain = 0.0092;
-                case 18
-                    lowerLimEstDomain  = 0.0071;
-                    higherLimEstDomain = 0.0152;
-                otherwise
-            end
-            
-            % Set the contrast range here.
-            estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
-                experimentParams.stimContrastsToTest <= higherLimEstDomain));
-            estDomainValidation = estDomain(estDomainIndex-1);
-        end
-        
-        % Estimation domain in linear unit.
-        estDomainValidationLinear = 10.^estDomainValidation;
+        % Set the test contrast domain to validate. Following is old way to
+        % set contrast range which is no longer used. The contrast range is
+        % saved per each subject and it will be loaded per each session.
+%             switch sineFreqCyclesPerDeg
+%                 case 3
+%                     lowerLimEstDomain  = 0.0019;
+%                     higherLimEstDomain = 0.0046;                  
+%                 case 6
+%                     lowerLimEstDomain  = 0.0027;
+%                     higherLimEstDomain = 0.0081;
+%                 case 9
+%                     lowerLimEstDomain  = 0.0038;
+%                     higherLimEstDomain = 0.0092;
+%                 case 12
+%                     lowerLimEstDomain  = 0.0038;
+%                     higherLimEstDomain = 0.0092;
+%                 case 18
+%                     lowerLimEstDomain  = 0.0071;
+%                     higherLimEstDomain = 0.0152;
+%                 otherwise
+%             end
+%             
+%             % Set the contrast range here.
+%             estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
+%                 experimentParams.stimContrastsToTest <= higherLimEstDomain));
+%             estDomainValidation = estDomain(estDomainIndex-1);
         
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
