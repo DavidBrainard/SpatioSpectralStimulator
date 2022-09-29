@@ -1,13 +1,12 @@
 function [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
     computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
-    theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,...
-    testContrast,window,windowRect,options)
+    theSceneTemporalSupportSeconds,testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
 %
 % Syntax:
-%    [correct, flipTime] = computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
-%    theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,...
-%    testContrast,window,windowRect)
+%    [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
+%     computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
+%     theSceneTemporalSupportSeconds,testContrast,window,windowRect)
 %
 % Description:
 %     Run one trial of a psychophysical experiment and return correct or
@@ -28,9 +27,6 @@ function [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
 %     theSceneTemporalSupportSeconds    - Temporal support vector for the
 %                                         test stimuli scene sequences in
 %                                         second unit.
-%     theCrossbarTemporalSupportSeconds - Temporal support vector for the
-%                                         cross fixation image in second
-%                                         unit.
 %     testContrast                      - Contrast value of the input image.
 %                                         This is only used when getting an
 %                                         automatic response based on the
@@ -160,7 +156,6 @@ arguments
     nullRGBImage
     testRGBImage
     theSceneTemporalSupportSeconds (1,1)
-    theCrossbarTemporalSupportSeconds (1,1)
     testContrast
     window (1,1)
     windowRect (1,4)

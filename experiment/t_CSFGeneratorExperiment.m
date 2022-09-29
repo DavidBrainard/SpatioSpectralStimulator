@@ -64,8 +64,8 @@ clear; close all;
 %
 % Set the initial parameters here.
 LOADDATA = true;
-METHODOFADJUSTMENT = true;
 PRACTICETRIALS = true;
+SAVETHERESULTS = true;
 conditionName = 'LminusMSmooth';
 
 %% Some parameters will be typed for convenience.
@@ -76,7 +76,7 @@ subjectName = input(inputMessageName, 's');
 
 % Spatial frequency.
 while 1
-    inputMessageSpatialFrequency = 'Type spatial frequency [3,6,9,12,18]: ';
+    inputMessageSpatialFrequency = 'Which spatial frequency to test [3,6,9,12,18]: ';
     sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
     sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
     
@@ -100,11 +100,28 @@ while 1
     disp('Experiment mode should be either adaptive or validation!');
 end
 
+% Method of adjustment.
+while 1
+    inputMessageMethodOfAdjustment = 'Start with Method of adjustment (only for first visit) [Y, N]: ';
+    ansMethodofAdjustment = input(inputMessageMethodOfAdjustment, 's');
+    methodOfAdjustmentOptions = {'Y' 'N'};
+    
+    if ismember(ansMethodofAdjustment, methodOfAdjustmentOptions)
+        break
+    end
+    
+    disp('Type either Y or N!');
+end
+if (strcmp(ansMethodofAdjustment,'Y'))
+    METHODOFADJUSTMENT = true;
+elseif (strcmp(ansMethodofAdjustment,'N'))
+    METHODOFADJUSTMENT = false;
+end
+
 %% Load data or make a new one.
 if (LOADDATA)
     % Set the condition of the images.
     gaborSdDeg = 0.75;
-    SAVETHERESULTS = true;
     
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -184,7 +201,6 @@ experimentParams.movieImageDelaySec = 0.2;
 % Set the presentation time for each target and crossbar images in seconds
 % unit.
 sceneParamsStruct.predefinedTemporalSupport = 0.4;
-sceneParamsStruct.predefinedTemporalSupportCrossbar = 1.0;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
 sceneParamsStruct.addNoiseToImage = true;
@@ -400,7 +416,6 @@ end
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds, nullStatusReportStruct] ...
     = theSceneEngine.compute(nullContrast);
-theCrossbarTemporalSupportSeconds = sceneParamsStruct.predefinedTemporalSupportCrossbar;
 
 if (noISETBio)
     nullStatusReportStruct.RGBimage = sceneParamsStruct.predefinedRGBImages{1,1};
@@ -474,7 +489,7 @@ if (PRACTICETRIALS)
         fprintf('Starting practice trial (%d/%d) \n', pp, nPracticeTrials);
         
         [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, practiceRGBImage, ...
-            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,practiceTestContrast,window,windowRect,...
+            theSceneTemporalSupportSeconds,practiceTestContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
@@ -541,7 +556,7 @@ while (nextFlag)
     for tt = 1:experimentParams.nTest
         [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt}] = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
-            theSceneTemporalSupportSeconds,theCrossbarTemporalSupportSeconds,testContrast,window,windowRect,...
+            theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
