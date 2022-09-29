@@ -537,6 +537,8 @@ end
 % And we are collecting flip time whenever the displaying image changes.
 flipTime = [];
 rngVal = {};
+whichPhaseImage = [];
+whichDirectionToDisplay = [];
 
 while (nextFlag)
     % Convert log contrast -> contrast.
@@ -565,7 +567,7 @@ while (nextFlag)
     %
     % Get a response here. Make a loop for the number of trials.
     for tt = 1:experimentParams.nTest
-        [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt}] = computePerformanceSACCDisplay(...
+        [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt} whichDirectionToDisplayTemp(tt)] = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
@@ -576,9 +578,11 @@ while (nextFlag)
             'addFixationPointImage', sceneParamsStruct.addFixationPointImage, 'rotateImageDeg', sceneParamsStruct.rotateImageDeg,'verbose',true);
     end
     
-    % Collect the flip time and rng values here.
+    % Collect the flip time, rng value, image phase shift info here.
     flipTime(:,end+1) = flipTimeTemp;
     rngVal(end+1) = rngValTemp;
+    whichPhaseImage(end+1) = testStatusReportStruct.whichPhaseRGBimage;
+    whichDirectionToDisplay(end+1) = whichDirectionToDisplayTemp;
     
     % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
@@ -622,6 +626,13 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
 fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %0.4f (linear units)\n', ...
     thresholdCriterion,threshold,10^threshold);
 
+%% Make a struct to collect raw data.
+imageRawData.flipTime = flipTime; 
+imageRawData.flipTimeInterval = flipTimeInterval;
+imageRawData.rngVal = rngVal;
+imageRawData.whichPhaseImage = whichPhaseImage;
+imageRawData.whichDirectionToDisplay = whichDirectionToDisplay;
+
 %% Save the results.
 if (SAVETHERESULTS)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -636,6 +647,6 @@ if (SAVETHERESULTS)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
             sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDeg,dayTimestr));
-        save(testFilename,'estimator','flipTime','flipTimeInterval','rngVal');
+        save(testFilename,'estimator','imageRawData');
     end
 end

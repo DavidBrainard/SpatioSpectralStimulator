@@ -118,7 +118,7 @@ function dataOut = sceSACCDisplay(sceneEngineOBJ,testContrast,sceneParamsStruct)
     dataOut.sceneSequence = sceneParamsStruct.predefinedSceneSequences{whichContrast};
     dataOut.temporalSupport = sceneParamsStruct.predefinedTemporalSupport;
     dataOut.statusReport.RGBimage = sceneParamsStruct.predefinedRGBImages{whichPhase,whichContrast};
-    dataOut.whichPhaseRGBimage = whichPhase;
+    dataOut.statusReport.whichPhaseRGBimage = whichPhase;
 end
 
 function p = generateDefaultParams()
