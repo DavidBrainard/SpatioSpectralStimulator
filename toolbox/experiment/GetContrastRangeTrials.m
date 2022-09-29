@@ -141,9 +141,9 @@ for cc = 1:nInitialContrasts
         buttonPress = GetGamepadResp;
         
         % Collect raw data. We will not keep the data repeated.
-        if ~(testContrast == testContrastCollect(end))
+        if ~(strcmp(buttonPress,'left'))
             testContrastCollect(end+1) = testContrast;
-            rngValuesCollect(end+1) = rngValues;
+            rngValuesCollect{end+1} = rngValues;
             whichDirectionCollect(end+1) = whichDirectionToDisplay;
         end
         
@@ -213,9 +213,9 @@ end
 estDomainValidation = unique(estDomainValidation);
 
 % Save the raw data in struct.
-preExpDataStruct.rawdata.testContrast = testContrastCollect;
-preExpDataStruct.rawdata.rngValues = rngValuesCollect;
-preExpDataStruct.rawdata.whichDirectionToDisplay = whichDirectionCollect;
+preExpDataStruct.rawData.testContrast = testContrastCollect;
+preExpDataStruct.rawData.rngValues = rngValuesCollect;
+preExpDataStruct.rawData.whichDirectionToDisplay = whichDirectionCollect;
 
 preExpDataStruct.thresholdFoundRawLinear = thresholdFoundRawLinear;
 preExpDataStruct.thresholdEstLinear = thresholdEstLinear;
