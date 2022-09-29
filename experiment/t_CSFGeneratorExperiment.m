@@ -123,7 +123,7 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         
         % Set the file name and load it.
-        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd',...
+        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd.mat',...
             subjectName,sineFreqCyclesPerDeg));
         load(testFilename);
     end
@@ -203,7 +203,7 @@ experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
-experimentParams.autoResponse = false;
+experimentParams.autoResponse = true;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
@@ -628,14 +628,14 @@ if (SAVETHERESULTS)
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         
         % Make folder with subject name if it does not exist.
-        if ~exist(fullfile(testFiledir,subjectName), 'dir')
-            mkdir(testFiledir,subjectName);
+        if ~exist(fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg)), 'dir')
+            mkdir(fullfile(testFiledir,subjectName),sprintf('%d_cpd',sineFreqCyclesPerDeg));
         end
         
         % Set the file name and save.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,subjectName,sprintf('CS_%s_%d_cpd_%s',...
-            subjectName,spatialTemporalParams.sineFreqCyclesPerDeg,dayTimestr));
+        testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
+            sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'estimator','flipTime','flipTimeInterval','rngVal');
     end
 end
