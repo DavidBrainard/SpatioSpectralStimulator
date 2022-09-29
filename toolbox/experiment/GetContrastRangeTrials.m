@@ -1,4 +1,4 @@
-function [estDomainValidation estDomainValidationNominalLinear contrastFoundLinear thresholdEstLinear] = ...
+function [estDomainValidation preExpDataStruct] = ...
     GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect, options)
 % Get contrast range based on the measured threshold using Method of
 % adjustment.
@@ -11,8 +11,8 @@ function [estDomainValidation estDomainValidationNominalLinear contrastFoundLine
 %    This measures initial contrast sensitivity (threshold) using Method of
 %    adjustments. In SACC project, we want to tailor test contrast range
 %    per each subject. To do so, this sets the test contrast range based on
-%    initial measure of contrast sensitivity. 
-% 
+%    initial measure of contrast sensitivity.
+%
 %    Here we measure two contrast threshold points, one being from the
 %    highest to non-visible, and the other being the lowest to visible. The
 %    test contrast range is decided based on the results.
@@ -23,7 +23,7 @@ function [estDomainValidation estDomainValidationNominalLinear contrastFoundLine
 %                                         function. It contains the RGB
 %                                         null and test contrast images.
 %    experimentParams                   - Struct containing properties of
-%                                         running the experiments. 
+%                                         running the experiments.
 %    autoResponseParams                 - Parameters to get an auto
 %                                         response.
 %    window                             - PTB window for opened screen.
@@ -33,19 +33,12 @@ function [estDomainValidation estDomainValidationNominalLinear contrastFoundLine
 %    estDomainValidation                - Contrast range found based on the
 %                                         trials. The number of contrast
 %                                         points can be decided.
-%    estDomainValidationNominalLinear   - Nominal contrast range. Inside
-%                                         this function, it finds the
-%                                         closest possible contrast to
-%                                         this nominal contrast value.
-%    contrastFoundLinear                - Contrast value at threshold
-%                                         point. This function measures
-%                                         threshold twice, so it will
-%                                         contain two numbers.
-%    thresholdEstLinear                 - Contrast of estimated threshold.
-%                                         This is basically an average of
-%                                         two thresholds which are stored
-%                                         in the variable contrastFoundLinear.
-% 
+%    preExpDataStruct                   - Struct that contains all raw data
+%                                         from the trials and computation
+%                                         process to get the contrast range
+%                                         which is saved in
+%                                         estDomainValiation.
+%
 % Optional key/value pairs:
 %    options.nContrastPoints            - Default to 6. Number of contrast
 %                                         points to make for the
@@ -77,7 +70,7 @@ arguments
 end
 
 %% Load null and test images.
-% 
+%
 % We will use only images without phase shifts here.
 whichPhaseImage = 1;
 nullImage = sceneParamsStruct.predefinedRGBImages{whichPhaseImage,1};
@@ -105,6 +98,11 @@ initialInstructionImage = fliplr(initialInstructionImage);
 initialContrast = [length(testImages) 1];
 nInitialContrasts = length(initialContrast);
 
+% Make variables to collect raw data.
+testContrastCollect = [];
+rngValuesCollect = [];
+whichDirectionCollect = [];
+
 % Start the loop for two sessions starting either from lowest or highest
 % contrast.
 for cc = 1:nInitialContrasts
@@ -115,7 +113,7 @@ for cc = 1:nInitialContrasts
     % Get any button press to proceed.
     GetGamepadResp;
     disp('Practice trial is going to be started!');
- 
+    
     %% Set the initial contrast level here.
     %
     % Contrast level starts either highest one or lowest one. Starts
@@ -129,8 +127,8 @@ for cc = 1:nInitialContrasts
         fprintf('Current test contrast is = (%.4f) \n',testContrast);
         
         % Display contrast image here.
-        [correct, flipTime, rngValues] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
-            sceneParamsStruct.predefinedTemporalSupport,sceneParamsStruct.predefinedTemporalSupportCrossbar,testContrast,window,windowRect,...
+        [correct, flipTime, rngValues, whichDirectionToDisplay] = computePerformanceSACCDisplay(nullImage, testImages{imageContrastLevel}, ...
+            sceneParamsStruct.predefinedTemporalSupport,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
             'expKeyType',experimentParams.expKeyType,'beepSound',false,...
             'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
@@ -142,6 +140,13 @@ for cc = 1:nInitialContrasts
         % Get a button press here.
         buttonPress = GetGamepadResp;
         
+        % Collect raw data. We will not keep the data repeated.
+        if ~(testContrast == testContrastCollect(end))
+            testContrastCollect(end+1) = testContrast;
+            rngValuesCollect(end+1) = rngValues;
+            whichDirectionCollect(end+1) = whichDirectionToDisplay;
+        end
+        
         % Update the state according to button press.
         if strcmp(buttonPress,'down')
             fprintf('Finishing up the session... \n');
@@ -149,10 +154,12 @@ for cc = 1:nInitialContrasts
             
         elseif strcmp(buttonPress,'right')
             % Change the contrast level for next display.
-            if (cc == 2)
-                imageContrastLevel = imageContrastLevel + 1;
-            elseif (cc == 1)
+            if  (cc == 1)
+                % Starting from highest contrast.
                 imageContrastLevel = imageContrastLevel - 1;
+            elseif (cc == 2)
+                % Starting from lowest contrast.
+                imageContrastLevel = imageContrastLevel + 1;    
             end
             
             % Play the sound.
@@ -177,15 +184,15 @@ for cc = 1:nInitialContrasts
     end
     
     % Print out the contrast level we found.
-    contrastFoundLinear(cc) = predefinedContrasts(imageContrastLevel);
-    fprintf('Contrast was found at (%.3f) \n', contrastFoundLinear(cc));
-    fprintf('Initial contast sensitivity measure is in progress -(%d/%d) \n', cc, nInitialContrasts); 
+    thresholdFoundRawLinear(cc) = predefinedContrasts(imageContrastLevel);
+    fprintf('Contrast was found at (%.3f) \n', thresholdFoundRawLinear(cc));
+    fprintf('Initial contast sensitivity measure is in progress -(%d/%d) \n', cc, nInitialContrasts);
 end
 
 %% Set the contrast range based on the results for constant stimuli method.
 %
 % Make an average of two contrast points as initial guess of threshold.
-thresholdEstLinear = mean(contrastFoundLinear);
+thresholdEstLinear = mean(thresholdFoundRawLinear);
 thresholdEstLog = log10(thresholdEstLinear);
 
 % We set the contrast range based on the above threshold estimation.
@@ -206,6 +213,12 @@ end
 estDomainValidation = unique(estDomainValidation);
 
 % Save the raw data in struct.
+preExpDataStruct.rawdata.testContrast = testContrastCollect;
+preExpDataStruct.rawdata.rngValues = rngValuesCollect;
+preExpDataStruct.rawdata.whichDirectionToDisplay = whichDirectionCollect;
 
+preExpDataStruct.thresholdFoundRawLinear = thresholdFoundRawLinear;
+preExpDataStruct.thresholdEstLinear = thresholdEstLinear;
+preExpDataStruct.estDomainValidationNominalLinear = estDomainValidationNominalLinear;
 
 end

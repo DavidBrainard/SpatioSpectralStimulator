@@ -87,7 +87,7 @@ while 1
     disp('Spatial frequency should be within the above range!');
 end
 
-% Experiment mode. 
+% Experiment mode.
 while 1
     inputMessageSpatialExpMode = 'Choose experiment mode [adaptive, valiation]: ';
     expMode = input(inputMessageSpatialExpMode, 's');
@@ -112,10 +112,21 @@ while 1
     
     disp('Type either Y or N!');
 end
+
 if (strcmp(ansMethodofAdjustment,'Y'))
     METHODOFADJUSTMENT = true;
+    
 elseif (strcmp(ansMethodofAdjustment,'N'))
     METHODOFADJUSTMENT = false;
+    % Load the contrast range if we skip the method of adjustment,
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        
+        % Set the file name and load it.
+        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd',...
+            subjectName,sineFreqCyclesPerDeg));
+        load(testFilename);
+    end
 end
 
 %% Load data or make a new one.
@@ -156,7 +167,7 @@ elseif (~LOADDATA)
     spatialTemporalParams.gaborSdDeg = 0.75;
     spatialTemporalParams.stimulusSizeDeg = 7;
     spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
-        
+    
     %% Instantiate a sceneEngine.
     %
     % First set up the scene parameters that will be needed by
@@ -258,7 +269,7 @@ experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTes
 
 % Update the scene parameters.
 sceneParamsStruct.predefinedContrasts = round(experimentParams.stimContrastsToTest,4);
-  
+
 %% Open projector and set the screen primary settings as we found.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
     initialScreenSetting = [0 0 0]';
@@ -275,9 +286,24 @@ end
 %% Method of adjustment.
 if (METHODOFADJUSTMENT)
     % Method of adjustment happens here and get the contrast range.
-    [estDomainValidation estDomainValidationNominalLinear contrastFoundLinear thresholdEstLinear] = ...
+    [estDomainValidation preExpDataStruct] = ...
         GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect);
-end 
+    
+    % Save the results.
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        
+        % Make folder with subject name if it does not exist.
+        if ~exist(fullfile(testFiledir,subjectName), 'dir')
+            mkdir(testFiledir,subjectName);
+        end
+        
+        % Set the file name and save.
+        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd',...
+            subjectName,sineFreqCyclesPerDeg));
+        save(testFilename,'estDomainValidation','preExpDataStruct');
+    end
+end
 
 % Set the auto response params empty if it is not used in the main
 % experiment.
@@ -391,7 +417,7 @@ switch experimentMode
             estDomainValidation = estDomain(estDomainIndex-1);
         end
         
-        % Estimation domain in linear unit. 
+        % Estimation domain in linear unit.
         estDomainValidationLinear = 10.^estDomainValidation;
         
         % Set up the estimator object.
@@ -468,7 +494,7 @@ if (PRACTICETRIALS)
     %% Display the null image.
     addFixationPointCircle = 'circle';
     [imageTextureNull imageWindowRect] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect, ...
-    'addNoiseToImage', sceneParamsStruct.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
+        'addNoiseToImage', sceneParamsStruct.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
     FlipImageTexture(imageTextureNull, window, imageWindowRect,'verbose', false);
     
     % Press any button to proceed.
