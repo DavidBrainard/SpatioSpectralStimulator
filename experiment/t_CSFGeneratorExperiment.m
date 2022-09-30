@@ -121,11 +121,10 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     % Load the contrast range if we skip the method of adjustment,
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        
-        % Set the file name and load it.
-        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd.mat',...
-            subjectName,sineFreqCyclesPerDeg));
-        load(testFilename);
+        testFiledir = fullfile(testFiledir,subjectName);
+        testFilename = GetMostRecentFileName(testFiledir,sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
+        contrastRangeData = GetMostRecentFileName(testFilename);
+        estDomainValidation = contrastRangeData.estDomainValidation;
     end
 end
 
@@ -137,7 +136,7 @@ if (LOADDATA)
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg.mat',...
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg_fine.mat',...
             conditionName,sineFreqCyclesPerDeg,gaborSdDeg));
         load(testFilename);
     end
@@ -166,7 +165,7 @@ elseif (~LOADDATA)
     spatialTemporalParams.sineFreqCyclesPerDeg = sineFreqCyclesPerDeg;
     spatialTemporalParams.gaborSdDeg = 0.75;
     spatialTemporalParams.stimulusSizeDeg = 7;
-    spatialTemporalParams.sineImagePhaseShiftDeg = [0 90 180 270];
+    spatialTemporalParams.sineImagePhaseShiftDeg = [0];
     
     %% Instantiate a sceneEngine.
     %
@@ -177,7 +176,7 @@ elseif (~LOADDATA)
     % psychophysics to work over. This gives us a finite list of scenes
     % to compute for.
     experimentParams.minContrast = 0.0003;
-    experimentParams.nContrasts = 20;
+    experimentParams.nContrasts = 30;
     experimentParams.stimContrastsToTest = [0 logspace(log10(experimentParams.minContrast), ...
         log10(colorDirectionParams.spatialGaborTargetContrast), experimentParams.nContrasts)];
     
@@ -199,11 +198,11 @@ end
 % [PTB-sequential; PTB-directional; simulation].
 experimentParams.minTrial = 40;
 experimentParams.maxTrial = 40;
-experimentParams.nTestValidation = 20;
+experimentParams.nTestValidation = 15;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
-experimentParams.autoResponse = true;
+experimentParams.autoResponse = false;
 experimentParams.debugMode = false;
 experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
@@ -255,7 +254,7 @@ if (~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg.mat',...
+        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg_fine.mat',...
             conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,spatialTemporalParams.gaborSdDeg));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
@@ -299,8 +298,9 @@ if (METHODOFADJUSTMENT)
         end
         
         % Set the file name and save.
-        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd',...
-            subjectName,sineFreqCyclesPerDeg));
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd_%s',...
+            subjectName,sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'estDomainValidation','preExpDataStruct');
     end
 end
