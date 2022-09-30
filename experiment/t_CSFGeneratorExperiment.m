@@ -120,9 +120,12 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     METHODOFADJUSTMENT = false;
     % Load the contrast range if we skip the method of adjustment,
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        % Load the file.
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFiledir = fullfile(testFiledir,subjectName);
-        testFilename = GetMostRecentFileName(testFiledir,sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
+        testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName),...
+            sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
+        
+        % Set the contrast range here.
         contrastRangeData = GetMostRecentFileName(testFilename);
         estDomainValidation = contrastRangeData.estDomainValidation;
     end
