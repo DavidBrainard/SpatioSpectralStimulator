@@ -33,7 +33,7 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-CHECKADAPTIVEMODE = true;
+CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 
 subjectName = 'David';
@@ -46,14 +46,15 @@ nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
 
 olderDate = 0;
 SUBPLOT = true;
-sizeSubplot = [3 2];
+sizeSubplot = [2 3];
 
+figure; clf; hold on;
 for ss = 1:nSineFreqCyclesPerDeg
     
     % Set target spatial frequency.
     sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
     
-    % Load the data.
+    % Load the experiment data.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','TestDataFolder'),...
             subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
@@ -62,6 +63,22 @@ for ss = 1:nSineFreqCyclesPerDeg
         theData = load(testFilename);
     else
         error('Cannot find data file');
+    end
+    
+    nDataContrastRange = 2;
+    for cc = 1:nDataContrastRange
+        % Load the contrast range data.
+        if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','TestDataFolder'),subjectName);
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',cc-1);
+            theContrastData = load(testFilename);
+        else
+            error('Cannot find data file');
+        end
+        
+        % Extract the threshold from the initial measurements.
+        thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
     end
     
     % Pull out the data here.
@@ -96,6 +113,12 @@ for ss = 1:nSineFreqCyclesPerDeg
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', ~SUBPLOT, 'pointSize', pointSize);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
+
+    % Add initial threhold to the plot.
+    for cc = 1:nDataContrastRange
+        plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
+        plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
+    end
     clear pointSize;
 end
 
@@ -160,6 +183,7 @@ end
 
 %% Plot the CSF curve here.
 CSFCURVE = true;
+SUBPLOTCSF = true;
 
 if (CSFCURVE)
     % Export the threshold data.
@@ -168,9 +192,15 @@ if (CSFCURVE)
     sensitivityLog = log10(1./thresholds);
     sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDeg);
     
+    % Decide the plot on either subplot or separate figure.
+    if (SUBPLOTCSF)
+        subplot(sizeSubplot(1), sizeSubplot(2), 6);
+    else
+        figure; clf; hold on;
+    end
+    
     % Plot it.
-    figure; clf; hold on;
-    plot(sineFreqCyclesPerDegLog, sensitivityLog, 'b.-','markersize',20,'linewidth',2);
+    plot(sineFreqCyclesPerDegLog, sensitivityLog, 'k.-','markersize',20,'linewidth',2);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast Sensitivity','fontsize',15);
     xticks(sineFreqCyclesPerDegLog);
