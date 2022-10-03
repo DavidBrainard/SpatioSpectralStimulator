@@ -38,14 +38,14 @@ thresholds = [thresholds1; thresholds2];
 % Subjects will be excluded for a median threshold of > 1.5% or an
 % interquartile range across the 12 measures of > 2.0%. 
 % Record as pass/fail.
-criteriaMediaThreshold = 1.5;
+criteriaMedianThreshold = 1.5;
 criteriaICR = 2;
 
 medianThreshold = median(thresholds);
 ICR = prctile(thresholds,75) - prctile(thresholds,25);
 
 % Print out the results.
-if or(medianThreshold > criteriaMediaThreshold, ICR > criteriaICR)
+if or(medianThreshold > criteriaMedianThreshold, ICR > criteriaICR)
     fprintf('    FAIL! Median threshold = %.3f / ICR = %.3f \n', medianThreshold, ICR);
 else
     fprintf('    PASS! Median threshold = %.3f / ICR = %.3f \n', medianThreshold, ICR);
