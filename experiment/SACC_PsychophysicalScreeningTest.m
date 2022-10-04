@@ -17,13 +17,13 @@ dir = cd;
 % Set the dir.
 userName = 'Semin Oh';
 expName = 'Exp_0001J';
-subjectName = 'DH';
-fileDir = sprintf('~/Aguirre-Brainard Lab Dropbox/%s/MTRP_data/%s/Subject_TEST_%s',userName,expName,subjectName);
+subjectID = 'SACC_002';
+fileDir = sprintf('~/Aguirre-Brainard Lab Dropbox/%s/MTRP_data/%s/Subject_%s',userName,expName,subjectID);
 cd(fileDir);
 
 % Load the file.
-fileName1 = sprintf('TEST_%s_1',subjectName);
-fileName2 = sprintf('TEST_%s_2',subjectName);
+fileName1 = sprintf('%s_1',subjectID);
+fileName2 = sprintf('%s_2',subjectID);
 theData1 = readtable(fileName1);
 theData2 = readtable(fileName2);
 
