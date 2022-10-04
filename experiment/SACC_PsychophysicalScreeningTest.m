@@ -18,7 +18,7 @@ dir = cd;
 userName = 'Semin Oh';
 expName = 'Exp_0001J';
 subjectName = 'DH';
-fileDir = sprintf('~/Aguirre-Brainard Lab Dropbox/%s/MTRP_data/%s/Subject_Test_%s',userName,expName,subjectName);
+fileDir = sprintf('~/Aguirre-Brainard Lab Dropbox/%s/MTRP_data/%s/Subject_TEST_%s',userName,expName,subjectName);
 cd(fileDir);
 
 % Load the file.
