@@ -64,7 +64,7 @@ arguments
     autoResponseParams
     window (1,1)
     windowRect (1,4)
-    options.nContrastPoints (1,1) = 6
+    options.nContrastPoints (1,1) = 8
     options.higherLimThresholdEstLog (1,1) = 0.3
     options.lowerLimThresholdEstLog (1,1) = 0.5
 end
