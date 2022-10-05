@@ -560,7 +560,7 @@ while (nextFlag)
         error('Test contrast not in predefined list. Check numerical precision');
     end
     
-    % Following if old method (as of 10/05/22).
+    % Following is old method (as of 10/05/22).
     %     if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
     %         error('Test contrast not in predefined list. Check numerical precision');
     %     end
