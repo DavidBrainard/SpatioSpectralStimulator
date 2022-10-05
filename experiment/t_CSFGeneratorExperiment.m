@@ -115,18 +115,18 @@ end
 
 if (strcmp(ansMethodofAdjustment,'Y'))
     METHODOFADJUSTMENT = true;
-    
 elseif (strcmp(ansMethodofAdjustment,'N'))
     METHODOFADJUSTMENT = false;
+    
     % Load the contrast range if we skip the method of adjustment,
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         % Load the file.
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName),...
-            sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
+            sprintf('ContrastRange_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
         
         % Set the contrast range here.
-        contrastRangeData = GetMostRecentFileName(testFilename);
+        contrastRangeData = load(testFilename);
         estDomainValidation = contrastRangeData.estDomainValidation;
     end
 end
@@ -267,10 +267,10 @@ end
 %% Match the contrast range scale.
 %
 % Round the contrast to match the scale.
-experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,4);
+experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,10);
 
 % Update the scene parameters.
-sceneParamsStruct.predefinedContrasts = round(experimentParams.stimContrastsToTest,4);
+sceneParamsStruct.predefinedContrasts = round(experimentParams.stimContrastsToTest,10);
 
 %% Open projector and set the screen primary settings as we found.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
