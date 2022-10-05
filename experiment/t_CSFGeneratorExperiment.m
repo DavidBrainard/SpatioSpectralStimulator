@@ -270,28 +270,7 @@ end
 % contrast in exact same decimal points. Here we can choose either on
 % linear scale or log space. It is recommended to choose the space that you
 % used for making the images.
-contrastRangeSpace = 'linear';
-
-switch contrastRangeSpace
-    case 'log'
-        % Round the contrast to match the scale.
-        numDigitRound = 2;
-        experimentParams.stimContrastsToTest = round(log10(experimentParams.stimContrastsToTest),numDigitRound);
-        
-        % Convert NaN to 0 here as null stimulus with 0 contrast goes
-        % infinity on log space.
-        for ss = 1:length(experimentParams.stimContrastsToTest)
-            if isinf(experimentParams.stimContrastsToTest(ss))
-                experimentParams.stimContrastsToTest(ss) = 0;
-            end
-        end
-        
-    case 'linear'
-        % Round the contrast to match the scale.
-        numDigitRound = 4;
-        experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,numDigitRound);
-end
-
+%
 % Update the scene parameters.
 sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
 
@@ -565,28 +544,30 @@ flipTime = [];
 rngVal = {};
 whichPhaseImage = [];
 whichDirectionToDisplay = [];
+numTrial = 1;
+nTestContrasts = experimentParams.nTestValidation * length(estDomainValidation);
 
 while (nextFlag)
     % Convert log contrast -> contrast.
-    %
-    % We round it to set it as exact the number of the target contrast.
-    % Otherwise, it throws the error. Here we can choose on either linear
-    % or log space.
-    switch contrastRangeSpace
-        case 'log'
-            testContrast = round(logContrast,numDigitRound);
-        case 'linear'
-            testContrast = round(10^logContrast,numDigitRound);
-    end
+    numRoundDigit = 4;
+    testContrastNominal = round(10^logContrast,numRoundDigit);
     
-    % Find the target contrast from predefiend contrast list.
-    if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
+    % Find the target contrast from predefiend contrast list. 
+    nominalToTestContrastCheck = abs(sceneParamsStruct.predefinedContrasts-testContrastNominal);
+    testContrast = sceneParamsStruct.predefinedContrasts(find(nominalToTestContrastCheck==min(nominalToTestContrastCheck)));
+    
+    if (abs(testContrast-testContrastNominal) > 10^(-numRoundDigit))
         error('Test contrast not in predefined list. Check numerical precision');
     end
     
+    % Following if old method (as of 10/05/22).
+    %     if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
+    %         error('Test contrast not in predefined list. Check numerical precision');
+    %     end
+    
     % Get the scene sequence and RGB info for the desired contrast.
     % Our scene engine provides us with the RGB values we need in the
-    % status report structure.  A bit of overloading of the original
+    % status report structure. A bit of overloading of the original
     % intent, but should work just fine.
     [theTestSceneSequences, ~, testStatusReportStruct] = ...
         theSceneEngine.compute(testContrast);
@@ -619,16 +600,20 @@ while (nextFlag)
     whichDirectionToDisplay(end+1) = whichDirectionToDisplayTemp;
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(correct));
+    fprintf('Current test contrast: %.4f, P-correct: %g \n', testContrast, mean(correct));
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
     [logContrast, nextFlag] = ...
         estimator.multiTrial(logContrast * ones(1, experimentParams.nTest), correct);
     
-    % Get current threshold estimate.
-    [threshold, stderr] = estimator.thresholdEstimate();
-    fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
+%     % Get current threshold estimate.
+%     [threshold, stderr] = estimator.thresholdEstimate();
+%     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
+     
+    % Print out where we are in the progress.
+    fprintf('    Experiment in progress: the number of trials (%d/%d) \n', numTrial, nTestContrasts);
+    numTrial = numTrial+1;
 end
 
 % Get flip time difference here.
