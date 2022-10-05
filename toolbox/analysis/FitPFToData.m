@@ -37,6 +37,10 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 to plot the results. If you want to plot
 %                                 multiple threshold results in a subplot,
 %                                 set this to false and do so.
+%    pointSize                  - Default to 100 each. Set the size of data
+%                                 point on the scatter plot.
+%    axisLog                    - Default to true. If it sets to true, plot
+%                                 the graph with x-axis on log space.
 %    verbose -                    Default to true. Boolean. Controls
 %                                 plotting and printout.
 %
@@ -58,8 +62,9 @@ arguments
     options.nTrials (1,1) = 20
     options.thresholdCriterion (1,1) = 0.81606
     options.figureWindow (1,1) = true
-    options.verbose (1,1) = true
     options.pointSize = ones(1,length(stimLevels))*100
+    options.axisLog (1,1) = true
+    options.verbose (1,1) = true
 end
 
 %% Check the size of the input parameters.
@@ -114,15 +119,29 @@ if (options.verbose)
     %
     % Marker size will be different over the number of the trials per each
     % test point.
+    %
+    % Plot it on log space if you want.
+    if (options.axisLog)
+        stimLevels = log10(stimLevels);
+        thresholdFittedLog = log10(thresholdFitted);
+        fineStimLevels = log10(fineStimLevels);
+    end
+    
+    % Plot it here.
     scatter(stimLevels, pCorrect, options.pointSize,...
         'MarkerEdgeColor', zeros(1,3), 'MarkerFaceColor', ones(1,3) * 0.5, 'MarkerFaceAlpha', 0.5);
     plot(fineStimLevels,smoothPsychometric,'r','LineWidth',3);
     
     % Mark the threshold point (red point).
-    plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
-    ylim([0 1]);
-    xlabel('Contrast', 'FontSize', 15);
+    if(options.axisLog)
+        plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        xlabel('Contrast (log)', 'FontSize', 15);
+    else
+        plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        xlabel('Contrast', 'FontSize', 15);
+    end
     ylabel('pCorrect', 'FontSize', 15);
+    ylim([0 1]);
     legend('Data','PF fit','Threshold','FontSize', 12, 'location', 'southeast');
     title(append('Threshold: ', num2str(round(thresholdFitted,4))), 'FontSize', 15);
 end

@@ -36,7 +36,7 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 
-subjectName = 'David';
+subjectName = 'Briana';
 
 %% Load the data and PF fitting.
 %
@@ -47,6 +47,7 @@ nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
 olderDate = 0;
 SUBPLOT = true;
 sizeSubplot = [2 3];
+axisLog = true;
 
 figure; clf; hold on;
 for ss = 1:nSineFreqCyclesPerDeg
@@ -65,7 +66,7 @@ for ss = 1:nSineFreqCyclesPerDeg
         error('Cannot find data file');
     end
     
-    nDataContrastRange = 2;
+    nDataContrastRange = 1;
     for cc = 1:nDataContrastRange
         % Load the contrast range data.
         if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -111,14 +112,26 @@ for ss = 1:nSineFreqCyclesPerDeg
         subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE, 'figureWindow', ~SUBPLOT, 'pointSize', pointSize);
+        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
+        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
 
     % Add initial threhold to the plot.
     for cc = 1:nDataContrastRange
+        % Plot it on log space if you want.
+        if(axisLog)
+            thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+        end
+        
+        % Plot it here.
         plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
         plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
     end
+    
+    % Set xlim differently according to the axis on linear and log space.
+    xlim([-3.3 -1]);
+    
+    % Clear the pointsize for next plot.
     clear pointSize;
 end
 
@@ -188,6 +201,15 @@ SUBPLOTCSF = true;
 if (CSFCURVE)
     % Export the threshold data.
     thresholds = paramsFitted(1,:);
+    
+    % Convert NaN to 0 here.
+    for tt = 1:length(thresholds)
+        if isnan(thresholds(tt))
+            thresholds(tt) = 0;
+        end
+    end
+    
+    % Calculate sensitivity.
     sensitivityLinear = 1./thresholds;
     sensitivityLog = log10(1./thresholds);
     sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDeg);
