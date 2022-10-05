@@ -64,7 +64,7 @@ clear; close all;
 %
 % Set the initial parameters here.
 LOADDATA = true;
-PRACTICETRIALS = true;
+PRACTICETRIALS = false;
 SAVETHERESULTS = true;
 conditionName = 'LminusMSmooth';
 
@@ -266,11 +266,34 @@ end
 
 %% Match the contrast range scale.
 %
-% Round the contrast to match the scale.
-experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,10);
+% To run quest, the target contrast should be in the list of predefined
+% contrast in exact same decimal points. Here we can choose either on
+% linear scale or log space. It is recommended to choose the space that you
+% used for making the images.
+contrastRangeSpace = 'linear';
+
+switch contrastRangeSpace
+    case 'log'
+        % Round the contrast to match the scale.
+        numDigitRound = 2;
+        experimentParams.stimContrastsToTest = round(log10(experimentParams.stimContrastsToTest),numDigitRound);
+        
+        % Convert NaN to 0 here as null stimulus with 0 contrast goes
+        % infinity on log space.
+        for ss = 1:length(experimentParams.stimContrastsToTest)
+            if isinf(experimentParams.stimContrastsToTest(ss))
+                experimentParams.stimContrastsToTest(ss) = 0;
+            end
+        end
+        
+    case 'linear'
+        % Round the contrast to match the scale.
+        numDigitRound = 4;
+        experimentParams.stimContrastsToTest = round(experimentParams.stimContrastsToTest,numDigitRound);
+end
 
 % Update the scene parameters.
-sceneParamsStruct.predefinedContrasts = round(experimentParams.stimContrastsToTest,10);
+sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
 
 %% Open projector and set the screen primary settings as we found.
 if (or(strcmp(experimentParams.runningMode,'PTB-sequential'),strcmp(experimentParams.runningMode,'PTB-directional')))
@@ -547,8 +570,16 @@ while (nextFlag)
     % Convert log contrast -> contrast.
     %
     % We round it to set it as exact the number of the target contrast.
-    % Otherwise, it throws the error.
-    testContrast = round(10 ^ logContrast,4);
+    % Otherwise, it throws the error. Here we can choose on either linear
+    % or log space.
+    switch contrastRangeSpace
+        case 'log'
+            testContrast = round(logContrast,numDigitRound);
+        case 'linear'
+            testContrast = round(10^logContrast,numDigitRound);
+    end
+    
+    % Find the target contrast from predefiend contrast list.
     if (isempty(find(testContrast == experimentParams.stimContrastsToTest)))
         error('Test contrast not in predefined list. Check numerical precision');
     end
