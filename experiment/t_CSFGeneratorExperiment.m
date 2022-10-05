@@ -64,7 +64,7 @@ clear; close all;
 %
 % Set the initial parameters here.
 LOADDATA = true;
-PRACTICETRIALS = false;
+PRACTICETRIALS = true;
 SAVETHERESULTS = true;
 conditionName = 'LminusMSmooth';
 
@@ -201,7 +201,7 @@ end
 % [PTB-sequential; PTB-directional; simulation].
 experimentParams.minTrial = 40;
 experimentParams.maxTrial = 40;
-experimentParams.nTestValidation = 15;
+experimentParams.nTestValidation = 20;
 experimentParams.runningMode = 'PTB-directional';
 experimentParams.expKeyType = 'gamepad';
 experimentParams.beepSound = true;
