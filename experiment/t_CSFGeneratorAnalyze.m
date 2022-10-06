@@ -42,7 +42,7 @@ axisLog = true;
 addQuestFit = true;
 addLegend = false; 
 
-subjectName = 'Briana';
+subjectName = 'Semin';
 
 %% Load the data and PF fitting.
 %
@@ -75,7 +75,7 @@ for ss = 1:nSineFreqCyclesPerDeg
         if (ispref('SpatioSpectralStimulator','TestDataFolder'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','TestDataFolder'),subjectName);
             testFilename = GetMostRecentFileName(testFiledir,...
-                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',cc-1);
+                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
             theContrastData = load(testFilename);
         else
             error('Cannot find data file');
