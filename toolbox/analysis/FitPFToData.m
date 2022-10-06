@@ -41,6 +41,13 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 point on the scatter plot.
 %    axisLog                    - Default to true. If it sets to true, plot
 %                                 the graph with x-axis on log space.
+%    questPara                  - Row vector or matrix of parameters.
+%                                 threshold  Threshold in log unit
+%                                 slope      Slope
+%                                 guess      Guess rate
+%                                 lapse      Lapse rate
+%                                 Parameterization matches the Mathematica
+%                                 code from the Watson QUEST+ paper.
 %    verbose -                    Default to true. Boolean. Controls
 %                                 plotting and printout.
 %
@@ -64,6 +71,7 @@ arguments
     options.figureWindow (1,1) = true
     options.pointSize = ones(1,length(stimLevels))*100
     options.axisLog (1,1) = true
+    options.questPara (1,4)
     options.verbose (1,1) = true
 end
 
@@ -113,7 +121,7 @@ end
 if (options.verbose)
     if (options.figureWindow)
         figure; clf; hold on;
-    end 
+    end
     
     % Plot all experimental data (gray points).
     %
@@ -142,8 +150,20 @@ if (options.verbose)
     end
     ylabel('pCorrect', 'FontSize', 15);
     ylim([0 1]);
-    legend('Data','PF fit','Threshold','FontSize', 12, 'location', 'southeast');
     title(append('Threshold: ', num2str(round(real(thresholdFitted),4))), 'FontSize', 15);
+    
+    %% Get QuestPlus prediction and add to plot.
+    if ~isempty(options.questPara)
+        % Calculate QuestPlus prediction here and plot it.
+        predictedQuestPlus = qpPFWeibullLog(fineStimLevels',options.questPara);
+        plot(fineStimLevels,predictedQuestPlus(:,2),'k--','LineWidth',3);
+        
+        % Add legend.
+        legend('Data','PF-fit','PF-Threshold','Quest-fit', 'FontSize', 12, 'location', 'southeast');
+    else
+        % Add legend.
+        legend('Data','PF-fit','PF-Threshold','FontSize', 12, 'location', 'southeast');
+    end
 end
 
 end

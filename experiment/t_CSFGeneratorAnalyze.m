@@ -36,7 +36,7 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 
-subjectName = 'Briana';
+subjectName = 'Semin';
 
 %% Load the data and PF fitting.
 %
@@ -103,6 +103,7 @@ for ss = 1:nSineFreqCyclesPerDeg
     thresholdCriterion = 0.81606;
     [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
         'thresholdCriterion', thresholdCriterion, 'returnData', true);
+    thresholdsQuest(ss) = threshold;
     
     % Set the contrast levels in linear unit.
     examinedContrastsLinear = 10.^dataOut.examinedContrasts;
@@ -113,7 +114,7 @@ for ss = 1:nSineFreqCyclesPerDeg
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
-        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog);
+        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog, 'questPara', para);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
 
     % Add initial threhold to the plot.
@@ -211,24 +212,29 @@ if (CSFCURVE)
     
     % Calculate sensitivity.
     sensitivityLinear = 1./thresholds;
-    sensitivityLog = log10(1./thresholds);
+    sensitivityLog = log10(sensitivityLinear);
     sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDeg);
+    
+    sensitivityQuestLinear = 1./(10.^thresholdsQuest);
+    sensitivityQuestLog = log10(sensitivityQuestLinear);
     
     % Decide the plot on either subplot or separate figure.
     if (SUBPLOTCSF)
-        subplot(sizeSubplot(1), sizeSubplot(2), 6);
+        subplot(sizeSubplot(1), sizeSubplot(2), 6); hold on;
     else
         figure; clf; hold on;
     end
     
-    % Plot it.
-    plot(sineFreqCyclesPerDegLog, sensitivityLog, 'k.-','markersize',20,'linewidth',2);
+    % Plot PF fit CSF curve.
+    plot(sineFreqCyclesPerDegLog, sensitivityLog, 'r.-','markersize',20,'linewidth',2);
+    % Add Quest fit CSF curve.
+    plot(sineFreqCyclesPerDegLog, sensitivityQuestLog, 'k.--','markersize',20,'linewidth',2);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast Sensitivity','fontsize',15);
     xticks(sineFreqCyclesPerDegLog);
     xticklabels(sineFreqCyclesPerDeg);
     yticks(sort(sensitivityLog));
     yticklabels(sort(round(sensitivityLinear)));
-    legend(subjectName,'fontsize',15);
     title('CSF curve','fontsize',15);
+    legend(append(subjectName,'-PF'),append(subjectName,'-Quest'),'fontsize',15);
 end
