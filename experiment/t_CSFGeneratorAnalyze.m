@@ -35,6 +35,7 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
+paramsFree = [1 1 0 1];
 
 olderDate = 0;
 SUBPLOT = true;
@@ -123,7 +124,7 @@ for ss = 1:nSineFreqCyclesPerDeg
         subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
+        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
         'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
         'questPara', questPara,'addLegend',false);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
