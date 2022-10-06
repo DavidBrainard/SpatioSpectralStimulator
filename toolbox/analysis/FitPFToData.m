@@ -50,6 +50,8 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 lapse      Lapse rate
 %                                 Parameterization matches the Mathematica
 %                                 code from the Watson QUEST+ paper.
+%    addLegend                  - Default to true. Add legend when it sets
+%                                 to true.
 %    verbose -                    Default to true. Boolean. Controls
 %                                 plotting and printout.
 %
@@ -74,6 +76,7 @@ arguments
     options.pointSize = ones(1,length(stimLevels))*100
     options.axisLog (1,1) = true
     options.questPara = []
+    options.addLegend (1,1) = true
     options.verbose (1,1) = true
 end
 
@@ -155,17 +158,22 @@ if (options.verbose)
     title(append('Threshold: ', num2str(round(real(thresholdFitted),4))), 'FontSize', 15);
     
     %% Get QuestPlus prediction and add to plot.
+    %
+    % Calculate QuestPlus prediction here and plot it.
     if ~isempty(options.questPara)
-        % Calculate QuestPlus prediction here and plot it.
         predictedQuestPlus = qpPFWeibullLog(fineStimLevels',options.questPara);
         plot(fineStimLevels,predictedQuestPlus(:,2),'k--','LineWidth',3);
-        
-        % Add legend.
-        legend('Data','PF-fit','PF-Threshold','Quest-fit', 'FontSize', 12, 'location', 'southeast');
-    else
-        % Add legend.
-        legend('Data','PF-fit','PF-Threshold','FontSize', 12, 'location', 'southeast');
     end
-end
-
+    
+    % Add legend if you want.
+    if (options.addLegend)
+        if ~isempty(options.questPara)
+            legend('Data','PF-fit','PF-Threshold','Quest-fit',...
+                'FontSize', 12, 'location', 'southeast');
+        else
+            legend('Data','PF-fit','PF-Threshold',...
+                'FontSize', 12, 'location', 'southeast');
+        end
+    end
+    
 end

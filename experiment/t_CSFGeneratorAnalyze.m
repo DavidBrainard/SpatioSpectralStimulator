@@ -40,6 +40,7 @@ olderDate = 0;
 SUBPLOT = true;
 axisLog = true;
 addQuestFit = true;
+addLegend = false; 
 
 subjectName = 'Briana';
 
@@ -123,7 +124,8 @@ for ss = 1:nSineFreqCyclesPerDeg
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
-        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog, 'questPara', questPara);
+        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
+        'questPara', questPara,'addLegend',false);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
     
     % Add initial threhold to the plot.
@@ -136,6 +138,14 @@ for ss = 1:nSineFreqCyclesPerDeg
         % Plot it here.
         plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
         plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
+    end
+    
+    if (addQuestFit)
+    legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
+        'FontSize', 12, 'location', 'southeast');
+    else
+        legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
+        'FontSize', 12, 'location', 'southeast');
     end
     
     % Set xlim differently according to the axis on linear and log space.
