@@ -33,7 +33,7 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 conducted per each stimulus level.
 %    thresholdCriterion -         Default to 0.81606. This is the value of
 %                                 pCorrect as a criteria to find threshold.
-%    figureWindow -               Default to true. Make a new figure window
+%    newFigureWindow -               Default to true. Make a new figure window
 %                                 to plot the results. If you want to plot
 %                                 multiple threshold results in a subplot,
 %                                 set this to false and do so.
@@ -72,7 +72,7 @@ arguments
     options.paramsFree (1,4) = [1 1 0 1]
     options.nTrials (1,1) = 20
     options.thresholdCriterion (1,1) = 0.81606
-    options.figureWindow (1,1) = true
+    options.newFigureWindow (1,1) = true
     options.pointSize = ones(1,length(stimLevels))*100
     options.axisLog (1,1) = true
     options.questPara = []
@@ -124,7 +124,7 @@ end
 
 %% Plot the results if you want.
 if (options.verbose)
-    if (options.figureWindow)
+    if (options.newFigureWindow)
         figure; clf; hold on;
     end
     

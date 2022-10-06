@@ -124,7 +124,7 @@ for ss = 1:nSineFreqCyclesPerDeg
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
-        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
+        'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
         'questPara', questPara,'addLegend',false);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
     
@@ -263,5 +263,4 @@ if (CSFCURVE)
     else
         legend(append(subjectName,'-PF'),'fontsize',15);
     end
-    
 end
