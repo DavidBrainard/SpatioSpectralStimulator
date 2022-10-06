@@ -36,7 +36,12 @@ VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 PF = 'weibull';
 
-subjectName = 'Semin';
+olderDate = 0;
+SUBPLOT = true;
+axisLog = true;
+addQuestFit = true;
+
+subjectName = 'Briana';
 
 %% Load the data and PF fitting.
 %
@@ -44,12 +49,9 @@ subjectName = 'Semin';
 sineFreqCyclesPerDeg = [3 6 9 12 18];
 nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
 
-olderDate = 0;
-SUBPLOT = true;
-sizeSubplot = [2 3];
-axisLog = true;
-
 figure; clf; hold on;
+sizeSubplot = [2 3];
+
 for ss = 1:nSineFreqCyclesPerDeg
     
     % Set target spatial frequency.
@@ -108,15 +110,22 @@ for ss = 1:nSineFreqCyclesPerDeg
     % Set the contrast levels in linear unit.
     examinedContrastsLinear = 10.^dataOut.examinedContrasts;
     
+    % Set if you want to add Quest fit in the results.
+    if (addQuestFit)
+        questPara = para;
+    else
+        questPara = [];
+    end
+    
     % PF fitting here.
     if (SUBPLOT)
         subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
     end
     [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,...
-        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog, 'questPara', para);
+        'figureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog, 'questPara', questPara);
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
-
+    
     % Add initial threhold to the plot.
     for cc = 1:nDataContrastRange
         % Plot it on log space if you want.
@@ -228,7 +237,9 @@ if (CSFCURVE)
     % Plot PF fit CSF curve.
     plot(sineFreqCyclesPerDegLog, sensitivityLog, 'r.-','markersize',20,'linewidth',2);
     % Add Quest fit CSF curve.
-    plot(sineFreqCyclesPerDegLog, sensitivityQuestLog, 'k.--','markersize',20,'linewidth',2);
+    if (addQuestFit)
+        plot(sineFreqCyclesPerDegLog, sensitivityQuestLog, 'k.--','markersize',20,'linewidth',2);
+    end
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast Sensitivity','fontsize',15);
     xticks(sineFreqCyclesPerDegLog);
@@ -236,5 +247,11 @@ if (CSFCURVE)
     yticks(sort(sensitivityLog));
     yticklabels(sort(round(sensitivityLinear)));
     title('CSF curve','fontsize',15);
-    legend(append(subjectName,'-PF'),append(subjectName,'-Quest'),'fontsize',15);
+    % Add legend.
+    if (addQuestFit)
+        legend(append(subjectName,'-PF'),append(subjectName,'-Quest'),'fontsize',15);
+    else
+        legend(append(subjectName,'-PF'),'fontsize',15);
+    end
+    
 end

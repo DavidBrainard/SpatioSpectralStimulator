@@ -41,7 +41,9 @@ function [paramsFitted] = FitPFToData(stimLevels,pCorrect,options)
 %                                 point on the scatter plot.
 %    axisLog                    - Default to true. If it sets to true, plot
 %                                 the graph with x-axis on log space.
-%    questPara                  - Row vector or matrix of parameters.
+%    questPara                  - Default to blank. Add Quest fit if this
+%                                 is not empty.Row vector or matrix of
+%                                 parameters.
 %                                 threshold  Threshold in log unit
 %                                 slope      Slope
 %                                 guess      Guess rate
@@ -71,7 +73,7 @@ arguments
     options.figureWindow (1,1) = true
     options.pointSize = ones(1,length(stimLevels))*100
     options.axisLog (1,1) = true
-    options.questPara (1,4)
+    options.questPara = []
     options.verbose (1,1) = true
 end
 
