@@ -55,8 +55,6 @@ thresholdCriterion = 0.81606;
 [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
-
-
 % Set the contrast levels in linear unit.
 examinedContrastsLinear = 10.^dataOut.examinedContrasts;
 
