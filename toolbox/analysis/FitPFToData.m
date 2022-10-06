@@ -143,7 +143,7 @@ if (options.verbose)
     ylabel('pCorrect', 'FontSize', 15);
     ylim([0 1]);
     legend('Data','PF fit','Threshold','FontSize', 12, 'location', 'southeast');
-    title(append('Threshold: ', num2str(round(thresholdFitted,4))), 'FontSize', 15);
+    title(append('Threshold: ', num2str(round(real(thresholdFitted),4))), 'FontSize', 15);
 end
 
 end
