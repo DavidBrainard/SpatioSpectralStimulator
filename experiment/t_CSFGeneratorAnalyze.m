@@ -40,8 +40,9 @@ paramsFree = [1 1 0 1];
 olderDate = 0;
 SUBPLOT = true;
 axisLog = true;
-addQuestFit = true;
-addLegend = false; 
+addInitialThresholdEst = false;
+addQuestFit = false;
+addLegend = false;
 
 subjectName = 'Semin';
 
@@ -130,23 +131,25 @@ for ss = 1:nSineFreqCyclesPerDeg
     subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
     
     % Add initial threhold to the plot.
-    for cc = 1:nDataContrastRange
-        % Plot it on log space if you want.
-        if(axisLog)
-            thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+    if (addInitialThresholdEst)
+        for cc = 1:nDataContrastRange
+            % Plot it on log space if you want.
+            if(axisLog)
+                thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+            end
+            
+            % Plot it here.
+            plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
+            plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
         end
-        
-        % Plot it here.
-        plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
-        plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
     end
     
     if (addQuestFit)
-    legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-        'FontSize', 12, 'location', 'southeast');
+        legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
+            'FontSize', 12, 'location', 'southeast');
     else
         legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-        'FontSize', 12, 'location', 'southeast');
+            'FontSize', 12, 'location', 'southeast');
     end
     
     % Set xlim differently according to the axis on linear and log space.
