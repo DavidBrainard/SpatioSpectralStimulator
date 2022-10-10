@@ -40,11 +40,11 @@ paramsFree = [1 1 0 1];
 olderDate = 0;
 SUBPLOT = true;
 axisLog = true;
-addInitialThresholdEst = false;
-addQuestFit = false;
+addInitialThresholdEst = true;
+addQuestFit = true;
 addLegend = false;
 
-subjectName = 'Semin';
+subjectName = 'Geoff';
 
 %% Load the data and PF fitting.
 %
