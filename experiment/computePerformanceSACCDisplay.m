@@ -1,4 +1,4 @@
-function [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
+function [correct, flipTime, rngValues, whichDirectionToDisplay, reactionTime] = ...
     computePerformanceSACCDisplay(nullRGBImage,testRGBImage,...
     theSceneTemporalSupportSeconds,testContrast,window,windowRect,options)
 % Run one trial of a psychophysical experiment.
@@ -45,6 +45,10 @@ function [correct, flipTime, rngValues, whichDirectionToDisplay] = ...
 %                                         images. We can retrieve the exact
 %                                         same random noise image using this
 %                                         number.
+%    reactionTime                       - Time taken to make an evaluation.
+%                                         It measures time from after the
+%                                         stimulus is ramping off until
+%                                         subject makes a key press.
 %
 % Optional key/value pairs:
 %     runningMode                       - If you are not acutally running
@@ -341,6 +345,9 @@ if (options.movieStimuli)
     end
 end
 
+% Measure reaction time (start from here).
+id = tic;
+
 % Display the cross-fixation image again.
 flipTimeFinal = FlipImageTexture(imageTextureCrossbar, window, imageWindowRect, ...
     'verbose', true);
@@ -385,6 +392,8 @@ if (isempty(options.autoResponse))
                             responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
                         end
                         
+                        % Measure reaction time (end at here).
+                        reactionTime = toc(id);
                 end
             end
             

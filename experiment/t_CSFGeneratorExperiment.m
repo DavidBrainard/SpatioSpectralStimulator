@@ -544,6 +544,7 @@ flipTime = [];
 rngVal = {};
 whichPhaseImage = [];
 whichDirectionToDisplay = [];
+reactionTime = [];
 numTrial = 1;
 nTestContrasts = experimentParams.nTestValidation * length(estDomainValidation);
 
@@ -582,7 +583,7 @@ while (nextFlag)
     %
     % Get a response here. Make a loop for the number of trials.
     for tt = 1:experimentParams.nTest
-        [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt} whichDirectionToDisplayTemp(tt)] = computePerformanceSACCDisplay(...
+        [correct(tt) flipTimeTemp(:,tt) rngValTemp{tt} whichDirectionToDisplayTemp(tt) reactionTimeTemp(tt)] = computePerformanceSACCDisplay(...
             nullStatusReportStruct.RGBimage, testStatusReportStruct.RGBimage, ...
             theSceneTemporalSupportSeconds,testContrast,window,windowRect,...
             'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
@@ -598,6 +599,7 @@ while (nextFlag)
     rngVal(end+1) = rngValTemp;
     whichPhaseImage(end+1) = testStatusReportStruct.whichPhaseRGBimage;
     whichDirectionToDisplay(end+1) = whichDirectionToDisplayTemp;
+    reactionTime(end+1) = reactionTimeTemp;
     
     % Report what happened
     fprintf('Current test contrast: %.4f, P-correct: %g \n', testContrast, mean(correct));
