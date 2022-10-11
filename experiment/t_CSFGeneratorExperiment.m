@@ -89,7 +89,7 @@ end
 
 % Experiment mode.
 while 1
-    inputMessageSpatialExpMode = 'Choose experiment mode [adaptive, valiation]: ';
+    inputMessageSpatialExpMode = 'Choose experiment mode [adaptive, validation]: ';
     expMode = input(inputMessageSpatialExpMode, 's');
     expModeOptions = {'adaptive' 'validation'};
     
