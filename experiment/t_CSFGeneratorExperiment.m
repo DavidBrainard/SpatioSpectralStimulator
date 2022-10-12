@@ -122,7 +122,7 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         % Load the file.
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName),...
+        testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName,append(num2str(sineFreqCyclesPerDeg),'_cpd')),...
             sprintf('ContrastRange_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
         
         % Set the contrast range here.
@@ -302,10 +302,15 @@ if (METHODOFADJUSTMENT)
             mkdir(testFiledir,subjectName);
         end
         
+        % Make another folder with spatial frequency if it does not exist.
+        if ~exist(fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg)), 'dir')
+            mkdir(fullfile(testFiledir,subjectName),sprintf('%d_cpd',sineFreqCyclesPerDeg));
+        end
+        
         % Set the file name and save.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,subjectName,sprintf('ContrastRange_%s_%d_cpd_%s',...
-            subjectName,sineFreqCyclesPerDeg,dayTimestr));
+        testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
+            sprintf('ContrastRange_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'estDomainValidation','preExpDataStruct');
     end
 end
