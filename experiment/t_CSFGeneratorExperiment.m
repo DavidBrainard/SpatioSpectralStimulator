@@ -18,7 +18,8 @@
 %
 % See Also:
 %    ISETBioCSFGenerator toolbox and its tutorials.
-%
+%    t_CSFGeneratorMakeTestImages.
+
 % History:
 %    01/18/22  dhb, smo  - Start writing.
 %    01/26/22  smo       - Added the part making the contrast gabor
@@ -53,6 +54,8 @@
 %                          point on the test contrast images to minimize
 %                          the artifacts.
 %    08/29/22  smo       - Added an option to rotate the images.
+%    10/12/22  smo       - Separate the part making images in a new script,
+%                          t_CSFGeneratorMakeTestImages.
 
 %% Initialization.
 clear; close all;
@@ -63,7 +66,6 @@ clear; close all;
 % we run the main experiment to save the time for making the images.
 %
 % Set the initial parameters here.
-LOADDATA = true;
 PRACTICETRIALS = true;
 SAVETHERESULTS = true;
 conditionName = 'LminusMSmooth';
@@ -158,72 +160,15 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     end
 end
 
-%% Load data or make a new one.
-if (LOADDATA)
-    % Load the data here.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
-            sprintf('RunExpData_%d_cpd.mat',sineFreqCyclesPerDeg));
-        load(testFilenameImages);
-    end
-    
-elseif (~LOADDATA)
-    %% Set up color direction
-    %
-    % Set spatialGaborTargetContrast differently according to spatial frequency.
-    if (sineFreqCyclesPerDeg == 3)
-        spatialGaborTargetContrast = 0.02;
-    elseif (sineFreqCyclesPerDeg == 18)
-        spatialGaborTargetContrast = 0.06;
-    else % This is for 6, 9, and 12 cpd.
-        spatialGaborTargetContrast = 0.04;
-    end
-
-    colorDirectionParams = SetupColorDirection(conditionName,...
-        'spatialGaborTargetContrast',spatialGaborTargetContrast);
-    
-    %% Image spatial parameters.
-    %
-    % Control sineFreqCyclesPerDeg for changing spatial frequncy of the
-    % contrast gabor pattern. For example, setting it to 1 means 1 cpd.
-    %
-    % We used to make the contrast gabor size in 1.5 gaborSdDeg, and now we
-    % are trying to test the size of 0.75.
-    spatialTemporalParams.sineFreqCyclesPerDeg = sineFreqCyclesPerDeg;
-    spatialTemporalParams.gaborSdDeg = 0.75;
-    spatialTemporalParams.stimulusSizeDeg = 7;
-    spatialTemporalParams.sineImagePhaseShiftDeg = [0];
-    
-    %% Instantiate a sceneEngine.
-    %
-    % First set up the scene parameters that will be needed by
-    % the sceSACCDisplay.
-    %
-    % First step is to predefine the contrasts that we will allow the
-    % psychophysics to work over. This gives us a finite list of scenes
-    % to compute for.
-    experimentParams.minContrast = 0.0003;
-    experimentParams.nContrasts = 30;
-    experimentParams.stimContrastsToTest = [0 logspace(log10(experimentParams.minContrast), ...
-        log10(colorDirectionParams.spatialGaborTargetContrast), experimentParams.nContrasts)];
-    
-    experimentParams.slopeRangeLow = 0.5;
-    experimentParams.slopeRangeHigh = 6;
-    experimentParams.slopeDelta = 0.5;
-    experimentParams.nTest = 1;
-    experimentParams.nQUESTEstimator = 1;
-    
-    % If this is set to true, we will measure primaries and use them.
-    experimentParams.measure = true;
+%% Load test image data.
+if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
+        sprintf('RunExpData_%d_cpd.mat',sineFreqCyclesPerDeg));
+    load(testFilenameImages);
 end
 
 %% Set up experimental parameters here.
-%
-% Set the number of trials here.
-%
-% RunningMode can be chosen among three
-% [PTB-sequential; PTB-directional; simulation].
 experimentParams.minTrial = 40;
 experimentParams.maxTrial = 40;
 experimentParams.nTestValidation = 20;
@@ -236,8 +181,7 @@ experimentParams.preStimuliDelaySec = 0;
 experimentParams.movieStimuli = true;
 experimentParams.movieImageDelaySec = 0.2;
 
-% Set the presentation time for each target and crossbar images in seconds
-% unit.
+% Set the presentation time for each target in seconds.
 sceneParamsStruct.predefinedTemporalSupport = 0.4;
 sceneParamsStruct.sineImagePhaseShiftDeg = spatialTemporalParams.sineImagePhaseShiftDeg;
 sceneParamsStruct.addFixationPointImage = true;
@@ -251,44 +195,6 @@ autoResponseParams.slope = 2;
 autoResponseParams.guess = 0.5;
 autoResponseParams.lapse = 0.01;
 autoResponseParams.psiParams = [log10(autoResponseParams.thresh) autoResponseParams.slope autoResponseParams.guess autoResponseParams.lapse];
-
-%% Make contrast gabor images and save.
-if (~LOADDATA)
-    % Now do all the computation to get us ISETBio scenes and RGB images for
-    % each predefined contrast, relative to the parameters set up above.
-    %
-    % Move the precomputed data into the format for the sceSACCDisplay scene
-    % engine. This will take some fair amount of time to run it.
-    %
-    % For experiment, turn off generation of ISETBio scenes because it eats up
-    % time and even worse memory.  But can turn on in the future for
-    % computational analyses.
-    %
-    % Also, lightVer prints out less variables inside the function so that we
-    % can save a lot of memory and time. What we get is the same.
-    noISETBio = true;
-    lightVer = true;
-    printGaborSpds = false;
-    
-    % Make contrast gabor images here.
-    [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages, experimentParams.screenPrimarySettings desiredSpdGaborCal] = ...
-        MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
-        colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
-        'verbose',true,'noISETBio',noISETBio,'lightVer',lightVer,'printGaborSpds',printGaborSpds);
-    
-    % Set some of the scene parameters.
-    sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
-    
-    % Save the images and params.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,'TestImages',sprintf('RunExpData_%d_cpd_%s.mat',...
-            sineFreqCyclesPerDeg,dayTimestr));
-        save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
-            'experimentParams','noISETBio','lightVer');
-    end
-end
 
 %% Match the contrast range scale.
 %
@@ -417,29 +323,29 @@ switch experimentMode
         % Set the test contrast domain to validate. Following is old way to
         % set contrast range which is no longer used. The contrast range is
         % saved per each subject and it will be loaded per each session.
-%             switch sineFreqCyclesPerDeg
-%                 case 3
-%                     lowerLimEstDomain  = 0.0019;
-%                     higherLimEstDomain = 0.0046;                  
-%                 case 6
-%                     lowerLimEstDomain  = 0.0027;
-%                     higherLimEstDomain = 0.0081;
-%                 case 9
-%                     lowerLimEstDomain  = 0.0038;
-%                     higherLimEstDomain = 0.0092;
-%                 case 12
-%                     lowerLimEstDomain  = 0.0038;
-%                     higherLimEstDomain = 0.0092;
-%                 case 18
-%                     lowerLimEstDomain  = 0.0071;
-%                     higherLimEstDomain = 0.0152;
-%                 otherwise
-%             end
-%             
-%             % Set the contrast range here.
-%             estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
-%                 experimentParams.stimContrastsToTest <= higherLimEstDomain));
-%             estDomainValidation = estDomain(estDomainIndex-1);
+        %             switch sineFreqCyclesPerDeg
+        %                 case 3
+        %                     lowerLimEstDomain  = 0.0019;
+        %                     higherLimEstDomain = 0.0046;
+        %                 case 6
+        %                     lowerLimEstDomain  = 0.0027;
+        %                     higherLimEstDomain = 0.0081;
+        %                 case 9
+        %                     lowerLimEstDomain  = 0.0038;
+        %                     higherLimEstDomain = 0.0092;
+        %                 case 12
+        %                     lowerLimEstDomain  = 0.0038;
+        %                     higherLimEstDomain = 0.0092;
+        %                 case 18
+        %                     lowerLimEstDomain  = 0.0071;
+        %                     higherLimEstDomain = 0.0152;
+        %                 otherwise
+        %             end
+        %
+        %             % Set the contrast range here.
+        %             estDomainIndex = find(and(experimentParams.stimContrastsToTest >= lowerLimEstDomain, ...
+        %                 experimentParams.stimContrastsToTest <= higherLimEstDomain));
+        %             estDomainValidation = estDomain(estDomainIndex-1);
         
         % Set up the estimator object.
         estimator = questThresholdEngine('validation',true, ...
@@ -584,7 +490,7 @@ while (nextFlag)
     numRoundDigit = 4;
     testContrastNominal = round(10^logContrast,numRoundDigit);
     
-    % Find the target contrast from predefiend contrast list. 
+    % Find the target contrast from predefiend contrast list.
     nominalToTestContrastCheck = abs(sceneParamsStruct.predefinedContrasts-testContrastNominal);
     testContrast = sceneParamsStruct.predefinedContrasts(find(nominalToTestContrastCheck==min(nominalToTestContrastCheck)));
     
@@ -640,10 +546,10 @@ while (nextFlag)
     [logContrast, nextFlag] = ...
         estimator.multiTrial(logContrast * ones(1, experimentParams.nTest), correct);
     
-%     % Get current threshold estimate.
-%     [threshold, stderr] = estimator.thresholdEstimate();
-%     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
-     
+    %     % Get current threshold estimate.
+    %     [threshold, stderr] = estimator.thresholdEstimate();
+    %     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
+    
     % Print out where we are in the progress.
     fprintf('    Experiment in progress: the number of trials (%d/%d) \n', numTrial, nTestContrasts);
     numTrial = numTrial+1;
@@ -679,7 +585,7 @@ fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %
     thresholdCriterion,threshold,10^threshold);
 
 %% Make a struct to collect raw data.
-imageRawData.flipTime = flipTime; 
+imageRawData.flipTime = flipTime;
 imageRawData.flipTimeInterval = flipTimeInterval;
 imageRawData.rngVal = rngVal;
 imageRawData.whichPhaseImage = whichPhaseImage;
