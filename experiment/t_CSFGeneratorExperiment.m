@@ -149,11 +149,11 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         % Load the file.
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(fullfile(testFiledir,subjectName,append(num2str(sineFreqCyclesPerDeg),'_cpd')),...
+        testFilenameContrast = GetMostRecentFileName(fullfile(testFiledir,subjectName,append(num2str(sineFreqCyclesPerDeg),'_cpd')),...
             sprintf('ContrastRange_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
         
         % Set the contrast range here.
-        contrastRangeData = load(testFilename);
+        contrastRangeData = load(testFilenameContrast);
         estDomainValidation = contrastRangeData.estDomainValidation;
     end
 end
@@ -166,9 +166,9 @@ if (LOADDATA)
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg_fine.mat',...
-            conditionName,sineFreqCyclesPerDeg,gaborSdDeg));
-        load(testFilename);
+        testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
+            sprintf('RunExpData_%d_cpd.mat',sineFreqCyclesPerDeg));
+        load(testFilenameImages);
     end
     
 elseif (~LOADDATA)
@@ -284,8 +284,9 @@ if (~LOADDATA)
     % Save the images and params.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,sprintf('RunExpData_%s_%d_cpd_%.2f_SdDeg_fine.mat',...
-            conditionName,spatialTemporalParams.sineFreqCyclesPerDeg,spatialTemporalParams.gaborSdDeg));
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,'TestImages',sprintf('RunExpData_%d_cpd_%s.mat',...
+            sineFreqCyclesPerDeg,dayTimestr));
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
     end
