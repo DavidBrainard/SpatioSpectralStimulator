@@ -94,8 +94,13 @@ initialInstructionImage = fliplr(initialInstructionImage);
 %
 % Start from the image with the highest contrast. Note that the first
 % image is null image with out contrast pattern, so we start from
-% either lowest or highest contrast.
-initialContrast = [length(testImages) 1];
+% highest contrast.
+%
+% Eventually we want to get a total of four initial threshold esitmate, two
+% starting from the high and the other two from the low. So, here we simply
+% set the initial contrast as four number in an array that contains two
+% contrasts (highest and lowest) and doubled it.
+initialContrast = [length(testImages) 1 length(testImages) 1];
 nInitialContrasts = length(initialContrast);
 
 % Make variables to collect raw data.
@@ -186,7 +191,7 @@ for cc = 1:nInitialContrasts
     % Print out the contrast level we found.
     thresholdFoundRawLinear(cc) = predefinedContrasts(imageContrastLevel);
     fprintf('Contrast was found at (%.3f) \n', thresholdFoundRawLinear(cc));
-    fprintf('Initial contast sensitivity measure is in progress -(%d/%d) \n', cc, nInitialContrasts);
+    fprintf('Initial contast sensitivity measure is in progress - (%d/%d) \n', cc, nInitialContrasts);
 end
 
 %% Set the contrast range based on the results for constant stimuli method.
