@@ -87,12 +87,34 @@ while 1
     disp('Spatial frequency should be within the above range!');
 end
 
+% Which filter to use.
+while 1
+    inputMessageFilter = 'Which filter to test [A(neutral),B,C,D,E]: ';
+    whichFilter = input(inputMessageFilter, 's');
+    whichFilterOptions = {'A', 'B', 'C', 'D', 'E'};
+    
+    if ismember(whichFilter, whichFilterOptions)
+        break
+    end
+    
+    disp('Filter should be chose within [A, B, C, D, E]!');
+end
+
 % Experiment mode.
 while 1
-    inputMessageSpatialExpMode = 'Choose experiment mode [adaptive, validation]: ';
-    expMode = input(inputMessageSpatialExpMode, 's');
     expModeOptions = {'adaptive' 'validation'};
+    defaultExpMode = expModeOptions{find(contains(expModeOptions, 'validation'))};
+    fprintf('Available experiment running mode: \n');
+    for k = 1:numel(expModeOptions)
+        fprintf('\t %s\n', expModeOptions{k});
+    end
+    inputMessageSpatialExpMode = 'Choose experiment mode [validation]: ';
+    expMode = input(inputMessageSpatialExpMode, 's');
     
+    % Set to default if it gets empty.
+    if isempty(expMode)
+        expMode = defaultExpMode;
+    end
     if ismember(expMode, expModeOptions)
         break
     end
@@ -102,10 +124,14 @@ end
 
 % Method of adjustment.
 while 1
-    inputMessageMethodOfAdjustment = 'Start with Method of adjustment (only for first visit) [Y, N]: ';
+    inputMessageMethodOfAdjustment = 'Start with Method of adjustment always with filter A (neutral) [Y, N]: ';
     ansMethodofAdjustment = input(inputMessageMethodOfAdjustment, 's');
     methodOfAdjustmentOptions = {'Y' 'N'};
     
+    neutralFilter = 'A';
+    if (~strcmp(whichFilter,neutralFilter))
+        error('Neutral filter should be used for method of adjustment!');
+    end
     if ismember(ansMethodofAdjustment, methodOfAdjustmentOptions)
         break
     end
@@ -310,7 +336,7 @@ if (METHODOFADJUSTMENT)
         % Set the file name and save.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
-            sprintf('ContrastRange_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDeg,dayTimestr));
+            sprintf('ContrastRange_%s_%d_cpd_%s_%s',subjectName,sineFreqCyclesPerDeg,whichFilter,dayTimestr));
         save(testFilename,'estDomainValidation','preExpDataStruct');
     end
 end
@@ -672,7 +698,7 @@ if (SAVETHERESULTS)
         % Set the file name and save.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
-            sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDeg,dayTimestr));
+            sprintf('CS_%s_%d_cpd_%s_%s',subjectName,sineFreqCyclesPerDeg,whichFilter,dayTimestr));
         save(testFilename,'estimator','imageRawData');
     end
 end
