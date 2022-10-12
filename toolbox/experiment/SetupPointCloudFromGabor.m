@@ -134,14 +134,39 @@ if (options.measure)
         fprintf('done.  Measuring.\n');
     end
     
-    % Measure it.
-    nPrimaries = screenCalObj.cal.nDevices;
-    for pp = 1:nPrimaries
-        theScreenOnePrimarySettings = zeros(nPrimaries,1);
-        theScreenOnePrimarySettings(pp) = 1;
-        targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
-            colorDirectionParams.S, window, windowRect, 'measurementOption', options.measure, 'verbose', options.verbose);
-        clear theScreenOnePrimarySettings;
+    % Measurement happens here.
+    %
+    % As we are going to make the test images with all spatial frequencies
+    % at once, we will measure screen primaries only once and save it, then
+    % load it for the other cases.
+    %
+    % Strategy here is to save the measurement results as a separate file
+    % and load it. The measurement happens if there is no such file with the
+    % name.
+    %
+    % Get file name.
+    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
+    end
+    
+    % Load it if the file exists.
+    if isfile(testFilename)
+        data = load(testFilename);
+        targetScreenSpdMeasured = data.targetScreenSpdMeasured;
+    else
+        % Measure it if the file does not exist.
+        nPrimaries = screenCalObj.cal.nDevices;
+        for pp = 1:nPrimaries
+            theScreenOnePrimarySettings = zeros(nPrimaries,1);
+            theScreenOnePrimarySettings(pp) = 1;
+            targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
+                colorDirectionParams.S, window, windowRect, 'measurementOption', options.measure, 'verbose', options.verbose);
+            clear theScreenOnePrimarySettings;
+        end
+        
+        % Save the measurement results.
+        save(testFilename,'targetScreenSpdMeasured');
     end
     
     % Plot the spd results.

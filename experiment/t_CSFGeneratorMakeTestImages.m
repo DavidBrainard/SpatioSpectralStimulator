@@ -94,3 +94,10 @@ if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
         'experimentParams','noISETBio','lightVer');
 end
+
+%% Delete the temporarily saved measured screen primaries.
+
+if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
+end
