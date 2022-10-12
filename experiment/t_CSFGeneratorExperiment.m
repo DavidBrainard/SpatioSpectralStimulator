@@ -687,6 +687,13 @@ imageRawData.rngVal = rngVal;
 imageRawData.whichPhaseImage = whichPhaseImage;
 imageRawData.whichDirectionToDisplay = whichDirectionToDisplay;
 
+%% Make a struct to save the file name.
+%
+% We will save which contrast range and test images were used in case we
+% want to track it.
+describe.testFileNameContrast = testFilenameContrast;
+describe.testFileNameImages = testFilenameImages;
+
 %% Save the results.
 if (SAVETHERESULTS)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
@@ -701,6 +708,6 @@ if (SAVETHERESULTS)
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg),...
             sprintf('CS_%s_%d_cpd_%s_%s',subjectName,sineFreqCyclesPerDeg,whichFilter,dayTimestr));
-        save(testFilename,'estimator','imageRawData');
+        save(testFilename,'estimator','imageRawData','describe');
     end
 end
