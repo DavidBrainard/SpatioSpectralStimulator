@@ -116,6 +116,7 @@ while 1
         expMode = defaultExpMode;
     end
     if ismember(expMode, expModeOptions)
+        fprintf('\t (%s) has been selected! \n',expMode);
         break
     end
     
