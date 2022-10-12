@@ -160,9 +160,6 @@ end
 
 %% Load data or make a new one.
 if (LOADDATA)
-    % Set the condition of the images.
-    gaborSdDeg = 0.75;
-    
     % Load the data here.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
@@ -174,14 +171,15 @@ if (LOADDATA)
 elseif (~LOADDATA)
     %% Set up color direction
     %
-    % Set spatialGaborTargetContrast = 0.03 for the spatial frequency 18
-    % cpd. If set 0.02, it's almost impossible to detect the stimuli.
-    %
-    % Now we set it as double.
-    % 1 cpd = 0.02
-    % the others = 0.04
-    % 18 cpd = 0.06
-    spatialGaborTargetContrast = 0.06;
+    % Set spatialGaborTargetContrast differently according to spatial frequency.
+    if (sineFreqCyclesPerDeg == 3)
+        spatialGaborTargetContrast = 0.02;
+    elseif (sineFreqCyclesPerDeg == 18)
+        spatialGaborTargetContrast = 0.06;
+    else % This is for 6, 9, and 12 cpd.
+        spatialGaborTargetContrast = 0.04;
+    end
+
     colorDirectionParams = SetupColorDirection(conditionName,...
         'spatialGaborTargetContrast',spatialGaborTargetContrast);
     
