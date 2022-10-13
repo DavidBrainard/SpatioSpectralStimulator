@@ -110,13 +110,26 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     fprintf('\t Progress making gabor image - Spatial frequency (%d/%d) \n', ss, numel(sineFreqCyclesPerDegTarget));
 end
 
-%% Delete the temporarily saved measured screen primaries.
-DELETEMEASUREMENT = false;
+%% Move the measured screen primaries data in the different folder.
+%
+% Here we will save the measurement data in the separate folder and delete
+% the temporary saved data.
+STOREMEASUREMENT = true;
 
-if (DELETEMEASUREMENT)
+if (STOREMEASUREMENT)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+        % Load the measurement file name.
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
-        delete testFilename;
+        load(testFilename);
+        
+        % Change the folder and save it.
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFiledirNew = fullfile(testFiledir,'TestImages','MeasurementData');
+        testFilenameNew = fullfile(testFiledirNew,sprintf('targetScreenSpdMeasured_%s.mat',dayTimestr));
+        save(testFilenameNew,'targetScreenSpdMeasured');
+        
+        % Delete the old file.
+        delete(testFilename);
     end
 end
