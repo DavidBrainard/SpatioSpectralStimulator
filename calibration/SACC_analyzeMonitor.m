@@ -78,6 +78,10 @@ ylabel('Spectral power','fontsize', fontSizeAxis);
 title('SACC','fontsize',fontSizeTitle);
 
 % Add legend with date.
+%
+% Note that when we get a info using get(gca), it sorts the data in a
+% reverse order. So, if there is more than one dataset to plot, take care
+% to add legend to it.
 f = get(gca, 'Children');
 if (nData == 1)
     legend([f(1)], dateSACC{1});
