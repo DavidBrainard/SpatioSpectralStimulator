@@ -113,27 +113,6 @@ screenBgSettings    = backgroundScreenPrimaryObject.screenBgSettings;
 % You can choose if you use the nominal primaries or measure it. If you use
 % nominal primaries, this part will be skipped.
 if (options.measure)
-    % Set target screen spd which will be compared with the measured results.
-    targetScreenSpd = screenCalObj.get('P_device');
-    
-    % Loop and measure all primaries here.
-    %
-    % Open up screen and radiometer.
-    [window,windowRect] = OpenPlainScreen([1 1 1]');
-    OpenSpectroradiometer;
-    
-    % Set subprimaries to desired value and wait for them to warm up to
-    % steady state.
-    SetChannelSettings(screenPrimaryChannelObject.screenPrimarySettings,...
-        'nInputLevels',colorDirectionParams.channelNInputLevels);
-    if (options.verbose)
-        fprintf('Waiting for warmup time of %d minutes ...',options.warmupTimeMinutes);
-    end
-    pause(60 * options.warmupTimeMinutes);
-    if (options.verbose)
-        fprintf('done.  Measuring.\n');
-    end
-    
     % Measurement happens here.
     %
     % As we are going to make the test images with all spatial frequencies
@@ -144,7 +123,7 @@ if (options.measure)
     % and load it. The measurement happens if there is no such file with the
     % name.
     %
-    % Get file name.
+    % Get measurement file name.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
@@ -156,6 +135,26 @@ if (options.measure)
         targetScreenSpdMeasured = data.targetScreenSpdMeasured;
     else
         % Measure it if the file does not exist.
+        % Set target screen spd which will be compared with the measured results.
+        targetScreenSpd = screenCalObj.get('P_device');
+        
+        % Open up screen and radiometer.
+        [window,windowRect] = OpenPlainScreen([1 1 1]');
+        OpenSpectroradiometer;
+        
+        % Set subprimaries to desired value and wait for them to warm up to
+        % steady state.
+        SetChannelSettings(screenPrimaryChannelObject.screenPrimarySettings,...
+            'nInputLevels',colorDirectionParams.channelNInputLevels);
+        if (options.verbose)
+            fprintf('Waiting for warmup time of %d minutes ...',options.warmupTimeMinutes);
+        end
+        pause(60 * options.warmupTimeMinutes);
+        if (options.verbose)
+            fprintf('done.  Measuring.\n');
+        end
+ 
+        % Loop and measure all primaries here.
         nPrimaries = screenCalObj.cal.nDevices;
         for pp = 1:nPrimaries
             theScreenOnePrimarySettings = zeros(nPrimaries,1);
