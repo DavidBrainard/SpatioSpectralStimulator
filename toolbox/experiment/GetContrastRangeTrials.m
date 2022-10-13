@@ -64,6 +64,7 @@ arguments
     autoResponseParams
     window (1,1)
     windowRect (1,4)
+    options.replay (1,1) = false
     options.nContrastPoints (1,1) = 8
     options.higherLimThresholdEstLog (1,1) = 0.3
     options.lowerLimThresholdEstLog (1,1) = 0.5
@@ -143,7 +144,18 @@ for cc = 1:nInitialContrasts
             'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
         
         % Get a button press here.
-        buttonPress = GetGamepadResp;
+        while 1
+            buttonPress = GetGamepadResp;
+            if (options.replay)
+                if any(strcmp(buttonPress,{'left','right','down'}))
+                    break
+                end
+            else
+                if any(strcmp(buttonPress,{'right','down'}))
+                    break
+                end
+            end
+        end
         
         % Collect raw data. We will not keep the data repeated.
         if ~(strcmp(buttonPress,'left'))
@@ -178,9 +190,10 @@ for cc = 1:nInitialContrasts
             numPlaySound = 2;
             for pp = 1:numPlaySound
                 MakeBeepSound('preset',correct);
+                
             end
         end
-    end
+        end
     
     % Play sound as feedback when the contrast level was decided.
     numPlaySound = 3;

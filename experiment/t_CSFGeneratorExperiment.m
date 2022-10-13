@@ -222,8 +222,10 @@ end
 %% Method of adjustment.
 if (METHODOFADJUSTMENT)
     % Method of adjustment happens here and get the contrast range.
+    replay = false;
     [estDomainValidation preExpDataStruct] = ...
-        GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect);
+        GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams,...
+        window, windowRect,'replay',replay);
     
     % Save the results.
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
