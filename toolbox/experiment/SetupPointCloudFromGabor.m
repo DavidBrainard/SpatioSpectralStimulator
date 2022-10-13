@@ -133,6 +133,7 @@ if (options.measure)
     if isfile(testFilename)
         data = load(testFilename);
         targetScreenSpdMeasured = data.targetScreenSpdMeasured;
+        fprintf('Measurement file found, so skipping the measurement!');
     else
         % Measure it if the file does not exist.
         % Set target screen spd which will be compared with the measured results.
@@ -267,9 +268,9 @@ for ss = 1:nPhaseShifts
             standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc} = standardPredictedContrastGaborCal;
         end
         
-        fprintf('Getting gabor image - Contrast point (%d/%d) \n', cc, nContrastPoints);
+        fprintf('Setting up point cloud from gabor - Contrast point (%d/%d) \n', cc, nContrastPoints);
     end
     
-    fprintf('Getting gabor image - Phase shift (%d/%d) \n', ss, nPhaseShifts);
+    fprintf('Setting up point cloud from gabor - Phase shift (%d/%d) \n', ss, nPhaseShifts);
 end
 end

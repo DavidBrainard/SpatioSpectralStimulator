@@ -16,6 +16,7 @@ sineFreqCyclesPerDegTarget = [3 6 9 12 18];
 minContrast = 0.0003;
 nContrasts = 30;
 measure = true;
+conditionName = 'LminusMSmooth';
 
 %% Make a loop here to make all test images at once for all spatial frequencies.
 for ss = 1:numel(sineFreqCyclesPerDegTarget)
@@ -104,6 +105,9 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
         save(testFilename,'colorDirectionParams','spatialTemporalParams','sceneParamsStruct', ...
             'experimentParams','noISETBio','lightVer');
     end
+    
+    % Show the progress.
+    fprintf('\t Progress making gabor image - Spatial frequency (%d/%d) \n', ss, numel(sineFreqCyclesPerDegTarget));
 end
 
 %% Delete the temporarily saved measured screen primaries.
