@@ -164,7 +164,7 @@ end
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
     testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
-        sprintf('RunExpData_%d_cpd.mat',sineFreqCyclesPerDeg));
+        sprintf('RunExpData_%d_cpd',sineFreqCyclesPerDeg));
     load(testFilenameImages);
 end
 
