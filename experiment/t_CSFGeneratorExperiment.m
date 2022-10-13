@@ -423,16 +423,6 @@ if (PRACTICETRIALS)
     GetGamepadResp;
     disp('Practice trial is going to be started!');
     
-    %% Display the null image.
-    addFixationPointCircle = 'circle';
-    [imageTextureNull imageWindowRect] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect, ...
-        'addNoiseToImage', sceneParamsStruct.addNoiseToImage, 'addFixationPoint', addFixationPointCircle, 'verbose', false);
-    FlipImageTexture(imageTextureNull, window, imageWindowRect,'verbose', false);
-    
-    % Press any button to proceed.
-    GetGamepadResp;
-    disp('Experiment is going to be started!');
-    
     %% Start the practice trials here.
     %
     % Here we will display the highest contrast image five times. It
