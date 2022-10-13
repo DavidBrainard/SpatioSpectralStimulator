@@ -581,17 +581,20 @@ fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units) / %
 
 %% Make a struct to collect raw data.
 imageRawData.flipTime = flipTime;
-imageRawData.flipTimeInterval = flipTimeInterval;
 imageRawData.rngVal = rngVal;
 imageRawData.whichPhaseImage = whichPhaseImage;
 imageRawData.whichDirectionToDisplay = whichDirectionToDisplay;
+imageRawData.reactionTime = reactionTime;
 
 %% Make a struct to save the file name.
 %
 % We will save which contrast range and test images were used in case we
 % want to track it.
-describe.testFileNameContrast = testFilenameContrast;
-describe.testFileNameImages = testFilenameImages;
+[pathImage filenameContrast extContrast] = fileparts(testFilenameContrast);
+[pathContrast filenameImage extImage] = fileparts(testFilenameImages);
+
+describe.testFileNameContrast = filenameContrast;
+describe.testFileNameImages = filenameImage;
 
 %% Save the results.
 if (SAVETHERESULTS)
