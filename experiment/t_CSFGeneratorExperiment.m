@@ -253,6 +253,11 @@ if (~experimentParams.autoResponse)
     autoResponseParams = [];
 end
 
+% Stop here if we did method of adjustment.
+if (METHODOFADJUSTMENT)
+    return;
+end
+
 %% Create the scene engine.
 theSceneEngine = sceneEngine(@sceSACCDisplay,sceneParamsStruct);
 
