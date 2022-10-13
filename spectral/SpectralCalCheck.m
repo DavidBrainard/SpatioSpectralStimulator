@@ -14,7 +14,7 @@ clear; close all;
 %% Parameters
 warmupTimeMinutes = 0;
 verbose = true;
-MEASURE = false;
+MEASURE = true;
 
 %% Which condition
 %
@@ -25,7 +25,7 @@ conditionName = 'LminusMSmooth';
 %% Load output of SpectralCalCompute.
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
+    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     theData = load(testFilename);
 end
 
@@ -282,7 +282,7 @@ if (MEASURE)
     if (ispref('SpatioSpectralStimulator','TestDataFolder'))
         testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+        testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
             'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
             'ptCldScreenSettingsCheckCal','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...

@@ -17,7 +17,7 @@ clear; close all;
 conditionName = 'LminusMSmooth';
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
+    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     theComputeData = load(testFilename);
 end
 
@@ -25,7 +25,8 @@ end
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     olderDate = 0;
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
+    testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
+        sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
     theCheckData = load(testFilename);
     theData = theCheckData.theData;
 else

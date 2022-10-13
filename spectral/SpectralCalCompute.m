@@ -25,7 +25,7 @@ S = [380 2 201];
 %% Set key stimulus parameters
 %
 % Condition Name.
-conditionName = 'ConeIsolating';
+conditionName = 'LminusMSmooth';
 switch (conditionName)
     case 'LminusMSmooth'
         % Background xy.
@@ -685,7 +685,7 @@ title('Check of consistency between screen primaries and screen primary spds');
 screenSettingsImage = standardSettingsGaborImage;
 if (ispref('SpatioSpectralStimulator','TestDataFolder'))
     testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
+    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
         'desiredContrastCheckCal', ...
