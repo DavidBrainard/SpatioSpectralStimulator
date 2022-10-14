@@ -101,8 +101,10 @@ initialInstructionImage = fliplr(initialInstructionImage);
 % starting from the high and the other two from the low. So, here we simply
 % set the initial contrast as four number in an array that contains two
 % contrasts (highest and lowest) and doubled it.
-initialContrast = [length(testImages) 1 length(testImages) 1];
-nInitialContrasts = length(initialContrast);
+idxContrastHigh = length(testImages);
+idxContrastLow = 1; 
+idxInitialContrast = [idxContrastHigh idxContrastLow idxContrastHigh idxContrastLow];
+nInitialContrasts = length(idxInitialContrast);
 
 % Make variables to collect raw data.
 testContrastCollect = [];
@@ -124,7 +126,7 @@ for cc = 1:nInitialContrasts
     %
     % Contrast level starts either highest one or lowest one. Starts
     % from the lower one.
-    imageContrastLevel = initialContrast(cc);
+    imageContrastLevel = idxInitialContrast(cc);
     fprintf('Starting initial contrast sensitivity measure (%d/%d) \n',cc,nInitialContrasts);
     
     while 1
@@ -171,10 +173,10 @@ for cc = 1:nInitialContrasts
             
         elseif strcmp(buttonPress,'right')
             % Change the contrast level for next display.
-            if  (cc == 1)
+            if  (idxInitialContrast(cc) == idxContrastHigh)
                 % Starting from highest contrast.
                 imageContrastLevel = imageContrastLevel - 1;
-            elseif (cc == 2)
+            elseif (idxInitialContrast(cc) == idxContrastLow)
                 % Starting from lowest contrast.
                 imageContrastLevel = imageContrastLevel + 1;    
             end
