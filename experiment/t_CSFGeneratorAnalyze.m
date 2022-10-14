@@ -44,12 +44,12 @@ addInitialThresholdEst = true;
 addQuestFit = true;
 addLegend = false;
 
-subjectName = 'TEST';
+subjectName = 'Geoff';
 
 %% Load the data and PF fitting.
 %
 % Set startData to 0 if you want to read the data from the most recent.
-whichFilter = 'A';
+whichFilter = 'E';
 sineFreqCyclesPerDeg = [3 6 9 12 18];
 nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
 
@@ -137,6 +137,8 @@ for ss = 1:nSineFreqCyclesPerDeg
             % Plot it here.
             plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
             plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
+            plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
+            plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
         end
     end
     
