@@ -15,7 +15,7 @@ dir = cd;
 %% Load the data.
 %
 % Set the dir.
-userName = 'Semin Oh';
+userName = 'Mela Nopsin';
 expName = 'Exp_0001J';
 subjectID = 'SACC_002';
 fileDir = sprintf('~/Aguirre-Brainard Lab Dropbox/%s/MTRP_data/%s/Subject_%s',userName,expName,subjectID);
