@@ -391,9 +391,6 @@ if (isempty(options.autoResponse))
                             numButtonRight = 3;
                             responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
                         end
-                        
-                        % Measure reaction time (end at here).
-                        reactionTime = toc(id);
                 end
             end
             
@@ -442,6 +439,9 @@ else
         fprintf('Test contrast %0.4f, pCorrect = %0.3f, response %d\n',testContrast,responseVec(2),response);
     end
 end
+
+% Measure reaction time (end at here).
+reactionTime = toc(id);
 
 %% Close.
 %
