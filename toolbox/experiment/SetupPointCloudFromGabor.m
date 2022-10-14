@@ -124,9 +124,9 @@ if (options.measure)
     % name.
     %
     % Get measurement file name.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        testFilename = fullfile(testFiledir,'TestImages','MeasurementData','targetScreenSpdMeasured.mat');
     end
     
     % Load it if the file exists.

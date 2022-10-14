@@ -97,8 +97,8 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
     
     % Save the images and params.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,'TestImages',sprintf('RunExpData_%d_cpd_%s.mat',...
             sineFreqCyclesPerDeg,dayTimestr));
@@ -117,13 +117,13 @@ end
 STOREMEASUREMENT = true;
 
 if (STOREMEASUREMENT)
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    if (ispref('SpatioSpectralStimulator','SACCData'))
         % Load the measurement file name.
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = fullfile(testFiledir,'TestImages','targetScreenSpdMeasured.mat');
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        testFilename = fullfile(testFiledir,'TestImages','MeasurementData','targetScreenSpdMeasured.mat');
         load(testFilename);
         
-        % Change the folder and save it.
+        % Save it with the date.
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFiledirNew = fullfile(testFiledir,'TestImages','MeasurementData');
         testFilenameNew = fullfile(testFiledirNew,sprintf('targetScreenSpdMeasured_%s.mat',dayTimestr));
