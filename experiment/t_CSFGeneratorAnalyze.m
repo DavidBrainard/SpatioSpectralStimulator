@@ -44,11 +44,12 @@ addInitialThresholdEst = true;
 addQuestFit = true;
 addLegend = false;
 
-subjectName = 'Semin';
+subjectName = 'TEST';
 
 %% Load the data and PF fitting.
 %
 % Set startData to 0 if you want to read the data from the most recent.
+whichFilter = 'A';
 sineFreqCyclesPerDeg = [3 6 9 12 18];
 nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
 
@@ -65,7 +66,7 @@ for ss = 1:nSineFreqCyclesPerDeg
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
             subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
         testFilename = GetMostRecentFileName(testFiledir,...
-            'CS','olderDate',olderDate);
+            sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
         theData = load(testFilename);
     else
         error('Cannot find data file');
