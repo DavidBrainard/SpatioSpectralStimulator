@@ -148,9 +148,9 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     METHODOFADJUSTMENT = false;
     
     % Load the contrast range if we skip the method of adjustment,
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+    if (ispref('SpatioSpectralStimulator','SACCData'))
         % Load the file.
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         testFilenameContrast = GetMostRecentFileName(fullfile(testFiledir,subjectName,append(num2str(sineFreqCyclesPerDeg),'_cpd')),...
             sprintf('ContrastRange_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
         
@@ -161,8 +161,8 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
 end
 
 %% Load test image data.
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
         sprintf('RunExpData_%d_cpd',sineFreqCyclesPerDeg));
     load(testFilenameImages);
@@ -228,8 +228,8 @@ if (METHODOFADJUSTMENT)
         window, windowRect,'replay',replay);
     
     % Save the results.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         
         % Make folder with subject name if it does not exist.
         if ~exist(fullfile(testFiledir,subjectName), 'dir')
@@ -600,8 +600,8 @@ describe.testFileNameImages = filenameImage;
 
 %% Save the results.
 if (SAVETHERESULTS)
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         
         % Make folder with subject name if it does not exist.
         if ~exist(fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg)), 'dir')

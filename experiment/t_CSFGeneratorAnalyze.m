@@ -61,8 +61,8 @@ for ss = 1:nSineFreqCyclesPerDeg
     sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
     
     % Load the experiment data.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','TestDataFolder'),...
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
             subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
         testFilename = GetMostRecentFileName(testFiledir,...
             'CS','olderDate',olderDate);
@@ -163,8 +163,8 @@ if (CHECKADAPTIVEMODE)
         sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
         
         % Load the data.
-        if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','TestDataFolder'),...
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
                 subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
             testFilename = GetMostRecentFileName(testFiledir,...
                 'CS','olderDate',olderDate);
