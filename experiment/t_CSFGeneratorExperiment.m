@@ -131,9 +131,11 @@ while 1
     ansMethodofAdjustment = input(inputMessageMethodOfAdjustment, 's');
     methodOfAdjustmentOptions = {'Y' 'N'};
     
-    neutralFilter = 'A';
-    if (~strcmp(whichFilter,neutralFilter))
-        error('Neutral filter should be used for method of adjustment!');
+    if strcmp(ansMethodofAdjustment,'Y')
+        neutralFilter = 'A';
+        if ~strcmp(whichFilter,neutralFilter)
+            error('Neutral filter (A) should be used for method of adjustment!');
+        end
     end
     if ismember(ansMethodofAdjustment, methodOfAdjustmentOptions)
         break
