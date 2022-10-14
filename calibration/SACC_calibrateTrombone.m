@@ -149,7 +149,26 @@ end
 %% Search an optimal Trombone position for a random lens diopters.
 %
 % Type your lens diopter of interest.
-targetLensDiopters = -2.5;
+PROMPT = true;
+
+if (PROMPT)
+    while 1
+    promptMessage = '    Type subject lens diopter of dominant eye [from -6 to +2]: ';
+    subjectLensDiopters = input(promptMessage);
+    
+    if ~isempty(subjectLensDiopters)
+        break
+    end
+    
+    disp('Lens diopter should be within from -6 to +2.');
+    end
+else
+    % Enter manually.
+    subjectLensDiopters = -5.25;
+end
+
+% Set the target (initial) position.
+targetLensDiopters = subjectLensDiopters + 0.5;
 
 % Here make a linear fitting for the data.
 p = polyfit(lensDioptersSet, positionContrastMax, 1);
@@ -159,7 +178,7 @@ positionFitted = polyval(p ,lensDioptersSet);
 positionEstimated = polyval(p, targetLensDiopters);
 
 % Print out the results.
-fprintf('Optimal Trombone position for lens diopter = (%.1f) is %.0f (mm) \n', ...
+fprintf('Initial Trombone position for lens diopter = (%.2f) is %.0f (mm) \n', ...
     targetLensDiopters, positionEstimated);
 
 % Plot it.
@@ -173,6 +192,6 @@ if (PLOTCALIBRATIONRESULTS)
         'ro', 'markersize', 13, 'markerfacecolor', 'r', 'markeredgecolor', 'k');
     xlabel('Lens diopters','FontSize',15);
     ylabel('Trombone position (mm)','FontSize',15);
-    title('Optimal Trombone position over lense diopers','FontSize',15);
+    title('Initial Trombone position over lense diopers','FontSize',15);
     legend('Measurement data', 'Fit', 'Estimation', 'location', 'SouthEast', 'FontSize', 15);
 end
