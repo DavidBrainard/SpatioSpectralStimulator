@@ -124,7 +124,7 @@ for ss = 1:nSineFreqCyclesPerDeg
         'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
         'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
         'questPara', questPara,'addLegend',false);
-    subtitle(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
+    subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
     
     % Add initial threhold to the plot.
     if (addInitialThresholdEst)
