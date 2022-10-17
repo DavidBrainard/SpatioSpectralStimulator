@@ -107,10 +107,11 @@ slope = 2;
 guess = 0.5;
 lapse = 0.01;
 searchGrid = [threshold slope guess lapse];
+lapseLimits = [0 0.05];
 
 % PF fitting happens here.
 paramsFitted = PAL_PFML_Fit(stimLevels, nCorrect, ...
-    nTrialsPerContrast, searchGrid, options.paramsFree, PF);
+    nTrialsPerContrast, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
 
 % Make a smooth curves with finer stimulus levels.
 nFineStimLevels = 1000;
