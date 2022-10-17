@@ -44,117 +44,121 @@ addInitialThresholdEst = true;
 addQuestFit = true;
 addLegend = false;
 
-subjectName = 'Geoff';
+subjectName = '002';
 
 %% Load the data and PF fitting.
-%
-% Set startData to 0 if you want to read the data from the most recent.
-whichFilter = 'E';
-sineFreqCyclesPerDeg = [3 6 9 12 18];
-nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
+sineFreqCyclesPerDeg = [6];
+allFilters = {'A', 'B', 'C', 'D', 'E'};
 
-figure; clf; hold on;
+nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
+nAllFilters = length(allFilters);
 sizeSubplot = [2 3];
 
-for ss = 1:nSineFreqCyclesPerDeg
+for ff = 1:nSineFreqCyclesPerDeg
+    figure; clf; 
     
     % Set target spatial frequency.
-    sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
+    sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ff);
     
-    % Load the experiment data.
-    if (ispref('SpatioSpectralStimulator','SACCData'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
-            subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-        testFilename = GetMostRecentFileName(testFiledir,...
-            sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
-        theData = load(testFilename);
-    else
-        error('Cannot find data file');
-    end
-    
-    nDataContrastRange = 1;
-    for cc = 1:nDataContrastRange
-        % Load the contrast range data.
-        testFilename = GetMostRecentFileName(testFiledir,...
-            sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
-        theContrastData = load(testFilename);
+    for ss = 1:nAllFilters
+        % Set target filter.
+        whichFilter = allFilters{ss};
         
-        % Extract the threshold from the initial measurements.
-        thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
-    end
-    
-    % Pull out the data here.
-    nTrials = theData.estimator.nRepeat;
-    [stimVec, responseVec, structVec] = combineData(theData.estimator);
-    
-    % Here we will plot the PF fitting graph.
-    %
-    % Set marker size here. We will use this number to plot the results to
-    % have different marker size according to the number of trials. Here
-    % we used the same method to decide the size of each marker as
-    % 'thresholdMLE' does.
-    stimVal = unique(stimVec);
-    pCorrect = zeros(1,length(stimVal));
-    for idx = 1:length(stimVal)
-        prop = responseVec(stimVec == stimVal(idx));
-        pCorrect(idx) = sum(prop) / length(prop);
-        pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
-    end
-    
-    thresholdCriterion = 0.81606;
-    [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
-        'thresholdCriterion', thresholdCriterion, 'returnData', true);
-    thresholdsQuest(ss) = threshold;
-    
-    % Set the contrast levels in linear unit.
-    examinedContrastsLinear = 10.^dataOut.examinedContrasts;
-    
-    % Set if you want to add Quest fit in the results.
-    if (addQuestFit)
-        questPara = para;
-    else
-        questPara = [];
-    end
-    
-    % PF fitting here.
-    if (SUBPLOT)
-        subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
-    end
-    [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
-        'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
-        'questPara', questPara,'addLegend',false);
-    subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
-    
-    % Add initial threhold to the plot.
-    if (addInitialThresholdEst)
-        for cc = 1:nDataContrastRange
-            % Plot it on log space if you want.
-            if(axisLog)
-                thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
-            end
-            
-            % Plot it here.
-            plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
-            plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
-            plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
-            plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
+        % Load the experiment data.
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
+                subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
+            theData = load(testFilename);
+        else
+            error('Cannot find data file');
         end
+        
+        nDataContrastRange = 1;
+        for cc = 1:nDataContrastRange
+            % Load the contrast range data.
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
+            theContrastData = load(testFilename);
+            
+            % Extract the threshold from the initial measurements.
+            thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
+        end
+        
+        % Pull out the data here.
+        nTrials = theData.estimator.nRepeat;
+        [stimVec, responseVec, structVec] = combineData(theData.estimator);
+        
+        % Here we will plot the PF fitting graph.
+        %
+        % Set marker size here. We will use this number to plot the results to
+        % have different marker size according to the number of trials. Here
+        % we used the same method to decide the size of each marker as
+        % 'thresholdMLE' does.
+        stimVal = unique(stimVec);
+        pCorrect = zeros(1,length(stimVal));
+        for idx = 1:length(stimVal)
+            prop = responseVec(stimVec == stimVal(idx));
+            pCorrect(idx) = sum(prop) / length(prop);
+            pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
+        end
+        
+        thresholdCriterion = 0.81606;
+        [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+            'thresholdCriterion', thresholdCriterion, 'returnData', true);
+        thresholdsQuest(ss) = threshold;
+        
+        % Set the contrast levels in linear unit.
+        examinedContrastsLinear = 10.^dataOut.examinedContrasts;
+        
+        % Set if you want to add Quest fit in the results.
+        if (addQuestFit)
+            questPara = para;
+        else
+            questPara = [];
+        end
+        
+        % PF fitting here.
+        if (SUBPLOT)
+            subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
+        end
+        [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+            'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+            'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
+            'questPara', questPara,'addLegend',false);
+        subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
+        
+        % Add initial threhold to the plot.
+        if (addInitialThresholdEst)
+            for cc = 1:nDataContrastRange
+                % Plot it on log space if you want.
+                if(axisLog)
+                    thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+                end
+                
+                % Plot it here.
+                plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
+                plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
+                plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
+                plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
+            end
+        end
+        
+        if (addQuestFit)
+            legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
+                'FontSize', 12, 'location', 'southeast');
+        else
+            legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
+                'FontSize', 12, 'location', 'southeast');
+        end
+        
+        % Set xlim differently according to the axis on linear and log space.
+        xlim([-3.3 -1]);
+        
+        % Clear the pointsize for next plot.
+        clear pointSize;
     end
-    
-    if (addQuestFit)
-        legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-            'FontSize', 12, 'location', 'southeast');
-    else
-        legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-            'FontSize', 12, 'location', 'southeast');
-    end
-    
-    % Set xlim differently according to the axis on linear and log space.
-    xlim([-3.3 -1]);
-    
-    % Clear the pointsize for next plot.
-    clear pointSize;
 end
 
 %% Here we check if the Adaptive mode works fine if you want.
@@ -217,8 +221,8 @@ if (CHECKADAPTIVEMODE)
 end
 
 %% Plot the CSF curve here.
-CSFCURVE = true;
-SUBPLOTCSF = true;
+CSFCURVE = false;
+SUBPLOTCSF = false;
 
 if (CSFCURVE)
     % Export the threshold data.
