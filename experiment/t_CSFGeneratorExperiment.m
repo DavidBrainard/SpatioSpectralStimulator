@@ -223,6 +223,18 @@ end
 
 %% Method of adjustment.
 if (METHODOFADJUSTMENT)
+    
+    % Show subject how the image will be displayed.
+    %
+    % Before starting the pre-experiment (method of adjustment), here we will
+    % show the same image with highest contrast continuosly so that subject can
+    % have a better idea what to expect to see during the session.
+    PREMOA = true;
+    if (PREMOA)
+        DisplayOneContrastImageTrials(sceneParamsStruct, experimentParams, autoResponseParams,...
+            window, windowRect);
+    end
+    
     % Method of adjustment happens here and get the contrast range.
     replay = false;
     [estDomainValidation preExpDataStruct] = ...
