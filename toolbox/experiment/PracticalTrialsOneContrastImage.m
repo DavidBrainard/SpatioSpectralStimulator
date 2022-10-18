@@ -67,7 +67,7 @@ GetGamepadResp;
 disp('Practice trial is going to be started!');
 
 %% Start the session.
-fprintf('Image display demo starts...\n');
+fprintf('Practical trial starts...\n');
 
 while 1
     % Set the contrast level.
@@ -91,8 +91,8 @@ while 1
     
     % Update the state according to button press.
     if strcmp(buttonPress,'down')
-        fprintf('Finishing up the demo session... \n');
-       
+        fprintf('Finishing up the practical trials session... \n');
+        
         % Play sound as feedback when the contrast level was decided.
         numPlaySound = 3;
         for pp = 1:numPlaySound
@@ -102,18 +102,18 @@ while 1
         
     elseif strcmp(buttonPress,'left')
         if (whichDirectionToDisplay == displayLeft)
-               MakeBeepSound('preset','correct');
+            MakeBeepSound('preset','correct');
         elseif ~(whichDirectionToDisplay == displayLeft)
-             MakeBeepSound('preset','incorrect');
+            MakeBeepSound('preset','incorrect');
         end
-   
+        
     elseif strcmp(buttonPress,'right')
-          if (whichDirectionToDisplay == displayRight)
-               MakeBeepSound('preset','correct');
+        if (whichDirectionToDisplay == displayRight)
+            MakeBeepSound('preset','correct');
         elseif ~(whichDirectionToDisplay == displayRight)
-             MakeBeepSound('preset','incorrect');
+            MakeBeepSound('preset','incorrect');
         end
-    end  
+    end
 end
 
 end

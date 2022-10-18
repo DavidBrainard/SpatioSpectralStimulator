@@ -96,7 +96,6 @@ while 1
         for pp = 1:numPlaySound
             MakeBeepSound('preset','correct');
         end
-        
         break;
         
     elseif strcmp(buttonPress,'right')
