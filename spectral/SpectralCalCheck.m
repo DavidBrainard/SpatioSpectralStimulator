@@ -72,10 +72,10 @@ if (MEASUREPRIMARY)
      % Load the measurement results.
 elseif (~MEASUREPRIMARY)
     if (ispref('SpatioSpectralStimulator','SACCData'))
-        olderDate = 1;
+        olderDatePrimary = 0;
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         testFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
-            'targetScreenSpdMeasured','olderDate',olderDate);
+            'targetScreenSpdMeasured','olderDate',olderDatePrimary);
         load(testFilename); 
     else
         error('No file to load');
