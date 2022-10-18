@@ -419,7 +419,6 @@ if (PRACTICETRIALS)
             window, windowRect); 
 end
 
-
 %% Main experiment.
 %
 % Make initial screen image.
