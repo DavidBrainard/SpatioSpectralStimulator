@@ -16,6 +16,8 @@
 %                         functions!
 %    04/15/22  smo        Corrections because of the sub routines now
 %                         save the variables in cell format.
+%    10/18/22  smo        Updated it to use to check calibration every
+%                         time we make test images for the experiment.
 
 %% Clear.
 clear; close all;
@@ -29,6 +31,7 @@ colorDirectionParams = SetupColorDirection(conditionName);
 % Set to true to get more output.
 VERBOSE = true;
 lightVer = false;
+printGaborSpds = true;
 
 %% Do all calibraiton loading.
 screenGammaMethod = 2;
@@ -38,7 +41,7 @@ screenGammaMethod = 2;
 %
 % Image will be centered in display.
 sineFreqCyclesPerDeg = 1;
-gaborSdDeg = 1.5;
+gaborSdDeg = 0.75;
 stimulusSizeDeg = 7;
 
 %% Use extant machinery to get primaries from spectrum.
@@ -80,7 +83,7 @@ nQuantizeBits = 14;
 
 %% Get cone contrast/excitation gabor image.
 [ptCldObject,standardGaborCalObject] = SetupPointCloudFromGabor(colorDirectionParams,rawMonochromeContrastGaborCal,...
-    screenCalObj,backgroundScreenPrimaryObject,screenPrimaryChannelObject,'verbose',VERBOSE,'lightVer',lightVer);
+    screenCalObj,backgroundScreenPrimaryObject,screenPrimaryChannelObject,'verbose',VERBOSE,'lightVer',lightVer,'printGaborSpds',printGaborSpds);
 
 %% Make image from point cloud.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
@@ -134,7 +137,6 @@ title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 % how we handled an actual gabor image above. We don't actually need to
 % quantize to 14 bits here on the contrast, but nor does it hurt.
 nQuantizeLevels = 2^nQuantizeBits;
-% It was [0 0.25 -0.25 0.5 -0.5 1 -1]
 rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 desiredContrastCheckCal = colorDirectionParams.spatialGaborTargetContrast * colorDirectionParams.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
@@ -199,9 +201,9 @@ screenPrimaryPrimaries = screenPrimaryChannelObject.screenPrimaryPrimaries;
 screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
 screenPrimarySpd = screenPrimaryChannelObject.screenPrimarySpd;
 
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-    testFilename = fullfile(testFiledir,sprintf('testImageData_%s',conditionName));
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s_temp',conditionName));
     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
         'desiredContrastCheckCal', ...
