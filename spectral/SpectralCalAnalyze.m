@@ -15,16 +15,16 @@ clear; close all;
 % We can remove this now that we are saving testData from SpectralCalCheck,
 % after next round of measurement.
 conditionName = 'LminusMSmooth';
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     theComputeData = load(testFilename);
 end
 
 %% Load output of SpectralCalCheck
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
+if (ispref('SpatioSpectralStimulator','SACCData'))
     olderDate = 0;
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
         sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
     theCheckData = load(testFilename);

@@ -683,8 +683,8 @@ title('Check of consistency between screen primaries and screen primary spds');
 
 %% Save out what we need to check things on the DLP
 screenSettingsImage = standardSettingsGaborImage;
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...

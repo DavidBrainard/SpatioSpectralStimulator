@@ -7,47 +7,41 @@
 %    10/19/2021  dhb,smo  Started on it.
 %    10/28/2021  dhb      Add condition name and date to output.
 %    11/12/2021  dhb      Moving to warmup and measure with steady subprimaries.
+%    10/18/2022  smo      Now it loads the screen primary measurement
+%                         results that used for making contrast images so
+%                         that we can validate this meausrement results are
+%                         fine.
 
 %% Initialize.
 clear; close all;
 
-%% Parameters
+%% Set parameters.
 warmupTimeMinutes = 0;
 verbose = true;
 MEASURETARGETCONTRAST = true;
 MEASUREPRIMARY = false;
 
-%% Which condition
-%
-% This is used to match up with parameters run in SpectralCalCompute.
-% Choose one either 'LminusMSmooth' or 'ConeIsolating'.
+%% Load output of SpectralCalCompute.
 conditionName = 'LminusMSmooth';
 
-%% Load output of SpectralCalCompute.
-if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-    testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
     theData = load(testFilename);
 end
 
-%% Measure the desired target primaries
-%
-% This just needs to measure.
-%
-% Target Spds.
+%% Set variables here.
 targetScreenSpd = theData.screenCalObj.get('P_device');
-
-% Set some variables.
-S = theData.S;           % Range of the spectrum.
-wls = SToWls(S);         % Wavelength. 
-nPrimaries = 3;          % Number of primaries.
-nChannels = theData.channelCalObjs{1}.get('nDevices');% Number of subprimaries.
+S = theData.S;           
+wls = SToWls(S);         
+nPrimaries = 3;          
+nChannels = theData.channelCalObjs{1}.get('nDevices');
 channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:15];
 nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
-% Open up screen and radiometer.
+%% Open up screen and radiometer.
 initialScreenSettings = [1 1 1]';
 [window,windowRect] = OpenPlainScreen(initialScreenSettings);
 OpenSpectroradiometer;
@@ -60,10 +54,10 @@ if (verbose)
 end
 pause(60*warmupTimeMinutes);
 if (verbose)
-    fprintf('done.  Measuring.\n');
+    fprintf('done. Measuring.\n');
 end
 
-% Measure primaries here. We can load it too if there is a file saved.
+%% Measure primaries here. We can load it too if there is a file saved.
 if (MEASUREPRIMARY)
     % Measure.
     for pp = 1:nPrimaries
@@ -281,8 +275,8 @@ if (MEASURETARGETCONTRAST)
     
     % Save data with the name containing dayTimestr, so that we can
     % automatically load in the most recent output.
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
