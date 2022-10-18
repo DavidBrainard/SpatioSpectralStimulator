@@ -1,13 +1,14 @@
 function PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
-% This displays one contrast image with the highest contrast continuosly.
+% This runs practical trials with one image with the highest contrast.
 %
 % Syntax:
 %    PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
 %
 % Description:
-%    This function displays one image that has the highest contrast within
-%    the input images. It is written to let subject have a better idea of
-%    how image is going to be displayed during the experiment.
+%    It runs practical trials before starting the main experiment in SACC
+%    project. It continuosly shows the same image with the highest contrast
+%    so that subject can get used to how to evaluate it for the main
+%    experiment.
 %
 % Inputs:
 %    sceneParamsStruct                  - Struct containing properties of
@@ -28,7 +29,7 @@ function PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, au
 %    N/A
 %
 % See also:
-%    GetContrastRangeTrials.
+%    N/A
 %
 
 % History:
@@ -54,7 +55,7 @@ testContrast = sceneParamsStruct.predefinedContrasts(end);
 %% Set the initial screen for instruction.
 imageSize = size(nullImage,2);
 messageInitialImage_1stLine = 'Press any button to start';
-messageInitialImage_2ndLine = 'Practical trials main experiment';
+messageInitialImage_2ndLine = 'Practical trials';
 initialInstructionImage = insertText(nullImage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialImage_1stLine messageInitialImage_2ndLine},...
     'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
 initialInstructionImage = fliplr(initialInstructionImage);
