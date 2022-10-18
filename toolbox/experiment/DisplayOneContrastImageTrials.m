@@ -94,14 +94,14 @@ while 1
         % Play sound as feedback when the contrast level was decided.
         numPlaySound = 3;
         for pp = 1:numPlaySound
-            MakeBeepSound('preset',correct);
+            MakeBeepSound('preset','correct');
         end
         
         break;
         
     elseif strcmp(buttonPress,'right')
         % Play the sound.
-        MakeBeepSound('preset',correct);
+        MakeBeepSound('preset','correct');
     end  
 end
 end

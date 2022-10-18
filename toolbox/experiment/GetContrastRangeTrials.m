@@ -182,7 +182,7 @@ for cc = 1:nInitialContrasts
             end
             
             % Play the sound.
-            MakeBeepSound('preset',correct);
+            MakeBeepSound('preset','correct');
             
         elseif strcmp(buttonPress,'left')
             % Show the same contrast level again for next display.
@@ -191,7 +191,7 @@ for cc = 1:nInitialContrasts
             % Play the feedback sound.
             numPlaySound = 2;
             for pp = 1:numPlaySound
-                MakeBeepSound('preset',correct);
+                MakeBeepSound('preset','correct');
                 
             end
         end
@@ -200,7 +200,7 @@ for cc = 1:nInitialContrasts
     % Play sound as feedback when the contrast level was decided.
     numPlaySound = 3;
     for pp = 1:numPlaySound
-        MakeBeepSound('preset',correct);
+        MakeBeepSound('preset','correct');
     end
     
     % Print out the contrast level we found.
