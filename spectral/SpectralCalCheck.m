@@ -14,7 +14,8 @@ clear; close all;
 %% Parameters
 warmupTimeMinutes = 0;
 verbose = true;
-MEASURE = true;
+MEASURETARGETCONTRAST = true;
+MEASUREPRIMARY = false;
 
 %% Which condition
 %
@@ -46,26 +47,24 @@ logicalToPhysical = [0:15];
 nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
-% Loop and measure all primaries.
-%
-% IF MEASURE is false, load in the data from a previous run where MEASURE
-% was true.
-if (MEASURE)
-    % Open up screen and radiometer.
-    [window,windowRect] = OpenPlainScreen([1 1 1]');
-    OpenSpectroradiometer;
-    
-    % Set subprimaries to desired value and wait for them to warm up to
-    % steady state.
-    SetChannelSettings(theData.screenPrimarySettings,'nInputLevels',channelNInputLevels); 
-    if (verbose)
-        fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
-    end
-    pause(60*warmupTimeMinutes);
-    if (verbose)
-        fprintf('done.  Measuring.\n');
-    end
-    
+% Open up screen and radiometer.
+initialScreenSettings = [1 1 1]';
+[window,windowRect] = OpenPlainScreen(initialScreenSettings);
+OpenSpectroradiometer;
+
+% Set subprimaries to desired value and wait for them to warm up to
+% steady state.
+SetChannelSettings(theData.screenPrimarySettings,'nInputLevels',channelNInputLevels);
+if (verbose)
+    fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
+end
+pause(60*warmupTimeMinutes);
+if (verbose)
+    fprintf('done.  Measuring.\n');
+end
+
+% Measure primaries here. We can load it too if there is a file saved.
+if (MEASUREPRIMARY)
     % Measure.
     for pp = 1:nPrimaries
         theScreenOnePrimarySettings = zeros(nPrimaries,1);
@@ -75,15 +74,18 @@ if (MEASURE)
         clear theScreenOnePrimarySettings;
         
     end
-else
-    if (ispref('SpatioSpectralStimulator','TestDataFolder'))
-        olderDate = 0;
-        testFiledir = getpref('SpatioSpectralStimulator','TestDataFolder');
-        testFilename = GetMostRecentFileName(testFiledir,sprintf('testImageDataCheck_%s',conditionName),'olderDate',olderDate);
+    
+     % Load the measurement results.
+elseif (~MEASUREPRIMARY)
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        olderDate = 1;
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        testFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
+            'targetScreenSpdMeasured','olderDate',olderDate);
         load(testFilename); 
     else
         error('No file to load');
-    end
+    end    
 end
 
 % Make plot comparing what we wanted for primaries versus what we got.
@@ -121,7 +123,7 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
-if (MEASURE)
+if (MEASURETARGETCONTRAST)
     screenCalObj = theData.screenCalObj;
     theData = rmfield(theData,'screenCalObj');
    
@@ -272,7 +274,7 @@ end
 title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
 
 %% Close screen and save out the measurement data.
-if (MEASURE)
+if (MEASURETARGETCONTRAST)
     % Close
     CloseScreen;
     CloseSpectroradiometer;
