@@ -405,89 +405,74 @@ end
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-%% Practice trials before the main experiment if you want.
+%% Practical trials before starting the main experiment.
 %
-% Set the images to use for practice trials.
+% Here it shows one image with the highest contrast continuously and
+% subject will evaluate the direction of the image. This is basically the
+% same as the practical trials we made right before starting the main
+% experiment, but here we will do the same thing until subjects say that
+% they understand and have a good idea of what to do during the session.
+PRACTICETIRALS = true;
+
 if (PRACTICETRIALS)
-    
-    %% Make images of the practice trials.
-    %
-    % We make initial, finishing images for disply and load the contrast
-    % image for practice trials.
-    %
-    % Note that our DMD displays the vertical symmetry image of the
-    % original images, so here we make vertical symmetry image to look fine
-    % on the DMD.
-    %
-    % Make initial screen image.
-    imageSize = size(nullStatusReportStruct.RGBimage,2);
-    messageInitialRGBImage_1stLine = 'Press any button to start';
-    messageInitialRGBImage_2ndLine = 'Main Experiment';
-    initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
-        'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
-    initialRGBImagePractice = fliplr(initialRGBImagePractice);
-    
-    % Set the contrast image for practice.
-    practiceTestContrast = max(sceneParamsStruct.predefinedContrasts);
-    practiceTestContrastIndex = find(sceneParamsStruct.predefinedContrasts == practiceTestContrast);
-    practiceRGBImage = sceneParamsStruct.predefinedRGBImages{1,practiceTestContrastIndex};
-    
-    %% Display the initial screen of the practice trials.
-    SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
-    
-    % Press any button to proceed.
-    GetGamepadResp;
-    disp('Practice trial is going to be started!');
-    
-    %% Start the practice trials here.
-    %
-    % Here we will display the highest contrast image five times. It
-    % should be easily visible. This is for subjects to get used to how
-    % they evaluate stimuli and to expect what's going to happen during the
-    % experiment. Here we set 5 times, but we can increase the number of
-    % the trials if needed.
-    nPracticeTrials = 5;
-    for pp = 1:nPracticeTrials
-        
-        % Print out the progress.
-        fprintf('Starting practice trial (%d/%d) \n', pp, nPracticeTrials);
-        
-        [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, practiceRGBImage, ...
-            theSceneTemporalSupportSeconds,practiceTestContrast,window,windowRect,...
-            'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
-            'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
-            'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
-            'movieImageDelaySec',experimentParams.movieImageDelaySec,...
-            'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
-            'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
-            'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',true);
-    end
-    
-    disp('Practice trial has been ended!');
+    PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams,...
+            window, windowRect); 
 end
+
+
+%% Main experiment.
+%
+% Make initial screen image.
+%
+% Note that our DMD displays the vertical symmetry image of the
+% original images, so here we make vertical symmetry image to look fine
+% on the DMD.
+imageSize = size(nullStatusReportStruct.RGBimage,2);
+messageInitialRGBImage_1stLine = 'Press any button to start';
+messageInitialRGBImage_2ndLine = 'Main Experiment';
+initialRGBImagePractice = insertText(nullStatusReportStruct.RGBimage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialRGBImage_1stLine messageInitialRGBImage_2ndLine},...
+    'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
+initialRGBImagePractice = fliplr(initialRGBImagePractice);
+
+% Set the contrast image for practice.
+practiceTestContrast = max(sceneParamsStruct.predefinedContrasts);
+practiceTestContrastIndex = find(sceneParamsStruct.predefinedContrasts == practiceTestContrast);
+practiceRGBImage = sceneParamsStruct.predefinedRGBImages{1,practiceTestContrastIndex};
+
+%% Display the initial screen for main experiment.
+SetScreenImage(initialRGBImagePractice, window, windowRect,'verbose',true);
+
+% Press any button to proceed.
+GetGamepadResp;
+disp('Practice trial is going to be started!');
+
+%% Start the pre-experiment trials here.
+%
+% Here we will display the highest contrast image five times. It
+% should be easily visible. This is for subjects to get used to how
+% they evaluate stimuli and to expect what's going to happen during the
+% experiment. 
+nPreExpTestTrials = 5;
+for pp = 1:nPreExpTestTrials
+    
+    % Print out the progress.
+    fprintf('Starting pre-experiment trial before main experiment (%d/%d) \n', pp, nPreExpTestTrials);
+    
+    [correct] = computePerformanceSACCDisplay(nullStatusReportStruct.RGBimage, practiceRGBImage, ...
+        theSceneTemporalSupportSeconds,practiceTestContrast,window,windowRect,...
+        'runningMode',experimentParams.runningMode,'autoResponse',autoResponseParams,...
+        'expKeyType',experimentParams.expKeyType,'beepSound',experimentParams.beepSound,...
+        'debugMode',experimentParams.debugMode,'movieStimuli',experimentParams.movieStimuli,...
+        'movieImageDelaySec',experimentParams.movieImageDelaySec,...
+        'preStimuliDelaySec',experimentParams.preStimuliDelaySec, 'addNoiseToImage', sceneParamsStruct.addNoiseToImage, ...
+        'addFixationPointImage', sceneParamsStruct.addFixationPointImage,...
+        'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',true);
+end
+disp('Pre-experiment trial has been ended!');
 
 %% Main experiment starts from here.
 %
-% If PTB mode and not simulating response, wait for subject
-% to press a button before starting trials. In the end,
-% probably want to move this to a place where the test cross
-% is displayed for the first time.  Or display test cross here,
-% or something.
-if (~PRACTICETRIALS)
-    
-    % Display crossbar image.
-    [imageTextureNull, imageWindowRectNull] = MakeImageTexture(nullStatusReportStruct.RGBimage, window, windowRect,...
-        'addFixationPoint', 'circle', 'verbose', true);
-    FlipImageTexture(imageTextureNull, window, imageWindowRectNull);
-    
-    % Press any button to proceed.
-    GetGamepadResp;
-end
-
-% All experimental trials happen here that include displaying test images
-% and getting responses.
-%
-% And we are collecting flip time whenever the displaying image changes.
+% We collect the data from here.
 flipTime = [];
 rngVal = {};
 whichPhaseImage = [];
