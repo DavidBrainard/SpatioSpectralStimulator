@@ -57,7 +57,7 @@ arguments
     gaborSdDeg (1,1)
     screenSizeObj
     options.nQuantizeBits (1,1) = 14
-    options.sineImagePhaseShiftDeg = []
+    options.sineImagePhaseShiftDeg = [0]
     options.verbose (1,1) = true
 end
 
