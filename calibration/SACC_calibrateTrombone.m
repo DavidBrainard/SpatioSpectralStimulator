@@ -191,7 +191,7 @@ if (PLOTCALIBRATIONRESULTS)
     plot(lensDioptersSet, positionFitted, 'r--');
     plot(targetLensDiopters, positionEstimated, ...
         'ro', 'markersize', 13, 'markerfacecolor', 'r', 'markeredgecolor', 'k');
-    xlabel('Lens diopters','FontSize',15);
+    xlabel('Testing lens diopters','FontSize',15);
     ylabel('Trombone position (mm)','FontSize',15);
     title('Initial Trombone position over lense diopers','FontSize',15);
     legend('Measurement data', 'Fit', 'Estimation', 'location', 'SouthEast', 'FontSize', 15);
