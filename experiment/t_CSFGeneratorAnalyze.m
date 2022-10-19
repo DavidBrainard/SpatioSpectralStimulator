@@ -56,6 +56,7 @@ sizeSubplot = [2 3];
 
 for ff = 1:nSineFreqCyclesPerDeg
     figure; clf; 
+    set(gcf,'position',[0,0,1920,1080]);
     
     % Set target spatial frequency.
     sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ff);
@@ -158,6 +159,28 @@ for ff = 1:nSineFreqCyclesPerDeg
         
         % Clear the pointsize for next plot.
         clear pointSize;
+    end
+end
+
+%% Save the results.
+SAVETHEPLOT = true;
+
+if (SAVETHEPLOT)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+            subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+        
+        % Make folder with subject name if it does not exist.
+        if ~exist(testFiledir, 'dir')
+            mkdir(testFiledir);
+        end
+        
+        % Save the plot.
+        testFilename = fullfile(testFiledir,...
+            sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDegTemp));
+        testFileFormat = '.tiff';
+        saveas(gcf,append(testFilename,testFileFormat));
+        fprintf('Plot has been saved successfully! \n');
     end
 end
 
