@@ -44,7 +44,7 @@ addInitialThresholdEst = true;
 addQuestFit = true;
 addLegend = false;
 
-subjectName = '002';
+subjectName = '003';
 
 %% Load the data and PF fitting.
 sineFreqCyclesPerDeg = [6];
@@ -148,10 +148,10 @@ for ff = 1:nSineFreqCyclesPerDeg
         
         if (addQuestFit)
             legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-                'FontSize', 12, 'location', 'southeast');
+                'FontSize', 9, 'location', 'southeast');
         else
             legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-                'FontSize', 12, 'location', 'southeast');
+                'FontSize', 9, 'location', 'southeast');
         end
         
         % Set xlim differently according to the axis on linear and log space.
@@ -180,7 +180,7 @@ if (SAVETHEPLOT)
             sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDegTemp));
         testFileFormat = '.tiff';
         saveas(gcf,append(testFilename,testFileFormat));
-        fprintf('Plot has been saved successfully! \n');
+        fprintf('\t Plot has been saved successfully! \n');
     end
 end
 
