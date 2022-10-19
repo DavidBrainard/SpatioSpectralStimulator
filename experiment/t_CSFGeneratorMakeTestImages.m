@@ -27,10 +27,12 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     % Set spatialGaborTargetContrast differently according to spatial frequency.
     if (sineFreqCyclesPerDeg == 3)
         spatialGaborTargetContrast = 0.02;
+    elseif (sineFreqCyclesPerDeg == 6)
+        spatialGaborTargetContrast = 0.04;
     elseif (sineFreqCyclesPerDeg == 18)
         spatialGaborTargetContrast = 0.06;
-    else % This is for 6, 9, and 12 cpd.
-        spatialGaborTargetContrast = 0.04;
+    else % This if for 9 and 12 cpd.
+        spatialGaborTargetContrast = 0.05;
     end
     
     colorDirectionParams = SetupColorDirection(conditionName,...
