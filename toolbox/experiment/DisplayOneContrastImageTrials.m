@@ -85,7 +85,17 @@ while 1
         'rotateImageDeg',sceneParamsStruct.rotateImageDeg, 'verbose',false);
     
     % Get a button press here.
-    buttonPress = GetGamepadResp;
+    while 1
+        buttonPress = GetGamepadResp;
+        
+        buttonOptions = {'right', 'down'};
+        if any(strcmp(buttonPress,buttonOptions))
+            break;
+        end
+        
+        fprintf('Available button options: \n');
+        fprintf('\t \t [%s] \n',buttonOptions{:});
+    end
     
     % Update the state according to button press.
     if strcmp(buttonPress,'down')
