@@ -77,6 +77,7 @@ elseif (~MEASUREPRIMARY)
         testFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
             'targetScreenSpdMeasured','olderDate',olderDatePrimary);
         load(testFilename); 
+        fprintf('Measurement file found, so skipping primary measurement! \n');
     else
         error('No file to load');
     end    
