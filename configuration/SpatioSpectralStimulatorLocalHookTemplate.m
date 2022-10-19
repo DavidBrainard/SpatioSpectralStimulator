@@ -62,6 +62,9 @@ setpref(projectName,'TestDataFolder',fullfile(baseDir,'SACC_datadev','TestData')
 % Main experiment data dir (as of 10/14/22)
 setpref(projectName,'SACCData',fullfile(baseDir,'SACC_data'));
 
+% Experiment analysis data dir (as of 10/19/22)
+setpref(projectName,'SACCAnalysis',fullfile(baseDir,'SACC_analysis'));
+
 % Check data dir (This is for screen stability and channel additivity data)
 setpref(projectName,'CheckDataFolder',fullfile(baseDir,'SACC_materials','JandJProjector','CheckData'));
 
