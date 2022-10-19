@@ -263,12 +263,6 @@ if (METHODOFADJUSTMENT)
     end
 end
 
-% Set the auto response params empty if it is not used in the main
-% experiment.
-if (~experimentParams.autoResponse)
-    autoResponseParams = [];
-end
-
 % Stop here if we did method of adjustment.
 if (METHODOFADJUSTMENT)
     return;
@@ -417,6 +411,12 @@ PRACTICETIRALS = true;
 if (PRACTICETRIALS)
     PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams,...
             window, windowRect); 
+end
+
+% Set the auto response params empty if it is not used in the main
+% experiment.
+if (~experimentParams.autoResponse)
+    autoResponseParams = [];
 end
 
 %% Main experiment.
