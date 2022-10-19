@@ -153,7 +153,7 @@ PROMPT = true;
 
 if (PROMPT)
     while 1
-    promptMessage = '    Type subject lens diopter of dominant eye [from -6 to +2]: ';
+    promptMessage = '    Type subject lens diopter of dominant eye: ';
     subjectLensDiopters = input(promptMessage);
     
     if ~isempty(subjectLensDiopters)
@@ -168,7 +168,7 @@ else
 end
 
 % Set the target (initial) position.
-targetLensDiopters = subjectLensDiopters + 0.5;
+targetLensDiopters = -(subjectLensDiopters + 0.5);
 
 % Here make a linear fitting for the data.
 p = polyfit(lensDioptersSet, positionContrastMax, 1);
@@ -178,7 +178,8 @@ positionFitted = polyval(p ,lensDioptersSet);
 positionEstimated = polyval(p, targetLensDiopters);
 
 % Print out the results.
-fprintf('Initial Trombone position for lens diopter = (%.2f) is %.0f (mm) \n', ...
+fprintf('\t * Target lens diopter is (%.2f) \n', subjectLensDiopters);
+fprintf('\t * Initial Trombone position at (%.2f) is %.0f (mm) \n', ...
     targetLensDiopters, positionEstimated);
 
 % Plot it.
