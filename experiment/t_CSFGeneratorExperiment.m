@@ -179,9 +179,9 @@ if (strcmp(ansMethodofAdjustment,'N'))
     end
     
     if (strcmp(ansPracticeTrials,'Y'))
-        PRACTICETIRALS = true;
+        PRACTICETRIALS = true;
     elseif (strcmp(ansPracticeTrials,'N'))
-        PRACTICETIRALS = false;
+        PRACTICETRIALS = false;
     end
 end
 
