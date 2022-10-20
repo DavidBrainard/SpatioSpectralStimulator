@@ -29,10 +29,14 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
         spatialGaborTargetContrast = 0.02;
     elseif (sineFreqCyclesPerDeg == 6)
         spatialGaborTargetContrast = 0.04;
+    elseif (sineFreqCyclesPerDeg == 9)
+        spatialGaborTargetContrast = 0.05;
+    elseif (sineFreqCyclesPerDeg == 12)
+        spatialGaborTargetContrast = 0.05;
     elseif (sineFreqCyclesPerDeg == 18)
         spatialGaborTargetContrast = 0.06;
-    else % This if for 9 and 12 cpd.
-        spatialGaborTargetContrast = 0.05;
+    else
+        error('Spatial frequency should be selected within [3,6,9,12,18]');
     end
     
     colorDirectionParams = SetupColorDirection(conditionName,...
