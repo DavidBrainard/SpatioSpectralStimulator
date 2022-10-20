@@ -15,6 +15,8 @@
 %                             interpolation.
 %    08/02/22  smo          - Changed the fitting method from interpolation
 %                             to linear. And file name changed.
+%    10/20/22  smo          - New calibration data added for the lens
+%                             diopters of +2 to +6.
 
 %% Initialize.
 clear; close all;
@@ -34,7 +36,7 @@ clear; close all;
 % to +2.0 for SACC project.
 %
 % Set the data range of interest.
-whichDataRange = [11:18];
+whichDataRange = [11:22];
 VERBOSE = false;
 
 % Make a loop here to collect the multiple lens data.
@@ -118,6 +120,31 @@ for ii = 1:length(whichDataRange)
             lensDiopters = +2.0;
             positionTrombone = [170.5 169.5 168.5 168 166 165 164 162 161];
             contrast         = [0.908 0.938 0.953 0.953 0.961 0.961 0.953 0.937 0.896];
+            
+            % This is the newly obtained data to validate the measurement
+            % (as of 10/20/22). We repeated the meausurement of lens
+            % diopters of +2 to see if we can get the same results as the
+            % last time and it did!
+        case 23
+            lensDiopters = +2.0;
+            positionTrombone = [170.5 169.5 168.5 168 166 165 164 162 161];
+            contrast         = [0.908 0.935 0.943 0.942 0.956 0.956 0.949 0.922 0.912];
+        case 19
+            lensDiopters = +3.0;
+            positionTrombone = [176 175 174 173 172 171 170 169 168 167 166 165];
+            contrast         = [0.897 0.938 0.937 0.945 0.950 0.950 0.952 0.957 0.944 0.935 0.900 0.841];
+        case 20
+            lensDiopters = +4.0;
+            positionTrombone = [182 181 180 179 178 177 176 175 174 173 172 171];
+            contrast         = [0.881 0.914 0.936 0.943 0.951 0.951 0.958 0.952 0.944 0.936 0.914 0.879];
+        case 21
+            lensDiopters = +5.0;
+            positionTrombone = [186 185 184 183 182 181 180 179 178 177 176 175];
+            contrast         = [0.894 0.923 0.942 0.949 0.949 0.953 0.95 0.942 0.936 0.934 0.905 0.831];
+        case 22
+            lensDiopters = +6.0;
+            positionTrombone = [191 190 189 188 187 186 185 184 183 182 181 180];
+            contrast         = [0.889 0.910 0.931 0.939 0.947 0.954 0.945 0.944 0.935 0.921 0.914 0.861];
         otherwise
     end
     
@@ -194,5 +221,5 @@ if (PLOTCALIBRATIONRESULTS)
     xlabel('Testing lens diopters','FontSize',15);
     ylabel('Trombone position (mm)','FontSize',15);
     title('Initial Trombone position over lense diopers','FontSize',15);
-    legend('Measurement data', 'Fit', 'Estimation', 'location', 'SouthEast', 'FontSize', 15);
+    legend('Measure','Fit', 'Estimation', 'location', 'SouthEast', 'FontSize', 12);
 end
