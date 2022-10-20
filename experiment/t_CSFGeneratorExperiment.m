@@ -76,7 +76,7 @@ conditionName = 'LminusMSmooth';
 inputMessageName = 'Enter subject name: ';
 subjectName = input(inputMessageName, 's');
 
-% Spatial frequency.
+%% Prompt Spatial frequency.
 while 1
     inputMessageSpatialFrequency = 'Which spatial frequency to test [3,6,9,12,18]: ';
     sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
@@ -89,7 +89,7 @@ while 1
     disp('Spatial frequency should be within the above range!');
 end
 
-% Which filter to use.
+%% Prompt Which filter to use.
 while 1
     inputMessageFilter = 'Which filter to test [A(neutral),B,C,D,E]: ';
     whichFilter = input(inputMessageFilter, 's');
@@ -102,7 +102,7 @@ while 1
     disp('Filter should be chose within [A, B, C, D, E]!');
 end
 
-% Experiment mode.
+%% Prompt Experiment mode.
 while 1
     expModeOptions = {'adaptive' 'validation'};
     defaultExpMode = expModeOptions{find(contains(expModeOptions, 'validation'))};
@@ -125,11 +125,11 @@ while 1
     disp('Experiment mode should be either adaptive or validation!');
 end
 
-% Method of adjustment.
+%% Prompt Method of adjustment.
 while 1
     inputMessageMethodOfAdjustment = 'Start with Method of adjustment always with filter A (neutral) [Y, N]: ';
     ansMethodofAdjustment = input(inputMessageMethodOfAdjustment, 's');
-    methodOfAdjustmentOptions = {'Y' 'N'};
+    ansOptions = {'Y' 'N'};
     
     if strcmp(ansMethodofAdjustment,'Y')
         neutralFilter = 'A';
@@ -137,7 +137,7 @@ while 1
             error('Neutral filter (A) should be used for method of adjustment!');
         end
     end
-    if ismember(ansMethodofAdjustment, methodOfAdjustmentOptions)
+    if ismember(ansMethodofAdjustment, ansOptions)
         break
     end
     
@@ -159,6 +159,29 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
         % Set the contrast range here.
         contrastRangeData = load(testFilenameContrast);
         estDomainValidation = contrastRangeData.estDomainValidation;
+    end
+end
+
+%% Prompt Practice trials.
+%
+% It only prompts when the method of adjustment is skipped.
+if (strcmp(ansMethodofAdjustment,'N'))
+    while 1
+        inputMessagePracticeTrials = 'Practice trials before main experiment? [Y, N]: ';
+        ansPracticeTrials = input(inputMessagePracticeTrials, 's');
+        ansOptions = {'Y' 'N'};
+ 
+        if ismember(ansPracticeTrials, ansOptions)
+            break
+        end
+        
+        disp('Type either Y or N!');  
+    end
+    
+    if (strcmp(ansPracticeTrials,'Y'))
+        PRACTICETIRALS = true;
+    elseif (strcmp(ansPracticeTrials,'N'))
+        PRACTICETIRALS = false;
     end
 end
 
@@ -406,8 +429,6 @@ end
 % same as the practical trials we made right before starting the main
 % experiment, but here we will do the same thing until subjects say that
 % they understand and have a good idea of what to do during the session.
-PRACTICETIRALS = true;
-
 if (PRACTICETRIALS)
     PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams,...
             window, windowRect); 
