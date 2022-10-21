@@ -26,12 +26,13 @@ dataSACCPrimary3 = load('SACCPrimary3.mat').cals;
 % Get a number for each data which contains the most recent data.
 %
 % SACC.
-numMostRecentDataSACC = length(dataSACC);
+olderDate = 0;
+numMostRecentDataSACC = length(dataSACC) - olderDate;
 
 % SACC primaries.
 nPrimaries = 3;
 for pp = 1:nPrimaries
-    numMostRecentDataSACCPrimary(pp) = length(eval(append('dataSACCPrimary',num2str(pp))));
+    numMostRecentDataSACCPrimary(pp) = length(eval(append('dataSACCPrimary',num2str(pp)))) - olderDate;
 end
 
 % Extract spd and the date of measurement from each dataset. You can choose
