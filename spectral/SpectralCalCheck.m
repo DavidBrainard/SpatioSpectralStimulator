@@ -26,7 +26,8 @@ conditionName = 'LminusMSmooth';
 
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s',conditionName));
+    testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
+        'testImageData_');
     theData = load(testFilename);
 end
 
@@ -279,7 +280,7 @@ if (MEASURETARGETCONTRAST)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_%s_%s',conditionName,dayTimestr));
+        testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_%s',dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
             'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
             'ptCldScreenSettingsCheckCal','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
