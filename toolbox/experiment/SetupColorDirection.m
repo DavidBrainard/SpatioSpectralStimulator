@@ -95,8 +95,6 @@ switch (colorDirectionParams.conditionName)
         % run into numerical error at the edges. The second number is used when
         % defining the three primaries, the first when computing desired weights on
         % the primaries.
-        %
-        % colorDirectionParams.spatialGaborTargetContrast = 0.04;
         colorDirectionParams.spatialGaborTargetContrast = options.spatialGaborTargetContrast;
         
         % Set up basis to try to keep spectra close to.
