@@ -15,10 +15,11 @@ clear; close all;
 % We can remove this now that we are saving testData from SpectralCalCheck,
 % after next round of measurement.
 conditionName = 'LminusMSmooth';
+olderDate = 0;
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
-        'testImageData_');
+        'testImageData_','olderDate',olderDate);
     theComputeData = load(testFilename);
 end
 
@@ -33,6 +34,9 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
 else
     error('Cannot find data file');
 end
+
+% Get the file name only.
+[filedir filename ext] = fileparts(testFilename);
 
 %% Set up some variables that we need
 %
@@ -213,6 +217,21 @@ for pp = 1:nPrimaries
     ylabel('Measured contrast');
     legend({'Measured','Nominal'},'location','southeast');
     title(sprintf('Cone class %d',pp));
+end
+
+% Save the plot if you want.
+SAVETHEPLOT = true;
+
+if (SAVETHEPLOT)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
+        
+        % Save the plot.
+        testFilename = fullfile(testFiledir,filename);
+        testFileFormat = '.tiff';
+        saveas(gcf,append(testFilename,testFileFormat));
+        fprintf('\t Plot has been saved successfully! \n');
+    end
 end
 
 %% Plot the residual between desired and measured contrasts.
