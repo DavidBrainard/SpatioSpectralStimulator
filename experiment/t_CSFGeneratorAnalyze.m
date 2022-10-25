@@ -44,6 +44,55 @@ addInitialThresholdEst = true;
 addQuestFit = true;
 addLegend = false;
 
+%% Find available data here.
+if (ispref('SpatioSpectralStimulator','SACCData'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+    testFileList = dir(testFiledir);
+    
+    % Subject name.
+    for tt = 1:length(testFileList)
+        testFilenameList{tt}  = testFileList(tt).name;
+    end
+    idxSubjectName = find(str2double(testFilenameList)>0);
+    subjectNameOptions = testFilenameList(idxSubjectName);
+    
+    % Spatial frequency.
+    nSubjectName = length(subjectNameOptions);
+    for ss = 1:nSubjectName
+        dirTemp = fullfile(testFiledir,subjectNameOptions{ss});
+        dataList = dir(dirTemp);
+        
+        numStartData = 3;
+        for dd = 1:length(dataList)-numStartData+1
+            idxData = numStartData+dd-1;
+            optionsSF{dd,ss} = dataList(idxData).name;
+        end
+    end
+    
+    % Load the data.
+    %
+    % Subject.
+    for ss = 1:nSubjectName
+        dirSubjectTemp = fullfile(testFiledir,subjectNameOptions{ss});
+        
+        % Spatial frequency.
+        nSF = size(optionsSF,1);
+        for dd = 1:nSF
+            dirSFTemp = fullfile(dirSubjectTemp,optionsSF{dd,ss});
+        end
+        
+        % If dir exists, load the data.
+        if exist(dirSFTemp)
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
+            
+            theData = load(testFilename);
+        end
+        
+
+    end
+end
+
 subjectName = '003';
 
 %% Load the data and PF fitting.
@@ -55,7 +104,7 @@ nAllFilters = length(allFilters);
 sizeSubplot = [2 3];
 
 for ff = 1:nSineFreqCyclesPerDeg
-    figure; clf; 
+    figure; clf;
     set(gcf,'position',[0,0,1920,1080]);
     
     % Set target spatial frequency.
