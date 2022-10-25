@@ -5,6 +5,9 @@
 % History:
 %    10/25/22   smo    - Wrote it.
 
+%% Initialize.
+clear; close all;
+ 
 %% Load images.
 sineFreqCyclesPerDeg = [3,6,9,12,18];
 olderDate = 0;
