@@ -22,15 +22,15 @@ for ss = 1:nSineFreqCyclesPerDeg
     else
         error('Cannot find data file');
     end
+    [filepath,filename,ext] = fileparts(testFilename);
+    fprintf('\t *Image data has been successfully loaded! (%d/%d) \n',ss,nSineFreqCyclesPerDeg);
+    fprintf('\t *Loaded file name = (%s) \n',filename);
 end
 
 %% Plot images.
-figure; clf;
-
 for ss = 1:nSineFreqCyclesPerDeg
     sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
-  
-    subplot(1,nSineFreqCyclesPerDeg,ss);
+    figure; clf;
     imshow(images{ss});
-    title(sprintf('%dcpd',sineFreqCyclesPerDegTemp));
+    title(sprintf('%dcpd',sineFreqCyclesPerDegTemp),'fontsize',15);
 end
