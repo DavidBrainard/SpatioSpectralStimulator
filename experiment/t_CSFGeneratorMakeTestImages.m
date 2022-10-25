@@ -32,9 +32,9 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     elseif (sineFreqCyclesPerDeg == 9)
         spatialGaborTargetContrast = 0.05;
     elseif (sineFreqCyclesPerDeg == 12)
-        spatialGaborTargetContrast = 0.05;
-    elseif (sineFreqCyclesPerDeg == 18)
         spatialGaborTargetContrast = 0.06;
+    elseif (sineFreqCyclesPerDeg == 18)
+        spatialGaborTargetContrast = 0.07;
     else
         error('Spatial frequency should be selected within [3,6,9,12,18]');
     end
