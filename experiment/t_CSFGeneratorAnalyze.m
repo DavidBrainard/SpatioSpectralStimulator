@@ -212,8 +212,11 @@ for ss = 1:nSubjects
             clear pointSize;
         end
         
+        % Print out the progress.
+        fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
+        
         %% Save the results.
-        SAVETHEPLOT = false;
+        SAVETHEPLOT = true;
         
         if (SAVETHEPLOT)
             if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -233,9 +236,6 @@ for ss = 1:nSubjects
                 fprintf('\t Plot has been saved successfully! \n');
             end
         end
-        
-        % Print out the progress.
-        fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
     end
 end
 
