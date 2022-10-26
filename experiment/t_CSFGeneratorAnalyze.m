@@ -85,36 +85,43 @@ else
     spatialFrequencyOptions = {'6'};
 end
 
-%% Load the data and PF fitting.
+%% Load data and PF fitting.
 nSubjects = length(subjectNameOptions);
 
 for ss = 1:nSubjects
+    % Set target subject.
     subjectName = subjectNameOptions{ss};
     
+    % Set available spatial frequency data for the subject.
     sineFreqCyclesPerDeg = spatialFrequencyOptions(:,ss);
-    % Here we remove empty cells, and take only cells that has numbers.
+    % Here we remove empty cells. It shows a cell empty when a subject does
+    % not have all possible spatial frequency data.
     sineFreqCyclesPerDeg = sineFreqCyclesPerDeg(...
         find(~cellfun(@isempty,sineFreqCyclesPerDeg)));
     
     nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
     
-    allFilters = {'A', 'B', 'C', 'D', 'E'};
-    nAllFilters = length(allFilters);
+    % Set all possible filters.
+    filterOptions = {'A', 'B', 'C', 'D', 'E'};
+    nFilters = length(filterOptions);
+    
+    % Set the size of the subplot. Each figure will contain all filters
+    % data, so there will be a total of five subplots in one figure.
     sizeSubplot = [2 3];
     
     for dd = 1:nSineFreqCyclesPerDeg
         
-        % Set target spatial frequency. As it is stored in string form, we
-        % extract it and convert it to double.
+        % As spatial frequency info is stored in string form, we extract
+        % and convert it to double.
         sineFreqCyclesPerDegStr = sineFreqCyclesPerDeg{dd};
         sineFreqCyclesPerDegTemp = sscanf(sineFreqCyclesPerDegStr,'%d');
         
         figure; clf;
         set(gcf,'position',[0,0,1920,1080]);
         
-        for ff = 1:nAllFilters
+        for ff = 1:nFilters
             % Set target filter.
-            whichFilter = allFilters{ff};
+            whichFilter = filterOptions{ff};
             
             % Load the experiment data.
             if (ispref('SpatioSpectralStimulator','SACCData'))
@@ -205,7 +212,7 @@ for ss = 1:nSubjects
                     'FontSize', 9, 'location', 'southeast');
             end
             
-            % Set xlim differently according to the axis on linear and log space.
+            % Set the range for the x-axis.
             xlim([-3.3 -1]);
             
             % Clear the pointsize for next plot.
