@@ -1,11 +1,11 @@
-function PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
-% This runs practical trials with one image with the highest contrast.
+function PracticeTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
+% This runs practice trials with one image with the highest contrast.
 %
 % Syntax:
-%    PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
+%    PracticeTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams, window, windowRect)
 %
 % Description:
-%    It runs practical trials before starting the main experiment in SACC
+%    It runs practice trials before starting the main experiment in SACC
 %    project. It continuosly shows the same image with the highest contrast
 %    so that subject can get used to how to evaluate it for the main
 %    experiment.
@@ -55,7 +55,7 @@ testContrast = sceneParamsStruct.predefinedContrasts(end);
 %% Set the initial screen for instruction.
 imageSize = size(nullImage,2);
 messageInitialImage_1stLine = 'Press any button to start';
-messageInitialImage_2ndLine = 'Practical trials';
+messageInitialImage_2ndLine = 'Practice trials';
 initialInstructionImage = insertText(nullImage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialImage_1stLine messageInitialImage_2ndLine},...
     'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
 initialInstructionImage = fliplr(initialInstructionImage);
@@ -68,7 +68,7 @@ GetGamepadResp;
 disp('Practice trial is going to be started!');
 
 %% Start the session.
-fprintf('Practical trial starts...\n');
+fprintf('Practice trial starts...\n');
 
 while 1
     % Set the contrast level.
@@ -92,7 +92,7 @@ while 1
     
     % Update the state according to button press.
     if strcmp(buttonPress,'down')
-        fprintf('Finishing up the practical trials session... \n');
+        fprintf('Finishing up the practice trials session... \n');
         
         % Play sound as feedback when the contrast level was decided.
         numPlaySound = 3;

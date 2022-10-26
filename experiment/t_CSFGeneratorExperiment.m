@@ -422,15 +422,15 @@ end
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-%% Practical trials before starting the main experiment.
+%% Practice trials before starting the main experiment.
 %
 % Here it shows one image with the highest contrast continuously and
 % subject will evaluate the direction of the image. This is basically the
-% same as the practical trials we made right before starting the main
+% same as the practice trials we made right before starting the main
 % experiment, but here we will do the same thing until subjects say that
 % they understand and have a good idea of what to do during the session.
 if (PRACTICETRIALS)
-    PracticalTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams,...
+    PracticeTrialsOneContrastImage(sceneParamsStruct, experimentParams, autoResponseParams,...
             window, windowRect); 
 end
 
