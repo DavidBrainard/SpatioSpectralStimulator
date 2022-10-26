@@ -289,3 +289,45 @@ if (MEASURETARGETCONTRAST)
     end
     disp('Data has been saved successfully!');
 end
+
+%% This part is from SpectralCalAnalyze.
+%
+% Plot measured versus desired contrasts.
+contrastFig = figure; hold on;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize/3];
+set(gcf,'position',figurePosition);
+
+axisLim = 0.05;
+theColors = ['r' 'g' 'b'];
+for pp = 1:nPrimaries
+    subplot(1,nPrimaries,pp); hold on;
+    plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(desiredContrastCheckCal(pp,:),ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
+    plot(desiredContrastCheckCal(pp,1),ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(desiredContrastCheckCal(pp,1),ptCldContrastNominal(pp,1), 'ko','MarkerSize',18);
+
+    plot([-1 1],[-1 1],'k');
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    xlabel('Desired contrast');
+    ylabel('Measured contrast');
+    legend({'Measured','Nominal'},'location','southeast');
+    title(sprintf('Cone class %d',pp));
+end
+
+% Save the plot if you want.
+SAVETHEPLOT = true;
+
+if (SAVETHEPLOT)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
+        
+        % Save the plot.
+        testFilename = fullfile(testFiledir,filename);
+        testFileFormat = '.tiff';
+        saveas(gcf,append(testFilename,testFileFormat));
+        fprintf('\t Plot has been saved successfully! \n');
+    end
+end
