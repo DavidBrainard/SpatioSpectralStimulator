@@ -325,6 +325,7 @@ if (SAVETHEPLOT)
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
         
         % Save the plot.
+        [filedir filename ext] = fileparts(testFilename);
         testFilename = fullfile(testFiledir,filename);
         testFileFormat = '.tiff';
         saveas(gcf,append(testFilename,testFileFormat));
