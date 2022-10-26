@@ -27,6 +27,8 @@
 %    06/26/22  smo          - Added a part plotting CSF curves.
 %    10/03/22  smo          - Now fitting all spatial frequency at once and
 %                             give CSF curve at the same time.
+%    10/26/22  smo          - Added an option to fit all available data at
+%                             once.
 
 %% Start over.
 clear; close all;
@@ -45,191 +47,195 @@ addQuestFit = true;
 addLegend = false;
 
 %% Find available data here.
-if (ispref('SpatioSpectralStimulator','SACCData'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-    testFileList = dir(testFiledir);
-    
-    % Subject name.
-    for tt = 1:length(testFileList)
-        testFilenameList{tt}  = testFileList(tt).name;
-    end
-    idxSubjectName = find(str2double(testFilenameList)>0);
-    subjectNameOptions = testFilenameList(idxSubjectName);
-    
-    % Spatial frequency.
-    nSubjectName = length(subjectNameOptions);
-    for ss = 1:nSubjectName
-        dirTemp = fullfile(testFiledir,subjectNameOptions{ss});
-        dataList = dir(dirTemp);
+%
+% You can either fit all available data at once or choose one subject's
+% data to fit.
+FITALLATONCE = true;
+
+if (FITALLATONCE)
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        testFileList = dir(testFiledir);
         
-        numStartData = 3;
-        for dd = 1:length(dataList)-numStartData+1
-            idxData = numStartData+dd-1;
-            optionsSF{dd,ss} = dataList(idxData).name;
+        % Find available data of subject and spatial frequency.
+        %
+        % Subject name.
+        for tt = 1:length(testFileList)
+            testFilenameList{tt}  = testFileList(tt).name;
         end
-    end
-    
-    % Load the data.
-    %
-    % Subject.
-    for ss = 1:nSubjectName
-        dirSubjectTemp = fullfile(testFiledir,subjectNameOptions{ss});
+        idxSubjectName = find(str2double(testFilenameList)>0);
+        subjectNameOptions = testFilenameList(idxSubjectName);
         
         % Spatial frequency.
-        nSF = size(optionsSF,1);
-        for dd = 1:nSF
-            dirSFTemp = fullfile(dirSubjectTemp,optionsSF{dd,ss});
-        end
-        
-        % If dir exists, load the data.
-        if exist(dirSFTemp)
-            testFilename = GetMostRecentFileName(testFiledir,...
-                sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
+        nSubjectName = length(subjectNameOptions);
+        for ss = 1:nSubjectName
+            dirTemp = fullfile(testFiledir,subjectNameOptions{ss});
+            dataList = dir(dirTemp);
             
-            theData = load(testFilename);
+            numStartData = 3;
+            for dd = 1:length(dataList)-numStartData+1
+                idxData = numStartData+dd-1;
+                spatialFrequencyOptions{dd,ss} = dataList(idxData).name;
+            end
         end
-        
-
     end
+else
+    % Load single subject to fit one by one.
+    subjectNameOptions = {'003'};
+    spatialFrequencyOptions = {'6'};
 end
 
-subjectName = '003';
-
 %% Load the data and PF fitting.
-sineFreqCyclesPerDeg = [6];
-allFilters = {'A', 'B', 'C', 'D', 'E'};
+nSubjects = length(subjectNameOptions);
 
-nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
-nAllFilters = length(allFilters);
-sizeSubplot = [2 3];
-
-for ff = 1:nSineFreqCyclesPerDeg
-    figure; clf;
-    set(gcf,'position',[0,0,1920,1080]);
+for ss = 1:nSubjects
+    subjectName = subjectNameOptions{ss};
     
-    % Set target spatial frequency.
-    sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ff);
+    sineFreqCyclesPerDeg = spatialFrequencyOptions(:,ss);
+    % Here we remove empty cells, and take only cells that has numbers.
+    sineFreqCyclesPerDeg = sineFreqCyclesPerDeg(...
+        find(~cellfun(@isempty,sineFreqCyclesPerDeg)));
     
-    for ss = 1:nAllFilters
-        % Set target filter.
-        whichFilter = allFilters{ss};
+    nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
+    
+    allFilters = {'A', 'B', 'C', 'D', 'E'};
+    nAllFilters = length(allFilters);
+    sizeSubplot = [2 3];
+    
+    for dd = 1:nSineFreqCyclesPerDeg
         
-        % Load the experiment data.
-        if (ispref('SpatioSpectralStimulator','SACCData'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
-                subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-            testFilename = GetMostRecentFileName(testFiledir,...
-                sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
-            theData = load(testFilename);
-        else
-            error('Cannot find data file');
-        end
+        % Set target spatial frequency. As it is stored in string form, we
+        % extract it and convert it to double.
+        sineFreqCyclesPerDegStr = sineFreqCyclesPerDeg{dd};
+        sineFreqCyclesPerDegTemp = sscanf(sineFreqCyclesPerDegStr,'%d');
         
-        nDataContrastRange = 1;
-        for cc = 1:nDataContrastRange
-            % Load the contrast range data.
-            testFilename = GetMostRecentFileName(testFiledir,...
-                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
-            theContrastData = load(testFilename);
+        figure; clf;
+        set(gcf,'position',[0,0,1920,1080]);
+        
+        for ff = 1:nAllFilters
+            % Set target filter.
+            whichFilter = allFilters{ff};
             
-            % Extract the threshold from the initial measurements.
-            thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
-        end
-        
-        % Pull out the data here.
-        nTrials = theData.estimator.nRepeat;
-        [stimVec, responseVec, structVec] = combineData(theData.estimator);
-        
-        % Here we will plot the PF fitting graph.
-        %
-        % Set marker size here. We will use this number to plot the results to
-        % have different marker size according to the number of trials. Here
-        % we used the same method to decide the size of each marker as
-        % 'thresholdMLE' does.
-        stimVal = unique(stimVec);
-        pCorrect = zeros(1,length(stimVal));
-        for idx = 1:length(stimVal)
-            prop = responseVec(stimVec == stimVal(idx));
-            pCorrect(idx) = sum(prop) / length(prop);
-            pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
-        end
-        
-        thresholdCriterion = 0.81606;
-        [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
-            'thresholdCriterion', thresholdCriterion, 'returnData', true);
-        thresholdsQuest(ss) = threshold;
-        
-        % Set the contrast levels in linear unit.
-        examinedContrastsLinear = 10.^dataOut.examinedContrasts;
-        
-        % Set if you want to add Quest fit in the results.
-        if (addQuestFit)
-            questPara = para;
-        else
-            questPara = [];
-        end
-        
-        % PF fitting here.
-        if (SUBPLOT)
-            subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
-        end
-        [paramsFitted(:,ss)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-            'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
-            'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
-            'questPara', questPara,'addLegend',false);
-        subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
-        
-        % Add initial threhold to the plot.
-        if (addInitialThresholdEst)
+            % Load the experiment data.
+            if (ispref('SpatioSpectralStimulator','SACCData'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
+                    subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+                testFilename = GetMostRecentFileName(testFiledir,...
+                    sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
+                theData = load(testFilename);
+            else
+                error('Cannot find data file');
+            end
+            
+            nDataContrastRange = 1;
             for cc = 1:nDataContrastRange
-                % Plot it on log space if you want.
-                if(axisLog)
-                    thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+                % Load the contrast range data.
+                testFilename = GetMostRecentFileName(testFiledir,...
+                    sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
+                theContrastData = load(testFilename);
+                
+                % Extract the threshold from the initial measurements.
+                thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
+            end
+            
+            % Pull out the data here.
+            nTrials = theData.estimator.nRepeat;
+            [stimVec, responseVec, structVec] = combineData(theData.estimator);
+            
+            % Here we will plot the PF fitting graph.
+            %
+            % Set marker size here. We will use this number to plot the results to
+            % have different marker size according to the number of trials. Here
+            % we used the same method to decide the size of each marker as
+            % 'thresholdMLE' does.
+            stimVal = unique(stimVec);
+            pCorrect = zeros(1,length(stimVal));
+            for idx = 1:length(stimVal)
+                prop = responseVec(stimVec == stimVal(idx));
+                pCorrect(idx) = sum(prop) / length(prop);
+                pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
+            end
+            
+            thresholdCriterion = 0.81606;
+            [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+                'thresholdCriterion', thresholdCriterion, 'returnData', true);
+            thresholdsQuest(ff) = threshold;
+            
+            % Set the contrast levels in linear unit.
+            examinedContrastsLinear = 10.^dataOut.examinedContrasts;
+            
+            % Set if you want to add Quest fit in the results.
+            if (addQuestFit)
+                questPara = para;
+            else
+                questPara = [];
+            end
+            
+            % PF fitting here.
+            if (SUBPLOT)
+                subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
+            end
+            [paramsFitted(:,ff)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+                'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+                'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
+                'questPara', questPara,'addLegend',false);
+            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
+            
+            % Add initial threhold to the plot.
+            if (addInitialThresholdEst)
+                for cc = 1:nDataContrastRange
+                    % Plot it on log space if you want.
+                    if(axisLog)
+                        thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
+                    end
+                    
+                    % Plot it here.
+                    plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
+                    plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
+                    plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
+                    plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
+                end
+            end
+            
+            if (addQuestFit)
+                legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
+                    'FontSize', 9, 'location', 'southeast');
+            else
+                legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
+                    'FontSize', 9, 'location', 'southeast');
+            end
+            
+            % Set xlim differently according to the axis on linear and log space.
+            xlim([-3.3 -1]);
+            
+            % Clear the pointsize for next plot.
+            clear pointSize;
+        end
+        
+        %% Save the results.
+        SAVETHEPLOT = false;
+        
+        if (SAVETHEPLOT)
+            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                    subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+                
+                % Make folder with subject name if it does not exist.
+                if ~exist(testFiledir, 'dir')
+                    mkdir(testFiledir);
                 end
                 
-                % Plot it here.
-                plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
-                plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
-                plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
-                plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
+                % Save the plot.
+                testFilename = fullfile(testFiledir,...
+                    sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDegTemp));
+                testFileFormat = '.tiff';
+                saveas(gcf,append(testFilename,testFileFormat));
+                fprintf('\t Plot has been saved successfully! \n');
             end
         end
         
-        if (addQuestFit)
-            legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-                'FontSize', 9, 'location', 'southeast');
-        else
-            legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-                'FontSize', 9, 'location', 'southeast');
-        end
-        
-        % Set xlim differently according to the axis on linear and log space.
-        xlim([-3.3 -1]);
-        
-        % Clear the pointsize for next plot.
-        clear pointSize;
-    end
-end
-
-%% Save the results.
-SAVETHEPLOT = true;
-
-if (SAVETHEPLOT)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
-            subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-        
-        % Make folder with subject name if it does not exist.
-        if ~exist(testFiledir, 'dir')
-            mkdir(testFiledir);
-        end
-        
-        % Save the plot.
-        testFilename = fullfile(testFiledir,...
-            sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDegTemp));
-        testFileFormat = '.tiff';
-        saveas(gcf,append(testFilename,testFileFormat));
-        fprintf('\t Plot has been saved successfully! \n');
+        % Print out the progress.
+        fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
     end
 end
 
