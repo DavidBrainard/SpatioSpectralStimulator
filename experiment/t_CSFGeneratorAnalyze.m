@@ -134,11 +134,14 @@ if (SHOWPROGRESS)
     % Save the progress plot.
     SAVEPROGRESSPLOT = true;
     if (SAVEPROGRESSPLOT)
-        
+        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            testFilename = fullfile(testFiledir,'Experiment_Progress');
+            testFileFormat = '.tiff';
+            saveas(gcf,append(testFilename,testFileFormat));
+        end
     end
 end
-
-
 
 %% Load data and PF fitting.
 nSubjects = length(subjectNameOptions);
