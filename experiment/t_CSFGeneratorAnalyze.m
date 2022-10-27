@@ -81,8 +81,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'003'};
-    spatialFrequencyOptions = {'6'};
+    subjectNameOptions = {'012'};
+    spatialFrequencyOptions = {'3'};
 end
 
 %% Show the progress of the experiment.
@@ -124,15 +124,21 @@ if (SHOWPROGRESS)
         numLevelProgress = length(numVisitsCompleted);
         
         bgBarColor = annotation('rectangle', ...
-            [barPositionHorzStart barPositionVert-0.105*(ss-1) barPositionHorzEnd barWidth],...
+            [barPositionHorzStart textLocationVert barPositionHorzEnd barWidth],...
             'EdgeColor','black', 'FaceColor', 'white');
         frontBarColor = annotation('rectangle', ...
-            [barPositionHorzStart barPositionVert-0.105*(ss-1) numLevelProgress*0.15 barWidth],...
+            [barPositionHorzStart textLocationVert numLevelProgress*0.15 barWidth],...
             'EdgeColor','None', 'FaceColor', 'blue');
+    end
+    
+    % Save the progress plot.
+    SAVEPROGRESSPLOT = true;
+    if (SAVEPROGRESSPLOT)
+        
     end
 end
 
-% Save the progress plot.
+
 
 %% Load data and PF fitting.
 nSubjects = length(subjectNameOptions);
