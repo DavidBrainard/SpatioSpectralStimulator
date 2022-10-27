@@ -85,6 +85,55 @@ else
     spatialFrequencyOptions = {'6'};
 end
 
+%% Show the progress of the experiment.
+SHOWPROGRESS = true;
+
+if (SHOWPROGRESS)
+    figure; clf;
+    
+    % Set background axes. This is just for texts.
+    main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
+    
+    % Put visit number text on the top.
+    nVisits = 5;
+    barPositionHorzStart = 0.15;
+    barPositionHorzEnd = 0.8;
+    barPositionVert = 0.8;
+    for vv = 1:nVisits
+        visitOptions = linspace(3,7,nVisits);
+        visitStr = sprintf('Visit %d', visitOptions(vv));
+        textIntervalHorzOptions = linspace(barPositionHorzStart+0.05,barPositionHorzEnd,nVisits);
+        text(textIntervalHorzOptions(vv), barPositionVert+0.05, visitStr, 'Parent', main);
+    end
+    
+    % Use a red annotation rectangle as background, and overlay a
+    % green annotation rectangle on top.
+    nSubjects = length(subjectNameOptions);
+    for ss = 1:nSubjects
+        % Subejct.
+        textLocationVertOptions = sort(linspace(0.2,0.8,nSubjects),'descend');
+        textLocationVert = textLocationVertOptions(ss);
+        text(0.03, textLocationVert, sprintf('Subject %s',subjectNameOptions{ss}), 'Parent', main)
+        
+        % Fill the bar based on the completed number of spatial frequency
+        % (so, number of visits) per each subject.
+        barWidth = 0.02;
+
+        numVisitsCompleted = spatialFrequencyOptions(:,ss);
+        numVisitsCompleted = numVisitsCompleted(find(~cellfun(@isempty,numVisitsCompleted)));
+        numLevelProgress = length(numVisitsCompleted);
+        
+        bgBarColor = annotation('rectangle', ...
+            [barPositionHorzStart barPositionVert-0.105*(ss-1) barPositionHorzEnd barWidth],...
+            'EdgeColor','black', 'FaceColor', 'white');
+        frontBarColor = annotation('rectangle', ...
+            [barPositionHorzStart barPositionVert-0.105*(ss-1) numLevelProgress*0.15 barWidth],...
+            'EdgeColor','None', 'FaceColor', 'blue');
+    end
+end
+
+% Save the progress plot.
+
 %% Load data and PF fitting.
 nSubjects = length(subjectNameOptions);
 
