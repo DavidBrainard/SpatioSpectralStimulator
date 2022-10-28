@@ -81,12 +81,12 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'012'};
-    spatialFrequencyOptions = {'3'};
+    subjectNameOptions = {'008'};
+    spatialFrequencyOptions = {'12'};
 end
 
 %% Show the progress of the experiment.
-SHOWPROGRESS = true;
+SHOWPROGRESS = false;
 
 if (SHOWPROGRESS)
     figure; clf;
@@ -95,23 +95,25 @@ if (SHOWPROGRESS)
     main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
     
     % Put visit number text on the top.
-    nVisits = 5;
+    numVisitStart = 1;
+    numVisitEnd = 8;
+    nVisits = numVisitEnd-numVisitStart+1;
     barPositionHorzStart = 0.15;
     barPositionHorzEnd = 0.8;
     barPositionVert = 0.8;
     for vv = 1:nVisits
-        visitOptions = linspace(3,7,nVisits);
+        visitOptions = linspace(numVisitStart,numVisitEnd,nVisits);
         visitStr = sprintf('Visit %d', visitOptions(vv));
-        textIntervalHorzOptions = linspace(barPositionHorzStart+0.05,barPositionHorzEnd,nVisits);
+        textIntervalHorzOptions = linspace(barPositionHorzStart+0.05,barPositionHorzEnd+0.05,nVisits);
         text(textIntervalHorzOptions(vv), barPositionVert+0.05, visitStr, 'Parent', main);
     end
     
     % Use a red annotation rectangle as background, and overlay a
     % green annotation rectangle on top.
-    nSubjects = length(subjectNameOptions);
-    for ss = 1:nSubjects
+    nSubjectsProgress = length(subjectNameOptions);
+    for ss = 1:nSubjectsProgress
         % Subejct.
-        textLocationVertOptions = sort(linspace(0.2,0.8,nSubjects),'descend');
+        textLocationVertOptions = sort(linspace(0.2,0.8,nSubjectsProgress),'descend');
         textLocationVert = textLocationVertOptions(ss);
         text(0.03, textLocationVert, sprintf('Subject %s',subjectNameOptions{ss}), 'Parent', main)
         
@@ -122,12 +124,13 @@ if (SHOWPROGRESS)
         numVisitsCompleted = spatialFrequencyOptions(:,ss);
         numVisitsCompleted = numVisitsCompleted(find(~cellfun(@isempty,numVisitsCompleted)));
         numLevelProgress = length(numVisitsCompleted);
+        barWidthHorzOneLevelProgress = 0.14;
         
         bgBarColor = annotation('rectangle', ...
             [barPositionHorzStart textLocationVert barPositionHorzEnd barWidth],...
             'EdgeColor','black', 'FaceColor', 'white');
         frontBarColor = annotation('rectangle', ...
-            [barPositionHorzStart textLocationVert numLevelProgress*0.15 barWidth],...
+            [barPositionHorzStart textLocationVert numLevelProgress*barWidthHorzOneLevelProgress barWidth],...
             'EdgeColor','None', 'FaceColor', 'blue');
     end
     
