@@ -36,6 +36,7 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 arguments
     conditionName {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
     options.spatialGaborTargetContrast (1,1) = 0.04
+    options.targetScreenPrimaryContrasts (1,1) = 0.05
 end
 
 %% Set some initial parameters on the struct here.
@@ -83,7 +84,7 @@ switch (colorDirectionParams.conditionName)
         colorDirectionParams.targetScreenPrimaryContrastDir(:,3) = colorDirectionParams.targetScreenPrimaryContrastDir(:,3) / norm(colorDirectionParams.targetScreenPrimaryContrastDir(:,3));
         
         % Set parameters for getting desired target primaries.
-        colorDirectionParams.targetScreenPrimaryContrasts = [0.05 0.05 0.05];
+        colorDirectionParams.targetScreenPrimaryContrasts = ones(1,3) * options.targetScreenPrimaryContrasts;
         colorDirectionParams.targetPrimaryHeadroom = 1.05;
         colorDirectionParams.primaryHeadroom = 0;
         colorDirectionParams.targetLambda = 3;
