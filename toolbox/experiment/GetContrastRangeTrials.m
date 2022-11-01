@@ -68,6 +68,7 @@ arguments
     options.nContrastPoints (1,1) = 8
     options.higherLimThresholdEstLog (1,1) = 0.3
     options.lowerLimThresholdEstLog (1,1) = 0.5
+    options.verbose (1,1) = true
 end
 
 %% Load null and test images.
@@ -231,6 +232,42 @@ end
 
 % Delete the same values.
 estDomainValidation = unique(estDomainValidation);
+
+% If there is not desired number of test points, add more to match the
+% number.
+if ~(length(estDomainValidation)==options.nContrastPoints)
+    nPredefinedContrasts = length(predefinedContrastsLog);
+    nContrastsNeeded = options.nContrastPoints - length(estDomainValidation);
+    
+    % Get index of predefined contrasts.
+    for vv = 1:length(estDomainValidation)
+        idxPredefinedContrastsLog(vv) = find(predefinedContrastsLog==estDomainValidation(vv));
+    end
+    
+    idxContrastsNotSelected = setdiff([1:1:nPredefinedContrasts],idxPredefinedContrastsLog);
+    
+    if any(idxPredefinedContrastsLog,length(estDomainValidation))
+        % When the contrast range was set too high.
+        idxContrastsNotSelected = sort(idxContrastsNotSelected,'descend');
+    else
+        % When the contrast range was set too low.
+        idxContrastsNotSelected = sort(idxContrastsNotSelected,'aescend');
+    end
+    
+    % Add new contrast points to the pre-selected result.
+    idxContrastsToAdd = idxContrastsNotSelected(1:nContrastsNeeded);
+    idxContrastsNew = [idxPredefinedContrastsLog idxContrastsToAdd];
+    
+    % Set the new contrast range.
+    estDomainValidation = predefinedContrastsLog(idxContrastsNew);
+    estDomainValidation = unique(estDomainValidation);
+end
+
+% Print out the results.
+nContrastPointsSelected = length(estDomainValidation);
+if (options.verbose)
+    fprintf('The number of contrast points selected = (%d/%d) \n', nContrastPointsSelected, options.nContrastPoints);
+end
 
 % Save the raw data in struct.
 preExpDataStruct.rawData.testContrast = testContrastCollect;
