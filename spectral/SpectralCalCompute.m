@@ -52,7 +52,8 @@ switch (conditionName)
         targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetScreenPrimaryContrasts = [0.05 0.05 0.05];
+        targetScreenPrimaryContrasts = 0.07;
+        targetScreenPrimaryContrasts = ones(1,3) * targetScreenPrimaryContrasts;
         targetPrimaryHeadroom = 1.05;
         primaryHeadroom = 0;
         targetLambda = 3;
