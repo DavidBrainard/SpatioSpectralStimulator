@@ -81,67 +81,69 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'008'};
-    spatialFrequencyOptions = {'12'};
+    subjectNameOptions = {'002'};
+    spatialFrequencyOptions = {'3'};
 end
 
 %% Show the progress of the experiment.
-SHOWPROGRESS = false;
-
-if (SHOWPROGRESS)
-    figure; clf;
+if (FITALLATONCE)
+    SHOWPROGRESS = true;
     
-    % Set background axes. This is just for texts.
-    main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
-    
-    % Put visit number text on the top.
-    numVisitStart = 1;
-    numVisitEnd = 8;
-    nVisits = numVisitEnd-numVisitStart+1;
-    barPositionHorzStart = 0.15;
-    barPositionHorzEnd = 0.8;
-    barPositionVert = 0.8;
-    for vv = 1:nVisits
-        visitOptions = linspace(numVisitStart,numVisitEnd,nVisits);
-        visitStr = sprintf('Visit %d', visitOptions(vv));
-        textIntervalHorzOptions = linspace(barPositionHorzStart+0.05,barPositionHorzEnd+0.05,nVisits);
-        text(textIntervalHorzOptions(vv), barPositionVert+0.05, visitStr, 'Parent', main);
-    end
-    
-    % Use a red annotation rectangle as background, and overlay a
-    % green annotation rectangle on top.
-    nSubjectsProgress = length(subjectNameOptions);
-    for ss = 1:nSubjectsProgress
-        % Subejct.
-        textLocationVertOptions = sort(linspace(0.2,0.8,nSubjectsProgress),'descend');
-        textLocationVert = textLocationVertOptions(ss);
-        text(0.03, textLocationVert, sprintf('Subject %s',subjectNameOptions{ss}), 'Parent', main)
+    if (SHOWPROGRESS)
+        figure; clf;
         
-        % Fill the bar based on the completed number of spatial frequency
-        % (so, number of visits) per each subject.
-        barWidth = 0.02;
-
-        numVisitsCompleted = spatialFrequencyOptions(:,ss);
-        numVisitsCompleted = numVisitsCompleted(find(~cellfun(@isempty,numVisitsCompleted)));
-        numLevelProgress = length(numVisitsCompleted);
-        barWidthHorzOneLevelProgress = 0.14;
+        % Set background axes. This is just for texts.
+        main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
         
-        bgBarColor = annotation('rectangle', ...
-            [barPositionHorzStart textLocationVert barPositionHorzEnd barWidth],...
-            'EdgeColor','black', 'FaceColor', 'white');
-        frontBarColor = annotation('rectangle', ...
-            [barPositionHorzStart textLocationVert numLevelProgress*barWidthHorzOneLevelProgress barWidth],...
-            'EdgeColor','None', 'FaceColor', 'blue');
-    end
-    
-    % Save the progress plot.
-    SAVEPROGRESSPLOT = true;
-    if (SAVEPROGRESSPLOT)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-            testFilename = fullfile(testFiledir,'Experiment_Progress');
-            testFileFormat = '.tiff';
-            saveas(gcf,append(testFilename,testFileFormat));
+        % Put visit number text on the top.
+        numVisitStart = 3;
+        numVisitEnd = 7;
+        nVisits = numVisitEnd-numVisitStart+1;
+        barPositionHorzStart = 0.15;
+        barPositionHorzEnd = 0.8;
+        barPositionVert = 0.8;
+        for vv = 1:nVisits
+            visitOptions = linspace(numVisitStart,numVisitEnd,nVisits);
+            visitStr = sprintf('Visit %d', visitOptions(vv));
+            textIntervalHorzOptions = linspace(barPositionHorzStart+0.05,barPositionHorzEnd+0.05,nVisits);
+            text(textIntervalHorzOptions(vv), barPositionVert+0.05, visitStr, 'Parent', main);
+        end
+        
+        % Use a red annotation rectangle as background, and overlay a
+        % green annotation rectangle on top.
+        nSubjectsProgress = length(subjectNameOptions);
+        for ss = 1:nSubjectsProgress
+            % Subejct.
+            textLocationVertOptions = sort(linspace(0.2,0.8,nSubjectsProgress),'descend');
+            textLocationVert = textLocationVertOptions(ss);
+            text(0.03, textLocationVert, sprintf('Subject %s',subjectNameOptions{ss}), 'Parent', main)
+            
+            % Fill the bar based on the completed number of spatial frequency
+            % (so, number of visits) per each subject.
+            barWidth = 0.02;
+            
+            numVisitsCompleted = spatialFrequencyOptions(:,ss);
+            numVisitsCompleted = numVisitsCompleted(find(~cellfun(@isempty,numVisitsCompleted)));
+            numLevelProgress = length(numVisitsCompleted);
+            barWidthHorzOneLevelProgress = 0.16;
+            
+            bgBarColor = annotation('rectangle', ...
+                [barPositionHorzStart textLocationVert barPositionHorzEnd barWidth],...
+                'EdgeColor','black', 'FaceColor', 'white');
+            frontBarColor = annotation('rectangle', ...
+                [barPositionHorzStart textLocationVert numLevelProgress*barWidthHorzOneLevelProgress barWidth],...
+                'EdgeColor','None', 'FaceColor', 'blue');
+        end
+        
+        % Save the progress plot.
+        SAVEPROGRESSPLOT = true;
+        if (SAVEPROGRESSPLOT)
+            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+                testFilename = fullfile(testFiledir,'Experiment_Progress');
+                testFileFormat = '.tiff';
+                saveas(gcf,append(testFilename,testFileFormat));
+            end
         end
     end
 end
