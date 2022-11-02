@@ -67,6 +67,8 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStim = framesPerStimSet(1);
     
     framesPerStimIndexs = [1 1 2 2];
+
+%     framesPerStimIndexs = [1 2 1 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
@@ -177,7 +179,8 @@ end
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,'verbose',false);
 
 %% Start the flicker loop here.
-frameCounter = 0;
+frameCounter = 1;
+nextFrame = 1;
 frameIndexCounter = 1;
 
 % Start a flicker loop here.
@@ -256,25 +259,31 @@ while 1
     imageTextures = [imageTextureRed(intensityPrimary1+1) imageTextureGreen];   
             
     % Update the fill color at desired frame time.
-    if ~mod(frameCounter, framesPerStim)
-        fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-        imageTexture = imageTextures(fillColorIndex);
-        
-        % Change the frames per stim if there are more than one target frames.
-        if ~isempty(framesPerStimSet)
-            framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
-            framesPerStim = framesPerStimSet(framesPerStimIndex);
-            
-            % Update the frame counter index here.
-            if (frameIndexCounter < length(framesPerStimIndexs))
-                frameIndexCounter = frameIndexCounter + 1;
-            else
-                % Set the counter back to 1 if it ran one set of cycle.
-                frameIndexCounter = 1;
-            end
-        end
-    end
+%     if ~mod(frameCounter, framesPerStim)
+    if (frameCounter >= nextFrame)
+    fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
+    imageTexture = imageTextures(fillColorIndex);
     
+    % Change the frames per stim if there are more than one target frames.
+    if ~isempty(framesPerStimSet)
+        framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
+        framesPerStim = framesPerStimSet(framesPerStimIndex);
+        
+        % Update the frame counter index here.
+        if (frameIndexCounter < length(framesPerStimIndexs))
+            frameIndexCounter = frameIndexCounter + 1;
+        else
+            % Set the counter back to 1 if it ran one set of cycle.
+            frameIndexCounter = 1;
+        end
+        
+        
+        
+    end
+    nextFrame = frameCounter+framesPerStim;
+    
+end
+
     % Make a flip.
     flipTime(frameCounter+1) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     
