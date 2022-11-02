@@ -178,27 +178,34 @@ for cc = 1:nInitialContrasts
             %
             % Case 1) Starting from the highest contrast.
             if  (idxInitialContrast(cc) == idxContrastHigh)                
-                if ~(imageContrastLevel == idxContrastHigh)
+                if ~(imageContrastLevel == idxContrastLow)
                     imageContrastLevel = imageContrastLevel - 1;
+                    
+                    % Play the sound.
+                    MakeBeepSound('preset','correct');                   
                 else
-                    fprintf('\t Reached the lowest contrast! \n');
+                    % Print out it reached the limit.                
+                    fprintf('\t You reached the lowest contrast! \n');
+                    
                     % Play the sound for feedback.
                     MakeBeepSound('preset','incorrect');
                 end
                 
                 % Case 2) Starting from the lowest contrast.
             elseif (idxInitialContrast(cc) == idxContrastLow)
-                if ~(imageContrastLevel == idxContrastLow)
+                if ~(imageContrastLevel == idxContrastHigh)
                     imageContrastLevel = imageContrastLevel + 1;
+                    
+                    % Play the sound.
+                    MakeBeepSound('preset','correct');
                 else
-                    fprintf('\t Reached the highest contrast! \n');
+                    % Print out it reached the limit.                
+                    fprintf('\t You reached the highest contrast! \n');
+                    
                     % Play the sound for feedback.
                     MakeBeepSound('preset','incorrect');
                 end
             end
-            
-            % Play the sound.
-            MakeBeepSound('preset','correct');
             
         elseif strcmp(buttonPress,'left')
             % Show the same contrast level again for next display.
