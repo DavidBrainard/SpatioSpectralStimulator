@@ -282,6 +282,12 @@ for ss = 1:nSubjects
             clear pointSize;
         end
         
+        % Add some text info in the figure.
+        main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
+        text(0.2,0.5,sprintf('Subject %s',subjectName),'fontsize',15,'Parent',main);
+        text(0.2,0.45,sprintf('Image file used: %s',theData.describe.testFileNameContrast),'fontsize',15,'Parent',main);
+        text(0.2,0.4,sprintf('Contrast range used (MOA): %s',theData.describe.testFileNameContrast),'fontsize',15,'Parent',main);
+        
         % Print out the progress.
         fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
         
