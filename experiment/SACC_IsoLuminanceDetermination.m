@@ -67,7 +67,6 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStim = framesPerStimSet(1);
     
     framesPerStimIndexs = [1 1 2 2];
-
 %     framesPerStimIndexs = [1 2 1 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
@@ -269,21 +268,19 @@ while 1
         framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
         framesPerStim = framesPerStimSet(framesPerStimIndex);
         
-        % Update the frame counter index here.
+        % Update the frame index counter here.
         if (frameIndexCounter < length(framesPerStimIndexs))
             frameIndexCounter = frameIndexCounter + 1;
         else
             % Set the counter back to 1 if it ran one set of cycle.
             frameIndexCounter = 1;
         end
-        
-        
-        
     end
-    nextFrame = frameCounter+framesPerStim;
+       nextFrame = frameCounter+framesPerStim;
+    end
     
-end
-
+    fprintf('Frame = %d / Frames per stim = %d \n',frameCounter,framesPerStim);
+    
     % Make a flip.
     flipTime(frameCounter+1) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     
