@@ -285,15 +285,15 @@ for ss = 1:nSubjects
         % Add some text info in the figure.
         %
         % Refine the text before adding it to the figure. 
-        testFileNameContrastRefine = strrep(theData.describe.testFileNameContrast,'-','/');
-        testFileNameContrastRefine = strrep(testFileNameContrastRefine,'_','/');
+        testFileNameImagesRefine = strrep(theData.describe.testFileNameImages,'-','/');
+        testFileNameImagesRefine = strrep(testFileNameImagesRefine,'_','/');
         
         testFileNameContrastRefine = strrep(theData.describe.testFileNameContrast,'-','/');
         testFileNameContrastRefine = strrep(testFileNameContrastRefine,'_','/');
         
         main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
         text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
-        text(0.7,0.35,sprintf('* Image file used: %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
+        text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
         text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
         
         % Print out the progress.
