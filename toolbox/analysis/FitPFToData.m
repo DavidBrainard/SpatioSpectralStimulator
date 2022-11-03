@@ -102,11 +102,17 @@ nTrialsPerContrast = options.nTrials * ones(size(stimLevels));
 nCorrect = round(pCorrect .* nTrialsPerContrast);
 
 % Set an initinal search parameters.
-threshold = mean(stimLevels);
-slope = 2;
-guess = 0.5;
-lapse = 0.01;
-searchGrid = [threshold slope guess lapse];
+% threshold = mean(stimLevels);
+% slope = 2;
+% guess = 0.5;
+% lapse = 0.01;
+% searchGrid = [threshold slope guess lapse];
+
+searchGrid.alpha = mean(stimLevels);  
+searchGrid.beta = 10.^[-2:.1:2];
+searchGrid.gamma = 0.5;
+searchGrid.lambda = 0.01;
+
 lapseLimits = [0 0.05];
 
 % PF fitting happens here.
