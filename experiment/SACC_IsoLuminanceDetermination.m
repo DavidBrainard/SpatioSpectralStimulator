@@ -66,8 +66,8 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
     
-%     framesPerStimIndexs = [1 1 2 2];
-    framesPerStimIndexs = [1 2 1 2];
+    framesPerStimIndexs = [1 1 2 2];
+%     framesPerStimIndexs = [1 2 1 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
@@ -189,7 +189,7 @@ while 1
     if (stateButtonRight == false)
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
         if (stateButtonRight == true)
-            fprintf('Finishing up the session... \n');
+            fprintf('Finishing up the session... \n');            
             break;
         end
     end
@@ -262,7 +262,7 @@ while 1
     if (frameCounter >= nextFrame)
     fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
     imageTexture = imageTextures(fillColorIndex);
-    
+         
     % Change the frames per stim if there are more than one target frames.
     if ~isempty(framesPerStimSet)
         framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
@@ -287,6 +287,12 @@ while 1
     
     % Count the frame.
     frameCounter = frameCounter + 1;
+end
+
+% Finishing up with the beep sounds.
+nBeeps = 3;
+for bb = 1:nBeeps
+    MakeBeepSound('preset','correct');
 end
 
 %% Close the screen.
