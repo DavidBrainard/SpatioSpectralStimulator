@@ -66,8 +66,8 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
     
-    framesPerStimIndexs = [1 1 2 2];
-%     framesPerStimIndexs = [1 2 1 2];
+%     framesPerStimIndexs = [1 1 2 2];
+    framesPerStimIndexs = [1 2 1 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
@@ -283,7 +283,7 @@ while 1
     fprintf('Frame = %d / Frames per stim = %d \n',frameCounter,framesPerStim);
     
     % Make a flip.
-    flipTime(frameCounter+1) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
+    flipTime(frameCounter) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     
     % Count the frame.
     frameCounter = frameCounter + 1;
