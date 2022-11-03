@@ -275,9 +275,9 @@ while 1
             % Set the counter back to 1 if it ran one set of cycle.
             frameIndexCounter = 1;
         end
+        fprintf('\t\t Frames per stim updated! \n');
     end
-       nextFrame = frameCounter+framesPerStim;
-       fprintf('\t\t Frames per stim updated! \n');
+       nextFrame = frameCounter+framesPerStim;       
     end
     
     fprintf('Frame = %d / Frames per stim = %d \n',frameCounter,framesPerStim);
