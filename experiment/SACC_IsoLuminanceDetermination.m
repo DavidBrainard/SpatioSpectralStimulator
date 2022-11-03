@@ -277,6 +277,7 @@ while 1
         end
     end
        nextFrame = frameCounter+framesPerStim;
+       fprintf('\t\t Frames per stim updated! \n');
     end
     
     fprintf('Frame = %d / Frames per stim = %d \n',frameCounter,framesPerStim);
