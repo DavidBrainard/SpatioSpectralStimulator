@@ -66,8 +66,7 @@ if ~(framesPerStim == ceil(framesPerStim))
     framesPerStimSet = [floor(framesPerStim) ceil(framesPerStim)];
     framesPerStim = framesPerStimSet(1);
     
-    framesPerStimIndexs = [1 1 2 2];
-%     framesPerStimIndexs = [1 2 1 2];
+    framesPerStimIndexs = [1 2 1 2];
     framesPerStimIndex = framesPerStimIndexs(1);
 else
     framesPerStimSet = [];
@@ -93,7 +92,7 @@ gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
-redStartingPoint = 'top';
+redStartingPoint = 'bottom';
 
 plainImageRed = plainImageBase;
 switch redStartingPoint
@@ -134,7 +133,7 @@ numButtonDown = 2;
 numButtonRight = 3;
 numButtonLeft = 1;
 
-primaryControlIntervals = [1 10];
+primaryControlIntervals = [2 5];
 primaryControlIntervalIndexs = [1 2];
 primaryControlIntervalIndex = 2;
 
@@ -148,7 +147,7 @@ primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
 %
 % Red.
 fillColorTemp = plainImageBase;
-BACKGROUND = 'black';
+BACKGROUND = 'white';
 
 % Make a loop to make all possible image textures here.
 for pp = 1:nInputLevels
@@ -275,12 +274,9 @@ while 1
             % Set the counter back to 1 if it ran one set of cycle.
             frameIndexCounter = 1;
         end
-        fprintf('\t\t Frames per stim updated! \n');
     end
        nextFrame = frameCounter+framesPerStim;       
     end
-    
-    fprintf('Frame = %d / Frames per stim = %d \n',frameCounter,framesPerStim);
     
     % Make a flip.
     flipTime(frameCounter) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
