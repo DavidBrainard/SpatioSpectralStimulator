@@ -92,8 +92,15 @@ gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
+redStartingPoint = 'top';
+
 plainImageRed = plainImageBase;
-intensityPrimary1 = 180;
+switch redStartingPoint
+    case 'top'
+        intensityPrimary1 = round(nInputLevels*0.7);
+    case 'bottom'
+        intensityPrimary1 = round(nInputLevels*0.2);
+end
 plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
@@ -119,7 +126,6 @@ stateButtonLeft = false;
 
 actedUp = false;
 actedDown = false;
-actedRight = false;
 actedLeft = false;
 
 numButtonUp = 4;
@@ -127,7 +133,11 @@ numButtonDown = 2;
 numButtonRight = 3;
 numButtonLeft = 1;
 
-primaryControlInterval = 5;
+primaryControlIntervals = [2 5];
+primaryControlIntervalIndexs = [1 2];
+primaryControlIntervalIndex = 2;
+
+primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
 
 %% Make PTB texture for all possible settings.
 %
@@ -168,140 +178,123 @@ end
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
     'addFixationPointImage','crossbar','verbose',false);
 
-%% Make a loop here.
-redStartingPointOptions = {'top' 'bottom'};
-idxRedStartingPoint = [1 2 1 2];
-nTrials = length(idxRedStartingPoint);
+%% Start the flicker loop here.
+frameCounter = 1;
+nextFrame = 1;
+frameIndexCounter = 1;
 
-for tt = 1:nTrials
-    redStartingPoint = redStartingPointOptions{idxRedStartingPoint(tt)};
+% Start a flicker loop here.
+while 1
     
-    switch redStartingPoint
-        case 'top'
-            intensityPrimary1 = 180;
-        case 'bottom'
-            intensityPrimary1 = 55;
-    end
-    
-    %% Start the flicker loop here.
-    frameCounter = 1;
-    nextFrame = 1;
-    frameIndexCounter = 1;
-    
-    % Back to the default setting.
-    stateButtonRight = false;
-    stateButtonDown = false;
-    
-    %% Set the initial screen for instruction.
-    plainWhiteImage = plainImageBase;
-    intensityWhite = 1;
-    plainWhiteImage(:,:,:) = intensityWhite;
-    
-    imageSize = stimulusN;
-    messageInitialImage_1stLine = 'Press any button to start';
-    messageInitialImage_2ndLine = append('Flicker session (',num2str(tt),'/',num2str(nTrials),')');
-    initialInstructionImage = insertText(plainWhiteImage,[30 imageSize/2-40; 30 imageSize/2+40],{messageInitialImage_1stLine messageInitialImage_2ndLine},...
-        'fontsize',70,'Font','FreeSansBold','BoxColor',[1 1 1],'BoxOpacity',0,'TextColor','black','AnchorPoint','LeftCenter');
-    initialInstructionImage = fliplr(initialInstructionImage);
-    
-    % Display the initial screen.
-    SetScreenImage(initialInstructionImage, window, windowRect,'verbose',true);
-    
-    % Get any button press to proceed.
-    GetGamepadResp;
-    disp('Practice trial is going to be started!');
-    
-    %% Start a flicker loop here.
-    while 1
-        
-        % End the session if the right button was pressed.
-        if (stateButtonDown == false)
-            stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
-            if (stateButtonDown == true)
-                fprintf('Finishing up the session... \n');
-                break;
-            end
-        end
-    
-        % Get a gamepad response here.
+    % End the session if the right button was pressed.
+    if (stateButtonRight == false)
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
+        if (stateButtonRight == true)
+            fprintf('Finishing up the session... \n');            
+            break;
+        end
+    end
+    
+    % Get a gamepad response here.
+    stateButtonUp = Gamepad('GetButton', gamepadIndex, numButtonUp);
+    stateButtonDown = Gamepad('GetButton', gamepadIndex, numButtonDown);
+    stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
+    
+    % Reset acted on state when button comes back up.
+    if (actedUp && ~stateButtonUp)
+        actedUp = false;
+    end
+    if (actedDown && ~stateButtonDown)
+        actedDown = false;
+    end
+    if (actedLeft && ~stateButtonLeft)
+        actedLeft = false;
+    end
+    
+    % Update the intensity of red light based on the key press above.
+    if (stateButtonUp && ~actedUp)
+        % Increase the intensity of red light.
+        if (intensityPrimary1 < nInputLevels-1)
+            intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
+        end
+        % Cut the value over the maximum.
+        if (intensityPrimary1 > nInputLevels-1)
+            intensityPrimary1 = nInputLevels-1;
+        end
+        actedUp = true;
+        fprintf('Button pressed: (UP)   / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
         
-        % Reset acted on state when button comes back up.
-        if (actedRight && ~stateButtonRight)
-            actedRight = false;
+    elseif (stateButtonDown && ~actedDown)
+        % Decrease the intensity of red light.
+        if (intensityPrimary1 > 0)
+            intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
+        end
+       
+        % Cut the value on the range.
+        if (intensityPrimary1 < 0)
+            intensityPrimary1 = 0;
         end
         
-        % Update the intensity of red light based on the key press above.
-        if (stateButtonRight && ~actedRight)
-            if strcmp(redStartingPoint,'top')
-                % Decrease the intensity of red light.
-                if (intensityPrimary1 > 0)
-                    intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
-                end
-                % Cut the value on the range.
-                if (intensityPrimary1 < 0)
-                    intensityPrimary1 = 0;
-                end
-                
-            elseif strcmp(redStartingPoint,'bottom')
-                % Increase the intensity of red light.
-                if (intensityPrimary1 < nInputLevels-1)
-                    intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
-                end
-                % Cut the value over the maximum.
-                if (intensityPrimary1 > nInputLevels-1)
-                    intensityPrimary1 = nInputLevels-1;
-                end
-            end
-            actedRight = true;
-            fprintf('Button pressed! Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
+        actedDown = true;
+        fprintf('Button pressed: (DOWN) / Red = (%d), Green = (%d) \n', intensityPrimary1, intensityPrimary2);
+        
+    elseif (stateButtonLeft && ~actedLeft)
+        % Update the interval as desired.
+        primaryControlIntervalIndex = setdiff(primaryControlIntervalIndexs, primaryControlIntervalIndex);
+        primaryControlInterval = primaryControlIntervals(primaryControlIntervalIndex);
+        actedLeft = true;
+        fprintf('Button pressed: (LEFT) / Control interval is now = (%d) \n', primaryControlInterval);
+        
+        % Play a sound when the interval changes.
+        switch primaryControlInterval
+            case primaryControlIntervals(1)
+                beepSound = 'incorrect';
+            case primaryControlIntervals(2)
+                beepSound = 'correct';
         end
-        
-        % Update the intensity of the red light here.
-        imageTextures = [imageTextureRed(intensityPrimary1+1) imageTextureGreen];
-        
-        % Update the fill color at desired frame time.
-        if (frameCounter >= nextFrame)
-            fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
-            imageTexture = imageTextures(fillColorIndex);
+        MakeBeepSound('preset',beepSound);
+    end
+   
+     % Update the intensity of the red light here.
+    imageTextures = [imageTextureRed(intensityPrimary1+1) imageTextureGreen];   
             
-            % Change the frames per stim if there are more than one target frames.
-            if ~isempty(framesPerStimSet)
-                framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
-                framesPerStim = framesPerStimSet(framesPerStimIndex);
-                
-                % Update the frame index counter here.
-                if (frameIndexCounter < length(framesPerStimIndexs))
-                    frameIndexCounter = frameIndexCounter + 1;
-                else
-                    % Set the counter back to 1 if it ran one set of cycle.
-                    frameIndexCounter = 1;
-                end
-            end
-            nextFrame = frameCounter+framesPerStim;
+    % Update the fill color at desired frame time.
+%     if ~mod(frameCounter, framesPerStim)
+    if (frameCounter >= nextFrame)
+    fillColorIndex = setdiff(fillColorIndexs, fillColorIndex);
+    imageTexture = imageTextures(fillColorIndex);
+         
+    % Change the frames per stim if there are more than one target frames.
+    if ~isempty(framesPerStimSet)
+        framesPerStimIndex = framesPerStimIndexs(frameIndexCounter);
+        framesPerStim = framesPerStimSet(framesPerStimIndex);
+        
+        % Update the frame index counter here.
+        if (frameIndexCounter < length(framesPerStimIndexs))
+            frameIndexCounter = frameIndexCounter + 1;
+        else
+            % Set the counter back to 1 if it ran one set of cycle.
+            frameIndexCounter = 1;
         end
-        
-        % Make a flip.
-        flipTime(frameCounter) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
-        
-        % Count the frame.
-        frameCounter = frameCounter + 1;
+    end
+       nextFrame = frameCounter+framesPerStim;       
     end
     
-    % Finishing up with the beep sounds.
-    nBeeps = 3;
-    for bb = 1:nBeeps
-        MakeBeepSound('preset','correct');
-    end
+    % Make a flip.
+    flipTime(frameCounter) = FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     
-    % Print out the matching results.
-    fprintf('The matching intensity of red = (%d) \n', intensityPrimary1);
-    
-    % Save the matching value.
-    data(tt) = intensityPrimary1;
-    fprintf('The matching result has been saved! \n');
-    
+    % Count the frame.
+    frameCounter = frameCounter + 1;
+end
+
+% Finishing up with the beep sounds.
+nBeeps = 3;
+for bb = 1:nBeeps
+    MakeBeepSound('preset','correct');
 end
 
 %% Close the screen.
 CloseScreen;
+
+% Print out the matching results.
+fprintf('The matching intensity of red = (%d) \n', intensityPrimary1);
