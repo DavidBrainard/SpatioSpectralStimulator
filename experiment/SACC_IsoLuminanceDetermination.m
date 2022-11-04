@@ -98,7 +98,7 @@ plainImageRed(:,:,1) = intensityPrimary1;
 
 % Green plain image.
 plainImageGreen = plainImageBase;
-intensityPrimary2 = round(nInputLevels * 0.3);
+intensityPrimary2 = 75;
 plainImageGreen(:,:,2) = intensityPrimary2;
 
 % Set primary index to update to make a flicker.
@@ -127,7 +127,7 @@ numButtonDown = 2;
 numButtonRight = 3;
 numButtonLeft = 1;
 
-primaryControlInterval = 5;
+primaryControlInterval = 4;
 
 %% Make PTB texture for all possible settings.
 %
