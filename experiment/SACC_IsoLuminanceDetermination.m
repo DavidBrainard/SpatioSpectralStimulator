@@ -209,7 +209,7 @@ for tt = 1:nTrials
     
     % Get any button press to proceed.
     GetGamepadResp;
-    disp('Practice trial is going to be started!');
+    disp('Flicker session is going to be started!');
     
     %% Start a flicker loop here.
     while 1
@@ -300,8 +300,10 @@ for tt = 1:nTrials
     % Save the matching value.
     data(tt) = intensityPrimary1;
     fprintf('The matching result has been saved! \n');
-    
 end
+
+%% Save the results as a file.
+
 
 %% Close the screen.
 CloseScreen;
