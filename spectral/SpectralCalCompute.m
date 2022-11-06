@@ -52,8 +52,8 @@ switch (conditionName)
         targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetScreenPrimaryContrasts = 0.07;
-        targetScreenPrimaryContrasts = ones(1,3) * targetScreenPrimaryContrasts;
+        targetScreenPrimaryContrast = 0.07;
+        targetScreenPrimaryContrasts = ones(1,3) * targetScreenPrimaryContrast;
         targetPrimaryHeadroom = 1.05;
         primaryHeadroom = 0;
         targetLambda = 3;
@@ -65,7 +65,7 @@ switch (conditionName)
         % run into numerical error at the edges. The second number is used when
         % defining the three primaries, the first when computing desired weights on
         % the primaries.
-        spatialGaborTargetContrast = 0.04;
+        spatialGaborTargetContrast = 0.07;
         plotAxisLimit = 100*spatialGaborTargetContrast;
 
         % Set up basis to try to keep spectra close to.
