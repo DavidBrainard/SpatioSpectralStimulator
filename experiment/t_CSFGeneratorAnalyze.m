@@ -197,16 +197,23 @@ for ss = 1:nSubjects
                 error('Cannot find data file');
             end
             
-            nDataContrastRange = 1;
-            for cc = 1:nDataContrastRange
-                % Load the contrast range data.
-                testFilename = GetMostRecentFileName(testFiledir,...
-                    sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp), 'olderDate',olderDate+cc-1);
-                theContrastData = load(testFilename);
-                
-                % Extract the threshold from the initial measurements.
-                thresholdInitial(cc,:) = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
+            % Load the contrast range data.
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp));
+            theContrastData = load(testFilename);
+            
+            % Extract the threshold from the initial measurements.
+            thresholdInitial = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
+            
+            % Get the tested contrast range here. If there is not the
+            % number of contrast points, we just match the size of the
+            % array.
+            nContrastPoints = 8;
+            if ~(length(theContrastData.estDomainValidation)==nContrastPoints)
+                theContrastData.estDomainValidation(nContrastPoints) = 1;
             end
+                
+            contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
             
             % Pull out the data here.
             nTrials = theData.estimator.nRepeat;
@@ -253,18 +260,17 @@ for ss = 1:nSubjects
             
             % Add initial threhold to the plot.
             if (addInitialThresholdEst)
-                for cc = 1:nDataContrastRange
-                    % Plot it on log space if you want.
-                    if(axisLog)
-                        thresholdInitial(cc,:) = log10(thresholdInitial(cc,:));
-                    end
-                    
-                    % Plot it here.
-                    plot([thresholdInitial(cc,1) thresholdInitial(cc,1)], [0 1], 'b-', 'linewidth',3);
-                    plot([thresholdInitial(cc,2) thresholdInitial(cc,2)], [0 1], 'g--', 'linewidth',3);
-                    plot([thresholdInitial(cc,3) thresholdInitial(cc,3)], [0 1], 'b-', 'linewidth',3);
-                    plot([thresholdInitial(cc,4) thresholdInitial(cc,4)], [0 1], 'g--', 'linewidth',3);
+                
+                % Plot it on log space if you want.
+                if(axisLog)
+                    thresholdInitial = log10(thresholdInitial);
                 end
+                
+                % Plot it here.
+                plot([thresholdInitial(1) thresholdInitial(1)], [0 1], 'b-', 'linewidth',3);
+                plot([thresholdInitial(2) thresholdInitial(2)], [0 1], 'g--', 'linewidth',3);
+                plot([thresholdInitial(3) thresholdInitial(3)], [0 1], 'b-', 'linewidth',3);
+                plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'g--', 'linewidth',3); 
             end
             
             if (addQuestFit)
