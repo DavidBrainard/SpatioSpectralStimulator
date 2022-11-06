@@ -26,7 +26,11 @@ clear; close all;
 %
 % Set up color direction parameters by its condition name.
 conditionName = 'LminusMSmooth';
-colorDirectionParams = SetupColorDirection(conditionName);
+targetScreenPrimaryContrasts = 0.07;
+spatialGaborTargetContrast = 0.05;
+
+colorDirectionParams = SetupColorDirection(conditionName,...
+    'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast);
 
 % Set to true to get more output.
 VERBOSE = true;
