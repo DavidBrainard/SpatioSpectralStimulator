@@ -298,7 +298,7 @@ figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 
-axisLim = 0.05;
+axisLim = 0.07;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
