@@ -260,9 +260,12 @@ if (METHODOFADJUSTMENT)
     
     % Method of adjustment happens here and get the contrast range.
     replay = false;
+    higherLimThresholdEstLog = 0.4;
+    lowerLimThresholdEstLog = 0.4;
     [estDomainValidation preExpDataStruct] = ...
         GetContrastRangeTrials(sceneParamsStruct, experimentParams, autoResponseParams,...
-        window, windowRect,'replay',replay);
+        window, windowRect,'replay',replay,...
+        'higherLimThresholdEstLog',higherLimThresholdEstLog,'lowerLimThresholdEstLog',lowerLimThresholdEstLog);
     
     % Save the results.
     if (ispref('SpatioSpectralStimulator','SACCData'))

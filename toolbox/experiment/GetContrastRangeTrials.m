@@ -66,8 +66,8 @@ arguments
     windowRect (1,4)
     options.replay (1,1) = false
     options.nContrastPoints (1,1) = 8
-    options.higherLimThresholdEstLog (1,1) = 0.3
-    options.lowerLimThresholdEstLog (1,1) = 0.5
+    options.higherLimThresholdEstLog (1,1) = 0.4
+    options.lowerLimThresholdEstLog (1,1) = 0.4
     options.verbose (1,1) = true
 end
 
