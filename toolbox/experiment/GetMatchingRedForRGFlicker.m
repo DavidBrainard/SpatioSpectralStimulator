@@ -1,4 +1,4 @@
-function [results] = GetMatchingRedForRGFlicker(options)
+function [data] = GetMatchingRedForRGFlicker(options)
 % Get matching red intensity for red-green flicker.
 %
 % Syntax:
@@ -36,6 +36,7 @@ arguments
     options.intensityPrimary1InitialTop (1,1) = 180
     options.intensityPrimary1InitialBottom (1,1) = 56
     options.intensityPrimary2 (1,1) = 75
+    options.primaryControlInterval (1,1) = 4
     options.frequencyFlicker (1,1) = 25
     options.bgColor = 'white'
     options.nTrials (1,1) = 4
@@ -150,8 +151,6 @@ numButtonDown = 2;
 numButtonRight = 3;
 numButtonLeft = 1;
 
-primaryControlInterval = 4;
-
 %% Make PTB texture for all possible settings.
 %
 % As making texture takes an extra time which could cause delay for
@@ -204,10 +203,16 @@ for tt = 1:options.nTrials
     
     switch redStartingPoint
         case 'top'
-            intensityPrimary1 = options.intensityPrimary1InitialTop;
+            intensityPrimary1 = options.intensityPrimary1InitialTop;      
         case 'bottom'
             intensityPrimary1 = options.intensityPrimary1InitialBottom;
     end
+    intensityPrimary1Options = [intensityPrimary1, ...
+        intensityPrimary1-options.primaryControlInterval intensityPrimary1+options.primaryControlInterval, ...
+        intensityPrimary1-2*options.primaryControlInterval intensityPrimary1+2*options.primaryControlInterval];
+    
+    intensityPrimary1 = intensityPrimary1Options(randi(length(intensityPrimary1Options)));
+    startingPointPrimary1(tt) = intensityPrimary1;
     
     %% Start the flicker loop here.
     frameCounter = 1;
@@ -262,7 +267,7 @@ for tt = 1:options.nTrials
             if strcmp(redStartingPoint,'top')
                 % Decrease the intensity of red light.
                 if (intensityPrimary1 > 0)
-                    intensityPrimary1 = intensityPrimary1 - primaryControlInterval;
+                    intensityPrimary1 = intensityPrimary1 - options.primaryControlInterval;
                 end
                 % Cut the value on the range.
                 if (intensityPrimary1 < 0)
@@ -272,7 +277,7 @@ for tt = 1:options.nTrials
             elseif strcmp(redStartingPoint,'bottom')
                 % Increase the intensity of red light.
                 if (intensityPrimary1 < nInputLevels-1)
-                    intensityPrimary1 = intensityPrimary1 + primaryControlInterval;
+                    intensityPrimary1 = intensityPrimary1 + options.primaryControlInterval;
                 end
                 % Cut the value over the maximum.
                 if (intensityPrimary1 > nInputLevels-1)
@@ -327,6 +332,10 @@ for tt = 1:options.nTrials
     results(tt) = intensityPrimary1;
     fprintf('The matching result has been saved! \n');
 end
+
+%% Save out the results.
+data.results = results;
+data.startingPointRed = startingPointPrimary1;
 
 %% Close the screen.
 CloseScreen;
