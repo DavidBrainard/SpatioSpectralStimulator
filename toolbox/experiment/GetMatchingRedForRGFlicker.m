@@ -2,7 +2,7 @@ function [results] = GetMatchingRedForRGFlicker(options)
 % Get matching red intensity for red-green flicker.
 %
 % Syntax:
-%    [matchingRed] = StartRGFlickerTrials()
+%    [results] = GetMatchingRedForRGFlicker()
 %
 % Description:
 %    This is for iso-luminance determination for SACC project. Here we display
@@ -17,8 +17,13 @@ function [results] = GetMatchingRedForRGFlicker(options)
 %                                 flicker of red-green.
 %
 % Optional key/value pairs:
-%    frameRate
-%    verbose                      Boolean. Default true.  Controls plotting
+%    intensityPrimary1InitialTop
+%    intensityPrimary1InitialBottom
+%    intensityPrimary2
+%    frequencyFlicker
+%    bgColor
+%    nTrials
+%    verbose                      Boolean. Default true. Controls plotting
 %                                 and printout.
 % See also:
 %    SACC_IsoLuminanceDetermination
