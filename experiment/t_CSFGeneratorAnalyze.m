@@ -319,8 +319,12 @@ for ss = 1:nSubjects
                 end
                 
                 % Save the plot.
+                testFileNameContrast = theData.describe.testFileNameContrast;
+                numExtract = regexp(testFileNameContrast,'\d+','match');
+                dayStr = sprintf('%s_%s_%s',numExtract{3},numExtract{4},numExtract{5});
+                
                 testFilename = fullfile(testFiledir,...
-                    sprintf('CS_%s_%d_cpd',subjectName,sineFreqCyclesPerDegTemp));
+                    sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,dayStr));
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
                 fprintf('\t Plot has been saved successfully! \n');
