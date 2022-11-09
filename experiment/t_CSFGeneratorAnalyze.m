@@ -81,8 +81,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'003'};
-    spatialFrequencyOptions = {'9'};
+    subjectNameOptions = {'011'};
+    spatialFrequencyOptions = {'18'};
 end
 
 %% Show the progress of the experiment.
@@ -273,12 +273,23 @@ for ss = 1:nSubjects
                 plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'g--', 'linewidth',3); 
             end
             
+            % Add the entire test image contrast range and chosen ones for
+            % the experiment to the plot.
+            testContrastMax = max(theContrastData.preExpDataStruct.rawData.testContrast);
+            testContrastMin = min(theContrastData.preExpDataStruct.rawData.testContrast);
+            nTestContrasts = 30;
+            testContrastsLinear = logspace(log10(testContrastMin),log10(testContrastMax),nTestContrasts);
+            testContrastsLog = log10(testContrastsLinear);
+            
+            plot(testContrastsLog,0,'ko','markersize',10);
+            plot(theContrastData.estDomainValidation,0,'ko','markersize',10,'markerfacecolor',[0.7 0.7 0.7]);
+            
             if (addQuestFit)
                 legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-                    'FontSize', 9, 'location', 'southeast');
+                    'AllContrasts','TestContrasts','FontSize', 9, 'location', 'southeast');
             else
                 legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-                    'FontSize', 9, 'location', 'southeast');
+                    'AllContrasts','TestContrasts','FontSize', 9, 'location', 'southeast');
             end
             
             % Set the range for the x-axis.
