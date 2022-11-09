@@ -259,10 +259,14 @@ for tt = 1:options.nTrials
     
         % Get a gamepad response here.
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
+        stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
         
         % Reset acted on state when button comes back up.
         if (actedRight && ~stateButtonRight)
             actedRight = false;
+        end
+        if (actedLeft && ~stateButtonLeft)
+            actedLeft = false;
         end
         
         % (RIGHT KEY) Update the intensity of red light based on the key press above.
