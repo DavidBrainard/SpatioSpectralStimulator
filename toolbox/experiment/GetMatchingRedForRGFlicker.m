@@ -23,6 +23,7 @@ function [data] = GetMatchingRedForRGFlicker(options)
 %    frequencyFlicker
 %    bgColor
 %    nTrials
+%    leftButton
 %    verbose                      Boolean. Default true. Controls plotting
 %                                 and printout.
 % See also:
@@ -30,6 +31,7 @@ function [data] = GetMatchingRedForRGFlicker(options)
 
 % History:
 %    11/08/22   smo        - Made it as a function.
+%    11/09/22   smo        - Brought the left button back as an option.
 
 %% Set parameters.
 arguments
@@ -40,6 +42,7 @@ arguments
     options.frequencyFlicker (1,1) = 25
     options.bgColor = 'white'
     options.nTrials (1,1) = 4
+    options.leftButton = 'false'
     options.verbose
 end
 
@@ -158,22 +161,22 @@ numButtonLeft = 1;
 % starting the loop.
 %
 % Red.
-fillColorTemp = plainImageBase;
+fillColorRed = plainImageBase;
 
 % Make a loop to make all possible image textures here.
 for pp = 1:nInputLevels
-    fillColorTemp(:,:,1) = pp-1;
-    fillColorTemp = fillColorTemp./(nInputLevels-1);
+    fillColorRed(:,:,1) = pp-1;
+    fillColorRed = fillColorRed./(nInputLevels-1);
     
     % Add Gaussian window here.
     switch options.bgColor
         case 'white'
-            fillColorTemp = fillColorTemp + gaussianWindowBGWhite;
+            fillColorRed = fillColorRed + gaussianWindowBGWhite;
         case 'black'
-            fillColorTemp = fillColorTemp .* gaussianWindowBGBlack;
+            fillColorRed = fillColorRed .* gaussianWindowBGBlack;
     end
     
-    [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorTemp, window, windowRect,...
+    [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorRed, window, windowRect,...
         'addFixationPointImage','crossbar','verbose',false);
     fprintf('Image texture has been created - (%d/%d) \n', pp, nInputLevels);
 end
@@ -262,7 +265,7 @@ for tt = 1:options.nTrials
             actedRight = false;
         end
         
-        % Update the intensity of red light based on the key press above.
+        % (RIGHT KEY) Update the intensity of red light based on the key press above.
         if (stateButtonRight && ~actedRight)
             if strcmp(redStartingPoint,'top')
                 % Decrease the intensity of red light.
@@ -285,7 +288,35 @@ for tt = 1:options.nTrials
                 end
             end
             actedRight = true;
-            fprintf('Button pressed! Red = (%d), Green = (%d) \n', intensityPrimary1, options.intensityPrimary2);
+            fprintf('Button pressed (RIGHT)! Red = (%d), Green = (%d) \n', intensityPrimary1, options.intensityPrimary2);
+        end
+        
+        % (LEFT KEY) the intensity of red light based on the key press above.
+        if (options.leftButton)
+            if (stateButtonLeft && ~actedLeft)
+                if strcmp(redStartingPoint,'bottom')
+                    % Decrease the intensity of red light.
+                    if (intensityPrimary1 > 0)
+                        intensityPrimary1 = intensityPrimary1 - options.primaryControlInterval;
+                    end
+                    % Cut the value on the range.
+                    if (intensityPrimary1 < 0)
+                        intensityPrimary1 = 0;
+                    end
+                    
+                elseif strcmp(redStartingPoint,'top')
+                    % Increase the intensity of red light.
+                    if (intensityPrimary1 < nInputLevels-1)
+                        intensityPrimary1 = intensityPrimary1 + options.primaryControlInterval;
+                    end
+                    % Cut the value over the maximum.
+                    if (intensityPrimary1 > nInputLevels-1)
+                        intensityPrimary1 = nInputLevels-1;
+                    end
+                end
+                actedLeft = true;
+                fprintf('Button pressed (LEFT)! Red = (%d), Green = (%d) \n', intensityPrimary1, options.intensityPrimary2);
+            end
         end
         
         % Update the intensity of the red light here.
