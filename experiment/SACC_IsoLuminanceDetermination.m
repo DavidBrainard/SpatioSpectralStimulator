@@ -18,29 +18,30 @@
 %% Initialize.
 clear; close all;
 
-%% Type subject info.
+%% Set variables.
 subjectName = '002';
+leftButton = 'true';
 
 %% 1) Look at stimulus demo.
 %
 % For practice, subject will see the flicker stimulus by controlling the
 % red starting either from top or bottom.
 nTrials = 2;
-GetMatchingRedForRGFlicker('nTrials',nTrials);
+GetMatchingRedForRGFlicker('nTrials',nTrials,'leftButton',leftButton);
 
 %% 2) Practice trials.
 %
 % We will repeat the whole session twice so that subject will do a total of
 % 4 flicker sessions (2 repeatitions x 2 starting points either top or bottom).
 nTrials = 4;
-dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials);
+dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'leftButton',leftButton);
 
 %% 3) Main session.
 %
 % By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
 % starting points either top or bottom).
 nTrials = 6;
-dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials);
+dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'leftButton',leftButton);
 
 %% Collect all data and save it.
 theData.practice = dataPractice;
