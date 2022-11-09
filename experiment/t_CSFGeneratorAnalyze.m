@@ -281,8 +281,8 @@ for ss = 1:nSubjects
             testContrastsLinear = logspace(log10(testContrastMin),log10(testContrastMax),nTestContrasts);
             testContrastsLog = log10(testContrastsLinear);
             
-            plot(testContrastsLog,0,'ko','markersize',10);
-            plot(theContrastData.estDomainValidation,0,'ko','markersize',10,'markerfacecolor',[0.7 0.7 0.7]);
+            plot(testContrastsLog,0,'ko','markersize',7);
+            plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
             
             if (addQuestFit)
                 legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
