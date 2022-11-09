@@ -286,10 +286,10 @@ for ss = 1:nSubjects
             
             if (addQuestFit)
                 legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-                    'AllContrasts','TestContrasts','FontSize', 9, 'location', 'southeast');
+                    'FontSize', 9, 'location', 'southeast');
             else
                 legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-                    'AllContrasts','TestContrasts','FontSize', 9, 'location', 'southeast');
+                    'FontSize', 9, 'location', 'southeast');
             end
             
             % Set the range for the x-axis.
