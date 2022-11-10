@@ -318,7 +318,7 @@ for pp = 1:nPrimaries
 end
 
 % Save the plot if you want.
-SAVETHEPLOT = true;
+SAVETHEPLOT = false;
 
 if (SAVETHEPLOT)
     if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
