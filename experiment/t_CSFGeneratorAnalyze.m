@@ -36,7 +36,7 @@ clear; close all;
 %% Set parameters here.
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
-SAVETHEPLOT = true;
+SAVETHEPLOT = false;
 PF = 'weibull';
 paramsFree = [1 1 0 1];
 
@@ -51,7 +51,7 @@ addLegend = false;
 %
 % You can either fit all available data at once or choose one subject's
 % data to fit.
-FITALLATONCE = true;
+FITALLATONCE = false;
 
 if (FITALLATONCE)
     if (ispref('SpatioSpectralStimulator','SACCData'))
