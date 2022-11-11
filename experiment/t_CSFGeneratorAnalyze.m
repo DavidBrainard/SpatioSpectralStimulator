@@ -36,6 +36,7 @@ clear; close all;
 %% Set parameters here.
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
+SAVETHEPLOT = true;
 PF = 'weibull';
 paramsFree = [1 1 0 1];
 
@@ -315,9 +316,6 @@ for ss = 1:nSubjects
         
         % Print out the progress.
         fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
-        
-        %% Save the results.
-        SAVETHEPLOT = true;
         
         if (SAVETHEPLOT)
             if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
