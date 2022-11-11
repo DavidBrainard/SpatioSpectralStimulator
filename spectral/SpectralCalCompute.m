@@ -52,11 +52,10 @@ switch (conditionName)
         targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetScreenPrimaryContrast = 0.07;
+        targetScreenPrimaryContrast = 0.05;
         targetScreenPrimaryContrasts = ones(1,3) * targetScreenPrimaryContrast;
         targetPrimaryHeadroom = 1.05;
         primaryHeadroom = 0;
-        targetLambda = 3;
 
         % We may not need the whole direction contrast excursion. Specify max
         % contrast we want relative to that direction vector.
@@ -65,7 +64,7 @@ switch (conditionName)
         % run into numerical error at the edges. The second number is used when
         % defining the three primaries, the first when computing desired weights on
         % the primaries.
-        spatialGaborTargetContrast = 0.07;
+        spatialGaborTargetContrast = 0.04;
         plotAxisLimit = 100*spatialGaborTargetContrast;
 
         % Set up basis to try to keep spectra close to.
@@ -117,7 +116,6 @@ switch (conditionName)
         targetScreenPrimaryContrasts = [0.03 0.03 0.03];
         targetPrimaryHeadroom = 1;
         primaryHeadroom = 0.0;
-        targetLambda = 3;
 
         % We may not need the whole direction contrast excursion. Specify max
         % contrast we want relative to that direction vector.
@@ -329,8 +327,16 @@ projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 %
 % Set parameters for getting desired background primaries.
 primaryHeadRoom = 0;
-targetLambda = 3;
 targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
+
+% Target lambda determines how heavily the smoothness constraint is weighed
+% in the optimization.  Bigger weighs smoothness more heavily.  This
+% parameter thus trades off contrast accuracy against smoothness.  We used 
+% 3 in our initial computations, which had a target primary contrast of
+% 0.05 and a maximum gabor contrast of 0.04.  But this is too large when we
+% push to 0.08/0.07.  A value of 1 is OK for that case, and 2 too big.  Not
+% sure where in between we can set and still get good contrast accuracy.
+targetLambda = 3;
 
 % Adjust these to keep background in gamut
 primaryBackgroundScaleFactor = 0.5;
