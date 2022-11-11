@@ -42,8 +42,8 @@ arguments
     options.frequencyFlicker (1,1) = 25
     options.bgColor = 'white'
     options.nTrials (1,1) = 4
-    options.leftButton = 'false'
-    options.gaussianWindow = 'true'
+    options.leftButton = false
+    options.gaussianWindow = true
     options.verbose
 end
 
@@ -169,17 +169,22 @@ for pp = 1:nInputLevels
     fillColorRed(:,:,1) = pp-1;
     fillColorRed = fillColorRed./(nInputLevels-1);
     
+    % Decide if you want to add Gaussian window or not.
+    if (~options.gaussianWindow)
+        switch options.bgColor
+            case 'white'
+                gaussianWindowBGWhite = round(gaussianWindowBGWhite);
+            case 'black'
+                gaussianWindowBGBlack = round(gaussianWindowBGBlack);
+        end
+    end
+    
     % Add Gaussian window here.
     switch options.bgColor
         case 'white'
             fillColorRed = fillColorRed + gaussianWindowBGWhite;
         case 'black'
             fillColorRed = fillColorRed .* gaussianWindowBGBlack;  
-    end
-    
-    % Remove gaussian window if you want.
-    if (~options.gaussianWindow)
-        fillColorRed = round(fillColorRed);
     end
     
     [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorRed, window, windowRect,...
@@ -194,11 +199,6 @@ switch options.bgColor
         fillColorGreen = plainImageGreen + gaussianWindowBGWhite;
     case 'black'
         fillColorGreen = plainImageGreen .* gaussianWindowBGBlack;
-end
-
-% Remove gaussian window if you want.
-if (~options.gaussianWindow)
-    fillColorGreen = round(fillColorGreen);
 end
 
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
