@@ -43,6 +43,7 @@ arguments
     options.bgColor = 'white'
     options.nTrials (1,1) = 4
     options.leftButton = 'false'
+    options.gaussianWindow = 'true'
     options.verbose
 end
 
@@ -173,7 +174,12 @@ for pp = 1:nInputLevels
         case 'white'
             fillColorRed = fillColorRed + gaussianWindowBGWhite;
         case 'black'
-            fillColorRed = fillColorRed .* gaussianWindowBGBlack;
+            fillColorRed = fillColorRed .* gaussianWindowBGBlack;  
+    end
+    
+    % Remove gaussian window if you want.
+    if (~options.gaussianWindow)
+        fillColorRed = round(fillColorRed);
     end
     
     [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorRed, window, windowRect,...
@@ -189,6 +195,12 @@ switch options.bgColor
     case 'black'
         fillColorGreen = plainImageGreen .* gaussianWindowBGBlack;
 end
+
+% Remove gaussian window if you want.
+if (~options.gaussianWindow)
+    fillColorGreen = round(fillColorGreen);
+end
+
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
     'addFixationPointImage','crossbar','verbose',false);
 
