@@ -20,17 +20,18 @@ clear; close all;
 
 %% Set variables.
 subjectName = 'TEST';
+frequencyFlicker = 25;
 leftButton = true;
 gaussianWindow = true;
 bgColor = 'white';
 
-%% 1) Look at stimulus demo.
-%
-% For practice, subject will see the flicker stimulus by controlling the
-% red starting either from top or bottom.
-nTrials = 2;
-GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-    'leftButton',leftButton,'gaussianWindow',gaussianWindow);
+% %% 1) Look at stimulus demo.
+% %
+% % For practice, subject will see the flicker stimulus by controlling the
+% % red starting either from top or bottom.
+% nTrials = 2;
+% GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+%     'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
 
 %% 2) Practice trials.
 %
@@ -38,16 +39,16 @@ GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
 % 4 flicker sessions (2 repeatitions x 2 starting points either top or bottom).
 nTrials = 4;
 dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-    'leftButton',leftButton,'gaussianWindow',gaussianWindow);
+    'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
 
-%% 3) Main session.
-%
-% By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
-% starting points either top or bottom).
-nTrials = 6;
-dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-    'leftButton',leftButton,'gaussianWindow',gaussianWindow);
-
-%% Collect all data and save it.
-theData.practice = dataPractice;
-theData.main = dataMain;
+% %% 3) Main session.
+% %
+% % By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
+% % starting points either top or bottom).
+% nTrials = 6;
+% dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+%     'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+% 
+% %% Collect all data and save it.
+% theData.practice = dataPractice;
+% theData.main = dataMain;
