@@ -336,6 +336,9 @@ targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
 % 0.05 and a maximum gabor contrast of 0.04.  But this is too large when we
 % push to 0.08/0.07.  A value of 1 is OK for that case, and 2 too big.  Not
 % sure where in between we can set and still get good contrast accuracy.
+%
+% You can also reduce smoothness by increasing the number of Fourier basis
+% functions defining the smoothness constraint.
 targetLambda = 3;
 
 % Adjust these to keep background in gamut
