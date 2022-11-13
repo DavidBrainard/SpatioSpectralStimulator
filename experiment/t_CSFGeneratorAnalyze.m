@@ -36,7 +36,11 @@ clear; close all;
 %% Set parameters here.
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
+
+FITALLATONCE = false;
 SAVETHEPLOT = false;
+RECORDTESTIMAGEPROFILE = true;
+
 PF = 'weibull';
 paramsFree = [1 1 0 1];
 
@@ -51,8 +55,6 @@ addLegend = false;
 %
 % You can either fit all available data at once or choose one subject's
 % data to fit.
-FITALLATONCE = false;
-
 if (FITALLATONCE)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
@@ -163,7 +165,8 @@ for ss = 1:nSubjects
     sineFreqCyclesPerDeg = sineFreqCyclesPerDeg(...
         find(~cellfun(@isempty,sineFreqCyclesPerDeg)));
     
-    nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
+    nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg); 
+    nSineFreqCyclesPerDegAll(ss) = nSineFreqCyclesPerDeg;
     
     % Set all possible filters.
     filterOptions = {'A', 'B', 'C', 'D', 'E'};
@@ -211,7 +214,7 @@ for ss = 1:nSubjects
             % array.
             nContrastPoints = 8;
             if ~(length(theContrastData.estDomainValidation)==nContrastPoints)
-                theContrastData.estDomainValidation(nContrastPoints) = 1;
+                theContrastData.estDomainValidation(nContrastPoints) = -10;
             end
                 
             contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
@@ -297,7 +300,7 @@ for ss = 1:nSubjects
             xlim([-3.3 -1]);
             
             % Clear the pointsize for next plot.
-            clear pointSize;
+            clear pointSize;    
         end
         
         % Add some text info in the figure.
@@ -317,6 +320,15 @@ for ss = 1:nSubjects
         % Print out the progress.
         fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
         
+        % Get the date of experiment.
+        testFileNameContrast = theData.describe.testFileNameContrast;
+        numExtract = regexp(testFileNameContrast,'\d+','match');
+        yearStr = numExtract{3};
+        monthStr = numExtract{4};
+        dayStr = numExtract{5};
+        dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+        
+        % Save the plot here if you want.
         if (SAVETHEPLOT)
             if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                 testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
@@ -328,18 +340,68 @@ for ss = 1:nSubjects
                 end
                 
                 % Save the plot.
-                testFileNameContrast = theData.describe.testFileNameContrast;
-                numExtract = regexp(testFileNameContrast,'\d+','match');
-                dayStr = sprintf('%s_%s_%s',numExtract{3},numExtract{4},numExtract{5});
-                
                 testFilename = fullfile(testFiledir,...
-                    sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,dayStr));
+                    sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,dateStr));
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
                 fprintf('\t Plot has been saved successfully! \n');
             end
         end
+        
+        % Make a table that contains test image profile.
+        % 
+        % Get the number of spatial frequency tested for the previous
+        % subject so that we can make a right gap between two adjacent
+        % subjects in the table.
+        if (ss >= 2)
+            nSineFreqCyclesPerDegOneBefore = nSineFreqCyclesPerDegAll(1:ss-1);
+            numSpace = sum(nSineFreqCyclesPerDegOneBefore);
+        else
+            numSpace = 0;
+        end
+        
+        % Collect the data for the table.
+        Date{dd+numSpace,:} = dateStr;
+        Subject{dd+numSpace,:} = subjectName;
+        SpatialFrequency(dd+numSpace,:) = sineFreqCyclesPerDegTemp;
+        
+        if strcmp(monthStr,'10')
+            PrimaryContrast(dd+numSpace,:) = 0.05;
+        else
+            PrimaryContrast(dd+numSpace,:) = 0.07;
+        end
+        TestImageContrastMax(dd+numSpace,:) = max(theContrastData.preExpDataStruct.rawData.testContrast);
+        
+        if strcmp(monthStr,'10')
+            RuleMOA{dd+numSpace,:} = '-0.5to+0.3';
+        elseif (strcmp(monthStr,'11') & any(strcmp(dayStr,append('0',string([1:1:6])))))
+            RuleMOA{dd+numSpace,:} = '-0.5to+0.3';
+        else
+            RuleMOA{dd+numSpace,:} = '-0.4to+0.4';
+        end
+        
+        TestContrastNominalMax(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(end),4);
+        TestContrastNominalMin(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(1),4);
+        TestContrasts{dd+numSpace,:} = round(10.^theContrastData.estDomainValidation,4);
     end
+end
+
+% Record test image info to excel file.
+if (FITALLATONCE)
+    if (RECORDTESTIMAGEPROFILE)
+        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            testFilename = fullfile(testFiledir,'TestImageProfile.xlsx');
+        end
+        tableImageProfile = table(Date,Subject,SpatialFrequency,PrimaryContrast,TestImageContrastMax,...
+            RuleMOA,TestContrastNominalMin,TestContrastNominalMax,TestContrasts);
+        
+        % Write a table to the excel file.
+        sheet = 1;
+        range = 'B2';
+        writetable(tableImageProfile,testFilename,'Sheet',sheet,'Range',range);
+    end
+    fprintf('\t Test image profile has been successfully recorded! \n');
 end
 
 %% Here we check if the Adaptive mode works fine if you want.
