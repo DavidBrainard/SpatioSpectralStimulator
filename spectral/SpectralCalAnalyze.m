@@ -14,8 +14,8 @@ clear; close all;
 
 %% Set paramters.
 QUICKCHECK = true;
-FITALLATONCE = true;
-SAVETHEPLOT = true;
+FITALLATONCE = false;
+SAVETHEPLOT = false;
 
 % You can decide to see all available data to fit at once or load a single
 % data.
@@ -249,10 +249,12 @@ for ff = 1:nFits
     theColors = ['r' 'g' 'b'];
     for pp = 1:nPrimaries
         subplot(1,nPrimaries,pp); hold on;
-        plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-        plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
-        plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-        plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldContrastNominal(pp,1), 'ko','MarkerSize',18);
+        markerSizeFilled = 18;
+        markerSizeUnfilled = 21;
+        plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',markerSizeFilled,'MarkerFaceColor',theColors(pp));
+        plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',markerSizeUnfilled);
+        plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',markerSizeFilled,'MarkerFaceColor','k');
+        plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldContrastNominal(pp,1), 'ko','MarkerSize',markerSizeUnfilled);
         
         plot([-1 1],[-1 1],'k');
         xlim([-axisLim axisLim]);
