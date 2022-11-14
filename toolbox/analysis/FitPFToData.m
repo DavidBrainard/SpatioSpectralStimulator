@@ -70,6 +70,7 @@ arguments
     pCorrect
     options.PF = 'weibull'
     options.paramsFree (1,4) = [1 1 0 1]
+    options.beta = 10.^linspace(log10(0.1),log10(10),20)
     options.nTrials (1,1) = 20
     options.thresholdCriterion (1,1) = 0.81606
     options.newFigureWindow (1,1) = true
@@ -109,21 +110,63 @@ nCorrect = round(pCorrect .* nTrialsPerContrast);
 % searchGrid = [threshold slope guess lapse];
 
 searchGrid.alpha = mean(stimLevels);  
-searchGrid.beta = 10.^[-2:.1:2];
+searchGrid.beta = options.beta;
 searchGrid.gamma = 0.5;
 searchGrid.lambda = 0.01;
 
 lapseLimits = [0 0.05];
 
-% PF fitting happens here.
-paramsFitted = PAL_PFML_Fit(stimLevels, nCorrect, ...
-    nTrialsPerContrast, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
+% PF fitting happens here. Search over passed
+% list of possible slopes
+paramsFreeUse = options.paramsFree;
+paramsFreeUse(2) = 0;
+for ss = 1:length(searchGrid.beta)
+    searchGridUse = searchGrid;
+    searchGridUse.beta = searchGrid.beta(ss);
+    [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrect, ...
+        nTrialsPerContrast, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+end
+[~,index] = max(LL);
+paramsFitted = paramsFittedList(index,:);
+thresholdFitted = PF(paramsFitted, options.thresholdCriterion, 'inv');
+
+% Bootstrap fits
+options.nBootstraps = 100;
+if (options.nBootstraps > 0)
+    paramsFittedBoot = zeros(options.nBootstraps,4);
+    for bb = 1:options.nBootstraps
+        nCorrectBoot = zeros(size(nCorrect));
+        for cc = 1:length(nTrialsPerContrast)
+            trialsBoot = zeros(1,nTrialsPerContrast(cc));
+            trialsBoot(1:nCorrect(cc)) = 1;
+            index = randi(nTrialsPerContrast(cc),1,nTrialsPerContrast(cc));
+            nCorrectBoot(cc) = sum(trialsBoot(index));
+        end
+        for ss = 1:length(searchGrid.beta)
+            searchGridUse = searchGrid;
+            searchGridUse.beta = searchGrid.beta(ss);
+            [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
+                nTrialsPerContrast, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+        end
+        [~,index] = max(LL);
+        paramsFittedBoot(bb,:) = paramsFittedList(index,:);
+        thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
+    end
+    medianThresholdBoot = median(thresholdFittedBoot);
+    lowThresholdBoot = prctile(thresholdFittedBoot,10);
+    highThresholdBoot = prctile(thresholdFittedBoot,90);
+
+else
+    paramsFittedBoot = [];
+    medianThresholdBoot = [];
+    lowThresholdBoot = [];
+    highThresholdBoot = [];
+end
 
 % Make a smooth curves with finer stimulus levels.
 nFineStimLevels = 1000;
 fineStimLevels = linspace(0, max(stimLevels), nFineStimLevels);
 smoothPsychometric = PF(paramsFitted, fineStimLevels);
-thresholdFitted = PF(paramsFitted, options.thresholdCriterion, 'inv');
 
 if (options.verbose)
     fprintf('Threshold was found at %.4f (linear unit) \n', thresholdFitted);
@@ -142,34 +185,48 @@ if (options.verbose)
     %
     % Plot it on log space if you want.
     if (options.axisLog)
-        stimLevels = log10(stimLevels);
+        stimLevelsPlot = log10(stimLevels);
         thresholdFittedLog = log10(thresholdFitted);
-        fineStimLevels = log10(fineStimLevels);
+        fineStimLevelsPlot = log10(fineStimLevels);
+    else
+        stimLevelsPlot = stimLevels;
+        fineStimLevelsPlot = fineStimLevels;
     end
     
-    % Plot it here.
-    scatter(stimLevels, pCorrect, options.pointSize,...
+    % Plot bootstraps
+    for bb = 1:options.nBootstraps
+        smoothPsychometricBoot = PF(paramsFittedBoot(bb,:), fineStimLevels);
+        plot(fineStimLevelsPlot,smoothPsychometricBoot,'Color',[0.9 0.8 0.8],'LineWidth',0.5);
+    end
+
+    % Plot best fit here.
+    scatter(stimLevelsPlot, pCorrect, options.pointSize,...
         'MarkerEdgeColor', zeros(1,3), 'MarkerFaceColor', ones(1,3) * 0.5, 'MarkerFaceAlpha', 0.5);
-    plot(fineStimLevels,smoothPsychometric,'r','LineWidth',3);
+    plot(fineStimLevelsPlot,smoothPsychometric,'r','LineWidth',3);
     
     % Mark the threshold point (red point).
     if(options.axisLog)
         plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        h = errorbarX(log10(medianThresholdBoot),options.thresholdCriterion,log10(medianThresholdBoot)-log10(lowThresholdBoot),log10(highThresholdBoot)-log10(medianThresholdBoot),'go');
+        set(h,'MarkerSize',9); set(h,'MarkerFaceColor','g'); set(h,'MarkerEdgeColor','g'); set(h,'LineWidth',3);
         xlabel('Contrast (log)', 'FontSize', 15);
     else
         plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        h = errorbarX(medianThresholdBoot,options.thresholdCriterion,medianThresholdBoot-lowThresholdBoot,highThresholdBoot-medianThresholdBoot,'go');
+        set(h,'MarkerSize',9); set(h,'MarkerFaceColor','g'); set(h,'MarkerEdgeColor','g'); set(h,'LineWidth',3);
         xlabel('Contrast', 'FontSize', 15);
     end
     ylabel('pCorrect', 'FontSize', 15);
     ylim([0 1]);
     title(append('Threshold: ', num2str(round(real(thresholdFitted),4))), 'FontSize', 15);
+    drawnow;
     
     %% Get QuestPlus prediction and add to plot.
     %
     % Calculate QuestPlus prediction here and plot it.
     if ~isempty(options.questPara)
-        predictedQuestPlus = qpPFWeibullLog(fineStimLevels',options.questPara);
-        plot(fineStimLevels,predictedQuestPlus(:,2),'k--','LineWidth',3);
+        predictedQuestPlus = qpPFWeibullLog(fineStimLevelsPlot',options.questPara);
+        plot(fineStimLevelsPlot,predictedQuestPlus(:,2),'k--','LineWidth',3);
     end
     
     % Add legend if you want.

@@ -37,8 +37,8 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 
 PF = 'weibull';
@@ -48,7 +48,7 @@ olderDate = 0;
 SUBPLOT = true;
 axisLog = true;
 addInitialThresholdEst = true;
-addQuestFit = true;
+addQuestFit = false;
 addLegend = false;
 
 %% Find available data here.
@@ -84,8 +84,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'011'};
-    spatialFrequencyOptions = {'18'};
+    subjectNameOptions = {'003'};
+    spatialFrequencyOptions = {'6'};
 end
 
 %% Show the progress of the experiment.
@@ -345,6 +345,7 @@ for ss = 1:nSubjects
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
                 fprintf('\t Plot has been saved successfully! \n');
+                close(gcf);
             end
         end
         
