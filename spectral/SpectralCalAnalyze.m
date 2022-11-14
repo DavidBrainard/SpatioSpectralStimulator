@@ -236,7 +236,7 @@ for ff = 1:nFits
     
     %% Plot measured versus desired contrasts
     contrastFig = figure; hold on;
-    figureSize = 1000;
+    figureSize = 1100;
     figurePosition = [1200 300 figureSize figureSize/3];
     set(gcf,'position',figurePosition);
     
@@ -249,8 +249,8 @@ for ff = 1:nFits
     theColors = ['r' 'g' 'b'];
     for pp = 1:nPrimaries
         subplot(1,nPrimaries,pp); hold on;
-        markerSizeFilled = 18;
-        markerSizeUnfilled = 21;
+        markerSizeFilled = 19;
+        markerSizeUnfilled = 22;
         plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',markerSizeFilled,'MarkerFaceColor',theColors(pp));
         plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',markerSizeUnfilled);
         plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',markerSizeFilled,'MarkerFaceColor','k');
@@ -260,15 +260,17 @@ for ff = 1:nFits
         xlim([-axisLim axisLim]);
         ylim([-axisLim axisLim]);
         axis('square');
-        xlabel('Desired contrast');
-        ylabel('Measured contrast');
-        legend({'Measured','Nominal'},'location','southeast');
-        title(sprintf('Cone class %d',pp));
+        fontSize = 15;
+        xlabel('Desired vector contrast','fontsize',fontSize);
+        ylabel('Measured vector contrast','fontsize',fontSize);
+        legend({'Measured','Nominal'},'location','southeast','fontsize',fontSize);
+        title(sprintf('Cone class %d',pp),'fontsize',fontSize);
     end
     
     % Add some text info to the plot.
     main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
-    text(0.12,0.95,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
+    text(0.08,0.97,sprintf('* Date of primary measurement: ( %s )',dateStr),'fontsize',15,'Parent',main);
+    text(0.08,0.92,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
     text(0.40,0.95,sprintf('* Target Primary Contrast: ( %.2f )',targetPrimaryContrasts),'fontsize',15,'Parent',main);
     text(0.68,0.95,sprintf('* Target Image Contrast: ( %.2f )',theData.spatialGaborTargetContrast),'fontsize',15,'Parent',main);
     
