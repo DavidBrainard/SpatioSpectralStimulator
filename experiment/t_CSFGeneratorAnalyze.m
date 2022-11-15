@@ -29,6 +29,7 @@
 %                             give CSF curve at the same time.
 %    10/26/22  smo          - Added an option to fit all available data at
 %                             once.
+%    11/14/22  dhb          - Bootstrapping
 
 %% Start over.
 clear; close all;
@@ -37,8 +38,8 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 
 PF = 'weibull';
@@ -48,8 +49,18 @@ olderDate = 0;
 SUBPLOT = true;
 axisLog = true;
 addInitialThresholdEst = true;
-addQuestFit = true;
+addQuestFit = false;
 addLegend = false;
+
+% Slope (aka beta) values.  Fits are done on this
+% discrete set of slopes, with best slope chosen.
+% Set to empty to allow the slope to go free.
+minSlope = 0.1;
+maxSlope = 10;
+nSlopes = 20;
+betaValList = 10.^linspace(log10(minSlope),log10(maxSlope),nSlopes);
+nBootstraps = 100;
+bootConfInterval = 0.8;
 
 %% Find available data here.
 %
@@ -84,8 +95,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'011'};
-    spatialFrequencyOptions = {'18'};
+    subjectNameOptions = {'003'};
+    spatialFrequencyOptions = {'6'};
 end
 
 %% Show the progress of the experiment.
@@ -256,25 +267,28 @@ for ss = 1:nSubjects
             if (SUBPLOT)
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
             end
-            [paramsFitted(:,ff)] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+            [paramsFitted(:,ff), ...
+                thresholdFitted(ss,dd,ff), medianThresholdBoot(ss,dd,ff),lowThresholdBoot(ss,dd,ff),highThresholdBoot(ss,dd,ff), ...
+                slopeFitted(ss,dd,ff),medianSlopeBoot(ss,dd,ff),lowSlopeBoot(ss,dd,ff),highSlopeBoot(ss,dd,ff), ...
+                legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
                 'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
                 'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
-                'questPara', questPara,'addLegend',false);
+                'questPara', questPara,'addLegend',false, ...
+                'beta',betaValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
             subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
             
             % Add initial threhold to the plot.
             if (addInitialThresholdEst)
-                
                 % Plot it on log space if you want.
                 if(axisLog)
                     thresholdInitial = log10(thresholdInitial);
                 end
                 
                 % Plot it here.
-                plot([thresholdInitial(1) thresholdInitial(1)], [0 1], 'b-', 'linewidth',3);
-                plot([thresholdInitial(2) thresholdInitial(2)], [0 1], 'g--', 'linewidth',3);
-                plot([thresholdInitial(3) thresholdInitial(3)], [0 1], 'b-', 'linewidth',3);
-                plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'g--', 'linewidth',3); 
+                h_high = plot([thresholdInitial(1) thresholdInitial(1)], [0 1], 'b-', 'linewidth',1);
+                h_low = plot([thresholdInitial(2) thresholdInitial(2)], [0 1], 'c--', 'linewidth',1);
+                plot([thresholdInitial(3) thresholdInitial(3)], [0 1], 'b-', 'linewidth',1);
+                plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'c--', 'linewidth',1); 
             end
             
             % Add the entire test image contrast range and chosen ones for
@@ -285,19 +299,36 @@ for ss = 1:nSubjects
             testContrastsLinear = logspace(log10(testContrastMin),log10(testContrastMax),nTestContrasts);
             testContrastsLog = log10(testContrastsLinear);
             
+            % Indicate available and used contrasts
             plot(testContrastsLog,0,'ko','markersize',7);
             plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
-            
-            if (addQuestFit)
-                legend('Data','PF-fit','PF-Threshold','Quest-fit','ThresholdEst from high','ThresholdEst from low',...
-                    'FontSize', 9, 'location', 'southeast');
+
+            % Fussy legend adding
+            if (addInitialThresholdEst)
+                if (addQuestFit)
+                    legend([legendHandles h_high h_low], 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
+                        'Adj From High','Adj From Low', ...
+                        'FontSize', 12, 'location', 'southwest');
+                else
+                    legend([legendHandles h_high h_low], 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                        'Adj From High','Adj From Low', ...
+                        'FontSize', 12, 'location', 'southwest');
+                end
             else
-                legend('Data','PF-fit','PF-Threshold','ThresholdEst from high','ThresholdEst from low',...
-                    'FontSize', 9, 'location', 'southeast');
+                if (addQuestFit)
+                    legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
+                        'FontSize', 12, 'location', 'southwest');
+                else
+                    legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                        'FontSize', 12, 'location', 'southwest');
+                end
             end
             
             % Set the range for the x-axis.
             xlim([-3.3 -1]);
+
+            % Force draw
+            drawnow;
             
             % Clear the pointsize for next plot.
             clear pointSize;    
@@ -345,6 +376,7 @@ for ss = 1:nSubjects
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
                 fprintf('\t Plot has been saved successfully! \n');
+                close(gcf);
             end
         end
         
@@ -506,6 +538,7 @@ if (CSFCURVE)
     yticks(sort(sensitivityLog));
     yticklabels(sort(round(sensitivityLinear)));
     title('CSF curve','fontsize',15);
+
     % Add legend.
     if (addQuestFit)
         legend(append(subjectName,'-PF'),append(subjectName,'-Quest'),'fontsize',15);
@@ -513,3 +546,7 @@ if (CSFCURVE)
         legend(append(subjectName,'-PF'),'fontsize',15);
     end
 end
+
+% Save out full run info
+save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
+
