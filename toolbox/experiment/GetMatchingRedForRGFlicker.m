@@ -44,10 +44,10 @@ arguments
     options.frequencyFlicker (1,1) = 25
     options.bgColor = 'white'
     options.nTrials (1,1) = 4
-    options.leftButton = false
-    options.gaussianWindow = true
+    options.leftButton (1,1) = false
+    options.gaussianWindow (1,1) = true
     options.calibrate (1,1) = false
-    options.verbose
+    options.verbose (1,1) = true
 end
 
 %% Open the projector.
@@ -70,11 +70,15 @@ nInputLevels = 256;
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 whichChannelPrimary1 = 15;
 whichChannelPrimary2 = 5;
-whichChannelPrimary3 = [];
+whichChannelPrimary3 = [1:16];
 
 channelIntensityPrimary1 = 1;
 channelIntensityPrimary2 = 1;
-channelIntensityPrimary3 = 0;
+if (~options.calibrate)
+    channelIntensityPrimary3 = 0;
+else
+    channelIntensityPrimary3 = 1;
+end 
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
@@ -115,7 +119,7 @@ centerN = stimulusN/2;
 if (~options.calibrate)
     gaborSdDeg = 0.5;
 else
-    gaborSdDeg = 0.8;
+    gaborSdDeg = 1.5;
 end
 
 screenPixelsPerDeg = 142.1230;
@@ -137,6 +141,16 @@ plainImageRed(:,:,1) = options.intensityPrimary1InitialTop;
 % Green plain image.
 plainImageGreen = plainImageBase;
 plainImageGreen(:,:,2) = options.intensityPrimary2;
+
+% Ambient image for calibration.
+if (options.calibrate)
+   intensityPrimary3 = 20;
+   plainImageRed(:,:,3) = intensityPrimary3;
+   plainImageGreen(:,:,3) = intensityPrimary3;
+   
+   plainImageAmbient = plainImageBase;
+   plainImageAmbient(:,:,3) = intensityPrimary3;
+end
 
 % Set primary index to update to make a flicker.
 fillColors = {plainImageRed plainImageGreen};
@@ -174,6 +188,14 @@ numButtonLeft = 1;
 fillColorRed = plainImageBase;
 
 % Make a loop to make all possible image textures here.
+%
+% Option to add crossbar at the center of the image.
+if (~options.calibrate)
+    addFixationPointImage = 'crossbar';
+else
+    addFixationPointImage = [];
+end
+
 for pp = 1:nInputLevels
     fillColorRed(:,:,1) = pp-1;
     fillColorRed = fillColorRed./(nInputLevels-1);
@@ -195,9 +217,8 @@ for pp = 1:nInputLevels
         case 'black'
             fillColorRed = fillColorRed .* gaussianWindowBGBlack;
     end
-    
     [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorRed, window, windowRect,...
-        'addFixationPointImage','crossbar','verbose',false);
+        'addFixationPointImage',addFixationPointImage,'verbose',false);
     fprintf('Image texture has been created - (%d/%d) \n', pp, nInputLevels);
 end
 
@@ -209,9 +230,21 @@ switch options.bgColor
     case 'black'
         fillColorGreen = plainImageGreen .* gaussianWindowBGBlack;
 end
-
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
-    'addFixationPointImage','crossbar','verbose',false);
+    'addFixationPointImage',addFixationPointImage,'verbose',false);
+
+% Ambient image
+if (options.calibrate)
+    plainImageAmbient = plainImageAmbient./(nInputLevels-1);
+    switch options.bgColor
+        case 'white'
+            fillColorAmbient = plainImageAmbient + gaussianWindowBGWhite;
+        case 'black'
+            fillColorAmbient = plainImageAmbient .* gaussianWindowBGBlack;
+    end
+    imageTextureAmbient = MakeImageTexture(fillColorAmbient, window, windowRect,...
+        'addFixationPointImage',addFixationPointImage,'verbose',false);
+end
 
 %% Calibrate
 if (options.calibrate)
@@ -222,18 +255,27 @@ if (options.calibrate)
     OpenSpectroradiometer;
     
     % Measurement happens here.
-    %
+    disp('Measurement is going to be started!');
+    
     % Red.
     for cc = 1:nMeasuresRed
         imageTexture = imageTextureRed(redMeasurementRange(cc));
         FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
         spdRed(:,cc) = MeasureSpectroradiometer;
+        fprintf('(Red) Measurement in progress (%d/%d) \n', cc, nMeasuresRed);
     end
     
     % Green.
     imageTexture = imageTextureGreen;
     FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
     spdGreen = MeasureSpectroradiometer;
+    fprintf('(Green) Measurement completed! \n');
+          
+    % Ambient.
+    imageTexture = imageTextureAmbient;
+    FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
+    spdAmbient = MeasureSpectroradiometer;
+    fprintf('(Ambient) Measurement completed! \n');
     
     % Calculate XYZ.
     % Load color matching function and match the spectrum range.
@@ -242,18 +284,23 @@ if (options.calibrate)
     T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
 
     xyzRed = T_xyz * spdRed;
+    xyzRedNorm = xyzRed./max(xyzRed(2,:));
     xyzGreen = T_xyz * spdGreen;
-    
+     
     % Plot the results if you want.
     if (options.verbose)
         figure; clf; hold on;
-        plot(redMeasurementRange, xyzRed(2,:),'ro');
+        plot(redMeasurementRange, xyzRedNorm,'ro');
     end
     
     % Save out the data.
     data.redIntensity = redMeasurementRange;
     data.greenIntensity = options.intensityPrimary2;
-   
+    data.spdRed = spdRed-spdAmbient;
+    data.spdGreen = spdGreen-spdAmbient;
+    data.xyzRed = xyzRed;
+    data.xyzGreen = xyzGreen;
+    
     % Close the screen and spectroradiometer.
     CloseScreen;
     CloseSpectroradiometer;
