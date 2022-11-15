@@ -14,8 +14,8 @@ clear; close all;
 
 %% Set paramters.
 QUICKCHECK = true;
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 
 % You can decide to see all available data to fit at once or load a single
 % data.
@@ -52,6 +52,8 @@ for ff = 1:nFits
     yearStr = numExtract{1};
     monthStr = numExtract{2};
     dayStr = numExtract{3};    
+    hourStr = numExtract{4};
+    minuteStr = numExtract{5};
     dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
     dateStr = strrep(dateStr,'_','/');
     
@@ -267,9 +269,27 @@ for ff = 1:nFits
         title(sprintf('Cone class %d',pp),'fontsize',fontSize);
     end
     
-    % Add some text info to the plot.
+    % Set the primary measurement date and validation date right. For most
+    % cases, validation was performed on the same day when the primary
+    % measurement was made except some cases. Here we added the cases so
+    % that it shows the right dates for both.
+    if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))        
+        if (strcmp(houtStr,'17') & (minuteStr,'13'))
+            dateStrPrimary = '2022/10/31';
+            targetPrimaryContrasts = 0.05;
+        elseif (strcmp(houtStr,'17') & (minuteStr,'06'))
+            dateStrPrimary = '2022/11/03';
+        elseif (strcmp(houtStr,'16') & (minuteStr,'57'))
+            dateStrPrimary = '2022/10/26';
+            targetPrimaryContrasts = 0.05;
+        end
+    else
+        dateStrPrimary = dateStr;
+    end
+    
+    % Add some texts to the plot.
     main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
-    text(0.08,0.97,sprintf('* Date of primary measurement: ( %s )',dateStr),'fontsize',15,'Parent',main);
+    text(0.08,0.97,sprintf('* Date of primary measurement: ( %s )',dateStrPrimary),'fontsize',15,'Parent',main);
     text(0.08,0.92,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
     text(0.40,0.95,sprintf('* Target Primary Contrast: ( %.2f )',targetPrimaryContrasts),'fontsize',15,'Parent',main);
     text(0.68,0.95,sprintf('* Target Image Contrast: ( %.2f )',theData.spatialGaborTargetContrast),'fontsize',15,'Parent',main);
@@ -279,8 +299,9 @@ for ff = 1:nFits
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
             
             % Save the plot.
-            testFilename = append(fullfile(testFiledir,filename),...
-                sprintf('_(%.2f_%.2f)',targetPrimaryContrasts,theData.spatialGaborTargetContrast));
+            testFilename = append(fullfile(testFiledir,'testImageDataCheck'),...
+                sprintf('_PrimaryMeas_(%s)_Valid_(%s)_(%.2f_%.2f)',dateStrPrimary,dateStr...
+                targetPrimaryContrasts,theData.spatialGaborTargetContrast));
             testFileFormat = '.tiff';
             saveas(gcf,append(testFilename,testFileFormat));
             fprintf('\t Plot has been saved successfully! \n');
