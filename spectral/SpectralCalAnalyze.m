@@ -51,7 +51,7 @@ for ff = 1:nFits
     numExtract = regexp(filename,'\d+','match');
     yearStr = numExtract{1};
     monthStr = numExtract{2};
-    dayStr = numExtract{3};    
+    dayStr = numExtract{3};
     hourStr = numExtract{4};
     minuteStr = numExtract{5};
     dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
@@ -273,13 +273,13 @@ for ff = 1:nFits
     % cases, validation was performed on the same day when the primary
     % measurement was made except some cases. Here we added the cases so
     % that it shows the right dates for both.
-    if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))        
-        if (strcmp(houtStr,'17') & (minuteStr,'13'))
+    if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
+        if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
             dateStrPrimary = '2022/10/31';
             targetPrimaryContrasts = 0.05;
-        elseif (strcmp(houtStr,'17') & (minuteStr,'06'))
+        elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
             dateStrPrimary = '2022/11/03';
-        elseif (strcmp(houtStr,'16') & (minuteStr,'57'))
+        elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
             dateStrPrimary = '2022/10/26';
             targetPrimaryContrasts = 0.05;
         end
@@ -298,10 +298,13 @@ for ff = 1:nFits
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
             
+            % Back to underbar to save it on the file name.
+            dateStr = strrep(dateStr,'/','_');
+            dateStrPrimary = strrep(dateStrPrimary,'/','_');
+            
             % Save the plot.
-            testFilename = append(fullfile(testFiledir,'testImageDataCheck'),...
-                sprintf('_PrimaryMeas_(%s)_Valid_(%s)_(%.2f_%.2f)',dateStrPrimary,dateStr...
-                targetPrimaryContrasts,theData.spatialGaborTargetContrast));
+            testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_M(%s)_V(%s)_(%.2f_%.2f)',...
+                dateStrPrimary,dateStr,targetPrimaryContrasts,theData.spatialGaborTargetContrast));
             testFileFormat = '.tiff';
             saveas(gcf,append(testFilename,testFileFormat));
             fprintf('\t Plot has been saved successfully! \n');
