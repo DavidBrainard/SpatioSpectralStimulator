@@ -24,6 +24,7 @@ function [data] = GetMatchingRedForRGFlicker(options)
 %    bgColor
 %    nTrials
 %    leftButton
+%    calibrate
 %    verbose                      Boolean. Default true. Controls plotting
 %                                 and printout.
 % See also:
@@ -32,6 +33,7 @@ function [data] = GetMatchingRedForRGFlicker(options)
 % History:
 %    11/08/22   smo        - Made it as a function.
 %    11/09/22   smo        - Brought the left button back as an option.
+%    11/15/22   smo        - Added an option for calibration.
 
 %% Set parameters.
 arguments
@@ -44,6 +46,7 @@ arguments
     options.nTrials (1,1) = 4
     options.leftButton = false
     options.gaussianWindow = true
+    options.calibrate (1,1) = false
     options.verbose
 end
 
@@ -67,7 +70,7 @@ nInputLevels = 256;
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 whichChannelPrimary1 = 15;
 whichChannelPrimary2 = 5;
-whichChannelPrimary3 = [1:16];
+whichChannelPrimary3 = [];
 
 channelIntensityPrimary1 = 1;
 channelIntensityPrimary2 = 1;
@@ -108,7 +111,13 @@ end
 % view settings for SACC project.
 stimulusN = 996;
 centerN = stimulusN/2;
-gaborSdDeg = 0.5;
+
+if (~options.calibrate)
+    gaborSdDeg = 0.5;
+else
+    gaborSdDeg = 0.8;
+end
+
 screenPixelsPerDeg = 142.1230;
 gaborSdPixels = gaborSdDeg * screenPixelsPerDeg;
 
@@ -184,7 +193,7 @@ for pp = 1:nInputLevels
         case 'white'
             fillColorRed = fillColorRed + gaussianWindowBGWhite;
         case 'black'
-            fillColorRed = fillColorRed .* gaussianWindowBGBlack;  
+            fillColorRed = fillColorRed .* gaussianWindowBGBlack;
     end
     
     [imageTextureRed(pp), imageWindowRect] = MakeImageTexture(fillColorRed, window, windowRect,...
@@ -204,6 +213,55 @@ end
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
     'addFixationPointImage','crossbar','verbose',false);
 
+%% Calibrate
+if (options.calibrate)
+    redMeasurementRange = [options.intensityPrimary1InitialBottom-2*options.primaryControlInterval : options.primaryControlInterval*3 : options.intensityPrimary1InitialTop+2*options.primaryControlInterval];
+    nMeasuresRed = length(redMeasurementRange);
+    
+    % Get spectroradiometer ready.
+    OpenSpectroradiometer;
+    
+    % Measurement happens here.
+    %
+    % Red.
+    for cc = 1:nMeasuresRed
+        imageTexture = imageTextureRed(redMeasurementRange(cc));
+        FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
+        spdRed(:,cc) = MeasureSpectroradiometer;
+    end
+    
+    % Green.
+    imageTexture = imageTextureGreen;
+    FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
+    spdGreen = MeasureSpectroradiometer;
+    
+    % Calculate XYZ.
+    % Load color matching function and match the spectrum range.
+    load T_xyzJuddVos;
+    S = [380 2 201];
+    T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
+
+    xyzRed = T_xyz * spdRed;
+    xyzGreen = T_xyz * spdGreen;
+    
+    % Plot the results if you want.
+    if (options.verbose)
+        figure; clf; hold on;
+        plot(redMeasurementRange, xyzRed(2,:),'ro');
+    end
+    
+    % Save out the data.
+    data.redIntensity = redMeasurementRange;
+    data.greenIntensity = options.intensityPrimary2;
+   
+    % Close the screen and spectroradiometer.
+    CloseScreen;
+    CloseSpectroradiometer;
+    
+    % Stop here if it was for calibration.
+    return;
+end
+
 %% Make a loop here.
 redStartingPointOptions = {'top' 'bottom'};
 idxRedStartingPoint = [1 2];
@@ -218,7 +276,7 @@ for tt = 1:options.nTrials
     
     switch redStartingPoint
         case 'top'
-            intensityPrimary1 = options.intensityPrimary1InitialTop;      
+            intensityPrimary1 = options.intensityPrimary1InitialTop;
         case 'bottom'
             intensityPrimary1 = options.intensityPrimary1InitialBottom;
     end
@@ -268,7 +326,7 @@ for tt = 1:options.nTrials
                 break;
             end
         end
-    
+        
         % Get a gamepad response here.
         stateButtonRight = Gamepad('GetButton', gamepadIndex, numButtonRight);
         stateButtonLeft = Gamepad('GetButton', gamepadIndex, numButtonLeft);
