@@ -303,7 +303,7 @@ for ff = 1:nFits
             dateStrPrimary = strrep(dateStrPrimary,'/','_');
             
             % Save the plot.
-            testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_M(%s)_V(%s)_(%.2f_%.2f)',...
+            testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_P(%s)_V(%s)_PC(%.2f)_IC(%.2f)',...
                 dateStrPrimary,dateStr,targetPrimaryContrasts,theData.spatialGaborTargetContrast));
             testFileFormat = '.tiff';
             saveas(gcf,append(testFilename,testFileFormat));
