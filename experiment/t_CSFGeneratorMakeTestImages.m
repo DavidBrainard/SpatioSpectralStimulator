@@ -39,8 +39,10 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
         error('Spatial frequency should be selected within [3,6,9,12,18]');
     end
     targetScreenPrimaryContrasts = 0.07;
+    targetLambda = 3;
     colorDirectionParams = SetupColorDirection(conditionName,...
-        'spatialGaborTargetContrast',spatialGaborTargetContrast,'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts);
+        'spatialGaborTargetContrast',spatialGaborTargetContrast,'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,...
+        'targetLambda',targetLambda);
     
     %% Image spatial parameters.
     %

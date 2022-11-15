@@ -22,6 +22,10 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 % Optional key/value pairs:
 %    spatialGaborTargetContrast   - Maximum contrast in the target
 %                                   gabor image that we will make.
+%    targetLambda                 - Default to 3. Controls the smootheness
+%                                   of the target primaries. Higher value
+%                                   means more constrained to make it
+%                                   smoother.
 %
 % See also:
 %    SpectralCalCompute, SpectralCalCheck, SpectralCalAnalyze,
@@ -31,12 +35,14 @@ function colorDirectionParams = SetupColorDirection(conditionName,options)
 %   01/18/22  dhb, smo             - Wrote it
 %   01/26/22  smo                  - Added an option to set the target
 %                                    contrast of the gabor image.
+%   11/15/22  smo                  - Added an option to set target lambda.
 
 %% Set parameters.
 arguments
     conditionName {mustBeMember(conditionName,{'LminusMSmooth','ConeIsolating'})}
     options.spatialGaborTargetContrast (1,1) = 0.04
     options.targetScreenPrimaryContrasts (1,1) = 0.05
+    options.targetLambda (1,1) = 3
 end
 
 %% Set some initial parameters on the struct here.
@@ -87,7 +93,7 @@ switch (colorDirectionParams.conditionName)
         colorDirectionParams.targetScreenPrimaryContrasts = ones(1,3) * options.targetScreenPrimaryContrasts;
         colorDirectionParams.targetPrimaryHeadroom = 1.05;
         colorDirectionParams.primaryHeadroom = 0;
-        colorDirectionParams.targetLambda = 3;
+        colorDirectionParams.targetLambda = options.targetLambda;
         
         % We may not need the whole direction contrast excursion. Specify max
         % contrast we want relative to that direction vector.
