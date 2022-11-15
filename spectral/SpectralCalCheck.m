@@ -41,6 +41,9 @@ channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:15];
 nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
+spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
+targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
+targetLambda = theData.targetLambda;
 
 %% Open up screen and radiometer.
 initialScreenSettings = [1 1 1]';
@@ -67,17 +70,27 @@ if (MEASUREPRIMARY)
         targetScreenSpdMeasured(:,pp) = MeasurePlainScreenSettings(theScreenOnePrimarySettings,...
                                         S,window,windowRect,'measurementOption',true,'verbose',verbose);
         clear theScreenOnePrimarySettings;
-        
     end
     
      % Load the measurement results.
 elseif (~MEASUREPRIMARY)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         olderDatePrimary = 0;
+        
+        % Load different file name according to 'normal' set or 'high' test
+        % image contrast sets.
+        primaryContrast = 'high';       
+        switch primaryContrast
+            case 'normal'
+                filenamePart = 'targetScreenSpdMeasured';
+            case 'high'
+                filenamePart = 'targetScreenSpdMeasured_high';
+        end
+        
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-        testFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
-            'targetScreenSpdMeasured','olderDate',olderDatePrimary);
-        load(testFilename); 
+        primaryFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
+            filenamePart,'olderDate',olderDatePrimary);
+        load(primaryFilename); 
         fprintf('Measurement file found, so skipping primary measurement! \n');
     else
         error('No file to load');
@@ -285,7 +298,8 @@ if (MEASURETARGETCONTRAST)
             'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
             'ptCldScreenSettingsCheckCal','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
             'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
-            'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal');
+            'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal','primaryFilename','targetScreenPrimaryContrast',...
+            'targetLambda','spatialGaborTargetContrast');
     end
     disp('Data has been saved successfully!');
 end
@@ -298,7 +312,7 @@ figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 
-axisLim = 0.07;
+axisLim = 0.10;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
