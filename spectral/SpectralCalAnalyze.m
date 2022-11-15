@@ -14,8 +14,8 @@ clear; close all;
 
 %% Set paramters.
 QUICKCHECK = true;
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 
 % You can decide to see all available data to fit at once or load a single
 % data.
@@ -51,7 +51,9 @@ for ff = 1:nFits
     numExtract = regexp(filename,'\d+','match');
     yearStr = numExtract{1};
     monthStr = numExtract{2};
-    dayStr = numExtract{3};    
+    dayStr = numExtract{3};
+    hourStr = numExtract{4};
+    minuteStr = numExtract{5};
     dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
     dateStr = strrep(dateStr,'_','/');
     
@@ -236,7 +238,7 @@ for ff = 1:nFits
     
     %% Plot measured versus desired contrasts
     contrastFig = figure; hold on;
-    figureSize = 1000;
+    figureSize = 1100;
     figurePosition = [1200 300 figureSize figureSize/3];
     set(gcf,'position',figurePosition);
     
@@ -249,8 +251,8 @@ for ff = 1:nFits
     theColors = ['r' 'g' 'b'];
     for pp = 1:nPrimaries
         subplot(1,nPrimaries,pp); hold on;
-        markerSizeFilled = 18;
-        markerSizeUnfilled = 21;
+        markerSizeFilled = 19;
+        markerSizeUnfilled = 22;
         plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',markerSizeFilled,'MarkerFaceColor',theColors(pp));
         plot(theCheckData.desiredContrastCheckCal(pp,:),theCheckData.ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',markerSizeUnfilled);
         plot(theCheckData.desiredContrastCheckCal(pp,1),theCheckData.ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',markerSizeFilled,'MarkerFaceColor','k');
@@ -260,15 +262,35 @@ for ff = 1:nFits
         xlim([-axisLim axisLim]);
         ylim([-axisLim axisLim]);
         axis('square');
-        xlabel('Desired contrast');
-        ylabel('Measured contrast');
-        legend({'Measured','Nominal'},'location','southeast');
-        title(sprintf('Cone class %d',pp));
+        fontSize = 15;
+        xlabel('Desired vector contrast','fontsize',fontSize);
+        ylabel('Measured vector contrast','fontsize',fontSize);
+        legend({'Measured','Nominal'},'location','southeast','fontsize',fontSize);
+        title(sprintf('Cone class %d',pp),'fontsize',fontSize);
     end
     
-    % Add some text info to the plot.
+    % Set the primary measurement date and validation date right. For most
+    % cases, validation was performed on the same day when the primary
+    % measurement was made except some cases. Here we added the cases so
+    % that it shows the right dates for both.
+    if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
+        if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
+            dateStrPrimary = '2022/10/31';
+            targetPrimaryContrasts = 0.05;
+        elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
+            dateStrPrimary = '2022/11/03';
+        elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
+            dateStrPrimary = '2022/10/26';
+            targetPrimaryContrasts = 0.05;
+        end
+    else
+        dateStrPrimary = dateStr;
+    end
+    
+    % Add some texts to the plot.
     main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
-    text(0.12,0.95,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
+    text(0.08,0.97,sprintf('* Date of primary measurement: ( %s )',dateStrPrimary),'fontsize',15,'Parent',main);
+    text(0.08,0.92,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
     text(0.40,0.95,sprintf('* Target Primary Contrast: ( %.2f )',targetPrimaryContrasts),'fontsize',15,'Parent',main);
     text(0.68,0.95,sprintf('* Target Image Contrast: ( %.2f )',theData.spatialGaborTargetContrast),'fontsize',15,'Parent',main);
     
@@ -276,9 +298,13 @@ for ff = 1:nFits
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
             
+            % Back to underbar to save it on the file name.
+            dateStr = strrep(dateStr,'/','_');
+            dateStrPrimary = strrep(dateStrPrimary,'/','_');
+            
             % Save the plot.
-            testFilename = append(fullfile(testFiledir,filename),...
-                sprintf('_(%.2f_%.2f)',targetPrimaryContrasts,theData.spatialGaborTargetContrast));
+            testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_M(%s)_V(%s)_(%.2f_%.2f)',...
+                dateStrPrimary,dateStr,targetPrimaryContrasts,theData.spatialGaborTargetContrast));
             testFileFormat = '.tiff';
             saveas(gcf,append(testFilename,testFileFormat));
             fprintf('\t Plot has been saved successfully! \n');
