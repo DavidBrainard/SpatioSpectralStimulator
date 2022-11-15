@@ -50,7 +50,7 @@ end
 %
 % Set parameters for getting desired background primaries.
 bgPrimaryHeadRoom = 0;
-bgTargetLambda = 3;
+bgTargetLambda = colorDirectionParams.targetLambda;
 targetBgXYZ = xyYToXYZ([colorDirectionParams.targetBgxy ; 1]);
 nScreenPrimaries = size(colorDirectionParams.channelCalNames,2);
 
