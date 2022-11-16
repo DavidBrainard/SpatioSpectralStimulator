@@ -112,6 +112,8 @@ if (sineFreqCyclesPerDeg==18)
         
         disp('Test image should be chosen either normal or high!');
     end
+else
+    testImageToUse = 'normal';
 end
 
 %% Prompt Which filter to use.
