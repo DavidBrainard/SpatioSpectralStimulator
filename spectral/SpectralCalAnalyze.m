@@ -67,7 +67,7 @@ for ff = 1:nFits
     if isfield(theCheckData,'primaryFilename')
         [filedir filename ext] = fileparts(theCheckData.primaryFilename);
         numExtract = regexp(filename,'\d+','match');
-        dateStrPrimary = sprintf('%s_%s_%s',numExtrat{1},numExtract{2},numExtract{3});
+        dateStrPrimary = sprintf('%s_%s_%s',numExtract{1},numExtract{2},numExtract{3});
         dateStrPrimary = strrep(dateStrPrimary,'_','/');
     end
     
