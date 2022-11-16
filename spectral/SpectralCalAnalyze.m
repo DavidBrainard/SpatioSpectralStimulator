@@ -50,20 +50,26 @@ for ff = 1:nFits
         targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
         targetLambda = theData.targetLambda;
     end
-
-    % Get the file name only.
+    
+    % Get the date of validation.
     [filedir filename ext] = fileparts(testFilename);
     fprintf('\t Current testing file name: (%s) \n', filename);
-    
-    % Get the date of validation. We will add it to the plot.
     numExtract = regexp(filename,'\d+','match');
     yearStr = numExtract{1};
     monthStr = numExtract{2};
     dayStr = numExtract{3};
     hourStr = numExtract{4};
     minuteStr = numExtract{5};
-    dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
-    dateStr = strrep(dateStr,'_','/');
+    dateStrVal = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+    dateStrVal = strrep(dateStrVal,'_','/');
+    
+    % Get the date of primary measurement.
+    if isfield(theCheckData,'primaryFilename')
+        [filedir filename ext] = fileparts(theCheckData.primaryFilename);
+        numExtract = regexp(filename,'\d+','match');
+        dateStrPrimary = sprintf('%s_%s_%s',numExtrat{1},numExtract{2},numExtract{3});
+        dateStrPrimary = strrep(dateStrPrimary,'_','/');
+    end
     
     % We set the target primary contrast as 0.05 till the end of October
     % and it has been upadated to 0.07 after which sounds more sense.
@@ -73,12 +79,14 @@ for ff = 1:nFits
     % on 11/15 for high contrast test image set, we used 0.10 for target
     % primary contrast. Here, we set it manually, but further data would
     % contain this info in the variable so that we can read out from it.
-    if strcmp(monthStr,'10')
-        targetPrimaryContrasts = 0.05;
-    elseif (strcmp(monthStr,'11') & strcmp(dayStr,'15') & strcmp(hourStr,'16') & strcmp(minuteStr,'13'))
-        targetPrimaryContrasts = 0.10;
-    else
-        targetPrimaryContrasts = 0.07;
+    if ~exist('targetScreenPrimaryContrast')
+        if strcmp(monthStr,'10')
+            targetScreenPrimaryContrast = 0.05;
+        elseif (strcmp(monthStr,'11') & strcmp(dayStr,'15') & strcmp(hourStr,'16') & strcmp(minuteStr,'13'))
+            targetScreenPrimaryContrast = 0.10;
+        else
+            targetScreenPrimaryContrast = 0.07;
+        end
     end
     
     %% Set up some variables that we need
@@ -288,25 +296,27 @@ for ff = 1:nFits
     % cases, validation was performed on the same day when the primary
     % measurement was made except some cases. Here we added the cases so
     % that it shows the right dates for both.
-    if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
-        if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
-            dateStrPrimary = '2022/10/31';
-            targetPrimaryContrasts = 0.05;
-        elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
-            dateStrPrimary = '2022/11/03';
-        elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
-            dateStrPrimary = '2022/10/26';
-            targetPrimaryContrasts = 0.05;
+    if ~exist('dateStrPrimary')
+        if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
+            if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
+                dateStrPrimary = '2022/10/31';
+                targetScreenPrimaryContrast = 0.05;
+            elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
+                dateStrPrimary = '2022/11/03';
+            elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
+                dateStrPrimary = '2022/10/26';
+                targetScreenPrimaryContrast = 0.05;
+            end
+        else
+            dateStrPrimary = dateStrVal;
         end
-    else
-        dateStrPrimary = dateStr;
     end
     
     % Add some texts to the plot.
     main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
     text(0.08,0.97,sprintf('* Date of primary measurement: ( %s )',dateStrPrimary),'fontsize',15,'Parent',main);
-    text(0.08,0.92,sprintf('* Date of validation: ( %s )',dateStr),'fontsize',15,'Parent',main);
-    text(0.40,0.95,sprintf('* Target Primary Contrast: ( %.2f )',targetPrimaryContrasts),'fontsize',15,'Parent',main);
+    text(0.08,0.92,sprintf('* Date of validation: ( %s )',dateStrVal),'fontsize',15,'Parent',main);
+    text(0.40,0.95,sprintf('* Target Primary Contrast: ( %.2f )',targetScreenPrimaryContrast),'fontsize',15,'Parent',main);
     text(0.68,0.95,sprintf('* Target Image Contrast: ( %.2f )',theData.spatialGaborTargetContrast),'fontsize',15,'Parent',main);
     
     if (SAVETHEPLOT)
@@ -314,12 +324,12 @@ for ff = 1:nFits
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
             
             % Back to underbar to save it on the file name.
-            dateStr = strrep(dateStr,'/','_');
+            dateStrVal = strrep(dateStrVal,'/','_');
             dateStrPrimary = strrep(dateStrPrimary,'/','_');
             
             % Save the plot.
             testFilename = fullfile(testFiledir,sprintf('testImageDataCheck_P(%s)_V(%s)_PC(%.2f)_IC(%.2f)',...
-                dateStrPrimary,dateStr,targetPrimaryContrasts,theData.spatialGaborTargetContrast));
+                dateStrPrimary,dateStrVal,targetScreenPrimaryContrast,theData.spatialGaborTargetContrast));
             testFileFormat = '.tiff';
             saveas(gcf,append(testFilename,testFileFormat));
             fprintf('\t Plot has been saved successfully! \n');
