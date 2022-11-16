@@ -37,6 +37,7 @@ function [screenPrimaryChannelObject,backgroundChannelObject] = SetupChannelPrim
 % History:
 %   01/21/22  dhb,ga,smo           - Wrote it.
 %   01/24/22  smo                  - Made it work.
+%   11/16/22  smo                  - Update the target lambda right.
 
 %% Set parameters.
 arguments
