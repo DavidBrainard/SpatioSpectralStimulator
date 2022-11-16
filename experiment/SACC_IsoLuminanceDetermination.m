@@ -22,7 +22,7 @@ clear; close all;
 subjectName = 'TEST';
 frequencyFlicker = 25;
 leftButton = true;
-gaussianWindow = true;
+gaussianWindow = false;
 bgColor = 'white';
 
 % %% 1) Look at stimulus demo.
