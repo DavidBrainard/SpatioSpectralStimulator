@@ -56,7 +56,7 @@ function [paramsFitted, ...
 %                                 conducted per each stimulus level.
 %    thresholdCriterion -         Default to 0.81606. This is the value of
 %                                 pCorrect as a criteria to find threshold.
-%    newFigureWindow -               Default to true. Make a new figure window
+%    newFigureWindow -            Default to true. Make a new figure window
 %                                 to plot the results. If you want to plot
 %                                 multiple threshold results in a subplot,
 %                                 set this to false and do so.
@@ -268,13 +268,26 @@ if (options.verbose)
     end
     ylabel('pCorrect', 'FontSize', 15);
     ylim([0 1]);
-    if (options.nBootstraps > 0)
-        title({sprintf('Threshold: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
-            thresholdFitted,medianThresholdBoot,lowThresholdBoot,highThresholdBoot,round(100*options.bootConfInterval)) ; ...
-            sprintf('Slope: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
-            slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot,round(100*options.bootConfInterval))});
+    if (~isempty(options.beta))
+        if (options.nBootstraps > 0)
+            title({sprintf('Threshold: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
+                thresholdFitted,medianThresholdBoot,lowThresholdBoot,highThresholdBoot,round(100*options.bootConfInterval)) ; ...
+                sprintf('Slope range: %0.4f to %0.4f',min(options.beta),max(options.beta)); ...
+                sprintf('Slope: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
+                slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot,round(100*options.bootConfInterval))});
+        else
+            title({sprintf('Threshold: %0.4f',thresholdFitted); sprintf('Slope: %0.4f',slopeFitted); ...
+                sprintf('Slope range: %0.4f to %0.4f',min(options.beta),max(options.beta))})
+        end
     else
-        title({sprintf('Threshold: %0.4f',thresholdFitted); sprintf('Slope: %0.4f',slopeFitted)});
+        if (options.nBootstraps > 0)
+            title({sprintf('Threshold: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
+                thresholdFitted,medianThresholdBoot,lowThresholdBoot,highThresholdBoot,round(100*options.bootConfInterval)) ; ...
+                sprintf('Slope: %0.4f, [%0.4f (%0.4f, %0.4f, %d%%]',...
+                slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot,round(100*options.bootConfInterval))});
+        else
+            title({sprintf('Threshold: %0.4f',thresholdFitted); sprintf('Slope: %0.4f',slopeFitted)})
+        end
     end
     
     %% Get QuestPlus prediction and add to plot.
@@ -286,20 +299,38 @@ if (options.verbose)
     end
     
     % Add legend if you want.
-    if ~isempty(options.questPara)
-        legendHandles = [h_data h_pffit h_thresh h_bsthresh(2) h_bsthresh(1) h_quest];
-    else
-        legendHandles = [h_data h_pffit h_thresh h_bsthresh(2) h_bsthresh(1)];
-    end
-    if (options.addLegend)
+    if (options.nBootstraps > 0)
         if ~isempty(options.questPara)
-            legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit',...
-                'FontSize', 12, 'location', 'southeast');
+            legendHandles = [h_data h_pffit h_thresh h_bsthresh(2) h_bsthresh(1) h_quest];
         else
-            legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
-                'FontSize', 12, 'location', 'southeast');
+            legendHandles = [h_data h_pffit h_thresh h_bsthresh(2) h_bsthresh(1)];
+        end
+        if (options.addLegend)
+            if ~isempty(options.questPara)
+                legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit',...
+                    'FontSize', 12, 'location', 'southeast');
+            else
+                legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                    'FontSize', 12, 'location', 'southeast');
+            end
+        end
+    else
+        if ~isempty(options.questPara)
+            legendHandles = [h_data h_pffit h_thresh h_quest];
+        else
+            legendHandles = [h_data h_pffit h_thresh];
+        end
+        if (options.addLegend)
+            if ~isempty(options.questPara)
+                legend(legendHandles, 'Data','PF-fit','PF-Threshold','Quest-fit',...
+                    'FontSize', 12, 'location', 'southeast');
+            else
+                legend(legendHandles, 'Data','PF-fit','PF-Threshold', ...
+                    'FontSize', 12, 'location', 'southeast');
+            end
         end
     end
+
     drawnow;
 
 end

@@ -59,8 +59,10 @@ minSlope = 0.1;
 maxSlope = 10;
 nSlopes = 20;
 betaValList = 10.^linspace(log10(minSlope),log10(maxSlope),nSlopes);
+slopeRangeLogUnits = 0.2;
 nBootstraps = 100;
 bootConfInterval = 0.8;
+thresholdCriterion = 0.81606;
 
 %% Find available data here.
 %
@@ -194,9 +196,11 @@ for ss = 1:nSubjects
         sineFreqCyclesPerDegStr = sineFreqCyclesPerDeg{dd};
         sineFreqCyclesPerDegTemp = sscanf(sineFreqCyclesPerDegStr,'%d');
         
-        figure; clf;
+        % Figure for the psychometric function plots
+        psychoFig = figure; clf;
         set(gcf,'position',[0,0,1920,1080]);
         
+        % Do initial fit for each filter
         for ff = 1:nFilters
             % Set target filter.
             whichFilter = filterOptions{ff};
@@ -226,14 +230,17 @@ for ss = 1:nSubjects
             nContrastPoints = 8;
             if ~(length(theContrastData.estDomainValidation)==nContrastPoints)
                 theContrastData.estDomainValidation(nContrastPoints) = -10;
-            end
-                
+            end                
             contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
+
+            % Quest estimator.  Need this here to get data out
+            [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+                'thresholdCriterion', thresholdCriterion, 'returnData', true);
             
             % Pull out the data here.
             nTrials = theData.estimator.nRepeat;
             [stimVec, responseVec, structVec] = combineData(theData.estimator);
-            
+
             % Here we will plot the PF fitting graph.
             %
             % Set marker size here. We will use this number to plot the results to
@@ -247,26 +254,104 @@ for ss = 1:nSubjects
                 pCorrect(idx) = sum(prop) / length(prop);
                 pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
             end
-            
-            thresholdCriterion = 0.81606;
-            [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
-                'thresholdCriterion', thresholdCriterion, 'returnData', true);
-            thresholdsQuest(ff) = threshold;
-            
+
             % Set the contrast levels in linear unit.
             examinedContrastsLinear = 10.^dataOut.examinedContrasts;
             
+            % First fit without bootstrapping or plotting to get slopes for each filter
+            tempFig = figure;
+            paramsFittedRaw(:,ff) = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+                'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+                'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
+                'questPara', [],'addLegend',false, ...
+                'beta',betaValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
+            close(tempFig);
+        end
+
+        % Now fit again using range of slopes determined from first pass
+        for ff = 1:nFilters
+            % Set target filter.
+            whichFilter = filterOptions{ff};
+
+            % Load the experiment data.
+            if (ispref('SpatioSpectralStimulator','SACCData'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
+                    subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+                testFilename = GetMostRecentFileName(testFiledir,...
+                    sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,whichFilter),'olderDate',olderDate);
+                theData = load(testFilename);
+            else
+                error('Cannot find data file');
+            end
+
+            % Load the contrast range data.
+            testFilename = GetMostRecentFileName(testFiledir,...
+                sprintf('ContrastRange_%s_%d',subjectName,sineFreqCyclesPerDegTemp));
+            theContrastData = load(testFilename);
+
+            % Extract the threshold from the initial measurements.
+            thresholdInitial = theContrastData.preExpDataStruct.thresholdFoundRawLinear;
+
+            % Get the tested contrast range here. If there is not the
+            % number of contrast points, we just match the size of the
+            % array.
+            nContrastPoints = 8;
+            if ~(length(theContrastData.estDomainValidation)==nContrastPoints)
+                theContrastData.estDomainValidation(nContrastPoints) = -10;
+            end
+            contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
+
+            % Quest estimator.  Need this here to get data out
+            [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+                'thresholdCriterion', thresholdCriterion, 'returnData', true);
+
+            % Pull out the data here.
+            nTrials = theData.estimator.nRepeat;
+            [stimVec, responseVec, structVec] = combineData(theData.estimator);
+
+            % Set the contrast levels in linear unit.
+            examinedContrastsLinear = 10.^dataOut.examinedContrasts;
+
+            % Here we will plot the PF fitting graph.
+            %
+            % Set marker size here. We will use this number to plot the results to
+            % have different marker size according to the number of trials. Here
+            % we used the same method to decide the size of each marker as
+            % 'thresholdMLE' does.
+            stimVal = unique(stimVec);
+            pCorrect = zeros(1,length(stimVal));
+            for idx = 1:length(stimVal)
+                prop = responseVec(stimVec == stimVal(idx));
+                pCorrect(idx) = sum(prop) / length(prop);
+                pointSize(idx) = 10 * 100 / length(stimVec) * length(prop);
+            end
+
+            % Quest estimator
+            [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
+                'thresholdCriterion', thresholdCriterion, 'returnData', true);
+            thresholdsQuest(ff) = threshold;
+
+            % Set the contrast levels in linear unit.
+            examinedContrastsLinear = 10.^dataOut.examinedContrasts;
+
             % Set if you want to add Quest fit in the results.
             if (addQuestFit)
                 questPara = para;
             else
                 questPara = [];
             end
-            
-            % PF fitting here.
+
+            % PF fitting here. Use the initial fit to determine slope range
+            figure(psychoFig);
             if (SUBPLOT)
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
             end
+
+            rawSlopes = paramsFittedRaw(2,:);
+            useSlopes = rawSlopes(2:nFilters-1);
+            minSlopeRange = min(useSlopes)*(10^-slopeRangeLogUnits);
+            maxSlopeRange = max(useSlopes)*(10^slopeRangeLogUnits);
+
             [paramsFitted(:,ff), ...
                 thresholdFitted(ss,dd,ff), medianThresholdBoot(ss,dd,ff),lowThresholdBoot(ss,dd,ff),highThresholdBoot(ss,dd,ff), ...
                 slopeFitted(ss,dd,ff),medianSlopeBoot(ss,dd,ff),lowSlopeBoot(ss,dd,ff),highSlopeBoot(ss,dd,ff), ...
@@ -274,23 +359,23 @@ for ss = 1:nSubjects
                 'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
                 'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
                 'questPara', questPara,'addLegend',false, ...
-                'beta',betaValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
-            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 15);
-            
+                'beta',linspace(minSlopeRange,maxSlopeRange,nSlopes),'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
+            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+
             % Add initial threhold to the plot.
             if (addInitialThresholdEst)
                 % Plot it on log space if you want.
                 if(axisLog)
                     thresholdInitial = log10(thresholdInitial);
                 end
-                
+
                 % Plot it here.
                 h_high = plot([thresholdInitial(1) thresholdInitial(1)], [0 1], 'b-', 'linewidth',1);
                 h_low = plot([thresholdInitial(2) thresholdInitial(2)], [0 1], 'c--', 'linewidth',1);
                 plot([thresholdInitial(3) thresholdInitial(3)], [0 1], 'b-', 'linewidth',1);
-                plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'c--', 'linewidth',1); 
+                plot([thresholdInitial(4) thresholdInitial(4)], [0 1], 'c--', 'linewidth',1);
             end
-            
+
             % Add the entire test image contrast range and chosen ones for
             % the experiment to the plot.
             testContrastMax = max(theContrastData.preExpDataStruct.rawData.testContrast);
@@ -298,7 +383,7 @@ for ss = 1:nSubjects
             nTestContrasts = 30;
             testContrastsLinear = logspace(log10(testContrastMin),log10(testContrastMax),nTestContrasts);
             testContrastsLog = log10(testContrastsLinear);
-            
+
             % Indicate available and used contrasts
             plot(testContrastsLog,0,'ko','markersize',7);
             plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
@@ -323,34 +408,34 @@ for ss = 1:nSubjects
                         'FontSize', 12, 'location', 'southwest');
                 end
             end
-            
+
             % Set the range for the x-axis.
             xlim([-3.3 -1]);
 
             % Force draw
             drawnow;
-            
+
             % Clear the pointsize for next plot.
-            clear pointSize;    
+            clear pointSize;
         end
-        
+
         % Add some text info in the figure.
         %
-        % Refine the text before adding it to the figure. 
+        % Refine the text before adding it to the figure.
         testFileNameImagesRefine = strrep(theData.describe.testFileNameImages,'-','/');
         testFileNameImagesRefine = strrep(testFileNameImagesRefine,'_','/');
-        
+
         testFileNameContrastRefine = strrep(theData.describe.testFileNameContrast,'-','/');
         testFileNameContrastRefine = strrep(testFileNameContrastRefine,'_','/');
-        
+
         main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
         text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
         text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
         text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
-        
+
         % Print out the progress.
         fprintf('\t Fitting progress - Subject (%d/%d) / Spatial frequency (%d/%d) \n',ss, nSubjects, dd, nSineFreqCyclesPerDeg);
-        
+
         % Get the date of experiment.
         testFileNameContrast = theData.describe.testFileNameContrast;
         numExtract = regexp(testFileNameContrast,'\d+','match');
@@ -358,18 +443,18 @@ for ss = 1:nSubjects
         monthStr = numExtract{4};
         dayStr = numExtract{5};
         dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
-        
+
         % Save the plot here if you want.
         if (SAVETHEPLOT)
             if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                 testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                     subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-                
+
                 % Make folder with subject name if it does not exist.
                 if ~exist(testFiledir, 'dir')
                     mkdir(testFiledir);
                 end
-                
+
                 % Save the plot.
                 testFilename = fullfile(testFiledir,...
                     sprintf('CS_%s_%d_cpd_%s',subjectName,sineFreqCyclesPerDegTemp,dateStr));
@@ -379,9 +464,9 @@ for ss = 1:nSubjects
                 close(gcf);
             end
         end
-        
+
         % Make a table that contains test image profile.
-        % 
+        %
         % Get the number of spatial frequency tested for the previous
         % subject so that we can make a right gap between two adjacent
         % subjects in the table.
@@ -391,19 +476,19 @@ for ss = 1:nSubjects
         else
             numSpace = 0;
         end
-        
+
         % Collect the data for the table.
         Date{dd+numSpace,:} = dateStr;
         Subject{dd+numSpace,:} = subjectName;
         SpatialFrequency(dd+numSpace,:) = sineFreqCyclesPerDegTemp;
-        
+
         if strcmp(monthStr,'10')
             PrimaryContrast(dd+numSpace,:) = 0.05;
         else
             PrimaryContrast(dd+numSpace,:) = 0.07;
         end
         TestImageContrastMax(dd+numSpace,:) = max(theContrastData.preExpDataStruct.rawData.testContrast);
-        
+
         if strcmp(monthStr,'10')
             RuleMOA{dd+numSpace,:} = '-0.5to+0.3';
         elseif (strcmp(monthStr,'11') & any(strcmp(dayStr,append('0',string([1:1:6])))))
@@ -411,7 +496,7 @@ for ss = 1:nSubjects
         else
             RuleMOA{dd+numSpace,:} = '-0.4to+0.4';
         end
-        
+
         TestContrastNominalMax(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(end),4);
         TestContrastNominalMin(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(1),4);
         TestContrasts{dd+numSpace,:} = round(10.^theContrastData.estDomainValidation,4);
@@ -427,7 +512,7 @@ if (FITALLATONCE)
         end
         tableImageProfile = table(Date,Subject,SpatialFrequency,PrimaryContrast,TestImageContrastMax,...
             RuleMOA,TestContrastNominalMin,TestContrastNominalMax,TestContrasts);
-        
+
         % Write a table to the excel file.
         sheet = 1;
         range = 'B2';
@@ -440,10 +525,10 @@ end
 if (CHECKADAPTIVEMODE)
     figure; clf; hold on;
     for ss = 1:nSineFreqCyclesPerDeg
-        
+
         % Set target spatial frequency.
         sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
-        
+
         % Load the data.
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
@@ -454,13 +539,13 @@ if (CHECKADAPTIVEMODE)
         else
             error('Cannot find data file');
         end
-        
+
         % Set variables here.
         nTrial = theData.estimator.nTrial;
         testTrials = linspace(1,nTrial,nTrial);
         testContrasts = 10.^stimVec;
         testPerformances = {structVec.outcome};
-        
+
         % Set the color of the data point according to the subject's
         % performance. We will differenciate the marker point based on
         % each response either correct of incorrect.
@@ -472,17 +557,17 @@ if (CHECKADAPTIVEMODE)
         responseIncorrect = 1;
         markerColorCorrect   = 5;
         markerColorIncorrect = 10;
-        
+
         for tt = 1:nTrial
             markerFaceColor(1,tt) = testPerformances{tt};
             markerFaceColor(find(markerFaceColor == responseCorrect)) = markerColorCorrect;
             markerFaceColor(find(markerFaceColor == responseIncorrect)) = markerColorIncorrect;
         end
-        
+
         if (SUBPLOT)
             subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
         end
-        
+
         % Plot it.
         markerSize = 40;
         scatter(testTrials, testContrasts, markerSize, markerFaceColor, 'filled', 'MarkerEdgeColor', zeros(1,3));
@@ -490,7 +575,7 @@ if (CHECKADAPTIVEMODE)
         ylabel('Contrast', 'fontsize', 15);
         title(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
         legend('Blue = correct / Yellow = incorrect','location','northeast','fontsize',15);
-        
+
         clear markerFaceColor;
     end
 end
@@ -502,29 +587,29 @@ SUBPLOTCSF = false;
 if (CSFCURVE)
     % Export the threshold data.
     thresholds = paramsFitted(1,:);
-    
+
     % Convert NaN to 0 here.
     for tt = 1:length(thresholds)
         if isnan(thresholds(tt))
             thresholds(tt) = 0;
         end
     end
-    
+
     % Calculate sensitivity.
     sensitivityLinear = 1./thresholds;
     sensitivityLog = log10(sensitivityLinear);
     sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDeg);
-    
+
     sensitivityQuestLinear = 1./(10.^thresholdsQuest);
     sensitivityQuestLog = log10(sensitivityQuestLinear);
-    
+
     % Decide the plot on either subplot or separate figure.
     if (SUBPLOTCSF)
         subplot(sizeSubplot(1), sizeSubplot(2), 6); hold on;
     else
         figure; clf; hold on;
     end
-    
+
     % Plot PF fit CSF curve.
     plot(sineFreqCyclesPerDegLog, sensitivityLog, 'r.-','markersize',20,'linewidth',2);
     % Add Quest fit CSF curve.
