@@ -14,7 +14,7 @@ clear; close all;
 
 %% Set paramters.
 QUICKCHECK = true;
-FITALLATONCE = true;
+FITALLATONCE = false;
 SAVETHEPLOT = true;
 
 % You can decide to see all available data to fit at once or load a single
@@ -60,8 +60,15 @@ for ff = 1:nFits
     % We set the target primary contrast as 0.05 till the end of October
     % and it has been upadated to 0.07 after which sounds more sense.
     % However, the performance seems not quite affected by how we set it.
+    %
+    % For all October data, we used 0.05 for target primary contrasts. And
+    % on 11/15 for high contrast test image set, we used 0.10 for target
+    % primary contrast. Here, we set it manually, but further data would
+    % contain this info in the variable so that we can read out from it.
     if strcmp(monthStr,'10')
         targetPrimaryContrasts = 0.05;
+    elseif (strcmp(monthStr,'11') & strcmp(dayStr,'15') & strcmp(hourStr,'16') & strcmp(minuteStr,'13'))
+        targetPrimaryContrasts = 0.10;
     else
         targetPrimaryContrasts = 0.07;
     end
