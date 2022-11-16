@@ -89,6 +89,31 @@ while 1
     disp('Spatial frequency should be within the above range!');
 end
 
+%% Prompt Test image set when to test 18 cpd.
+if (sineFreqCyclesPerDeg==18)
+    while 1
+        testImageOptions = {'normal' 'high'};
+        defaultTestImage = testImageOptions{find(contains(testImageOptions, 'normal'))};
+        fprintf('Available test image options: \n');
+        for k = 1:numel(testImageOptions)
+            fprintf('\t %s\n', testImageOptions{k});
+        end
+        inputMessageTestImage = 'Which test image set to use [normal]: ';
+        testImageToUse = input(inputMessageTestImage, 's');
+        
+        % Set to default if it gets empty.
+        if isempty(testImageToUse)
+            testImageToUse = defaultTestImage;
+        end
+        if ismember(testImageToUse, testImageOptions)
+            fprintf('\t (%s) has been selected! \n',testImageToUse);
+            break
+        end
+        
+        disp('Test image should be chosen either normal or high!');
+    end
+end
+
 %% Prompt Which filter to use.
 while 1
     inputMessageFilter = 'Which filter to test [A(neutral),B,C,D,E]: ';
@@ -188,8 +213,18 @@ end
 %% Load test image data.
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-    testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
-        sprintf('RunExpData_%d_cpd',sineFreqCyclesPerDeg));
+    
+    % We will load either normal test image set or high based on the above
+    % prompt answer.
+    if strcmp(testImageToUse,'high')
+        testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
+            sprintf('RunExpData_high_%d_cpd',sineFreqCyclesPerDeg));
+    else
+        testFilenameImages = GetMostRecentFileName(fullfile(testFiledir,'TestImages'), ...
+            sprintf('RunExpData_%d_cpd',sineFreqCyclesPerDeg));
+    end
+    
+    % Load the test image.
     load(testFilenameImages);
 end
 
