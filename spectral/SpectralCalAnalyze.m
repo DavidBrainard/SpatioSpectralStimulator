@@ -17,8 +17,9 @@ QUICKCHECK = true;
 FITALLATONCE = false;
 SAVETHEPLOT = true;
 
-% You can decide to see all available data to fit at once or load a single
-% data.
+%% Fitting happens here.
+%
+% You can do fit all at once or only single data.
 if (FITALLATONCE)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
@@ -43,6 +44,13 @@ for ff = 1:nFits
         error('Cannot find data file');
     end
     
+    % Newly added variables.
+    if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','targetLambda'})
+        spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
+        targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
+        targetLambda = theData.targetLambda;
+    end
+
     % Get the file name only.
     [filedir filename ext] = fileparts(testFilename);
     fprintf('\t Current testing file name: (%s) \n', filename);

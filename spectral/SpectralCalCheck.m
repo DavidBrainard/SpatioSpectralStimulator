@@ -41,9 +41,13 @@ channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 logicalToPhysical = [0:15];
 nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
-spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
-targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
-targetLambda = theData.targetLambda;
+
+% Newly added variables.
+if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','targetLambda'})
+    spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
+    targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
+    targetLambda = theData.targetLambda;
+end 
 
 %% Open up screen and radiometer.
 initialScreenSettings = [1 1 1]';
@@ -79,7 +83,12 @@ elseif (~MEASUREPRIMARY)
         
         % Load different file name according to 'normal' set or 'high' test
         % image contrast sets.
-        primaryContrast = 'high';       
+        if (targetScreenPrimaryContrast > 0.7)
+            primaryContrast = 'high';
+        else
+            primaryContrast = 'normal';
+        end
+        
         switch primaryContrast
             case 'normal'
                 filenamePart = 'targetScreenSpdMeasured';
