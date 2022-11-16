@@ -27,7 +27,7 @@ conditionName = 'LminusMSmooth';
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
-        'testImageData_');
+        'testImageData');
     theData = load(testFilename);
 end
 
