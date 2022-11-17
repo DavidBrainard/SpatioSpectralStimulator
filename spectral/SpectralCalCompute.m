@@ -10,6 +10,11 @@
 %% Clear
 clear; close all;
 
+%% Decide which mode to test.
+%
+% Set it either 'normal' or 'high'.
+testImageContrast = 'normal';
+
 %% Verbose?
 %
 % Set to true to get more output
@@ -52,7 +57,12 @@ switch (conditionName)
         targetScreenPrimaryContrastDir(:,3) = [1 -1 -0.5]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
-        targetScreenPrimaryContrast = 0.07;
+        switch testImageContrast
+            case 'normal'
+                targetScreenPrimaryContrast = 0.07;
+            case 'high'
+                targetScreenPrimaryContrast = 0.10;
+        end
         targetScreenPrimaryContrasts = ones(1,3) * targetScreenPrimaryContrast;
         targetPrimaryHeadroom = 1.05;
         primaryHeadroom = 0;
@@ -64,9 +74,14 @@ switch (conditionName)
         % run into numerical error at the edges. The second number is used when
         % defining the three primaries, the first when computing desired weights on
         % the primaries.
-        spatialGaborTargetContrast = 0.07;
+        switch testImageContrast
+            case 'normal'
+                spatialGaborTargetContrast = 0.07;
+            case 'high'
+                spatialGaborTargetContrast = 0.10;
+        end
         plotAxisLimit = 100*spatialGaborTargetContrast;
-
+        
         % Set up basis to try to keep spectra close to.
         %
         % This is how we enforce a smoothness or other constraint
@@ -339,7 +354,12 @@ targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
 %
 % You can also reduce smoothness by increasing the number of Fourier basis
 % functions defining the smoothness constraint.
-targetLambda = 3;
+switch testImageContrast
+    case 'normal'
+        targetLambda = 3;     
+    case 'high'
+        targetLambda = 0.2;
+end
 
 % Adjust these to keep background in gamut
 primaryBackgroundScaleFactor = 0.5;

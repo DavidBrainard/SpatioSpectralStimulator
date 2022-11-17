@@ -289,6 +289,8 @@ end
 nContrastPointsSelected = length(estDomainValidation);
 if (options.verbose)
     fprintf('The number of contrast points selected = (%d/%d) \n', nContrastPointsSelected, options.nContrastPoints);
+    fprintf('\t The number of points (%d/%d) over the predefined range, consider using high contrast image set for 18 cpd \n,',...
+ nContrastsNeeded, options.nContrastPoints);
 end
 
 % Save the raw data in struct.
