@@ -154,6 +154,15 @@ if (~isempty(options.beta))
     end
     [~,index] = max(LL);
     paramsFitted = paramsFittedList(index,:);
+    PLOT_SLOPELL = false;
+    if (PLOT_SLOPELL)
+        theFig = gcf;
+        llfig = figure; clf; hold on
+        plot(options.beta,LL,'ro');
+        figure(theFig);
+        pause;
+        close(llfig);
+    end
 
 % Otherwise use Palamedes grid search
 else
