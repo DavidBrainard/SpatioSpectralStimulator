@@ -335,7 +335,7 @@ for ss = 1:nSubjects
         text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
         text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
         text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
-
+ 
         % Get the date of experiment.
         testFileNameContrast = theData.describe.testFileNameContrast;
         numExtract = regexp(testFileNameContrast,'\d+','match');
@@ -449,7 +449,8 @@ for ss = 1:nSubjects
 
             % Figure out slope range based on raw fits
             rawSlopes = squeeze(slopeFittedRaw(ss,dd,:));
-            useSlopes = rawSlopes(2:nFilters-1);
+            temp = sort(rawSlopes);
+            useSlopes = temp(2:nFilters-1);
             minSlopeRange = min(useSlopes)*(10^-slopeRangeLogUnits);
             maxSlopeRange = max(useSlopes)*(10^slopeRangeLogUnits);
 
@@ -733,6 +734,12 @@ if (CSFCURVE)
         legend(append(subjectName,'-PF'),'fontsize',15);
     end
 end
+
+% Summary plots comparing raw and final fits
+threshFig = figure; clf; hold on
+plot(log10(thresholdFittedRaw(~isnan(thresholdFittedRaw))),log10(thresholdFitted(~isnan(thresholdFitted))),'ro','MarkerSize',8,'MarkerFaceColor','r');
+plot([-3 12],[-3 12],'k');
+xlim([-3 12]); ylim([-3 6]);
 
 % Save out full run info
 save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
