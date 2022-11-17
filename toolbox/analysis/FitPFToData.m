@@ -216,6 +216,9 @@ else
     medianThresholdBoot = [];
     lowThresholdBoot = [];
     highThresholdBoot = [];
+    medianSlopeBoot = [];
+    lowSlopeBoot = [];
+    highSlopeBoot = [];
 end
 
 % Make a smooth curves with finer stimulus levels.

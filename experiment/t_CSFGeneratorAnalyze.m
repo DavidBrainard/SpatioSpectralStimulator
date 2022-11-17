@@ -104,7 +104,6 @@ end
 %% Show the progress of the experiment.
 if (FITALLATONCE)
     SHOWPROGRESS = true;
-    
     if (SHOWPROGRESS)
         figure; clf;
         
@@ -164,8 +163,30 @@ if (FITALLATONCE)
     end
 end
 
-%% Load data and PF fitting.
+%% Load data and PF fitting.  Loop over subjects, sessions, filters
 nSubjects = length(subjectNameOptions);
+ 
+%% Set all possible filters.
+filterOptions = {'A', 'B', 'C', 'D', 'E'};
+nFilters = length(filterOptions);
+
+%% Set all possible spatial frequency options
+spatialFrequencyOptionsAll = {'3_cpd', '6_cpd', '9_cpd', '12_cpd' '18_cpd'};
+maxNSpatialFrequencies = length(spatialFrequencyOptionsAll);
+
+% Fit holding variables.  Not all subjects are run at all sfs,
+% so fill with NaNs so it is easier to tell later what we actually
+% did.
+thresholdFittedRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+slopeFittedRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+thresholdFitted = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+medianThresholdBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+lowThresholdBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+highThresholdBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+slopeFitted = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+medianSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+lowSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+highSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
 
 for ss = 1:nSubjects
     % Set target subject.
@@ -173,6 +194,7 @@ for ss = 1:nSubjects
     
     % Set available spatial frequency data for the subject.
     sineFreqCyclesPerDeg = spatialFrequencyOptions(:,ss);
+
     % Here we remove empty cells. It shows a cell empty when a subject does
     % not have all possible spatial frequency data.
     sineFreqCyclesPerDeg = sineFreqCyclesPerDeg(...
@@ -181,14 +203,11 @@ for ss = 1:nSubjects
     nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg); 
     nSineFreqCyclesPerDegAll(ss) = nSineFreqCyclesPerDeg;
     
-    % Set all possible filters.
-    filterOptions = {'A', 'B', 'C', 'D', 'E'};
-    nFilters = length(filterOptions);
-    
     % Set the size of the subplot. Each figure will contain all filters
     % data, so there will be a total of five subplots in one figure.
     sizeSubplot = [2 3];
     
+    % Sessions (aka spatial frequency)
     for dd = 1:nSineFreqCyclesPerDeg
         
         % As spatial frequency info is stored in string form, we extract
@@ -196,10 +215,12 @@ for ss = 1:nSubjects
         sineFreqCyclesPerDegStr = sineFreqCyclesPerDeg{dd};
         sineFreqCyclesPerDegTemp = sscanf(sineFreqCyclesPerDegStr,'%d');
         
-        % Figure for the psychometric function plots
+        % Figures for the psychometric function plots
+        rawFig = figure; clf;
+        set(gcf,'position',[0,0,1920,1080])
         psychoFig = figure; clf;
         set(gcf,'position',[0,0,1920,1080]);
-        
+
         % Do initial fit for each filter
         for ff = 1:nFilters
             % Set target filter.
@@ -259,16 +280,95 @@ for ss = 1:nSubjects
             examinedContrastsLinear = 10.^dataOut.examinedContrasts;
             
             % First fit without bootstrapping or plotting to get slopes for each filter
-            tempFig = figure;
-            paramsFittedRaw(:,ff) = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+            figure(rawFig);
+             if (SUBPLOT)
+                subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
+            end
+            [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff),~,~,~, ...
+                ~,~,~,~,legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
                 'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
                 'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
                 'questPara', [],'addLegend',false, ...
                 'beta',betaValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
-            close(tempFig);
+            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+            slopeFittedRaw(ss,dd,ff) = paramsFittedRaw(2,ff);
+
+            % Add the entire test image contrast range and chosen ones for
+            % the experiment to the plot.
+            testContrastMax = max(theContrastData.preExpDataStruct.rawData.testContrast);
+            testContrastMin = min(theContrastData.preExpDataStruct.rawData.testContrast);
+            nTestContrasts = 30;
+            testContrastsLinear = logspace(log10(testContrastMin),log10(testContrastMax),nTestContrasts);
+            testContrastsLog = log10(testContrastsLinear);
+
+            % Indicate available and used contrasts
+            plot(testContrastsLog,0,'ko','markersize',7);
+            plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
+
+            % Fussy legend adding
+            if (addQuestFit)
+                legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
+                    'FontSize', 12, 'location', 'southwest');
+            else
+                legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
+                    'FontSize', 12, 'location', 'southwest');
+            end
+
+            % Set the range for the x-axis.
+            xlim([-3.3 -1]);
+
+            % Force draw
+            drawnow;
+
+            % Clear the pointsize for next plot.
+            clear pointSize;
         end
 
-        % Now fit again using range of slopes determined from first pass
+        % Finish up and save the raw fit plot
+        testFileNameImagesRefine = strrep(theData.describe.testFileNameImages,'-','/');
+        testFileNameImagesRefine = strrep(testFileNameImagesRefine,'_','/');
+
+        testFileNameContrastRefine = strrep(theData.describe.testFileNameContrast,'-','/');
+        testFileNameContrastRefine = strrep(testFileNameContrastRefine,'_','/');
+
+        main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
+        text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
+        text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
+        text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
+
+        % Get the date of experiment.
+        testFileNameContrast = theData.describe.testFileNameContrast;
+        numExtract = regexp(testFileNameContrast,'\d+','match');
+        yearStr = numExtract{3};
+        monthStr = numExtract{4};
+        dayStr = numExtract{5};
+        dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+
+        % Save the plot here if you want.
+        if (SAVETHEPLOT)
+            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                    subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+
+                % Make folder with subject name if it does not exist.
+                if ~exist(testFiledir, 'dir')
+                    mkdir(testFiledir);
+                end
+
+                % Save the plot.
+                testFilename = fullfile(testFiledir,...
+                    sprintf('CS_%s_%d_cpd_%s_raw',subjectName,sineFreqCyclesPerDegTemp,dateStr));
+                testFileFormat = '.tiff';
+                saveas(gcf,append(testFilename,testFileFormat));
+                fprintf('\t Plot has been saved successfully! \n');
+                close(gcf);
+            end
+        end
+
+        % Now fit again using range of slopes determined from first pass.
+        % This redoes a lot of things in the loop above that we really
+        % shouldn't redo, but it will take a little time to clean up the
+        % code.
         for ff = 1:nFilters
             % Set target filter.
             whichFilter = filterOptions{ff};
@@ -347,7 +447,8 @@ for ss = 1:nSubjects
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
             end
 
-            rawSlopes = paramsFittedRaw(2,:);
+            % Figure out slope range based on raw fits
+            rawSlopes = squeeze(slopeFittedRaw(ss,dd,:));
             useSlopes = rawSlopes(2:nFilters-1);
             minSlopeRange = min(useSlopes)*(10^-slopeRangeLogUnits);
             maxSlopeRange = max(useSlopes)*(10^slopeRangeLogUnits);
@@ -361,6 +462,7 @@ for ss = 1:nSubjects
                 'questPara', questPara,'addLegend',false, ...
                 'beta',linspace(minSlopeRange,maxSlopeRange,nSlopes),'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
             subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+            slopeFitted(ss,dd,ff) = paramsFitted(2,ff);
 
             % Add initial threhold to the plot.
             if (addInitialThresholdEst)
@@ -401,10 +503,10 @@ for ss = 1:nSubjects
                 end
             else
                 if (addQuestFit)
-                    legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
                         'FontSize', 12, 'location', 'southwest');
                 else
-                    legend(legendHandles, 'Data','PF-fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
                         'FontSize', 12, 'location', 'southwest');
                 end
             end
