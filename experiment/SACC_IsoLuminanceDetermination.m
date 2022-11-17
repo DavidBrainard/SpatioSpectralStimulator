@@ -19,36 +19,71 @@
 clear; close all;
 
 %% Set variables.
-subjectName = 'TEST';
 frequencyFlicker = 25;
 leftButton = true;
 gaussianWindow = false;
 bgColor = 'white';
+SAVETHERESULTS = true;
 
-% %% 1) Look at stimulus demo.
-% %
-% % For practice, subject will see the flicker stimulus by controlling the
-% % red starting either from top or bottom.
-% nTrials = 2;
-% GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-%     'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
-
-%% 2) Practice trials.
+%% Get subject name and which mode to run.
 %
-% We will repeat the whole session twice so that subject will do a total of
-% 4 flicker sessions (2 repeatitions x 2 starting points either top or bottom).
-nTrials = 4;
-dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-    'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+% Subject name.
+inputMessageName = 'Enter subject name: ';
+subjectName = input(inputMessageName, 's');
 
-% %% 3) Main session.
-% %
-% % By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
-% % starting points either top or bottom).
-% nTrials = 6;
-% dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
-%     'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
-% 
-% %% Collect all data and save it.
-% theData.practice = dataPractice;
-% theData.main = dataMain;
+% Which mode to run.
+while 1
+    inputMessageMode = 'Which mode to run [demo, practice, main]: ';
+    whichMode = input(inputMessageMode, 's');
+    whichModeOptions = {'demo', 'practice', 'main'};
+    
+    if ismember(whichMode, whichModeOptions)
+        fprintf('\t Flicker code will be run in (%s) mode! \n', whichMode);
+        break
+    end
+    
+    disp('Running mode should be selected within [demo, practice, main]!');
+end
+
+%% Run the flicker code according to different mode.
+switch whichMode
+    case 'demo'
+        % 1) Look at stimulus demo.
+        %
+        % For practice, subject will see the flicker stimulus by controlling the
+        % red starting either from top or bottom.
+        nTrials = 2;
+        GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+            'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+        
+    case 'practice'
+        % 2) Practice trials.
+        %
+        % We will repeat the whole session twice so that subject will do a total of
+        % 4 flicker sessions (2 repeatitions x 2 starting points either top or bottom).
+        nTrials = 4;
+        dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+            'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+        
+    case 'main'
+        % 3) Main session.
+        %
+        % By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
+        % starting points either top or bottom).
+        nTrials = 6;
+        dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+            'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+end
+
+%% Collect all data and save it.
+if (SAVETHERESULTS)
+    if (ispref('SpatioSpectralStimulator','SACCData'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        
+        % Set the file name and save.
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+        testFilename = fullfile(testFiledir,subjectName,...
+            sprintf('Flicker_%s_%s',subjectName,dayTimestr));
+        save(testFilename,'dataMain');
+    end
+end
