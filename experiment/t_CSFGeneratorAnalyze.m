@@ -520,6 +520,11 @@ for ss = 1:nSubjects
 
             % Clear the pointsize for next plot.
             clear pointSize;
+
+            % Save up subject, spatial frequency, and filter
+            subjectBigList{ss,dd,ff} = subjectName;
+            spatialFrequencyBigList{ss,dd,ff} = sineFreqCyclesPerDegTemp;
+            filterBigList{ss,dd,ff} = filterOptions{ff};
         end
 
         % Add some text info in the figure.
@@ -735,12 +740,52 @@ if (CSFCURVE)
     end
 end
 
+% Find cases where the raw threshold is not within the confidence interval
+% for the second pass threshold.
+indexBigDiff = find(thresholdFittedRaw < lowThresholdBoot | thresholdFittedRaw > highThresholdBoot);
+
 % Summary plots comparing raw and final fits
-threshFig = figure; clf; hold on
-plot(log10(thresholdFittedRaw(~isnan(thresholdFittedRaw))),log10(thresholdFitted(~isnan(thresholdFitted))),'ro','MarkerSize',8,'MarkerFaceColor','r');
+index = ~isnan(thresholdFittedRaw);
+threshFig = figure; clf;
+subplot(1,2,1);  hold on
+plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
+h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
+    log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
+set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
+plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
 plot([-3 12],[-3 12],'k');
-xlim([-3 12]); ylim([-3 6]);
+xlim([-3 8]); ylim([-3 1]);
+xlabel('First pass log10 threshold');
+ylabel('Second pass log10 threshold');
+subplot(1,2,2); hold on
+plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
+h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
+    log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
+set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
+plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
+plot([-3 12],[-3 12],'k');
+xlim([-2.5 -0.5]); ylim([-2.5 -0.5]);
+xlabel('First pass log10 threshold');
+ylabel('Second pass log10 threshold');
+saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassLogThresholds',testFileFormat)));
+
+slopeFig = figure; clf; hold on
+plot(slopeFittedRaw(~isnan(slopeFittedRaw)),slopeFitted(~isnan(slopeFitted)),'ro','MarkerSize',8,'MarkerFaceColor','r');
+plot([0 16],[0 16],'k');
+xlim([0 16]); ylim([0 16]);
+xlabel('First pass slope');
+ylabel('Second pass slope');
+axis('square');
+saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassSlopes',testFileFormat)));
+
+% Confidence interval figure;
+confIntervals = log10(highThresholdBoot) - log10(lowThresholdBoot);
+confHist = figure; clf; hold on;
+hist(confIntervals(~isnan(confIntervals)),50);
+xlabel('Threshold Confidence Interval Magnitude (Log10)');
+saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('ConfidenceIntervalHist',testFileFormat)));
 
 % Save out full run info
+close all
 save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
 
