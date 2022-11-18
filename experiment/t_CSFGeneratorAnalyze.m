@@ -30,6 +30,7 @@
 %    10/26/22  smo          - Added an option to fit all available data at
 %                             once.
 %    11/14/22  dhb          - Bootstrapping
+%    11/17/22  dhb          - Two pass fitting.  Needs a code cleaning pass.
 
 %% Start over.
 clear; close all;
@@ -42,26 +43,47 @@ FITALLATONCE = true;
 SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 
+% Psychometric function information.  
+% The paramsFree slope field is overridden
+% when we pass a range of slopes explicitly.
 PF = 'weibull';
 paramsFree = [1 1 0 1];
 
+% Allows this to analyze older data files.  0
+% means most recent, 1 next most recent, etc.
+% For actual (non-pilot) subjects, there should
+% be only 1 data file in each top level data directory
+% and this should be 0.
 olderDate = 0;
+
+% Control things about the plots
 SUBPLOT = true;
 axisLog = true;
 addInitialThresholdEst = true;
 addQuestFit = false;
-addLegend = false;
 
 % Slope (aka beta) values.  Fits are done on this
 % discrete set of slopes, with best slope chosen.
-% Set to empty to allow the slope to go free.
+% Set to empty to allow the slope to go free, according
+% to paramsFree vector above.
+%
+% An initial fit is done on slopeValList, and then a second
+% pass for each session (subject/sf) with slopes limited
+% by what was found in the initial fit.  The parameter
+% slopeRangeLogUnits affects the expansion of the determined
+% range for the second fit.
 minSlope = 0.1;
 maxSlope = 10;
 nSlopes = 20;
-betaValList = 10.^linspace(log10(minSlope),log10(maxSlope),nSlopes);
+slopeValList = 10.^linspace(log10(minSlope),log10(maxSlope),nSlopes);
 slopeRangeLogUnits = 0.2;
+
+% Bootstrap info
+BOOTSTRAP_RAWFITS = true;
 nBootstraps = 100;
 bootConfInterval = 0.8;
+
+% Threshold criterion
 thresholdCriterion = 0.81606;
 
 %% Find available data here.
@@ -187,6 +209,20 @@ slopeFitted = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
 medianSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
 lowSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
 highSlopeBoot = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+if (BOOTSTRAP_RAWFITS)
+    medianThresholdBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    lowThresholdBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    highThresholdBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    slopeFittedRawRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    medianSlopeBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    lowSlopeBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+    highSlopeBootRaw = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+end
+
+% Set up big lists of what was run.  Want these at full dimension.
+subjectBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
+spatialFrequencyBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
+filterBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 
 for ss = 1:nSubjects
     % Set target subject.
@@ -283,13 +319,26 @@ for ss = 1:nSubjects
             figure(rawFig);
              if (SUBPLOT)
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
+             end
+            if (~BOOTSTRAP_RAWFITS)
+                [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff), ...
+                    ~,~,~, ...
+                    ~,~,~,~, ...
+                    legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+                    'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+                    'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
+                    'questPara', [],'addLegend',false, ...
+                    'beta',slopeValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
+            else
+                [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff), ...
+                    medianThresholdBootRaw(ss,dd,ff),lowThresholdBootRaw(ss,dd,ff),highThresholdBootRaw(ss,dd,ff), ...
+                    slopeFittedRaw(ss,dd,ff),medianSlopeBootRaw(ss,dd,ff),lowSlopeBootRaw(ss,dd,ff),highSlopeBootRaw(ss,dd,ff), ...
+                    legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+                    'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+                    'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
+                    'questPara', [],'addLegend',false, ...
+                    'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
             end
-            [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff),~,~,~, ...
-                ~,~,~,~,legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-                'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
-                'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
-                'questPara', [],'addLegend',false, ...
-                'beta',betaValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
             subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
             slopeFittedRaw(ss,dd,ff) = paramsFittedRaw(2,ff);
 
@@ -306,12 +355,22 @@ for ss = 1:nSubjects
             plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
 
             % Fussy legend adding
-            if (addQuestFit)
-                legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
-                    'FontSize', 12, 'location', 'southwest');
+            if (BOOTSTRAP_RAWFITS)
+                if (addQuestFit)
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
+                        'FontSize', 12, 'location', 'southwest');
+                else
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                        'FontSize', 12, 'location', 'southwest');
+                end
             else
-                legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
-                    'FontSize', 12, 'location', 'southwest');
+                if (addQuestFit)
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
+                        'FontSize', 12, 'location', 'southwest');
+                else
+                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
+                        'FontSize', 12, 'location', 'southwest');
+                end
             end
 
             % Set the range for the x-axis.
@@ -454,15 +513,15 @@ for ss = 1:nSubjects
             minSlopeRange = min(useSlopes)*(10^-slopeRangeLogUnits);
             maxSlopeRange = max(useSlopes)*(10^slopeRangeLogUnits);
 
-            [paramsFitted(:,ff), ...
-                thresholdFitted(ss,dd,ff), medianThresholdBoot(ss,dd,ff),lowThresholdBoot(ss,dd,ff),highThresholdBoot(ss,dd,ff), ...
+            [paramsFitted(:,ff), thresholdFitted(ss,dd,ff), ...
+                medianThresholdBoot(ss,dd,ff),lowThresholdBoot(ss,dd,ff),highThresholdBoot(ss,dd,ff), ...
                 slopeFitted(ss,dd,ff),medianSlopeBoot(ss,dd,ff),lowSlopeBoot(ss,dd,ff),highSlopeBoot(ss,dd,ff), ...
                 legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
                 'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
                 'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
                 'questPara', questPara,'addLegend',false, ...
                 'beta',linspace(minSlopeRange,maxSlopeRange,nSlopes),'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
-            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+            subtitle(sprintf('Raw %d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
             slopeFitted(ss,dd,ff) = paramsFitted(2,ff);
 
             % Add initial threhold to the plot.
@@ -784,6 +843,50 @@ confHist = figure; clf; hold on;
 hist(confIntervals(~isnan(confIntervals)),50);
 xlabel('Threshold Confidence Interval Magnitude (Log10)');
 saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('ConfidenceIntervalHist',testFileFormat)));
+
+% Bootstrap on raw?
+if (BOOTSTRAP_RAWFITS)
+    confIntervalsRaw = log10(highThresholdBootRaw) - log10(lowThresholdBootRaw);
+end
+
+% Let's write out the confidence intervals in a sorted order
+clear writeCellArray
+[~,sortIndex] = sort(confIntervals(:),'descend');
+writeCellArray{1,1} = 'Subject';
+writeCellArray{1,2} = 'Spatial Freq';
+writeCellArray{1,3} = 'Filter';
+writeCellArray{1,4} = 'Threshold';
+writeCellArray{1,5} = 'Log10 Threshold';
+writeCellArray{1,6} = 'Slope';
+writeCellArray{1,7} = sprintf('Log10 Conf (%d%%)',round(100*bootConfInterval));
+writeCellArray{1,8} = 'Threshold Raw';
+writeCellArray{1,9} = 'Log10 Threshold Raw';
+writeCellArray{1,10} = 'Slope Raw';
+if (BOOTSTRAP_RAWFITS)
+    writeCellArray{1,11} = sprintf('Log10 Conf Raw (%d%%)',round(100*bootConfInterval));
+end
+
+cellIndex = 2;
+for ii = 1:length(sortIndex)
+    if (~isnan(confIntervals(sortIndex(ii))))
+        writeCellArray{cellIndex,1} = subjectBigList{sortIndex(ii)};
+        writeCellArray{cellIndex,2} = spatialFrequencyBigList{sortIndex(ii)};
+        writeCellArray{cellIndex,3} = filterBigList{sortIndex(ii)};
+        writeCellArray{cellIndex,4} = thresholdFitted(sortIndex(ii));
+        writeCellArray{cellIndex,5} = log10(thresholdFitted(sortIndex(ii)));
+        writeCellArray{cellIndex,6} = slopeFitted(sortIndex(ii));
+        writeCellArray{cellIndex,7} = confIntervals(sortIndex(ii));
+        writeCellArray{cellIndex,8} = thresholdFittedRaw(sortIndex(ii));
+        writeCellArray{cellIndex,9} = log10(thresholdFittedRaw(sortIndex(ii)));
+        writeCellArray{cellIndex,10} = slopeFittedRaw(sortIndex(ii));
+        if (BOOTSTRAP_RAWFITS)
+            writeCellArray{cellIndex,11} = confIntervalsRaw(sortIndex(ii));
+        end
+        cellIndex = cellIndex+1;
+    end
+end
+writecell(writeCellArray,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('DataSummary','.xlsx')), ...
+    'WriteMode',"replacefile");
 
 % Save out full run info
 close all
