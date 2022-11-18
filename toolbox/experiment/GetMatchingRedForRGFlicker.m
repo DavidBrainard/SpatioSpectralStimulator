@@ -131,7 +131,17 @@ gaussianWindow = normpdf(MakeRadiusMat(stimulusN,stimulusN,centerN,centerN),0,ga
 gaussianWindowBGBlack = gaussianWindow/max(gaussianWindow(:));
 gaussianWindowBGWhite = 1 - gaussianWindowBGBlack;
 
-% Make plain red/green images here.
+% Decide if you want to add Gaussian window or not.
+if (~options.gaussianWindow)
+    switch options.bgColor
+        case 'white'
+            gaussianWindowBGWhite = round(gaussianWindowBGWhite);
+        case 'black'
+            gaussianWindowBGBlack = round(gaussianWindowBGBlack);
+    end
+end
+
+%% Make plain red/green images here.
 plainImageBase = zeros(stimulusN, stimulusN, 3);
 
 % Red plain image.
@@ -144,12 +154,13 @@ plainImageGreen(:,:,2) = options.intensityPrimary2;
 
 % Ambient image for calibration.
 if (options.calibrate)
-   intensityPrimary3 = 20;
-   plainImageRed(:,:,3) = intensityPrimary3;
-   plainImageGreen(:,:,3) = intensityPrimary3;
-   
+   intensityPrimary3 = 5;
    plainImageAmbient = plainImageBase;
    plainImageAmbient(:,:,3) = intensityPrimary3;
+   
+   % Add ambient image to red and green.
+   plainImageRed = plainImageRed + plainImageAmbient;
+   plainImageGreen = plainImageGreen + plainImageAmbient;
 end
 
 % Set primary index to update to make a flicker.
@@ -184,11 +195,6 @@ numButtonLeft = 1;
 % diplaying a texture on desired time, so here we make all textures before
 % starting the loop.
 %
-% Red.
-fillColorRed = plainImageBase;
-
-% Make a loop to make all possible image textures here.
-%
 % Option to add crossbar at the center of the image.
 if (~options.calibrate)
     addFixationPointImage = 'crossbar';
@@ -196,19 +202,11 @@ else
     addFixationPointImage = [];
 end
 
+% Red. Make a loop here to make all possible image textures.
 for pp = 1:nInputLevels
+    fillColorRed = plainImageRed;
     fillColorRed(:,:,1) = pp-1;
     fillColorRed = fillColorRed./(nInputLevels-1);
-    
-    % Decide if you want to add Gaussian window or not.
-    if (~options.gaussianWindow)
-        switch options.bgColor
-            case 'white'
-                gaussianWindowBGWhite = round(gaussianWindowBGWhite);
-            case 'black'
-                gaussianWindowBGBlack = round(gaussianWindowBGBlack);
-        end
-    end
     
     % Add Gaussian window here.
     switch options.bgColor
@@ -277,25 +275,12 @@ if (options.calibrate)
     spdAmbient = MeasureSpectroradiometer;
     fprintf('(Ambient) Measurement completed! \n');
     
-    % Calculate XYZ.
-    % Load color matching function and match the spectrum range.
-    load T_xyzJuddVos;
-    S = [380 2 201];
-    T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
-
-    xyzRed = T_xyz * spdRed;
-    xyzRedNorm = xyzRed./max(xyzRed(2,:));
-    xyzGreen = T_xyz * spdGreen;
-         
     % Save out the data.
     data.redIntensity = redMeasurementRange;
     data.greenIntensity = options.intensityPrimary2;
-    data.spdRed = spdRed-spdAmbient;
-    data.spdGreen = spdGreen-spdAmbient;
+    data.spdRed = spdRed;
+    data.spdGreen = spdGreen;
     data.spdAmbient = spdAmbient;
-    data.xyzRed = xyzRed;
-    data.xyzGreen = xyzGreen;
-    data.xyzRedNorm = xyzRedNorm;
     
     % Close the screen and spectroradiometer.
     CloseScreen;

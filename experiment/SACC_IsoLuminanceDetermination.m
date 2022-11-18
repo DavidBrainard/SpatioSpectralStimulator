@@ -24,6 +24,7 @@ leftButton = true;
 gaussianWindow = false;
 bgColor = 'white';
 SAVETHERESULTS = true;
+verbose = true;
 
 %% Get subject name and which mode to run.
 %
@@ -53,15 +54,52 @@ end
 switch whichMode
     case 'calibrate'
         calibrate = true;
+        
+        % Measurement happens here.
         data = GetMatchingRedForRGFlicker('calibrate',true,'bgColor',bgColor,...
             'gaussianWindow',gaussianWindow);
         
+        % Black correction.
+        spdGreenBC = data.spdGreen - data.spdAmbient;
+        spdRedBC = data.spdRed - data.spdAmbient;
+        
+        % Set wavelength range and calculate XYZ.
+        S = [380 2 201];
+        wls = SToWls(S);
+
+        load T_xyzJuddVos;
+        T_xyz = SplineCmf(S_xyzJuddVos,683*T_xyzJuddVos,S);
+
+        xyzRedBC = T_xyz*spdRedBC;
+        xyzGreenBC = T_xyz*spdGreenBC;
+        
+        % Plot it.
+        if (verbose)
+            % Spectrum.
+            figure; clf; hold on;
+            plot(wls, spdGreenBC, 'g--', 'linewidth', 2);
+            plot(wls, spdRedBC, 'r-', 'linewidth', 0.5);
+            xlabel('Wavelength (nm)','fontsize',13)
+            ylabel('Spectral power','fontsize',13);
+            legend('Green', 'Red','fontsize',13);
+            xlim([380 780]);
+            xticks([380:80:780]);
+
+            % Settings vs. Output.
+            figure; clf; hold on;
+            plot(data.greenIntensity, xyzGreenBC(2),'ko','markersize',11,'markerfacecolor','g');
+            plot(data.redIntensity, xyzRedBC(2,:),'ko','markersize',11,'markerfacecolor','r')
+            xlabel('Input settings (8-bit)','fontsize',13)
+            ylabel('Output (no unit)','fontsize',13);
+            legend('Green', 'Red','fontsize',13,'location','southeast');
+        end
+
     case 'demo'
         % 1) Look at stimulus demo.
         %
         % For practice, subject will see the flicker stimulus by controlling the
         % red starting either from top or bottom.
-        nTrials = 2;
+        nTrials = 1;
         GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
         
@@ -86,7 +124,7 @@ switch whichMode
         % By protocol, we will meausre a total of 6 sessions (3 repeatitions x 2
         % starting points either top or bottom).
         nTrials = 6;
-        dataMain = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
+        data = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
 end
 
@@ -94,11 +132,32 @@ end
 if (SAVETHERESULTS)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
         
         % Set the file name and save.
-        dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,subjectName,...
-            sprintf('Flicker_%s_%s',subjectName,dayTimestr));
-        save(testFilename,'dataMain');
+        switch whichMode
+            case 'calibrate'
+                testFilename = fullfile(testFiledir,'CheckFlickerPhotom',...
+                    sprintf('checkFlickerPhotom_%s',dayTimestr));
+                save(testFilename,'data');
+
+                SAVECALIBRATIONPLOT = true;
+                if (SAVECALIBRATIONPLOT)
+                    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                            'CheckFlickerPhotom');
+                        testFilename = fullfile(testFiledir,sprintf('CheckFlickerPhotom_%s',dayTimestr));
+                        testFileFormat = '.tiff';
+                        saveas(gcf,append(testFilename,testFileFormat));
+                        fpintf('Figure has been succesfully saved! \n');
+                    end
+                end
+                
+            case 'main'
+                testFilename = fullfile(testFiledir,subjectName,...
+                    sprintf('flickerPhotom_%s_%s',subjectName,dayTimestr));
+                save(testFilename,'data');
+        end
     end
 end
+fpintf('Data file (%s) has been succesfully saved! \n', whichMode);
