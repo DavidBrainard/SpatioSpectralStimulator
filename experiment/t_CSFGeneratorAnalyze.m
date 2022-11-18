@@ -223,6 +223,7 @@ end
 subjectBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 spatialFrequencyBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 filterBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
+dateBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 
 for ss = 1:nSubjects
     % Set target subject.
@@ -339,7 +340,7 @@ for ss = 1:nSubjects
                     'questPara', [],'addLegend',false, ...
                     'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
             end
-            subtitle(sprintf('%d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+            subtitle(sprintf('Raw Fit %d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
             slopeFittedRaw(ss,dd,ff) = paramsFittedRaw(2,ff);
 
             % Add the entire test image contrast range and chosen ones for
@@ -521,7 +522,7 @@ for ss = 1:nSubjects
                 'newFigureWindow', ~SUBPLOT, 'pointSize', pointSize, 'axisLog', axisLog,...
                 'questPara', questPara,'addLegend',false, ...
                 'beta',linspace(minSlopeRange,maxSlopeRange,nSlopes),'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
-            subtitle(sprintf('Raw %d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
+            subtitle(sprintf('Second Pass %d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
             slopeFitted(ss,dd,ff) = paramsFitted(2,ff);
 
             % Add initial threhold to the plot.
@@ -584,6 +585,7 @@ for ss = 1:nSubjects
             subjectBigList{ss,dd,ff} = subjectName;
             spatialFrequencyBigList{ss,dd,ff} = sineFreqCyclesPerDegTemp;
             filterBigList{ss,dd,ff} = filterOptions{ff};
+            dateBigList{ss,dd,ff} = dateStr;
         end
 
         % Add some text info in the figure.
@@ -838,49 +840,57 @@ axis('square');
 saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassSlopes',testFileFormat)));
 
 % Confidence interval figure;
-confIntervals = log10(highThresholdBoot) - log10(lowThresholdBoot);
+confIntervalsLog = log10(highThresholdBoot) - log10(lowThresholdBoot);
+confIntervalsLin = highThresholdBoot - lowThresholdBoot;
 confHist = figure; clf; hold on;
-hist(confIntervals(~isnan(confIntervals)),50);
+hist(confIntervalsLog(~isnan(confIntervalsLog)),50);
 xlabel('Threshold Confidence Interval Magnitude (Log10)');
 saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('ConfidenceIntervalHist',testFileFormat)));
 
 % Bootstrap on raw?
 if (BOOTSTRAP_RAWFITS)
-    confIntervalsRaw = log10(highThresholdBootRaw) - log10(lowThresholdBootRaw);
+    confIntervalsRawLog = log10(highThresholdBootRaw) - log10(lowThresholdBootRaw);
+    confIntervalsRawLin = highThresholdBootRaw - lowThresholdBootRaw;
 end
 
 % Let's write out the confidence intervals in a sorted order
 clear writeCellArray
-[~,sortIndex] = sort(confIntervals(:),'descend');
+[~,sortIndex] = sort(confIntervalsLog(:),'descend');
 writeCellArray{1,1} = 'Subject';
 writeCellArray{1,2} = 'Spatial Freq';
 writeCellArray{1,3} = 'Filter';
-writeCellArray{1,4} = 'Threshold';
-writeCellArray{1,5} = 'Log10 Threshold';
-writeCellArray{1,6} = 'Slope';
-writeCellArray{1,7} = sprintf('Log10 Conf (%d%%)',round(100*bootConfInterval));
-writeCellArray{1,8} = 'Threshold Raw';
-writeCellArray{1,9} = 'Log10 Threshold Raw';
-writeCellArray{1,10} = 'Slope Raw';
+writeCellArray{1,4} = 'Date';
+writeCellArray{1,5} = 'Threshold';
+writeCellArray{1,6} = 'Log10 Threshold';
+writeCellArray{1,7} = 'Slope';
+writeCellArray{1,8} = sprintf('Conf (%d%%)',round(100*bootConfInterval));
+writeCellArray{1,9} = sprintf('Log10 Conf (%d%%)',round(100*bootConfInterval));
+writeCellArray{1,10} = 'Threshold Raw';
+writeCellArray{1,11} = 'Log10 Threshold Raw';
+writeCellArray{1,12} = 'Slope Raw';
 if (BOOTSTRAP_RAWFITS)
-    writeCellArray{1,11} = sprintf('Log10 Conf Raw (%d%%)',round(100*bootConfInterval));
+    writeCellArray{1,13} = sprintf('Conf Raw (%d%%)',round(100*bootConfInterval));
+    writeCellArray{1,14} = sprintf('Log10 Conf Raw (%d%%)',round(100*bootConfInterval));
 end
 
 cellIndex = 2;
 for ii = 1:length(sortIndex)
-    if (~isnan(confIntervals(sortIndex(ii))))
+    if (~isnan(confIntervalsLog(sortIndex(ii))))
         writeCellArray{cellIndex,1} = subjectBigList{sortIndex(ii)};
         writeCellArray{cellIndex,2} = spatialFrequencyBigList{sortIndex(ii)};
         writeCellArray{cellIndex,3} = filterBigList{sortIndex(ii)};
-        writeCellArray{cellIndex,4} = thresholdFitted(sortIndex(ii));
-        writeCellArray{cellIndex,5} = log10(thresholdFitted(sortIndex(ii)));
-        writeCellArray{cellIndex,6} = slopeFitted(sortIndex(ii));
-        writeCellArray{cellIndex,7} = confIntervals(sortIndex(ii));
-        writeCellArray{cellIndex,8} = thresholdFittedRaw(sortIndex(ii));
-        writeCellArray{cellIndex,9} = log10(thresholdFittedRaw(sortIndex(ii)));
-        writeCellArray{cellIndex,10} = slopeFittedRaw(sortIndex(ii));
+        writeCellArray{cellIndex,4} = dateBigStr{sortIndex(ii)};
+        writeCellArray{cellIndex,5} = thresholdFitted(sortIndex(ii));
+        writeCellArray{cellIndex,6} = log10(thresholdFitted(sortIndex(ii)));
+        writeCellArray{cellIndex,7} = slopeFitted(sortIndex(ii));
+        writeCellArray{cellIndex,8} = confIntervalsLin(sortIndex(ii));
+        writeCellArray{cellIndex,9} = confIntervalsLog(sortIndex(ii));
+        writeCellArray{cellIndex,10} = thresholdFittedRaw(sortIndex(ii));
+        writeCellArray{cellIndex,11} = log10(thresholdFittedRaw(sortIndex(ii)));
+        writeCellArray{cellIndex,12} = slopeFittedRaw(sortIndex(ii));
         if (BOOTSTRAP_RAWFITS)
-            writeCellArray{cellIndex,11} = confIntervalsRaw(sortIndex(ii));
+            writeCellArray{cellIndex,13} = confIntervalsRawLin(sortIndex(ii));
+            writeCellArray{cellIndex,14} = confIntervalsRawLog(sortIndex(ii));
         end
         cellIndex = cellIndex+1;
     end
