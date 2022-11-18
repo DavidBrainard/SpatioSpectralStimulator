@@ -650,14 +650,22 @@ for ss = 1:nSubjects
         Date{dd+numSpace,:} = dateStr;
         Subject{dd+numSpace,:} = subjectName;
         SpatialFrequency(dd+numSpace,:) = sineFreqCyclesPerDegTemp;
-
-        if strcmp(monthStr,'10')
-            PrimaryContrast(dd+numSpace,:) = 0.05;
+        
+        % Get target primary contrast. We will read it from the test image file
+        % we used.
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');   
+            testFilenameImage = theData.describe.testFileNameImages;
+            fileFormat = '.mat';
+            theImageData = load(fullfile(testFiledir,append(testFilenameImage,fileFormat)));
         else
-            PrimaryContrast(dd+numSpace,:) = 0.07;
+            error('Cannot find data file');
         end
+        PrimaryContrast = theImageData.colorDirectionParams.targetScreenPrimaryContrasts(1); 
+        clear theImageData;
+        
         TestImageContrastMax(dd+numSpace,:) = max(theContrastData.preExpDataStruct.rawData.testContrast);
-
+        
         if strcmp(monthStr,'10')
             RuleMOA{dd+numSpace,:} = '-0.5to+0.3';
         elseif (strcmp(monthStr,'11') & any(strcmp(dayStr,append('0',string([1:1:6])))))
