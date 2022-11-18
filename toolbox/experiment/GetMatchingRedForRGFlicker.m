@@ -286,20 +286,16 @@ if (options.calibrate)
     xyzRed = T_xyz * spdRed;
     xyzRedNorm = xyzRed./max(xyzRed(2,:));
     xyzGreen = T_xyz * spdGreen;
-     
-    % Plot the results if you want.
-    if (options.verbose)
-        figure; clf; hold on;
-        plot(redMeasurementRange, xyzRedNorm,'ro');
-    end
-    
+         
     % Save out the data.
     data.redIntensity = redMeasurementRange;
     data.greenIntensity = options.intensityPrimary2;
     data.spdRed = spdRed-spdAmbient;
     data.spdGreen = spdGreen-spdAmbient;
+    data.spdAmbient = spdAmbient;
     data.xyzRed = xyzRed;
     data.xyzGreen = xyzGreen;
+    data.xyzRedNorm = xyzRedNorm;
     
     % Close the screen and spectroradiometer.
     CloseScreen;

@@ -45,6 +45,8 @@ end
 if strcmp(whichMode, 'main')
     inputMessageName = 'Enter subject name: ';
     subjectName = input(inputMessageName, 's');
+elseif strcmp(whichMode, 'calibrate')
+    subjectName = 'calibrate';
 end
 
 %% Run the flicker code according to different mode.
@@ -63,6 +65,9 @@ switch whichMode
         GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
         
+        % Stop after trials.
+        return;
+    
     case 'practice'
         % 2) Practice trials.
         %
@@ -71,7 +76,10 @@ switch whichMode
         nTrials = 2;
         dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
-        
+    
+        % Stop after trials.
+        return;
+    
     case 'main'
         % 3) Main session.
         %
