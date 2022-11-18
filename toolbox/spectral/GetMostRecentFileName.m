@@ -20,7 +20,7 @@ function [fileName] = GetMostRecentFileName(testFileDir,testFileName,options)
 %                                 date.
 %
 % Optional key/value pairs:
-%    options.olderDate -          Set this number to get older date than
+%    'olderDate' -                Set this number to get older date than
 %                                 the most recent one. If you set this to
 %                                 1, the result will be the second to the
 %                                 most recent date. Likewise, setting this
