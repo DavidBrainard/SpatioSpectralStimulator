@@ -27,15 +27,11 @@ SAVETHERESULTS = true;
 
 %% Get subject name and which mode to run.
 %
-% Subject name.
-inputMessageName = 'Enter subject name: ';
-subjectName = input(inputMessageName, 's');
-
 % Which mode to run.
 while 1
-    inputMessageMode = 'Which mode to run [demo, practice, main]: ';
+    inputMessageMode = 'Which mode to run [calibrate, demo, practice, main]: ';
     whichMode = input(inputMessageMode, 's');
-    whichModeOptions = {'demo', 'practice', 'main'};
+    whichModeOptions = {'calibrate', 'demo', 'practice', 'main'};
     
     if ismember(whichMode, whichModeOptions)
         fprintf('\t Flicker code will be run in (%s) mode! \n', whichMode);
@@ -45,8 +41,19 @@ while 1
     disp('Running mode should be selected within [demo, practice, main]!');
 end
 
+% Subject name.
+if strcmp(whichMode, 'main')
+    inputMessageName = 'Enter subject name: ';
+    subjectName = input(inputMessageName, 's');
+end
+
 %% Run the flicker code according to different mode.
 switch whichMode
+    case 'calibrate'
+        calibrate = true;
+        data = GetMatchingRedForRGFlicker('calibrate',true,'bgColor',bgColor,...
+            'gaussianWindow',gaussianWindow);
+        
     case 'demo'
         % 1) Look at stimulus demo.
         %
