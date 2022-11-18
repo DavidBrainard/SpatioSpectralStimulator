@@ -14,6 +14,7 @@
 %                            corrected.
 %    11/08/22   smo        - Flicker session has been substituted with the
 %                            function.
+%    11/18/22   smo        - Added a calibartion mode.
 
 %% Initialize.
 clear; close all;
