@@ -661,7 +661,7 @@ for ss = 1:nSubjects
         else
             error('Cannot find data file');
         end
-        PrimaryContrast(dd+numSpace) = theImageData.colorDirectionParams.targetScreenPrimaryContrasts(1); 
+        PrimaryContrast(dd+numSpace,:) = theImageData.colorDirectionParams.targetScreenPrimaryContrasts(1); 
         clear theImageData;
         
         TestImageContrastMax(dd+numSpace,:) = max(theContrastData.preExpDataStruct.rawData.testContrast);
