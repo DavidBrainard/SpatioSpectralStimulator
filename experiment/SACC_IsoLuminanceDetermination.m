@@ -109,7 +109,7 @@ switch whichMode
         %
         % For practice, subject will see the flicker stimulus by controlling the
         % red starting either from top or bottom.
-        nTrials = 1;
+        nTrials = 2;
         GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
         
