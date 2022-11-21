@@ -307,9 +307,9 @@ for ff = 1:nFits
                 dateStrPrimary = '2022/10/26';
                 targetScreenPrimaryContrast = 0.05;
             end
-        else
-            dateStrPrimary = dateStrVal;
         end
+    else
+        dateStrPrimary = dateStrVal;
     end
     
     % Add some texts to the plot.
