@@ -286,8 +286,8 @@ for ff = 1:nFits
         ylim([-axisLim axisLim]);
         axis('square');
         fontSize = 15;
-        xlabel('Desired vector contrast','fontsize',fontSize);
-        ylabel('Measured vector contrast','fontsize',fontSize);
+        xlabel('Desired cone contrast','fontsize',fontSize);
+        ylabel('Measured cone contrast','fontsize',fontSize);
         legend({'Measured','Nominal'},'location','southeast','fontsize',fontSize);
         title(sprintf('Cone class %d',pp),'fontsize',fontSize);
     end
