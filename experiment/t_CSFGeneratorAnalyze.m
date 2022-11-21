@@ -287,7 +287,7 @@ for ss = 1:nSubjects
             % array.
             nContrastPoints = 8;
             if ~(length(theContrastData.estDomainValidation)==nContrastPoints)
-                theContrastData.estDomainValidation(nContrastPoints) = -10;
+                theContrastData.estDomainValidation(nContrastPoints) = NaN;
             end                
             contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
 
