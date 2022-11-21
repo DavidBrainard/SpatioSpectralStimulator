@@ -180,7 +180,11 @@ if (MEASURETARGETCONTRAST)
         % The reason for this is to measure and check these.  This logic follows
         % how we handled an actual gabor image above. The quantization to
         % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
-        rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
+        if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
+            rawMonochromeUnquantizedContrastCheckCal = theData.rawMonochromeUnquantizedContrastCheckCal;
+        else
+            rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
+        end
         rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
         desiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
         desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
