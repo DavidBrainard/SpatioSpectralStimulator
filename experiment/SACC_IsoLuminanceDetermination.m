@@ -94,7 +94,16 @@ switch whichMode
             ylabel('Output (no unit)','fontsize',13);
             legend('Green', 'Red','fontsize',13,'location','southeast');
         end
-
+        
+        % Collect the black corrected data in struct to save out.
+        dataBC.spdRedBC = spdRedBC;
+        dataBC.spdGreenBC = spdGreenBC;
+        dataBC.xyzRedBC = xyzRedBC;
+        dataBC.xyzGreenBC = xyzGreenBC;
+        dataBC.S = S;
+        dataBC.wls = wls;
+        dataBC.T_xyz = T_xyz;
+        
     case 'demo'
         % 1) Look at stimulus demo.
         %
@@ -140,7 +149,7 @@ if (SAVETHERESULTS)
             case 'calibrate'
                 testFilename = fullfile(testFiledir,'CheckFlickerPhotom',...
                     sprintf('checkFlickerPhotom_%s',dayTimestr));
-                save(testFilename,'data');
+                save(testFilename,'data','dataBC');
 
                 SAVECALIBRATIONPLOT = true;
                 if (SAVECALIBRATIONPLOT)
