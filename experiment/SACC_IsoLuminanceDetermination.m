@@ -164,7 +164,7 @@ if (SAVETHERESULTS)
                 end
                 
             case 'main'
-                testFilename = fullfile(testFiledir,subjectName,...
+                testFilename = fullfile(testFiledir,subjectName,'FlickerPhotom',...
                     sprintf('flickerPhotom_%s_%s',subjectName,dayTimestr));
                 save(testFilename,'data');
         end
