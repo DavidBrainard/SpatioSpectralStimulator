@@ -64,13 +64,32 @@ for ff = 1:nFits
     dateStrVal = strrep(dateStrVal,'_','/');
     
     % Get the date of primary measurement.
+    % 
+    % For most cases, validation was performed on the same day when the
+    % primary measurement was made except some cases. Here we add some
+    % dates manually that the date of primary measurement is different from
+    % the date of validation.
     if isfield(theCheckData,'primaryFilename')
         [filedir filename ext] = fileparts(theCheckData.primaryFilename);
         numExtract = regexp(filename,'\d+','match');
         dateStrPrimary = sprintf('%s_%s_%s',numExtract{1},numExtract{2},numExtract{3});
         dateStrPrimary = strrep(dateStrPrimary,'_','/');
-    end
+
+    elseif (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
+        if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
+            dateStrPrimary = '2022/10/31';
+            targetScreenPrimaryContrast = 0.05;
+        elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
+            dateStrPrimary = '2022/11/03';
+        elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
+            dateStrPrimary = '2022/10/26';
+            targetScreenPrimaryContrast = 0.05;
+        end
     
+    else
+        dateStrPrimary = dateStrVal;
+    end
+
     % We set the target primary contrast as 0.05 till the end of October
     % and it has been upadated to 0.07 after which sounds more sense.
     % However, the performance seems not quite affected by how we set it.
@@ -290,26 +309,6 @@ for ff = 1:nFits
         ylabel('Measured cone contrast','fontsize',fontSize);
         legend({'Measured','Nominal'},'location','southeast','fontsize',fontSize);
         title(sprintf('Cone class %d',pp),'fontsize',fontSize);
-    end
-    
-    % Set the primary measurement date and validation date right. For most
-    % cases, validation was performed on the same day when the primary
-    % measurement was made except some cases. Here we added the cases so
-    % that it shows the right dates for both.
-    if ~exist('dateStrPrimary')
-        if (strcmp(monthStr,'11') & strcmp(dayStr,'06'))
-            if (strcmp(hourStr,'17') & strcmp(minuteStr,'13'))
-                dateStrPrimary = '2022/10/31';
-                targetScreenPrimaryContrast = 0.05;
-            elseif (strcmp(hourStr,'17') & strcmp(minuteStr,'06'))
-                dateStrPrimary = '2022/11/03';
-            elseif (strcmp(hourStr,'16') & strcmp(minuteStr,'57'))
-                dateStrPrimary = '2022/10/26';
-                targetScreenPrimaryContrast = 0.05;
-            end
-        end
-    else
-        dateStrPrimary = dateStrVal;
     end
     
     % Add some texts to the plot.
