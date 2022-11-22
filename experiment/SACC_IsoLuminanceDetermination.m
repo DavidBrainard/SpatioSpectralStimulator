@@ -170,4 +170,4 @@ if (SAVETHERESULTS)
         end
     end
 end
-fpintf('Data file (%s) has been succesfully saved! \n', whichMode);
+fprintf('Data file (%s) has been succesfully saved! \n', whichMode);
