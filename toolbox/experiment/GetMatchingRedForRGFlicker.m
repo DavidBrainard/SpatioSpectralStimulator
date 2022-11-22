@@ -152,7 +152,7 @@ plainImageRed(:,:,1) = options.intensityPrimary1InitialTop;
 plainImageGreen = plainImageBase;
 plainImageGreen(:,:,2) = options.intensityPrimary2;
 
-% Ambient image for calibration.
+% Ambient and white image for calibration.
 if (options.calibrate)
    intensityPrimary3 = 5;
    plainImageAmbient = plainImageBase;
@@ -161,6 +161,13 @@ if (options.calibrate)
    % Add ambient image to red and green.
    plainImageRed = plainImageRed + plainImageAmbient;
    plainImageGreen = plainImageGreen + plainImageAmbient;
+   
+   % Plain white image.
+   intensityPrimaryWhite = 255;
+   plainImageWhite = plainImageBase;
+   for ww = 1:nPrimaries
+       plainImageWhite(:,:,ww) = intensityPrimaryWhite;
+   end
 end
 
 % Set primary index to update to make a flicker.
@@ -231,8 +238,9 @@ end
 imageTextureGreen = MakeImageTexture(fillColorGreen, window, windowRect,...
     'addFixationPointImage',addFixationPointImage,'verbose',false);
 
-% Ambient image
+% Ambient and white image
 if (options.calibrate)
+    % Ambient image.
     plainImageAmbient = plainImageAmbient./(nInputLevels-1);
     switch options.bgColor
         case 'white'
@@ -241,6 +249,12 @@ if (options.calibrate)
             fillColorAmbient = plainImageAmbient .* gaussianWindowBGBlack;
     end
     imageTextureAmbient = MakeImageTexture(fillColorAmbient, window, windowRect,...
+        'addFixationPointImage',addFixationPointImage,'verbose',false);
+    
+    % White image.
+    plainImageWhite = plainImageWhite./(nInputLevels-1);
+    fillColorWhite = plainImageWhite;
+    imageTextureWhite = MakeImageTexture(fillColorWhite, window, windowRect,...
         'addFixationPointImage',addFixationPointImage,'verbose',false);
 end
 
@@ -275,12 +289,19 @@ if (options.calibrate)
     spdAmbient = MeasureSpectroradiometer;
     fprintf('(Ambient) Measurement completed! \n');
     
+    % White.
+    imageTexture = imageTextureWhite;
+    FlipImageTexture(imageTexture, window, imageWindowRect, 'verbose', false);
+    spdWhite = MeasureSpectroradiometer;
+    fprintf('(White) Measurement completed! \n');
+    
     % Save out the data.
     data.redIntensity = redMeasurementRange;
     data.greenIntensity = options.intensityPrimary2;
     data.spdRed = spdRed;
     data.spdGreen = spdGreen;
     data.spdAmbient = spdAmbient;
+    data.spdWhite = spdWhite;
     
     % Close the screen and spectroradiometer.
     CloseScreen;
