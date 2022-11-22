@@ -159,7 +159,7 @@ if (SAVETHERESULTS)
                         testFilename = fullfile(testFiledir,sprintf('CheckFlickerPhotom_%s',dayTimestr));
                         testFileFormat = '.tiff';
                         saveas(gcf,append(testFilename,testFileFormat));
-                        fpintf('Figure has been succesfully saved! \n');
+                        frpintf('Figure has been succesfully saved! \n');
                     end
                 end
                 
