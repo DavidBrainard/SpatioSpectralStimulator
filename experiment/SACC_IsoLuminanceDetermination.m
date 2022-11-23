@@ -136,6 +136,15 @@ switch whichMode
         nTrials = 6;
         data = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
+        
+        % Calculate the mean and normalize it to have the value within the
+        % range of 0-1.
+        nInputLevels = 256;
+        meanNormalized = mean(data.results)./(nInputLevels-1);
+        fprintf('\t Mean normalized result = (%.2f) \n', meanNormalized);
+        
+        % Save the mean results to the data struct.
+        data.meanNormalized = meanNormalized;
 end
 
 %% Collect all data and save it.
@@ -164,6 +173,12 @@ if (SAVETHERESULTS)
                 end
                 
             case 'main'
+                % Make folder for saving flicker photometry if it does not exist.
+                if ~exist(fullfile(testFiledir,subjectName,'FlickerPhotom'),'dir')
+                    mkdir(fullfile(testFiledir,subjectName),'FlickerPhotom');
+                end
+                
+                % Save the data.
                 testFilename = fullfile(testFiledir,subjectName,'FlickerPhotom',...
                     sprintf('flickerPhotom_%s_%s',subjectName,dayTimestr));
                 save(testFilename,'data');

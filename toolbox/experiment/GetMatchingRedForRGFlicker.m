@@ -317,6 +317,7 @@ idxRedStartingPoint = [1 2];
 
 for tt = 1:options.nTrials
     
+    % Print out the progress.
     fprintf('\t Starting the flicker session. Progress = (%d/%d) \n', tt, options.nTrials);
     
     if ~(rem(tt,2) == 0)
