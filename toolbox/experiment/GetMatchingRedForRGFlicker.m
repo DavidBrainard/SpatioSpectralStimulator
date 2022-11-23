@@ -316,6 +316,9 @@ redStartingPointOptions = {'top' 'bottom'};
 idxRedStartingPoint = [1 2];
 
 for tt = 1:options.nTrials
+    
+    fprintf('\t Starting the flicker session. Progress = (%d/%d) \n', tt, options.nTrials);
+    
     if ~(rem(tt,2) == 0)
         tttt = 1;
     elseif rem(tt,2) == 0
