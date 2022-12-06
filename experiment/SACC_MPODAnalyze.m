@@ -75,12 +75,12 @@ for ss = 1:nSubjectName
     % Plot mpod and its standard deviation.
     %
     % Left eye.
-    plot(numSubject, mpodLeftEye(ss),'ro','markerfacecolor','r');
-    errorbar(numSubject, mpodLeftEye(ss), stdLeftEye(ss), 'r');
+    plot(numSubject, mpodLeftEye(ss),'ro','markersize',8,'markeredgecolor','k','markerfacecolor','r');
+    errorbar(numSubject, mpodLeftEye(ss), stdLeftEye(ss), 'r','linewidth',1);
 
     % Right eye.
-    plot(numSubject, mpodRightEye(ss),'go','markerfacecolor','g');
-    errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), 'g');
+    plot(numSubject, mpodRightEye(ss),'go','markersize',8,'markeredgecolor','k','markerfacecolor','g');
+    errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), 'g','linewidth',1);
 
     % Connect data points between left and right eyes.
     plot([numSubject numSubject], [mpodLeftEye(ss) mpodRightEye(ss) ],'k:','LineWidth',1);
