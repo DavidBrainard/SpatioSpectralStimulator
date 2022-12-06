@@ -68,6 +68,9 @@ setpref(projectName,'SACCAnalysis',fullfile(baseDir,'SACC_analysis'));
 % Check data dir (This is for screen stability and channel additivity data)
 setpref(projectName,'CheckDataFolder',fullfile(baseDir,'SACC_materials','JandJProjector','CheckData'));
 
+% SACC materials.
+setpref(projectName,'SACCMaterials',fullfile(baseDir,'SACC_materials'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.
