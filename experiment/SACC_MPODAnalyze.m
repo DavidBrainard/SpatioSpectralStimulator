@@ -75,12 +75,12 @@ for ss = 1:nSubjectName
     % Plot mpod and its standard deviation.
     %
     % Left eye.
-    plot(numSubject, mpodLeftEye(ss),'ro','markersize',8,'markeredgecolor','k','markerfacecolor','r');
-    errorbar(numSubject, mpodLeftEye(ss), stdLeftEye(ss), 'r','linewidth',1);
+    plot(numSubject, mpodLeftEye(ss),'ro','markersize',8,'markeredgecolor','k','markerfacecolor','b');
+    errorbar(numSubject, mpodLeftEye(ss), stdLeftEye(ss), 'b','linewidth',1);
 
-    % Right eye.
-    plot(numSubject, mpodRightEye(ss),'go','markersize',8,'markeredgecolor','k','markerfacecolor','g');
-    errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), 'g','linewidth',1);
+    % Right eye. 
+    plot(numSubject, mpodRightEye(ss),'go','markersize',8,'markeredgecolor','k','markerfacecolor','c');
+    errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), 'c','linewidth',1);
 
     % Connect data points between left and right eyes.
     plot([numSubject numSubject], [mpodLeftEye(ss) mpodRightEye(ss) ],'k:','LineWidth',1);
@@ -89,3 +89,12 @@ end
 legend('Left eye','','Right eye', 'fontSize', fontSize)
 
 %% Save the plot.
+SAVETHEPLOT = true;
+if (SAVETHEPLOT)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+        testFilename = fullfile(testFiledir,'Results_MPOD');
+        testFileFormat = '.tiff';
+        saveas(gcf,append(testFilename,testFileFormat));
+    end
+end
