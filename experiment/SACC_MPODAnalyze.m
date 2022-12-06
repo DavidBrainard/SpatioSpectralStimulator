@@ -64,6 +64,7 @@ end
 figure; clf; hold on;
 xlabel('Subject name');
 ylabel('MPOD');
+xlim([1.5 str2double(subjectNameOptions{end})])
 
 for ss = 1:nSubjectName
     numSubject = subjectNameOptions(ss);
