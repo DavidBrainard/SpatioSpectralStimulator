@@ -67,6 +67,7 @@ xlabel('Subject name', 'fontSize', fontSize);
 ylabel('MPOD', 'fontSize', fontSize);
 xlim([1.5 str2double(subjectNameOptions{end})])
 xticks([str2double(subjectNameOptions{1}) : 1 : str2double(subjectNameOptions{end})]);
+title('MPOD results','fontsize',fontSize);
 
 for ss = 1:nSubjectName
     numSubject = subjectNameOptions(ss);

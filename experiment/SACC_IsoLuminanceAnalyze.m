@@ -65,6 +65,7 @@ ylabel('Output (no unit)','fontsize',fontSize);
 xlim([1.5 str2double(numSubjects{end})])
 ylim([0 1.2]);
 xticks([str2double(numSubjects{1}) : 1 : str2double(numSubjects{end})]);
+title('Iso-luminance determination results','fontsize',fontSize);
 
 nSubjects = length(numSubjects);
 for ss = 1:nSubjects
