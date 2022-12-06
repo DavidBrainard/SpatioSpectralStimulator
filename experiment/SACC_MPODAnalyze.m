@@ -62,9 +62,11 @@ end
 
 %% Plot it.
 figure; clf; hold on;
-xlabel('Subject name');
-ylabel('MPOD');
+fontSize = 15;
+xlabel('Subject name', 'fontSize', fontSize);
+ylabel('MPOD', 'fontSize', fontSize);
 xlim([1.5 str2double(subjectNameOptions{end})])
+xticks([str2double(subjectNameOptions{1}) : 1 : str2double(subjectNameOptions{end})]);
 
 for ss = 1:nSubjectName
     numSubject = subjectNameOptions(ss);
@@ -81,9 +83,9 @@ for ss = 1:nSubjectName
     errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), 'g');
 
     % Connect data points between left and right eyes.
-    plot([numSubject numSubject], [mpodLeftEye(ss) mpodRightEye(ss) ],'k--','LineWidth',1);
+    plot([numSubject numSubject], [mpodLeftEye(ss) mpodRightEye(ss) ],'k:','LineWidth',1);
     
 end
-legend('Left eye','','Right eye')
+legend('Left eye','','Right eye', 'fontSize', fontSize)
 
 %% Save the plot.
