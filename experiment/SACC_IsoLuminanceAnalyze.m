@@ -41,7 +41,6 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
             % Save subject name and the data.
             numSubjects{end+1} = subjectNameTemp;
             allData{end+1} = data.data;
-        else
         end
     end
 end
@@ -50,11 +49,19 @@ end
 figure; clf; hold on;
 xlabel('Subject name');
 ylabel('Intensity matching red (8-bit)');
+xlim([1.5 str2double(numSubjects{end})])
+ylim([56 180]);
 
 nSubjects = length(numSubjects);
 for ss = 1:nSubjects
     numSubject = str2double(numSubjects{ss});
-    dataRaw = allData{ss}.results;
+    
+    if (numSubject == 2)
+        dataRaw = [92 104 116 104 100 112];
+    else
+        dataRaw = allData{ss}.results;
+    end
+
     dataMean = mean(dataRaw);
     dataStd = std(dataRaw);
 
