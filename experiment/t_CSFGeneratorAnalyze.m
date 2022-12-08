@@ -677,6 +677,17 @@ for ss = 1:nSubjects
         TestContrastNominalMax(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(end),4);
         TestContrastNominalMin(dd+numSpace,:) = round(theContrastData.preExpDataStruct.estDomainValidationNominalLinear(1),4);
         TestContrasts{dd+numSpace,:} = round(10.^theContrastData.estDomainValidation,4);
+        
+        % Check if the threshold lies within the range of test contrasts.
+        % If the threshold was estimated within the test contrast range,
+        % print out 'Good', else 'Bad'.
+%         if (1+1)
+%             ThresholdEstimate{dd+numSpace,:} = 'Good';
+%         else
+%             ThresholdEstimate{dd+numSpace,:} = 'Bad';
+%         end
+%         
+%         
     end
 end
 
