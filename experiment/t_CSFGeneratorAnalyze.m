@@ -717,7 +717,7 @@ for ss = 1:nSubjects
                 sensitivityLinear = 1./thresholds;
                 sensitivityLog = log10(sensitivityLinear);
                 for hh = 1:nSineFreqCyclesPerDeg
-                    sineFreqCyclesPerDegLinear(hh) = str2double(sineFreqCyclesPerDeg{hh,1});
+                    sineFreqCyclesPerDegLinear(hh) = sscanf(sineFreqCyclesPerDeg{hh},'%d');
                 end
                 sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegLinear);
                 
