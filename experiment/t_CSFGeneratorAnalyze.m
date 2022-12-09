@@ -39,7 +39,7 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 
-FITALLATONCE = true;
+FITALLATONCE = false;
 SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 
@@ -681,13 +681,13 @@ for ss = 1:nSubjects
         % Check if the threshold lies within the range of test contrasts.
         % If the threshold was estimated within the test contrast range,
         % print out 'Good', else 'Bad'.
-%         if (1+1)
-%             ThresholdEstimate{dd+numSpace,:} = 'Good';
-%         else
-%             ThresholdEstimate{dd+numSpace,:} = 'Bad';
-%         end
-%         
-%         
+        minTestContrast = min(contrastRangePerSubject);
+        maxTestContrast = max(contrastRangePerSubject);
+        if and(any(thresholdFittedRaw >= minTestContrast), any(thresholdFittedRaw <= maxTestContrast))
+            ThresholdEstimate{dd+numSpace,:} = 'Good';
+        else
+            ThresholdEstimate{dd+numSpace,:} = 'Bad';
+        end
     end
 end
 
@@ -699,7 +699,7 @@ if (FITALLATONCE)
             testFilename = fullfile(testFiledir,'TestImageProfile.xlsx');
         end
         tableImageProfile = table(Date,Subject,SpatialFrequency,PrimaryContrast,TestImageContrastMax,...
-            RuleMOA,TestContrastNominalMin,TestContrastNominalMax,TestContrasts);
+            RuleMOA,TestContrastNominalMin,TestContrastNominalMax,TestContrasts,ThresholdEstimate);
 
         % Write a table to the excel file.
         sheet = 1;
