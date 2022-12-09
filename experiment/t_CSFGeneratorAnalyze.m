@@ -683,10 +683,10 @@ for ss = 1:nSubjects
         % print out 'Good', else 'Bad'.
         minTestContrast = min(contrastRangePerSubject);
         maxTestContrast = max(contrastRangePerSubject);
-        if and(any(thresholdFittedRaw >= minTestContrast), any(thresholdFittedRaw <= maxTestContrast))
-            ThresholdEstimate{dd+numSpace,:} = 'Good';
-        else
+        if or(any(thresholdFittedRaw < minTestContrast),any(thresholdFittedRaw > maxTestContrast))
             ThresholdEstimate{dd+numSpace,:} = 'Bad';
+        else
+            ThresholdEstimate{dd+numSpace,:} = 'Good';
         end
     end
 end
