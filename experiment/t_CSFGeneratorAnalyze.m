@@ -116,13 +116,15 @@ if (FITALLATONCE)
             numStartData = 3;
             for dd = 1:length(dataList)-numStartData+1
                 idxData = numStartData+dd-1;
-                spatialFrequencyOptions{dd,ss} = dataList(idxData).name;
+                if ~strcmp(dataList(idxData).name,'FlickerPhotom')
+                    spatialFrequencyOptions{dd,ss} = dataList(idxData).name;
+                end
             end
         end
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'003'};
+    subjectNameOptions = {'012'};
     spatialFrequencyOptions = {'3'; '6'; '9'; '12'; '18'};
 end
 
