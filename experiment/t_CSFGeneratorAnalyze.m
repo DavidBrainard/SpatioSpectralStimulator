@@ -257,6 +257,10 @@ for ss = 1:nSubjects
         sineFreqCyclesPerDegStr = sineFreqCyclesPerDeg{dd};
         sineFreqCyclesPerDegTemp = sscanf(sineFreqCyclesPerDegStr,'%d');
         
+        % Collect spatial frequency in double format. This will be used
+        % when plotting CSF curve when all data is available.
+        sineFreqCyclesPerDegNum(dd) = sineFreqCyclesPerDegTemp;
+        
         % Figures for the psychometric function plots
         rawFig = figure; clf;
         set(gcf,'position',[0,0,1920,1080])
@@ -716,24 +720,34 @@ for ss = 1:nSubjects
                 % Calculate sensitivity.
                 sensitivityLinear = 1./thresholds;
                 sensitivityLog = log10(sensitivityLinear);
-                for hh = 1:nSineFreqCyclesPerDeg
-                    sineFreqCyclesPerDegLinear(hh) = sscanf(sineFreqCyclesPerDeg{hh},'%d');
-                end
-                sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegLinear);
+                sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
+                
+                % Sort each array in an ascending order of spatial
+                % frequency.
+                [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
+                sensitivityLinearSorted = sensitivityLinear(I);
+                sensitivityLogSorted = sensitivityLog(I);
+                sineFreqCyclesPerDegLogSorted = sineFreqCyclesPerDegLog(I);
                 
                 % Plot CSF curve.
-                colorOptions = {'k.-','r.-','g.-','b.-','c.-','m.-'};
-                plot(sineFreqCyclesPerDegLog, sensitivityLog, colorOptions{ff},'markersize',20,'linewidth',2);
+                colorOptions = {'k.-','r.-','g.-','b.-','c.-'};
+                plot(sineFreqCyclesPerDegLogSorted, sensitivityLogSorted, colorOptions{ff},'markersize',20,'linewidth',2);
             end
             
             % Set axis and stuffs.
             xlabel('Spatial Frequency (cpd)','fontsize',15);
             ylabel('Contrast Sensitivity','fontsize',15);
-            xticks(sineFreqCyclesPerDegLog);
-            xticklabels(sineFreqCyclesPerDeg);
-            yticks(sort(sensitivityLog));
-            yticklabels(sort(round(sensitivityLinear)));
-            title('CSF curve','fontsize',15);
+
+            xticks(sineFreqCyclesPerDegLogSorted);
+            xticklabels(sineFreqCyclesPerDegNumSorted);
+            
+            yaxisRangeLinear = [0:20:300];
+            yticks(log10(yaxisRangeLinear));
+            yticklabels(yaxisRangeLinear);
+            
+            title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
+            subtitle('Data points are in log unit, labels are in linear unit', 'fontsize',13);
+            
             legend(filterOptions,'fontsize',15);
             
             % Save the plot if you want.
