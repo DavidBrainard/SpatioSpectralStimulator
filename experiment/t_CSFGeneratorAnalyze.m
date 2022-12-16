@@ -705,39 +705,81 @@ for ss = 1:nSubjects
         if (nSineFreqCyclesPerDeg == maxNSpatialFrequencies)
             % Make a new figure to plot CSF.
             figure; clf; hold on;
+            figureSize = 900;
+            figurePosition = [1000 500 figureSize figureSize];
+            set(gcf,'position',figurePosition);
             
             % Export the threshold data.
             for ff = 1:nFilters
-                thresholds = thresholdFittedRaw(ss,:,ff);
+                thresholdsRaw = thresholdFittedRaw(ss,:,ff);
+                thresholdsBoot = medianThresholdBootRaw(ss,:,ff);
+                thresholdBootLow = lowThresholdBootRaw(ss,:,ff);
+                thresholdBootHigh = highThresholdBootRaw(ss,:,ff);
                 
                 % Convert NaN to 0 here.
-                for tt = 1:length(thresholds)
-                    if isnan(thresholds(tt))
-                        thresholds(tt) = 0;
+                for tt = 1:length(thresholdsRaw)
+                    if isnan(thresholdsRaw(tt))
+                        thresholdsRaw(tt) = 0;
+                    end
+                end
+                for tt = 1:length(thresholdsBoot)
+                    if isnan(thresholdsBoot(tt))
+                        thresholdsBoot(tt) = 0;
                     end
                 end
                 
                 % Calculate sensitivity.
-                sensitivityLinear = 1./thresholds;
-                sensitivityLog = log10(sensitivityLinear);
+                sensitivityRawLinear = 1./thresholdsRaw;
+                sensitivityRawLog = log10(sensitivityRawLinear);
+                
+                sensitivityBootLinear = 1./thresholdsBoot;
+                sensitivityBootLog = log10(sensitivityBootLinear);
+                
+                % For calculation of confindence interval from bootstrap,
+                % (low) threshold becomes (high) sensitivity, and vice
+                % versa.
+                sensitivityBootHighLinear = 1./thresholdBootLow;
+                sensitivityBootHighLog = log10(sensitivityBootHighLinear);
+                
+                sensitivityBootLowLinear = 1./thresholdBootHigh;
+                sensitivityBootLowLog = log10(sensitivityBootLowLinear);
+                
+                % Calculate spatial frequency in log space.
                 sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
                 
                 % Sort each array in an ascending order of spatial
                 % frequency.
                 [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
-                sensitivityLinearSorted = sensitivityLinear(I);
-                sensitivityLogSorted = sensitivityLog(I);
                 sineFreqCyclesPerDegLogSorted = sineFreqCyclesPerDegLog(I);
                 
-                % Plot CSF curve.
-                colorOptions = {'k.-','r.-','g.-','b.-','c.-'};
-                plot(sineFreqCyclesPerDegLogSorted, sensitivityLogSorted, colorOptions{ff},'markersize',20,'linewidth',2);
+                sensitivityRawLogSorted = sensitivityRawLog(I);
+                sensitivityBootLogSorted = sensitivityBootLog(I);
+                sensitivityBootHighLogSorted = sensitivityBootHighLog(I);
+                sensitivityBootLowLogSorted = sensitivityBootLowLog(I);
+                
+                % Plot it here.
+                %
+                % Different marker/line options for raw fit and bootstrap
+                % fit.
+                colorOptionsRaw = {'k.-','r.-','g.-','b.-','c.-'};
+                colorOptionsBoot = {'k.--','r.--','g.--','b.--','c.--'};
+                colorOptionsCI = {'k','r','g','b','c'};
+                
+                % Plot CSF curves.
+                plot(sineFreqCyclesPerDegLogSorted, sensitivityRawLogSorted, colorOptionsRaw{ff},'markersize',20,'linewidth',2);
+                plot(sineFreqCyclesPerDegLogSorted, sensitivityBootLogSorted, colorOptionsBoot{ff},'markersize',20,'linewidth',2);
+                
+                % Plot Confidence Interval acquired from Bootstrap.
+                errorNeg = abs(sensitivityBootLogSorted - sensitivityBootLowLogSorted);
+                errorPos = abs(sensitivityBootHighLogSorted - sensitivityBootLogSorted);
+                errorbar(sineFreqCyclesPerDegLogSorted, sensitivityBootLogSorted, ...
+                    errorNeg, errorPos, colorOptionsCI{ff});
             end
             
             % Set axis and stuffs.
             xlabel('Spatial Frequency (cpd)','fontsize',15);
             ylabel('Contrast Sensitivity','fontsize',15);
-
+            
             xticks(sineFreqCyclesPerDegLogSorted);
             xticklabels(sineFreqCyclesPerDegNumSorted);
             
@@ -748,7 +790,20 @@ for ss = 1:nSubjects
             title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
             subtitle('Data points are in log unit, labels are in linear unit', 'fontsize',13);
             
-            legend(filterOptions,'fontsize',15);
+            % Add legend.
+            f = flip(get(gca, 'Children'));
+            
+            numSpaceLegend = 3;
+            idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
+            idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
+            
+            filterWls = {'392 nm' '417 nm' '437 nm' '456 nm' '476 nm'};
+            for ll = 1:nSineFreqCyclesPerDeg
+                contentLegendRaw{ll} = sprintf('%s (%s) -PF',filterOptions{ll}, filterWls{ll});
+                contentLegendBoot{ll} = sprintf('%s (%s) -Boot',filterOptions{ll}, filterWls{ll});
+            end
+            legend(f([idxLegendRaw idxLegendBoot]), [contentLegendRaw contentLegendBoot], ...
+                'fontsize', 13, 'location', 'northeast');
             
             % Save the plot if you want.
             if (SAVECSFCURVE)
