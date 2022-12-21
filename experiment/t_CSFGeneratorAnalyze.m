@@ -784,6 +784,7 @@ for ss = 1:nSubjects
             xticklabels(sineFreqCyclesPerDegNumSorted);
             
             yaxisRangeLinear = [0:20:300];
+            ylim(log10([0 300]));
             yticks(log10(yaxisRangeLinear));
             yticklabels(yaxisRangeLinear);
             
