@@ -15,7 +15,13 @@
 clear; close all;
 
 %% Set test filename to save.
-testFilename = 'BiteBarZaixs';
+testFilename = 'Trombone';
+
+%% Put image on the screen.
+%
+% Here we use plain white screen and channel settings are all turned on as
+% its maximum.
+WarmupScreen;
 
 %% Open spectroradiometer.
 OpenSpectroradiometer;
@@ -39,9 +45,6 @@ for mm = 1:nMeasures
     % Show the progress.
     fprintf('Measurement Progress %d/%d \n', mm, nMeasures);    
 end
-
-%% Close spectroradiometer.
-CloseSpectroradiometer;
 
 %% Save the results.
 SAVERESULTS = false;
@@ -104,3 +107,7 @@ if (SAVETHEPLOT)
     saveas(gcf,append(testFilenamePlot,testFileFormat));
     fprintf('\t Plot has been saved successfully! \n');
 end
+
+%% Close.
+CloseSpectroradiometer;
+CloseSceen;
