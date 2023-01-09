@@ -15,7 +15,7 @@
 clear; close all;
 
 %% Set test filename to save.
-testFilename = 'Trombone';
+testFilename = 'Trombone_different_position';
 
 %% Put image on the screen.
 %
@@ -47,7 +47,7 @@ for mm = 1:nMeasures
 end
 
 %% Save the results.
-SAVERESULTS = false;
+SAVERESULTS = true;
 if (SAVERESULTS)
     if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCMaterials'),'CheckSpectralReproducibility');
@@ -60,7 +60,7 @@ end
 %% Calculate the scale factor.
 %
 % We set one spectrum as a reference to calculate the scale factor.
-numSpdRef = 5;
+numSpdRef = 10;
 numSpdTest = setdiff([1:1:size(spd,2)], numSpdRef);
 spdRef = spd(:,numSpdRef);
 spdTest = spd(:,numSpdTest);
@@ -98,7 +98,7 @@ text(0.15, 0.9, sprintf('Mean scale factor = (%.2f)',meanScaleFactor), 'Parent',
 text(0.15, 0.8, sprintf('Min scale factor   = (%.2f)',minScaleFactor), 'Parent', main,'fontsize',12)
 text(0.15, 0.75, sprintf('Max scale factor  = (%.2f)',maxScaleFactor), 'Parent', main,'fontsize',12)
 
-%% Save the plot.
+% Save the plot.
 SAVETHEPLOT = true;
 if (SAVETHEPLOT)
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCMaterials'),'CheckSpectralReproducibility');
@@ -108,6 +108,33 @@ if (SAVETHEPLOT)
     fprintf('\t Plot has been saved successfully! \n');
 end
 
+%% Plot the scaled results.
+figure; hold on;
+plot(wls,spd(:,numSpdRef),'r-','linewidth',2);
+for tt = 1:nSpdTest
+    plot(wls,spd(:,numSpdTest(tt))*scaleFactor(tt),'k-');
+end 
+xlabel('Wavelength (nm)','fontsize',12);
+ylabel('Spectral output (no unit)','fontsize',12);
+xlim([380 780]);
+title('Spectral Reproducibility Results - Scaled','fontsize',12);
+legend('Ref','Test (scaled)');
+
+% Add scale factor info to the plot.
+main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
+text(0.15, 0.9, sprintf('Mean scale factor = (%.2f)',meanScaleFactor), 'Parent', main,'fontsize',12)            
+text(0.15, 0.8, sprintf('Min scale factor   = (%.2f)',minScaleFactor), 'Parent', main,'fontsize',12)
+text(0.15, 0.75, sprintf('Max scale factor  = (%.2f)',maxScaleFactor), 'Parent', main,'fontsize',12)
+
+% Save the scaled results plot.
+if (SAVETHEPLOT)
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCMaterials'),'CheckSpectralReproducibility');
+    testFilenamePlot = fullfile(testFiledir, testFilename);
+    testFileFormat = '.tiff';
+    saveas(gcf,append(testFilenamePlot,'_scaled',testFileFormat));
+    fprintf('\t Plot has been saved successfully! \n');
+end
+
 %% Close.
 CloseSpectroradiometer;
-CloseSceen;
+CloseScreen;
