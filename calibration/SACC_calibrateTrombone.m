@@ -205,8 +205,8 @@ positionFitted = polyval(p ,lensDioptersSet);
 positionEstimated = polyval(p, targetLensDiopters);
 
 % Print out the results.
-fprintf('\t * Target lens diopter is (%.2f) \n', subjectLensDiopters);
-fprintf('\t * Initial Trombone position at (%.2f) is %.0f (mm) \n', ...
+fprintf('\t * Subject lens diopter is (%.2f) \n', subjectLensDiopters);
+fprintf('\t * Initial Trombone position at target lens diopter (%.2f) is %.0f (mm) \n', ...
     targetLensDiopters, positionEstimated);
 
 % Plot it.
