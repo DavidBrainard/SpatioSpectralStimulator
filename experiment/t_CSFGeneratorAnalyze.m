@@ -1000,9 +1000,18 @@ for ii = 1:length(sortIndex)
         cellIndex = cellIndex+1;
     end
 end
-writecell(writeCellArray,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('DataSummary','.xlsx')), ...
-    'WriteMode',"replacefile");
 
-% Save out full run info
-close all
-save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
+% We will write the info in the cell only if we run the fitting for all
+% cases so that we will not over-write the data.
+if (FITALLATONCE)
+    writecell(writeCellArray,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('DataSummary','.xlsx')), ...
+        'WriteMode',"replacefile");
+end 
+
+% Save out full run info.
+if (FITALLATONCE)
+    save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
+end
+
+% Close all.
+close all;
