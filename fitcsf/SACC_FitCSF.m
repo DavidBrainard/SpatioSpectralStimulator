@@ -12,6 +12,29 @@
 clear; close all;
 
 %% Load the data.
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+    testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
+    theData = load(testFilename);
+    
+    % Close the plots if popping up any.
+    close all;
+else
+    error('Cannot find the data file!');
+end
+
+%% Read out the data.
+%
+% Subject.
+subjectName = theData.subjectNameOptions;
+
+% Threshold.
+% 
+% Data is aligned in (subject, SF, filter).
+thresholds = theData.thresholdFitted;
+
+% Error / Confidence interval.
+
 
 
 %% Set variables.
