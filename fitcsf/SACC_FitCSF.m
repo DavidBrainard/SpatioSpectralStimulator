@@ -23,15 +23,18 @@ else
     error('Cannot find the data file!');
 end
 
-%% Read out the data.
+%% Read out the data.¸
 %
 % Subject.
 subjectName = theData.subjectNameOptions;
 
-% Threshold.
-% 
-% Data is aligned in (subject, SF, filter).
-thresholds = theData.thresholdFitted;
+% Threshold. Data is aligned in [subject, SF, filter].
+%
+% Threshold raw.
+thresholdsFittedRaw = theData.thresholdFittedRaw;
+
+% Threshold as Bootstrap median.
+medianThresholdBoot = theData.medianThresholdBoot;
 
 % Error / Confidence interval.
 
@@ -39,7 +42,7 @@ thresholds = theData.thresholdFitted;
 
 %% Set variables.
 myCSVals = [];
-mySFVals = [3 6 9 12 18];
+mySFVals = theData.sineFreqCyclesPerDegNumSorted;
 myWs = 1/[error or CIs];
 
 %% Optimize the parameter p using fmincon.
