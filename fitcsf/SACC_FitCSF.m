@@ -7,6 +7,8 @@
 
 % History:
 %    1/13/23   smo    - Started on it.
+%    1/19/23   smo    - First fitting CSF with the function and it seems
+%                       pretty good. Will be elaborated.
 
 %% Initialize.
 clear; close all;
@@ -36,7 +38,7 @@ highThresholdBootRaw = theData.highThresholdBootRaw;
 
 %% Fit CSF.
 nSubjects = length(theData.subjectNameOptions);
-nFilters = 5;
+nFilters = length(theData.filterOptions);
 
 for ss = 1:nSubjects
     %% Set target subject and filter. We will fit CSF one by one.
@@ -58,6 +60,12 @@ for ss = 1:nSubjects
         for dd = 1:nSineFreqCyclesPerDeg
             sineFreqCyclesPerDegNum(dd) = sscanf(sineFreqCyclesPerDeg{dd},'%d');
         end
+        
+        %% Make a new plot per each subject.
+        figure; clf; hold on;
+        figureSize = 900;
+        figurePosition = [1000 500 figureSize figureSize];
+        set(gcf,'position',figurePosition);
         
         % Here we read out five values of the thresholds (so, five spatial
         % frequency) to fit CSF curve.
@@ -104,7 +112,13 @@ for ss = 1:nSubjects
             [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
             sineFreqCyclesPerDegLogSorted = sineFreqCyclesPerDegLog(I);
             
+            % Linear sorted according to spatial frequency.
             sensitivityRawLinearSorted = sensitivityRawLinear(I);
+            sensitivityBootLinearSorted = sensitivityBootLinear(I);
+            sensitivityBootHighLinearSorted = sensitivityBootHighLinear(I);
+            sensitivityBootLowLinearSorted = sensitivityBootLowLinear(I);
+            
+            % Log sorted according to spatial frequency.
             sensitivityRawLogSorted = sensitivityRawLog(I);
             sensitivityBootLogSorted = sensitivityBootLog(I);
             sensitivityBootHighLogSorted = sensitivityBootHighLog(I);
@@ -118,80 +132,77 @@ for ss = 1:nSubjects
             myWs = 1;
             
             % Set parameters for optimazation of the parameter p.
-            p0 = [100 3 1 1];
+            p0 = [10 0.5 0.1 0.1];
             p_lowerBound = [10 0.5 0.1 0.1];
-            p_higherBound = [500 18 10 10];
+            p_higherBound = [400 18 10 10];
             A = []; % Set numbers for the condition of A*x <= b*x0 / x0 is the initial point
-            b = []; 
+            b = [];
             Aeq = []; % Matrix for linear equality constraints
             beq = []; % Vector for linear equality constraints
-            options = optimset('fmincon'); 
-
+            options = optimset('fmincon');
+            
             % Optimize p here.
             p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
                 p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
-                      
+            
             %% Plot it here.
             %
-            % Make a figure per each subject.
-            figure; clf; hold on;
-            figureSize = 900;
-            figurePosition = [1000 500 figureSize figureSize];
-            set(gcf,'position',figurePosition);
-            
             % Different marker/line options for raw fit and bootstrap
             % fit.
             colorOptionsRaw = {'k.','r.','g.','b.','c.'};
             colorOptionsBoot = {'k+','r+','g+','b+','c+'};
+            colorOptionsCSF = {'k-','r-','g-','b-','c-'};
             colorOptionsCI = {'k','r','g','b','c'};
             
             % Plot raw data.
-            plot(sineFreqCyclesPerDegLogSorted, sensitivityRawLogSorted, colorOptionsRaw{ff},'markersize',20,'linewidth',2);
-            plot(sineFreqCyclesPerDegLogSorted, sensitivityBootLogSorted, colorOptionsBoot{ff},'markersize',20,'linewidth',2);
+            plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
+            plot(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
             
             % Plot the CSF fitting results.
-            sineFreqCyclesPerDegNumCSF = linspace(1,20,20);
+            SF_CSF_start = 3;
+            SF_CSF_end = 18;
+            nPointsCSF = 100;
+            sineFreqCyclesPerDegNumCSF = linspace(SF_CSF_start,SF_CSF_end,nPointsCSF);
             sensitivityCSFLinear = asymmetricParabolicFunc(p_optimized, sineFreqCyclesPerDegNumCSF);
-            plot(log10(sineFreqCyclesPerDegNumCSF), log10(sensitivityCSFLinear), 'r-');
+            plot(sineFreqCyclesPerDegNumCSF, sensitivityCSFLinear, colorOptionsCSF{ff}, 'linewidth', 2);
             
             % Plot Confidence Interval acquired from Bootstrap.
-%             errorNeg = abs(sensitivityBootLogSorted - sensitivityBootLowLogSorted);
-%             errorPos = abs(sensitivityBootHighLogSorted - sensitivityBootLogSorted);
-%             errorbar(sineFreqCyclesPerDegLogSorted, sensitivityBootLogSorted, ...
-%                 errorNeg, errorPos, colorOptionsCI{ff});
+            errorNeg = abs(sensitivityBootLinearSorted - sensitivityBootLowLinearSorted);
+            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityBootLinearSorted);
+            errorbar(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, ...
+                errorNeg, errorPos, colorOptionsCI{ff});
         end
-        
-        %% Add details per each plot.
-        % Set axis and stuffs.
-        xlabel('Spatial Frequency (cpd)','fontsize',15);
-        ylabel('Contrast Sensitivity','fontsize',15);
-        
-        xticks(sineFreqCyclesPerDegLogSorted);
-        xticklabels(sineFreqCyclesPerDegNumSorted);
-        
-        yaxisRangeLinear = [0:20:300];
-        ylim(log10([0 300]));
-        yticks(log10(yaxisRangeLinear));
-        yticklabels(yaxisRangeLinear);
-        
-        title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
-        subtitle('Data points are in log unit, labels are in linear unit', 'fontsize',13);
-        
-        % Add legend.
-        f = flip(get(gca, 'Children'));
-        
-        numSpaceLegend = 3;
-        idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
-        idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
-        
-        filterWls = {'392 nm' '417 nm' '437 nm' '456 nm' '476 nm'};
-        for ll = 1:nSineFreqCyclesPerDeg
-            contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterWls{ll});
-            contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterWls{ll});
-        end
-%         legend(f([idxLegendRaw idxLegendBoot]), [contentLegendRaw contentLegendBoot], ...
-%             'fontsize', 13, 'location', 'northeast');
     end
+    
+    %% Add details per each plot of the subject.
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
+    
+    xticks(sineFreqCyclesPerDegNumSorted);
+    xticklabels(sineFreqCyclesPerDegNumSorted);
+    
+    yaxisRangeLinear = [0:50:300];
+    ylim([0 300]);
+    yticks(yaxisRangeLinear);
+    yticklabels(yaxisRangeLinear);
+    
+    title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
+    subtitle('Data points are in log unit, labels are in linear unit', 'fontsize',13);
+    
+    % Add legend.
+    f = flip(get(gca, 'Children'));
+    
+    numSpaceLegend = 3;
+    idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
+    idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
+    
+    filterWls = {'392 nm' '417 nm' '437 nm' '456 nm' '476 nm'};
+    for ll = 1:nSineFreqCyclesPerDeg
+        contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterWls{ll});
+        contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterWls{ll});
+    end
+    legend(f([idxLegendRaw idxLegendBoot]), [contentLegendRaw contentLegendBoot], ...
+        'fontsize', 13, 'location', 'northeast');
 end
 
 %% Save the results.
