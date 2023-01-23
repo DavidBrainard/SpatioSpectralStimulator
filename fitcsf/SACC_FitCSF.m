@@ -68,8 +68,8 @@ for ss = 1:nSubjects
         %% Make a new plot per each subject.
         if (DRAWONEFIGUREPERSUB)
             figure; clf; hold on;
-            figureSize = 800;
-            figurePosition = [1000 1000 figureSize figureSize];
+            figureSize = 550;
+            figurePosition = [100 100 figureSize figureSize];
             set(gcf,'position',figurePosition);
         end
 
