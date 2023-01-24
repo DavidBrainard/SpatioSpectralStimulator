@@ -163,8 +163,12 @@ for ss = 1:nSubjects
                 p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
 
             % Also try putting a smooth spline through the data
+            %
+            % It would be helpful to have access to the bootstrapped values
+            % for each SF right here.
+            %
+            % See whether fit can take the error bars into account
             nSmoothPoints = 100;
-
             crossValidate = false;
             if (crossValidate)
                 nSmoothingParams = 100;
