@@ -14,7 +14,7 @@
 clear; close all;
 
 %% Set the options.
-DRAWONEFIGUREPERSUB = true;
+DRAWONEFIGUREPERSUB = false;
 WAITFORKEYTODRAW = true;
 
 %% Load the data.
@@ -79,10 +79,12 @@ for ss = 1:nSubjects
 
             % Make a new plot per each filter of the subject.
             if (~DRAWONEFIGUREPERSUB)
-                figure; clf; hold on;
+                dataFig = figure; clf; hold on;
                 figureSize = 550;
                 figurePosition = [100 100 figureSize figureSize];
                 set(gcf,'position',figurePosition);
+                crossFig = figure;
+                figure(dataFig);
             end
 
             % Each variable should have the number of 5 entries.
@@ -160,6 +162,37 @@ for ss = 1:nSubjects
             p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
                 p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
 
+            % Also try putting a smooth spline through the data
+            nSmoothPoints = 100;
+
+            crossValidate = false;
+            if (crossValidate)
+                nSmoothingParams = 100;
+                maxSmoothingParam = 0.3;
+                crossSmoothingParams = linspace(0,maxSmoothingParam,nSmoothingParams);
+                for sss = 1:length(crossSmoothingParams)
+                    smoothCrossError(sss) = 0;
+                    for cc = 1:length(mySFVals)
+                        crossIndex = setdiff(1:length(mySFVals),cc);
+                        crossFitSFVals = mySFVals(crossIndex);
+                        crossFitCSVals = myCSVals(crossIndex);
+                        smoothFitCross = fit(crossFitSFVals',crossFitCSVals','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
+                        smoothDataPredsCross = feval(smoothFitCross,myCSVals(cc)');
+                        smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSVals(cc)' - smoothDataPredsCross));
+                    end
+                end
+                figure(crossFig); plot(crossSmoothingParams,smoothCrossError,'ro','MarkerSize',6);
+                figure(dataFig);
+                [~,index] = min(smoothCrossError);
+                smoothingParam = crossSmoothingParams(index)
+            else
+                smoothingParam = 0.1;
+            end
+
+            smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
+            smoothPlotSFVals = linspace(min(mySFVals),max(mySFVals),nSmoothPoints)';
+            smoothPlotPreds = feval(smoothFit,smoothPlotSFVals);
+
             %% Plot it here.
             %
             % Different marker/line options for raw fit and bootstrap
@@ -172,6 +205,8 @@ for ss = 1:nSubjects
             % Plot raw data.
             plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
             plot(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
+
+            plot(smoothPlotSFVals,smoothPlotPreds,'c-','LineWidth',4);
 
             % Plot the CSF fitting results.
             SF_CSF_start = 3;
