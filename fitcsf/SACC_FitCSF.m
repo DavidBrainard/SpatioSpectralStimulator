@@ -166,15 +166,20 @@ for ss = 1:nSubjects
             %
             % It would be helpful to have access to the bootstrapped values
             % for each SF right here.
-            %
+            % See whether fit can take the error bars into account.
             
-            % See whether fit can take the error bars into account
-            nSmoothPoints = 100;
-            crossValidate = false;
+            % Set the smoothing paramter from cross-validation if you want.
+            crossValidate = true;
             if (crossValidate)
+                nSmoothPoints = 100;
+                
+                % Set the smoothing param searching options.
                 nSmoothingParams = 100;
+                minSmoothingParam = 0;
                 maxSmoothingParam = 0.3;
-                crossSmoothingParams = linspace(0,maxSmoothingParam,nSmoothingParams);
+                crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
+                
+                % Make a loop for testing all set smoothing params.
                 for sss = 1:length(crossSmoothingParams)
                     smoothCrossError(sss) = 0;
                     for cc = 1:length(mySFVals)
@@ -182,14 +187,27 @@ for ss = 1:nSubjects
                         crossFitSFVals = mySFVals(crossIndex);
                         crossFitCSVals = myCSVals(crossIndex);
                         smoothFitCross = fit(crossFitSFVals',crossFitCSVals','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
-                        smoothDataPredsCross = feval(smoothFitCross,myCSVals(cc)');
+                        smoothDataPredsCross = feval(smoothFitCross,mySFVals(cc)');
                         smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSVals(cc)' - smoothDataPredsCross));
                     end
                 end
-                figure(crossFig); plot(crossSmoothingParams,smoothCrossError,'ro','MarkerSize',6);
-                figure(dataFig);
+                
+                % Set the smoothing params that has the smallest error.
                 [~,index] = min(smoothCrossError);
-                smoothingParam = crossSmoothingParams(index)
+                smoothingParam = crossSmoothingParams(index);
+                
+                % Plot cross validation error.
+                figure(crossFig); hold on;
+                plot(crossSmoothingParams,smoothCrossError,'ko','MarkerSize',6);
+                plot(smoothingParam,smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','c','Markeredgecolor','k');
+                xlabel('Smoothing parameter','fontsize',15);
+                ylabel('Cross-validation errors','fontsize',15);
+                title('Cross-validation error accoring to smoothing parameter','fontsize',15);
+                legend('All params', 'Set param','fontsize',12);
+                xlim([minSmoothingParam maxSmoothingParam]);
+                
+                % Plot the PF figure.
+                figure(dataFig);
             else
                 smoothingParam = 0.1;
             end
@@ -211,9 +229,10 @@ for ss = 1:nSubjects
             plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
             plot(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
             
+            % Plot the CSF fitting with smoothing spline (Method 2).
             plot(smoothPlotSFVals,smoothPlotPreds,'c-','LineWidth',4);
             
-            % Plot the CSF fitting results.
+            % Plot the CSF fitting results (Method 1).
             SF_CSF_start = 3;
             SF_CSF_end = 18;
             nPointsCSF = 100;
