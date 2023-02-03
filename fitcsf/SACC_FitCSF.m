@@ -251,6 +251,7 @@ for ss = 1:nSubjects
             colorOptionsRaw = {'k.','r.','g.','b.','c.'};
             colorOptionsBoot = {'k+','r+','g+','b+','c+'};
             colorOptionsCSF = {'k-','r-','g-','b-','c-'};
+            colorOptionsCSF2 = {'k--','r--','g--','b--','c--'};
             colorOptionsCI = {'k','r','g','b','c'};
             
             % Plot raw data.
@@ -258,7 +259,11 @@ for ss = 1:nSubjects
             plot(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
             
             % Plot the CSF fitting with smoothing spline (Method 2).
-            plot(smoothPlotSFVals,smoothPlotPreds,'c-','LineWidth',4);
+            if (DRAWONEFIGUREPERSUB)
+                plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF2{ff},'LineWidth',4);
+            else
+                plot(smoothPlotSFVals,smoothPlotPreds,'c-','LineWidth',4);
+            end
             
             % Plot the CSF fitting results (Method 1).
             SF_CSF_start = 3;
