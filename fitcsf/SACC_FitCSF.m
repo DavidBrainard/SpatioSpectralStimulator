@@ -6,15 +6,17 @@
 %    asymmetricParabolicFunc
 
 % History:
-%    1/13/23   smo    - Started on it.
-%    1/19/23   smo    - First fitting CSF with the function and it seems
-%                       pretty good. Will be elaborated.
+%    01/13/23   smo    - Started on it.
+%    01/19/23   smo    - First fitting CSF with the function and it seems
+%                        pretty good. Will be elaborated.
+%    02/03/23   smo    - Added a feature to use bootstrapped values to find
+%                        a smoothing parameter for smooth spline curve.
 
 %% Initialize.
 clear; close all;
 
 %% Set the options.
-DRAWONEFIGUREPERSUB = false;
+DRAWONEFIGUREPERSUB = true;
 WAITFORKEYTODRAW = true;
 
 %% Load the data.
@@ -67,10 +69,12 @@ for ss = 1:nSubjects
         
         %% Make a new plot per each subject.
         if (DRAWONEFIGUREPERSUB)
-            figure; clf; hold on;
+            dataFig = figure; clf; hold on;
             figureSize = 550;
             figurePosition = [100 100 figureSize figureSize];
             set(gcf,'position',figurePosition);
+            crossFig = figure;
+            figure(dataFig);
         end
         
         % Here we read out five values of the thresholds (so, five spatial
@@ -166,11 +170,22 @@ for ss = 1:nSubjects
             %
             % It would be helpful to have access to the bootstrapped values
             % for each SF right here.
+            myCSValsBootLow = sensitivityBootLowLinearSorted;
+            myCSValsBootHigh = sensitivityBootHighLinearSorted;
+            nBootPoints = 50;
+            
+            for bb = 1:length(sensitivityBootLowLinearSorted)
+                myCSValsBoot(:,bb) = linspace(myCSValsBootLow(bb), myCSValsBootHigh(bb), nBootPoints);
+            end
+            
             % See whether fit can take the error bars into account.
             
             % Set the smoothing paramter from cross-validation if you want.
             crossValidate = true;
+            useBootStrap = true;
+            
             if (crossValidate)
+                % Set the number of points for plotting the results.
                 nSmoothPoints = 100;
                 
                 % Set the smoothing param searching options.
@@ -183,12 +198,25 @@ for ss = 1:nSubjects
                 for sss = 1:length(crossSmoothingParams)
                     smoothCrossError(sss) = 0;
                     for cc = 1:length(mySFVals)
+                        % Get the values for the training set.
                         crossIndex = setdiff(1:length(mySFVals),cc);
                         crossFitSFVals = mySFVals(crossIndex);
                         crossFitCSVals = myCSVals(crossIndex);
+                        
+                        % Fit curve with the training set.
                         smoothFitCross = fit(crossFitSFVals',crossFitCSVals','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
+                        
+                        % Get the predicted result of testing value.
                         smoothDataPredsCross = feval(smoothFitCross,mySFVals(cc)');
-                        smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSVals(cc)' - smoothDataPredsCross));
+                        
+                        % Calculate the error.
+                        if (useBootStrap)
+                            for bb = 1:nBootPoints
+                                smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSValsBoot(bb,cc)' - smoothDataPredsCross));
+                            end
+                        else
+                            smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSVals(cc)' - smoothDataPredsCross));
+                        end
                     end
                 end
                 
