@@ -38,6 +38,7 @@ subjectName = theData.subjectNameOptions;
 
 % Get threshold data. Each variable is aligned in [subject, SF, filter].
 thresholdFittedRaw = theData.thresholdFittedRaw;
+thresholdFittedBootRaw = theData.thresholdFittedBootRaw;
 medianThresholdBootRaw = theData.medianThresholdBootRaw;
 lowThresholdBootRaw = theData.lowThresholdBootRaw;
 highThresholdBootRaw = theData.highThresholdBootRaw;
@@ -92,58 +93,64 @@ for ss = 1:nSubjects
             end
             
             % Each variable should have the number of 5 entries.
-            thresholdsRaw = thresholdFittedRaw(ss,:,ff);
-            thresholdsBoot = medianThresholdBootRaw(ss,:,ff);
-            thresholdBootLow = lowThresholdBootRaw(ss,:,ff);
-            thresholdBootHigh = highThresholdBootRaw(ss,:,ff);
+            thresholds = thresholdFittedRaw(ss,:,ff);
+            thresholdsBoot = thresholdFittedBootRaw(ss,:,ff,:);
+            medianThresholdsBoot = medianThresholdBootRaw(ss,:,ff);
+            lowThresholdBoot = lowThresholdBootRaw(ss,:,ff);
+            highThresholdBoot = highThresholdBootRaw(ss,:,ff);
             
             % Convert NaN to 0 here.
-            for tt = 1:length(thresholdsRaw)
-                if isnan(thresholdsRaw(tt))
-                    thresholdsRaw(tt) = 0;
+            for tt = 1:length(thresholds)
+                if isnan(thresholds(tt))
+                    thresholds(tt) = 0;
                 end
             end
-            for tt = 1:length(thresholdsBoot)
-                if isnan(thresholdsBoot(tt))
-                    thresholdsBoot(tt) = 0;
+            for tt = 1:length(medianThresholdsBoot)
+                if isnan(medianThresholdsBoot(tt))
+                    medianThresholdsBoot(tt) = 0;
                 end
             end
             
             %% Calculate sensitivity.
-            sensitivityRawLinear = 1./thresholdsRaw;
+            sensitivityRawLinear = 1./thresholds;
             sensitivityRawLog = log10(sensitivityRawLinear);
             
+            sensitivityMedianBootLinear = 1./medianThresholdsBoot;
+            sensitivityMedianBootLog = log10(sensitivityMedianBootLinear);
+            
+            % All bootstrapped values.
             sensitivityBootLinear = 1./thresholdsBoot;
             sensitivityBootLog = log10(sensitivityBootLinear);
             
             % For calculation of confindence interval from bootstrap,
             % (low) threshold becomes (high) sensitivity, and vice
             % versa.
-            sensitivityBootHighLinear = 1./thresholdBootLow;
+            sensitivityBootHighLinear = 1./lowThresholdBoot;
             sensitivityBootHighLog = log10(sensitivityBootHighLinear);
             
-            sensitivityBootLowLinear = 1./thresholdBootHigh;
+            sensitivityBootLowLinear = 1./highThresholdBoot;
             sensitivityBootLowLog = log10(sensitivityBootLowLinear);
             
             % Calculate spatial frequency in log space.
             sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
             
-            % Sort each array in an ascending order of spatial
-            % frequency.
+            %% Sort each array in an ascending order of spatial frequency.
             [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
             sineFreqCyclesPerDegLogSorted = sineFreqCyclesPerDegLog(I);
             
             % Linear sorted according to spatial frequency.
             sensitivityRawLinearSorted = sensitivityRawLinear(I);
-            sensitivityBootLinearSorted = sensitivityBootLinear(I);
+            sensitivityMedianBootLinearSorted = sensitivityMedianBootLinear(I);
             sensitivityBootHighLinearSorted = sensitivityBootHighLinear(I);
             sensitivityBootLowLinearSorted = sensitivityBootLowLinear(I);
+            sensitivityBootLinearSorted = sensitivityBootLinear(I,:);
             
             % Log sorted according to spatial frequency.
             sensitivityRawLogSorted = sensitivityRawLog(I);
-            sensitivityBootLogSorted = sensitivityBootLog(I);
+            sensitivityMedianBootLogSorted = sensitivityMedianBootLog(I);
             sensitivityBootHighLogSorted = sensitivityBootHighLog(I);
             sensitivityBootLowLogSorted = sensitivityBootLowLog(I);
+            sensitivityBootLogSorted = sensitivityBootLog(I,:);
             
             %% Fitting method 1) Asymmetric parabolic function.
             %
@@ -168,17 +175,20 @@ for ss = 1:nSubjects
             
             %% Fitting method 2) A smooth spline method.
             %
-            % It would be helpful to have access to the bootstrapped values
-            % for each SF right here.
-            myCSValsBootLow = sensitivityBootLowLinearSorted;
-            myCSValsBootHigh = sensitivityBootHighLinearSorted;
-            nBootPoints = 50;
-            
-            for bb = 1:length(sensitivityBootLowLinearSorted)
-                myCSValsBoot(:,bb) = linspace(myCSValsBootLow(bb), myCSValsBootHigh(bb), nBootPoints);
+            % Load all bootstrapped values.
+            if exist('sensitivityBootLinearSorted')
+                myCSValsBoot = sensitivityBootLinearSorted';
+                nBootPoints = length(sensitivityBootLinearSorted);
+            else
+                % If there is no possible data, we make them.
+                myCSValsBootLow = sensitivityBootLowLinearSorted;
+                myCSValsBootHigh = sensitivityBootHighLinearSorted;
+                nBootPoints = 50;
+                
+                for bb = 1:length(sensitivityBootLowLinearSorted)
+                    myCSValsBoot(:,bb) = linspace(myCSValsBootLow(bb), myCSValsBootHigh(bb), nBootPoints);
+                end
             end
-            
-            % See whether fit can take the error bars into account.
             
             % Set the smoothing paramter from cross-validation if you want.
             crossValidate = true;
@@ -256,7 +266,7 @@ for ss = 1:nSubjects
             
             % Plot raw data.
             plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
-            plot(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
+            plot(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
             
             % Plot the CSF fitting with smoothing spline (Method 2).
             if (DRAWONEFIGUREPERSUB)
@@ -274,9 +284,9 @@ for ss = 1:nSubjects
             plot(sineFreqCyclesPerDegNumCSF, sensitivityCSFLinear, colorOptionsCSF{ff}, 'linewidth', 2);
             
             % Plot Confidence Interval acquired from Bootstrap.
-            errorNeg = abs(sensitivityBootLinearSorted - sensitivityBootLowLinearSorted);
-            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityBootLinearSorted);
-            errorbar(sineFreqCyclesPerDegNumSorted, sensitivityBootLinearSorted, ...
+            errorNeg = abs(sensitivityMedianBootLinearSorted - sensitivityBootLowLinearSorted);
+            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityMedianBootLinearSorted);
+            errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, ...
                 errorNeg, errorPos, colorOptionsCI{ff});
             
             % Add details per each plot of the subject.
