@@ -1,5 +1,5 @@
 function [paramsFitted, ...
-    thresholdFitted, medianThresholdBoot,lowThresholdBoot,highThresholdBoot, ...
+    thresholdFitted, thresholdFittedBoot, medianThresholdBoot, lowThresholdBoot, highThresholdBoot,...
     slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot, ...
     legendHandles] = FitPFToData(stimLevels,pCorrect,options)
 % Fit Psychometric function to the given data.
@@ -25,9 +25,10 @@ function [paramsFitted, ...
 %                                 guess lapse]. You can choose which one to
 %                                 be free/not free parameters.
 %    thresholdFitted -            Threshold at criterion
+%    thresholdFittedBoot -        All bootstrapped values.
 %    medianThresholdBoot -        Median of boostrapped threshold
 %    lowThresholdBoot -           Low end of bootstrapped CI
-%    highSlopeBoot -              High end of bootstrapped CI
+%    highThresholdBoot -          High end of bootstrapped CI
 %    slopeFitted -                Fit slope
 %    medianSlopeBoot -            Median of bootstrapped slopes
 %    lowSlopeBoot -               Low end of bootstrapped slope CI
@@ -86,11 +87,12 @@ function [paramsFitted, ...
 %    N/A
 
 % History:
-%   02/25/22 dhb, smo             Started on it.
-%   03/14/22 smo                  Added a plotting option to make different
-%                                 marker size over different number of
-%                                 trials.
-%    11/14/22  dhb          - Bootstrapping
+%   02/25/22  dhb, smo         - Started on it.
+%   03/14/22  smo              - Added a plotting option to make different
+%                                marker size over different number of
+%                                trials.
+%   11/14/22  dhb              - Bootstrapping
+%   02/06/23  smo              - Now print out all bootstrap values.
 
 %% Set parameters.
 arguments
@@ -135,7 +137,7 @@ nCorrect = round(pCorrect .* nTrialsPerContrast);
 % Set an initial search parameters, with
 % gridded slope (aka beta).  The grid search
 % is only done if options.beta is empty.
-searchGrid.alpha = mean(stimLevels);  
+searchGrid.alpha = mean(stimLevels);
 searchGrid.beta = 10.^(-2:0.01:2);
 searchGrid.gamma = 0.5;
 searchGrid.lambda = 0.01;
@@ -163,8 +165,8 @@ if (~isempty(options.beta))
         pause;
         close(llfig);
     end
-
-% Otherwise use Palamedes grid search
+    
+    % Otherwise use Palamedes grid search
 else
     paramsFitted = PAL_PFML_Fit(stimLevels, nCorrect, ...
         nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
@@ -201,7 +203,7 @@ if (options.nBootstraps > 0)
             paramsFittedBoot(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
                 nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
         end
-
+        
         % Grab bootstrapped threshold
         thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
     end
@@ -213,6 +215,7 @@ if (options.nBootstraps > 0)
     highSlopeBoot = prctile(paramsFittedBoot(:,2),100-100*(1-options.bootConfInterval)/2);
 else
     paramsFittedBoot = [];
+    thresholdFittedBoot = [];
     medianThresholdBoot = [];
     lowThresholdBoot = [];
     highThresholdBoot = [];
@@ -256,7 +259,7 @@ if (options.verbose)
         smoothPsychometricBoot = PF(paramsFittedBoot(bb,:), fineStimLevels);
         h_bsfit = plot(fineStimLevelsPlot,smoothPsychometricBoot,'Color',[0.9 0.8 0.8],'LineWidth',0.5);
     end
-
+    
     % Plot best fit here.
     h_data = scatter(stimLevelsPlot, pCorrect, options.pointSize,...
         'MarkerEdgeColor', zeros(1,3), 'MarkerFaceColor', ones(1,3) * 0.5, 'MarkerFaceAlpha', 0.5);
@@ -342,7 +345,7 @@ if (options.verbose)
             end
         end
     end
-
+    
     drawnow;
-
+    
 end
