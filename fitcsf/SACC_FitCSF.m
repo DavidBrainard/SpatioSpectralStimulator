@@ -75,12 +75,18 @@ for ss = 1:nSubjects
         
         %% Make a new plot per each subject.
         if (DRAWONEFIGUREPERSUB)
-            dataFig = figure; clf; hold on;
+            % Set figure size.
             figureSize = 550;
+            
+            % Data figure info.
+            dataFig = figure; clf; hold on;
             figurePosition = [100 100 figureSize figureSize];
             set(gcf,'position',figurePosition);
+            
+            % Cross-validation figure info.
             crossFig = figure;
-            figure(dataFig);
+            figurePositionCross = [100+figureSize 100 figureSize figureSize];
+            set(gcf,'position',figurePositionCross);
         end
         
         % Here we read out five values of the thresholds (so, five spatial
@@ -88,12 +94,18 @@ for ss = 1:nSubjects
         for ff = 1:nFilters
             % Make a new plot per each filter of the subject.
             if (~DRAWONEFIGUREPERSUB)
-                dataFig = figure; clf; hold on;
+                % Set figure size.
                 figureSize = 550;
+                
+                % Data figure info.
+                dataFig = figure; clf; hold on;
                 figurePosition = [100 100 figureSize figureSize];
                 set(gcf,'position',figurePosition);
+                
+                % Cross-validation figure info.
                 crossFig = figure;
-                figure(dataFig);
+                figurePositionCross = [100+figureSize 100 figureSize figureSize];
+                set(gcf,'position',figurePositionCross);
             end
             
             % Each variable should have the number of 5 entries.
@@ -336,7 +348,7 @@ for ss = 1:nSubjects
                 if (WAITFORKEYTODRAW)
                     disp('Press a key to draw next plot!');
                     pause;
-                    close;
+                    close all;
                 end
             end
         end
@@ -377,7 +389,7 @@ for ss = 1:nSubjects
             if (WAITFORKEYTODRAW)
                 disp('Press a key to draw next plot!');
                 pause;
-                close;
+                close all;
             end
         end
     end
