@@ -1,6 +1,6 @@
 function [paramsFitted, ...
     thresholdFitted, thresholdFittedBoot, medianThresholdBoot, lowThresholdBoot, highThresholdBoot,...
-    slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot, ...
+    slopeFitted,medianSlopeBoot,lowSlopeBoot,highSlopeBoot,thresholdFittedBootCross1,thresholdFittedBootCross2, ...
     legendHandles] = FitPFToData(stimLevels,pCorrect,options)
 % Fit Psychometric function to the given data.
 %
@@ -33,6 +33,10 @@ function [paramsFitted, ...
 %    medianSlopeBoot -            Median of bootstrapped slopes
 %    lowSlopeBoot -               Low end of bootstrapped slope CI
 %    highSlopeBoot -              High end of bootstrapped slope CI
+%    thresholdFittedBootCross1 -  Additional bootstrapped values for
+%                                 cross-validation - training.
+%    thresholdFittedBootCross2 -  Additional bootstrapped values for
+%                                 cross-validation - validating.
 %    legendHandles -              Vector of plot handles so calling routine
 %                                 can make a sensible legend.
 %
@@ -174,30 +178,48 @@ end
 thresholdFitted = PF(paramsFitted, options.thresholdCriterion, 'inv');
 slopeFitted = paramsFitted(2);
 
-% Bootstrap fits
+%% Bootstrap fits.
 if (options.nBootstraps > 0)
     paramsFittedBoot = zeros(options.nBootstraps,4);
     for bb = 1:options.nBootstraps
-        % Bootstrap the data
-        nCorrectBoot = zeros(size(nCorrect));
-        nCorrectCross1 = zeros(size(nCorrect));
-        nCorrectCross2 = zeros(size(nCorrect));
-        nTrialsPerContrastCross1 = zeros(size(nCorrect));
-        nTrialsPerContrastCross2 = zeros(size(nCorrect));
+        % Set the array size for bootstrapped data.
+        zeroBaseArrayBoot = zeros(size(nCorrect));
+        
+        % Set an array for saving the bootstrapped data.
+        nCorrectBoot = zeroBaseArrayBoot;
+        
+        % Additional bootstrap data arrays for cross-validation for fitting
+        % CSF. We make two more.
+        nCorrectCross1 = zeroBaseArrayBoot;
+        nCorrectCross2 = zeroBaseArrayBoot;
+        nTrialsPerContrastCross1 = zeroBaseArrayBoot;
+        nTrialsPerContrastCross2 = zeroBaseArrayBoot;
+        
         for cc = 1:length(nTrialsPerContrast)
+            % Generate the bootstrapped data.
             trialsBoot = zeros(1,nTrialsPerContrast(cc));
             trialsBoot(1:nCorrect(cc)) = 1;
             index = randi(nTrialsPerContrast(cc),1,nTrialsPerContrast(cc));
             nCorrectBoot(cc) = sum(trialsBoot(index));
+            
+            % Here we shuffle the bootstrapped data to generate the
+            % additional data. Here we make two more separate dataset, each
+            % uses the half size of trials per each contrast.
+            %
+            % Therefore, if the original dataset uses a total of 20 trials
+            % per each contrast, these additional data will use 10 trials.
             trialsShuffle = Shuffle(trialsBoot);
             splitN = round(length(trialsShuffle)/2);
+            
             nCorrectCross1(cc) = sum(trialsShuffle(1:splitN));
             nCorrectCross2(cc) = sum(trialsShuffle((splitN+1):end));
             nTrialsPerContrastCross1(cc) = length(trialsShuffle(1:splitN));
             nTrialsPerContrastCross2(cc) = length(trialsShuffle((splitN+1):end));
         end
         
-        % Fit the bootstrap data in same way we fit actual data
+        %% Fit the bootstrap data in the same way we fit actual data.
+        %
+        % 1) Main bootstrapped data.
         if (~isempty(options.beta))
             paramsFreeUse = options.paramsFree;
             paramsFreeUse(2) = 0;
@@ -214,15 +236,60 @@ if (options.nBootstraps > 0)
                 nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
         end
         
-        % Grab bootstrapped threshold
+        % Grab bootstrapped threshold.
         thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
+        
+        
+        % 2) Cross data 1.
+        if (~isempty(options.beta))
+            paramsFreeUse = options.paramsFree;
+            paramsFreeUse(2) = 0;
+            for ss = 1:length(options.beta)
+                searchGridUse = searchGrid;
+                searchGridUse.beta = options.beta(ss);
+                [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrectCross1, ...
+                    nTrialsPerContrastCross1, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+            end
+            [~,index] = max(LL);
+            paramsFittedBootCross1(bb,:) = paramsFittedList(index,:);
+        else
+            paramsFittedBootCross1(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectCross1, ...
+                nTrialsPerContrastCross1, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+        end
+        
+        % Grab bootstrapped threshold.
+        thresholdFittedBootCross1(bb) = PF(paramsFittedBootCross1(bb,:), options.thresholdCriterion, 'inv');
+        
+        
+        % 3) Cross data 2.
+        if (~isempty(options.beta))
+            paramsFreeUse = options.paramsFree;
+            paramsFreeUse(2) = 0;
+            for ss = 1:length(options.beta)
+                searchGridUse = searchGrid;
+                searchGridUse.beta = options.beta(ss);
+                [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrectCross2, ...
+                    nTrialsPerContrastCross2, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+            end
+            [~,index] = max(LL);
+            paramsFittedBootCross2(bb,:) = paramsFittedList(index,:);
+        else
+            paramsFittedBootCross2(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectCross2, ...
+                nTrialsPerContrastCross2, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+        end
+        
+        % Grab bootstrapped threshold.
+        thresholdFittedBootCross2(bb) = PF(paramsFittedBootCross2(bb,:), options.thresholdCriterion, 'inv');
+        
     end
+    % Extract some useful data from main bootstrapped data.
     medianThresholdBoot = median(thresholdFittedBoot);
     lowThresholdBoot = prctile(thresholdFittedBoot,100*(1-options.bootConfInterval)/2);
     highThresholdBoot = prctile(thresholdFittedBoot,100-100*(1-options.bootConfInterval)/2);
     medianSlopeBoot = median(paramsFittedBoot(:,2));
     lowSlopeBoot = prctile(paramsFittedBoot(:,2),100*(1-options.bootConfInterval)/2);
     highSlopeBoot = prctile(paramsFittedBoot(:,2),100-100*(1-options.bootConfInterval)/2);
+    
 else
     paramsFittedBoot = [];
     thresholdFittedBoot = [];
