@@ -15,8 +15,8 @@
 %% Initialize.
 clear; close all;
 
-%% Set the options.
-DRAWONEFIGUREPERSUB = true;
+%% Set plotting options.
+DRAWONEFIGUREPERSUB = false;
 WAITFORKEYTODRAW = true;
 
 %% Load the data.
@@ -44,11 +44,14 @@ lowThresholdBootRaw = theData.lowThresholdBootRaw;
 highThresholdBootRaw = theData.highThresholdBootRaw;
 
 %% Fit CSF.
+%
+% Get the number of available subjects and filters.
 nSubjects = length(theData.subjectNameOptions);
 nFilters = length(theData.filterOptions);
 
+% Fitting happens here one by one per subject.
 for ss = 1:nSubjects
-    %% Set target subject and filter. We will fit CSF one by one.
+    % Set a target subject.
     subjectName = theData.subjectNameOptions{ss};
     
     % Set available spatial frequency data for the subject.
@@ -59,6 +62,8 @@ for ss = 1:nSubjects
     sineFreqCyclesPerDeg = sineFreqCyclesPerDeg(...
         find(~cellfun(@isempty,sineFreqCyclesPerDeg)));
     
+    % The number of available data for the subject. It should be 5 to
+    % proceed the fitting.
     nSineFreqCyclesPerDeg = length(sineFreqCyclesPerDeg);
     
     % Run fitting only if there are all spatial frequency data.
@@ -81,7 +86,6 @@ for ss = 1:nSubjects
         % Here we read out five values of the thresholds (so, five spatial
         % frequency) to fit CSF curve.
         for ff = 1:nFilters
-            
             % Make a new plot per each filter of the subject.
             if (~DRAWONEFIGUREPERSUB)
                 dataFig = figure; clf; hold on;
@@ -173,26 +177,29 @@ for ss = 1:nSubjects
             p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
                 p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
             
-            %% Fitting method 2) A smooth spline method.
+            %% Fitting method 2) Smooth spline method.
             %
             % Load all bootstrapped values.
             if exist('sensitivityBootLinearSorted')
                 myCSValsBoot = sensitivityBootLinearSorted';
                 nBootPoints = length(sensitivityBootLinearSorted);
+                
             else
-                % If there is no possible data, we make them.
+                % If there is no bootstrapped data, we make the number of
+                % points between high and low values.
                 myCSValsBootLow = sensitivityBootLowLinearSorted;
                 myCSValsBootHigh = sensitivityBootHighLinearSorted;
-                nBootPoints = 50;
+                nBootPoints = 100;
                 
                 for bb = 1:length(sensitivityBootLowLinearSorted)
                     myCSValsBoot(:,bb) = linspace(myCSValsBootLow(bb), myCSValsBootHigh(bb), nBootPoints);
                 end
             end
             
-            % Set the smoothing paramter from cross-validation if you want.
+            % Set the smoothing paramter. You can use bootstrapped values
+            % if you want.
             crossValidate = true;
-            useBootStrap = true;
+            crossValBoot = true;
             
             if (crossValidate)
                 % Set the number of points for plotting the results.
@@ -220,7 +227,7 @@ for ss = 1:nSubjects
                         smoothDataPredsCross = feval(smoothFitCross,mySFVals(cc)');
                         
                         % Calculate the error.
-                        if (useBootStrap)
+                        if (crossValBoot)
                             for bb = 1:nBootPoints
                                 smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSValsBoot(bb,cc)' - smoothDataPredsCross));
                             end
@@ -247,9 +254,11 @@ for ss = 1:nSubjects
                 % Plot the PF figure.
                 figure(dataFig);
             else
+                % Set the smoothing param as fixed value otherwise.
                 smoothingParam = 0.1;
             end
             
+            % Get the values for plotting smooth spline fitting curve.
             smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
             smoothPlotSFVals = linspace(min(mySFVals),max(mySFVals),nSmoothPoints)';
             smoothPlotPreds = feval(smoothFit,smoothPlotSFVals);
