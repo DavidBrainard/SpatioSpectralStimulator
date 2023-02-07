@@ -180,11 +180,21 @@ if (options.nBootstraps > 0)
     for bb = 1:options.nBootstraps
         % Bootstrap the data
         nCorrectBoot = zeros(size(nCorrect));
+        nCorrectCross1 = zeros(size(nCorrect));
+        nCorrectCross2 = zeros(size(nCorrect));
+        nTrialsPerContrastCross1 = zeros(size(nCorrect));
+        nTrialsPerContrastCross2 = zeros(size(nCorrect));
         for cc = 1:length(nTrialsPerContrast)
             trialsBoot = zeros(1,nTrialsPerContrast(cc));
             trialsBoot(1:nCorrect(cc)) = 1;
             index = randi(nTrialsPerContrast(cc),1,nTrialsPerContrast(cc));
             nCorrectBoot(cc) = sum(trialsBoot(index));
+            trialsShuffle = Shuffle(trialsBoot);
+            splitN = round(length(trialsShuffle)/2);
+            nCorrectCross1(cc) = sum(trialsShuffle(1:splitN));
+            nCorrectCross2(cc) = sum(trialsShuffle((splitN+1):end));
+            nTrialsPerContrastCross1(cc) = length(trialsShuffle(1:splitN));
+            nTrialsPerContrastCross2(cc) = length(trialsShuffle((splitN+1):end));
         end
         
         % Fit the bootstrap data in same way we fit actual data
