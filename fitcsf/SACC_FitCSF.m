@@ -119,7 +119,7 @@ for ss = 1:nSubjects
             sensitivityMedianBootLog = log10(sensitivityMedianBootLinear);
             
             % All bootstrapped values.
-            sensitivityBootLinear = 1./thresholdsBoot;
+            sensitivityBootLinear = 1./squeeze(thresholdsBoot);
             sensitivityBootLog = log10(sensitivityBootLinear);
             
             % For calculation of confindence interval from bootstrap,
