@@ -42,6 +42,8 @@ thresholdFittedBootRaw = theData.thresholdFittedBootRaw;
 medianThresholdBootRaw = theData.medianThresholdBootRaw;
 lowThresholdBootRaw = theData.lowThresholdBootRaw;
 highThresholdBootRaw = theData.highThresholdBootRaw;
+thresholdFittedBootCross1Raw = theData.thresholdFittedBootCross1Raw;
+thresholdFittedBootCross2Raw = theData.thresholdFittedBootCross2Raw;
 
 %% Fit CSF.
 %
@@ -108,12 +110,14 @@ for ss = 1:nSubjects
                 set(gcf,'position',figurePositionCross);
             end
             
-            % Each variable should have the number of 5 entries.
+            % Read out the variables per each filter.
             thresholds = thresholdFittedRaw(ss,:,ff);
             thresholdsBoot = thresholdFittedBootRaw(ss,:,ff,:);
             medianThresholdsBoot = medianThresholdBootRaw(ss,:,ff);
             lowThresholdBoot = lowThresholdBootRaw(ss,:,ff);
             highThresholdBoot = highThresholdBootRaw(ss,:,ff);
+            thresholdsBootCross1 = thresholdFittedBootCross1Raw(ss,:,ff,:);
+            thresholdsBootCross2 = thresholdFittedBootCross2Raw(ss,:,ff,:);
             
             % Convert NaN to 0 here.
             for tt = 1:length(thresholds)
@@ -138,6 +142,10 @@ for ss = 1:nSubjects
             sensitivityBootLinear = 1./squeeze(thresholdsBoot);
             sensitivityBootLog = log10(sensitivityBootLinear);
             
+            % Additional bootstrapped values for cross-validation.
+            sensitivityBootCross1Linear = 1./squeeze(thresholdsBootCross1);
+            sensitivityBootCross2Linear = 1./squeeze(thresholdsBootCross2);
+            
             % For calculation of confindence interval from bootstrap,
             % (low) threshold becomes (high) sensitivity, and vice
             % versa.
@@ -160,6 +168,8 @@ for ss = 1:nSubjects
             sensitivityBootHighLinearSorted = sensitivityBootHighLinear(I);
             sensitivityBootLowLinearSorted = sensitivityBootLowLinear(I);
             sensitivityBootLinearSorted = sensitivityBootLinear(I,:);
+            sensitivityBootCross1LinearSorted = sensitivityBootCross1Linear(I,:);
+            sensitivityBootCross2LinearSorted = sensitivityBootCross2Linear(I,:);
             
             % Log sorted according to spatial frequency.
             sensitivityRawLogSorted = sensitivityRawLog(I);
@@ -208,35 +218,45 @@ for ss = 1:nSubjects
                 end
             end
             
+            %% Decide an option how to search smoothing parameter.
+            %
+            % You can choose one among four {'crossVal',
+            % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
+            OptionSmoothParamSearch = 'crossValBootAcross';
+            
             % Set the smoothing paramter. You can use bootstrapped values
             % if you want.
-            crossValidate = true;
-            crossValBoot = true;
+            %
+            % Set the number of points for plotting the results.
+            nSmoothPoints = 100;
             
-            if (crossValidate)
-                % Set the number of points for plotting the results.
-                nSmoothPoints = 100;
-                
-                % Set the smoothing param searching options.
-                nSmoothingParams = 100;
-                minSmoothingParam = 0;
-                maxSmoothingParam = 1;
-                crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
-                
-                % Make a loop for testing all set smoothing params.
-                if (crossValBoot)
-                    nBootCrossVals = 20;
+            % Set the smoothing param searching options.
+            nSmoothingParams = 100;
+            minSmoothingParam = 0;
+            maxSmoothingParam = 1;
+            crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
+            
+            % We search smoothing parameter based on the option selected
+            % from the above.
+            switch OptionSmoothParamSearch
+                case 'crossValBootWithin'
+                    % Set the number of bootstrapped points to use.
+                    nCrossValBootWithin = 20;
+                    
                     for sss = 1:length(crossSmoothingParams)
-                        
                         smoothCrossError(sss) = 0;
-                        for cc = 1:nBootCrossVals
+                        
+                        for cc = 1:nCrossValBootWithin
+                            % Make the training and validating dataset.
+                            % Here we only pick randomly once at the
+                            % beginning and keep using the same dataset.
                             if (sss == 1)
                                 for zz = 1:length(mySFVals)
                                     bootCSFDataFit{cc}(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                                     bootCSFDataCross{cc}(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                                 end
                             end
-                                
+                            
                             % Fit curve with the training set.
                             smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
                             
@@ -248,12 +268,12 @@ for ss = 1:nSubjects
                         end
                     end
                     
-                elseif (crossValCross)
-                    nCrossCrossVals = 20;
+                case 'crossValBootAcross'
+                    nCrossValBootAcross = 20;
                     for sss = 1:length(crossSmoothingParams)
-                        
                         smoothCrossError(sss) = 0;
-                        for cc = 1:nCrossCrossVals
+                        
+                        for cc = 1:nCrossValBootAcross
                             if (sss == 1)
                                 for zz = 1:length(mySFVals)
                                     crossIndex = randi(nBootPoints,1,1)
@@ -272,7 +292,8 @@ for ss = 1:nSubjects
                             smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                         end
                     end
-                else   
+                    
+                case 'crossVal'
                     for sss = 1:length(crossSmoothingParams)
                         smoothCrossError(sss) = 0;
                         for cc = 1:length(mySFVals)
@@ -291,8 +312,14 @@ for ss = 1:nSubjects
                             smoothCrossError(sss) = smoothCrossError(sss) + norm(myWs(cc)' .* (myCSVals(cc)' - smoothDataPredsCross));
                         end
                     end
-                end
-                
+                    
+                case 'type'
+                    % Type a number manually.
+                    smoothingParam = 0.1;
+            end
+            
+            % Plot the bootstrapped results if we did.
+            if any(strcmp(OptionSmoothParamSearch,{'cross','crossVal','crossValCross'}))
                 % Set the smoothing params that has the smallest error.
                 [~,index] = min(smoothCrossError);
                 smoothingParam = crossSmoothingParams(index);
@@ -306,13 +333,10 @@ for ss = 1:nSubjects
                 title('Cross-validation error accoring to smoothing parameter','fontsize',15);
                 legend('All params', 'Set param','fontsize',12);
                 xlim([minSmoothingParam maxSmoothingParam]);
-                
-                % Plot the PF figure.
-                figure(dataFig);
-            else
-                % Set the smoothing param as fixed value otherwise.
-                smoothingParam = 0.1;
             end
+            
+            % Plot the PF figure.
+            figure(dataFig);
             
             % Get the values for plotting smooth spline fitting curve.
             smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
