@@ -11,6 +11,9 @@
 %                        pretty good. Will be elaborated.
 %    02/03/23   smo    - Added a feature to use bootstrapped values to find
 %                        a smoothing parameter for smooth spline curve.
+%    02/08/23   smo    - Now we can cross-validate with two separate
+%                        bootstrapped data when we fit CSF with smooth
+%                        spline function.
 
 %% Initialize.
 clear; close all;
@@ -202,21 +205,10 @@ for ss = 1:nSubjects
             %% Fitting method 2) Smooth spline method.
             %
             % Load all bootstrapped values.
-            if exist('sensitivityBootLinearSorted')
-                myCSValsBoot = sensitivityBootLinearSorted';
-                nBootPoints = size(myCSValsBoot,1);
-                
-            else
-                % If there is no bootstrapped data, we make the number of
-                % points between high and low values.
-                myCSValsBootLow = sensitivityBootLowLinearSorted;
-                myCSValsBootHigh = sensitivityBootHighLinearSorted;
-                nBootPoints = 100;
-                
-                for bb = 1:length(sensitivityBootLowLinearSorted)
-                    myCSValsBoot(:,bb) = linspace(myCSValsBootLow(bb), myCSValsBootHigh(bb), nBootPoints);
-                end
-            end
+            myCSValsBoot = sensitivityBootLinearSorted';
+            myCSValsCross1 = sensitivityBootCross1LinearSorted';
+            myCSValsCross2 = sensitivityBootCross2LinearSorted';
+            nBootPoints = size(myCSValsBoot,1);
             
             %% Decide an option how to search smoothing parameter.
             %
@@ -276,7 +268,7 @@ for ss = 1:nSubjects
                         for cc = 1:nCrossValBootAcross
                             if (sss == 1)
                                 for zz = 1:length(mySFVals)
-                                    crossIndex = randi(nBootPoints,1,1)
+                                    crossIndex = randi(nBootPoints,1,1);
                                     bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
                                     bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
                                 end
@@ -319,7 +311,7 @@ for ss = 1:nSubjects
             end
             
             % Plot the bootstrapped results if we did.
-            if any(strcmp(OptionSmoothParamSearch,{'cross','crossVal','crossValCross'}))
+            if any(strcmp(OptionSmoothParamSearch,{'crossValBootWithin','crossValBootAcross','crossVal'}))
                 % Set the smoothing params that has the smallest error.
                 [~,index] = min(smoothCrossError);
                 smoothingParam = crossSmoothingParams(index);
