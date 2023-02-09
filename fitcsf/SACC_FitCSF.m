@@ -269,11 +269,12 @@ for ss = 1:nSubjects
                                 smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                             end
                             % Print out the progress.
-                            fprintf('Smoothing param testing progress - (%d/%d) \n', sss, length(crossSmoothingParams));
+                            fprintf('Smoothing param testing progress - (%3d/%3d) \n', sss, length(crossSmoothingParams));
                         end
                         
                     case 'crossValBootAcross'
                         nCrossValBootAcross = 20;
+                        
                         for sss = 1:length(crossSmoothingParams)
                             smoothCrossError(sss) = 0;
                             
@@ -296,7 +297,7 @@ for ss = 1:nSubjects
                                 smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                             end
                             % Print out the progress.
-                            fprintf('Smoothing param testing progress - (%d/%d) \n', sss, length(crossSmoothingParams));
+                            fprintf('Smoothing param testing progress - (%3d/%3d) \n', sss, length(crossSmoothingParams));
                         end
                         
                     case 'crossVal'
@@ -425,7 +426,7 @@ for ss = 1:nSubjects
             % Key stroke to start measurement.
             if (~OneFigurePerSub)
                 if (WaitForKeyToPlot)
-                    disp('Press a key to draw next plot!');
+                    fprintf('\t Press a key to draw next plot! \n');
                     pause;
                     close all;
                 end
