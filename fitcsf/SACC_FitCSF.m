@@ -18,10 +18,19 @@
 %% Initialize.
 clear; close all;
 
-%% Set plotting options.
-DRAWONEFIGUREPERSUB = false;
-WAITFORKEYTODRAW = true;
+%% Decide the options to fit CSF and how to plot.
+%
+% Plotting options.
+OneFigurePerSub = false;
+WaitForKeyToPlot = true;
 
+% Fitting options.
+%
+% You can choose one among four {'crossVal', 'crossValBootWithin',
+% 'crossValBootAcross', 'type'}.
+AsymmetricParabolic = false;
+OptionSmoothParamSearch = 'crossVal';
+            
 %% Load the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
@@ -78,8 +87,8 @@ for ss = 1:nSubjects
             sineFreqCyclesPerDegNum(dd) = sscanf(sineFreqCyclesPerDeg{dd},'%d');
         end
         
-        %% Make a new plot per each subject.
-        if (DRAWONEFIGUREPERSUB)
+        %% Make a new plot per each subject if you want.
+        if (OneFigurePerSub)
             % Set figure size.
             figureSize = 550;
             
@@ -98,7 +107,7 @@ for ss = 1:nSubjects
         % frequency) to fit CSF curve.
         for ff = 1:nFilters
             % Make a new plot per each filter of the subject.
-            if (~DRAWONEFIGUREPERSUB)
+            if (~OneFigurePerSub)
                 % Set figure size.
                 figureSize = 550;
                 
@@ -181,26 +190,27 @@ for ss = 1:nSubjects
             sensitivityBootLowLogSorted = sensitivityBootLowLog(I);
             sensitivityBootLogSorted = sensitivityBootLog(I,:);
             
-            %% Fitting method 1) Asymmetric parabolic function.
-            %
-            % Set variables to fit CSF.
+            %% Set variables to fit CSF.
             mySFVals = sineFreqCyclesPerDegNumSorted;
             myCSVals = sensitivityRawLinearSorted;
             myWs = 1./(sensitivityBootHighLinearSorted-sensitivityBootLowLinearSorted);
             
-            % Set parameters for optimazation of the parameter p.
-            p0 = [10 0.5 0.1 0.1];
-            p_lowerBound = [10 0.5 0.1 0.1];
-            p_higherBound = [400 18 10 10];
-            A = []; % Set numbers for the condition of A*x <= b*x0 / x0 is the initial point
-            b = [];
-            Aeq = []; % Matrix for linear equality constraints
-            beq = []; % Vector for linear equality constraints
-            options = optimset('fmincon');
-            
-            % Optimize p here.
-            p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
-                p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
+            %% Fitting method 1) Asymmetric parabolic function.
+            if (AsymmetricParabolic)
+                % Set parameters for optimazation of the parameter p.
+                p0 = [10 0.5 0.1 0.1];
+                p_lowerBound = [10 0.5 0.1 0.1];
+                p_higherBound = [400 18 10 10];
+                A = []; % Set numbers for the condition of A*x <= b*x0 / x0 is the initial point
+                b = [];
+                Aeq = []; % Matrix for linear equality constraints
+                beq = []; % Vector for linear equality constraints
+                options = optimset('fmincon');
+                
+                % Optimize p here.
+                p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
+                    p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
+            end
             
             %% Fitting method 2) Smooth spline method.
             %
@@ -210,14 +220,7 @@ for ss = 1:nSubjects
             myCSValsCross2 = sensitivityBootCross2LinearSorted';
             nBootPoints = size(myCSValsBoot,1);
             
-            %% Decide an option how to search smoothing parameter.
-            %
-            % You can choose one among four {'crossVal',
-            % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
-            OptionSmoothParamSearch = 'crossValBootAcross';
-            
-            % Set the smoothing paramter. You can use bootstrapped values
-            % if you want.
+            %% Search smoothing parameter here. 
             %
             % Set the number of points for plotting the results.
             nSmoothPoints = 100;
@@ -337,41 +340,43 @@ for ss = 1:nSubjects
             
             %% Plot it here.
             %
-            % Different marker/line options for raw fit and bootstrap
-            % fit.
+            % Set marker/line options for the plot.
             colorOptionsRaw = {'k.','r.','g.','b.','c.'};
             colorOptionsBoot = {'k+','r+','g+','b+','c+'};
             colorOptionsCSF = {'k-','r-','g-','b-','c-'};
             colorOptionsCSF2 = {'k--','r--','g--','b--','c--'};
             colorOptionsCI = {'k','r','g','b','c'};
             
-            % Plot raw data.
+            % Raw data.
             plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
             plot(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
             
-            % Plot the CSF fitting with smoothing spline (Method 2).
-            if (DRAWONEFIGUREPERSUB)
+            % Confidence Interval.
+            errorNeg = abs(sensitivityMedianBootLinearSorted - sensitivityBootLowLinearSorted);
+            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityMedianBootLinearSorted);
+            e = errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, ...
+                errorNeg, errorPos, colorOptionsCI{ff});
+            e.LineStyle = 'none';
+            
+            % CSF fitting results with asymmetric parabolic (Method 1).
+            if (AsymmetricParabolic)
+                SF_CSF_start = 3;
+                SF_CSF_end = 18;
+                nPointsCSF = 100;
+                sineFreqCyclesPerDegNumCSF = linspace(SF_CSF_start,SF_CSF_end,nPointsCSF);
+                sensitivityCSFLinear = asymmetricParabolicFunc(p_optimized, sineFreqCyclesPerDegNumCSF);
+                plot(sineFreqCyclesPerDegNumCSF, sensitivityCSFLinear, colorOptionsCSF{ff}, 'linewidth', 2);
+            end
+            
+            % CSF fitting with smoothing spline (Method 2).
+            if (OneFigurePerSub)
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF2{ff},'LineWidth',4);
             else
                 plot(smoothPlotSFVals,smoothPlotPreds,'c-','LineWidth',4);
             end
-            
-            % Plot the CSF fitting results (Method 1).
-            SF_CSF_start = 3;
-            SF_CSF_end = 18;
-            nPointsCSF = 100;
-            sineFreqCyclesPerDegNumCSF = linspace(SF_CSF_start,SF_CSF_end,nPointsCSF);
-            sensitivityCSFLinear = asymmetricParabolicFunc(p_optimized, sineFreqCyclesPerDegNumCSF);
-            plot(sineFreqCyclesPerDegNumCSF, sensitivityCSFLinear, colorOptionsCSF{ff}, 'linewidth', 2);
-            
-            % Plot Confidence Interval acquired from Bootstrap.
-            errorNeg = abs(sensitivityMedianBootLinearSorted - sensitivityBootLowLinearSorted);
-            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityMedianBootLinearSorted);
-            errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, ...
-                errorNeg, errorPos, colorOptionsCI{ff});
-            
+                        
             % Add details per each plot of the subject.
-            if (~DRAWONEFIGUREPERSUB)
+            if (~OneFigurePerSub)
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
                 ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
                 
@@ -404,8 +409,8 @@ for ss = 1:nSubjects
             end
             
             % Key stroke to start measurement.
-            if (~DRAWONEFIGUREPERSUB)
-                if (WAITFORKEYTODRAW)
+            if (~OneFigurePerSub)
+                if (WaitForKeyToPlot)
                     disp('Press a key to draw next plot!');
                     pause;
                     close all;
@@ -414,7 +419,7 @@ for ss = 1:nSubjects
         end
         
         %% Add details per each plot of the subject.
-        if (DRAWONEFIGUREPERSUB)
+        if (OneFigurePerSub)
             xlabel('Spatial Frequency (cpd)','fontsize',15);
             ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
             
@@ -446,7 +451,7 @@ for ss = 1:nSubjects
                 'fontsize', 13, 'location', 'northeast');
             
             % Key stroke to start measurement.
-            if (WAITFORKEYTODRAW)
+            if (WaitForKeyToPlot)
                 disp('Press a key to draw next plot!');
                 pause;
                 close all;
