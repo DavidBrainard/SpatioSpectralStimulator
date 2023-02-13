@@ -25,7 +25,7 @@ OneFigurePerSub = false;
 WaitForKeyToPlot = true;
 
 % Fitting options.
-FitAsymmetricParabolic = false;
+FitAsymmetricParabolic = true;
 FitSmoothSpline = true;
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
@@ -269,7 +269,15 @@ for ss = 1:nSubjects
                                 smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                             end
                             % Print out the progress.
-                            fprintf('Smoothing param testing progress - (%3d/%3d) \n', sss, length(crossSmoothingParams));
+                            if (sss == round(length(crossSmoothingParams)*0.25))
+                                fprintf('Smoothing param testing progress - (%s) \n', '25%');
+                            elseif (sss == round(length(crossSmoothingParams)*0.50))
+                                fprintf('Smoothing param testing progress - (%s) \n', '50%');
+                            elseif (sss == round(length(crossSmoothingParams)*0.75))
+                                fprintf('Smoothing param testing progress - (%s) \n', '75%');
+                            elseif (sss == length(crossSmoothingParams))
+                                fprintf('Smoothing param testing progress - (%s) \n', '100%');
+                            end
                         end
                         
                     case 'crossValBootAcross'
@@ -297,7 +305,15 @@ for ss = 1:nSubjects
                                 smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                             end
                             % Print out the progress.
-                            fprintf('Smoothing param testing progress - (%3d/%3d) \n', sss, length(crossSmoothingParams));
+                            if (sss == round(length(crossSmoothingParams)*0.25))
+                                fprintf('Smoothing param testing progress - (%s) \n', '25%');
+                            elseif (sss == round(length(crossSmoothingParams)*0.50))
+                                fprintf('Smoothing param testing progress - (%s) \n', '50%');
+                            elseif (sss == round(length(crossSmoothingParams)*0.75))
+                                fprintf('Smoothing param testing progress - (%s) \n', '75%');
+                            elseif (sss == length(crossSmoothingParams))
+                                fprintf('Smoothing param testing progress - (%s) \n', '100%');
+                            end
                         end
                         
                     case 'crossVal'
