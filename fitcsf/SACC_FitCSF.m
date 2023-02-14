@@ -235,7 +235,7 @@ for ss = 1:nSubjects
                 nSmoothPoints = 100;
                 
                 % Set the smoothing param searching options.
-                nSmoothingParams = 100;
+                nSmoothingParams = 30;
                 minSmoothingParam = 0;
                 maxSmoothingParam = 1;
                 crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
