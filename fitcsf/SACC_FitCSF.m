@@ -394,7 +394,7 @@ for ss = 1:nSubjects
                     smoothPlotPreds{oo} = feval(smoothFit,smoothPlotSFVals{oo});
                 end
                 
-                % Add legend.
+                % Add legend to cross figure.
                 f_cross = flip(get(gca, 'Children'));
                 idxLegendCross = [2:2:nOptionsSearchSmoothParamSet*2];
                 legend(f_cross(idxLegendCross),optionSearchSmoothParamSet,'fontsize',12);
@@ -409,7 +409,7 @@ for ss = 1:nSubjects
             colorOptionsCSF = {'k-','r-','g-','b-','c-'};
             colorOptionsCSF2 = {'k--','r--','g--','b--','c--'};
             colorOptionsCI = {'k','r','g','b','c'};
-            colorOptionsSmoothSpline = {'r-','g--','b-','c-'};
+            colorOptionsSmoothSpline = {'r-','g--','b:'};
             
             % Raw data.
             plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
@@ -472,8 +472,8 @@ for ss = 1:nSubjects
                 end
                 
                 % Add legend when drawing one figure per each filter.
-                legend(append(filterWls{ff},'-PF'),append(filterWls{ff},'-Boot'),...
-                    'fontsize', 13, 'location', 'northeast');
+                legend(f_data([1,2,4:end]),[append(filterWls{ff},'-PF'), append(filterWls{ff},'-Boot'), ...
+                    optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
             end
             
             % Key stroke to start measurement.
