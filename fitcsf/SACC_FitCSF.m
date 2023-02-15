@@ -16,6 +16,7 @@
 %                        spline function.
 %    02/13/23   smo    - Now we fit and plot the data with all methods at
 %                        the same time.
+%    02/15/23   smo    - Added an option to save the CSF plot.
 
 %% Initialize.
 clear; close all;
@@ -25,6 +26,7 @@ clear; close all;
 % Plotting options.
 OneFigurePerSub = false;
 WaitForKeyToPlot = true;
+SAVECSFPLOT = true;
 
 % Fitting options.
 FitAsymmetricParabolic = false;
@@ -476,6 +478,19 @@ for ss = 1:nSubjects
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
             end
             
+            % Save the CSF plot if you want.
+            if (SAVECSFPLOT)
+                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                        subjectName,'CSF');
+                    filterNames = {'A', 'B', 'C', 'D', 'E'};
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterNames{ff}));
+                    testFileFormat = '.tiff';
+                    saveas(dataFig, append(testFilename,testFileFormat));
+                    disp('CSF plot has been saved successfully!');
+                end
+            end
+            
             % Key stroke to start measurement.
             if (~OneFigurePerSub)
                 if (WaitForKeyToPlot)
@@ -517,6 +532,19 @@ for ss = 1:nSubjects
             % Add legend when drawing one figure per each subject.
             legend(f_data([idxLegendRaw idxLegendBoot]), [contentLegendRaw contentLegendBoot], ...
                 'fontsize', 13, 'location', 'northeast');
+            
+            % Save the CSF plot if you want.
+            if (SAVECSFPLOT)
+                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                        subjectName,'CSF');
+                    filterNames = {'A', 'B', 'C', 'D', 'E'};
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterNames{ff}));
+                    testFileFormat = '.tiff';
+                    saveas(dataFig, append(testFilename,testFileFormat));
+                    disp('CSF plot has been saved successfully!');
+                end
+            end
             
             % Key stroke to start measurement.
             if (WaitForKeyToPlot)
