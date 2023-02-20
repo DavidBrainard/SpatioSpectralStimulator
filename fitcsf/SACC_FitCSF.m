@@ -17,6 +17,8 @@
 %    02/13/23   smo    - Now we fit and plot the data with all methods at
 %                        the same time.
 %    02/15/23   smo    - Added an option to save the CSF plot.
+%    02/20/23   smo    - Added an option to calculate CSF area under the
+%                        curve.
 
 %% Initialize.
 clear; close all;
@@ -25,12 +27,14 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = false;
-SAVECSFPLOT = true;
+WaitForKeyToPlot = true;
+SaveCSFPlot = true;
+PlotCSFArea = true;
 
 % Fitting options.
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
+CalCSFArea = true;
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
 % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
@@ -382,6 +386,19 @@ for ss = 1:nSubjects
                     smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
                     smoothPlotSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
                     smoothPlotPreds{oo} = feval(smoothFit,smoothPlotSFVals{oo});
+                    
+                    %% Get the area under the CSF curve.
+                    if (CalCSFArea)
+                        nPointsCalArea = 1000;
+                        calAreaSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalArea))';
+                        calAreaPreds{oo} = feval(smoothFit,calAreaSFVals{oo});
+                        areaCSF = 0;
+                        for aa = 1:nPointsCalArea-1
+                            areaCSFPart = (calAreaSFVals{oo}(aa+1)-calAreaSFVals{oo}(aa)) * calAreaPreds{oo}(aa);
+                            areaCSF = areaCSF + areaCSFPart;
+                        end
+                        fprintf('CSF area is (%.3f)',areaCSF);
+                    end
                 end
                 
                 % Add legend to cross figure.
@@ -433,6 +450,13 @@ for ss = 1:nSubjects
                 end
             end
             
+            % Plot CSF area calculation if you want.
+            if (PlotCSFArea)
+                for aa = 1:nPointsCalArea
+                    plot(ones(1,2)*calAreaSFVals{1}(aa), [0 calAreaPreds{1}(aa)],'color',[1 0 0 0.1]);
+                end
+            end
+            
             % Add details per each plot of the subject.
             if (~OneFigurePerSub)
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
@@ -465,10 +489,14 @@ for ss = 1:nSubjects
                 % Add legend when drawing one figure per each filter.
                 legend(f_data([1,2,4:end]),[append(filterWls{ff},'-PF'), append(filterWls{ff},'-Boot'), ...
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
+                
+                % Add area CSF to the plot.
+                textAreaCSF = sprintf('CSF area = (%.3f)',areaCSF);
+                text(log10(3),log10(280),textAreaCSF,'fontsize',15);
             end
             
             % Save the CSF plot if you want.
-            if (SAVECSFPLOT)
+            if (SaveCSFPlot)
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
@@ -523,7 +551,7 @@ for ss = 1:nSubjects
                 'fontsize', 13, 'location', 'northeast');
             
             % Save the CSF plot if you want.
-            if (SAVECSFPLOT)
+            if (SaveCSFPlot)
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
