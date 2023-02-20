@@ -35,7 +35,7 @@ FitSmoothSpline = true;
 % When fitting Smooth spline, You can choose option among {'crossVal',
 % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
 if (FitSmoothSpline)
-    optionSearchSmoothParamSet = {'crossVal','crossValBootWithin','crossValBootAcross'};
+    optionSearchSmoothParamSet = {'crossValBootAcross'};
 end
 
 %% Load the data.
@@ -133,7 +133,8 @@ for ss = 1:nSubjects
                 end
             end
             
-            % Read out the variables per each filter.
+            % Read out the variables per each filter. These values are
+            % linear units, which we will conver them on log space.
             thresholds = thresholdFittedRaw(ss,:,ff);
             thresholdsBoot = thresholdFittedBootRaw(ss,:,ff,:);
             medianThresholdsBoot = medianThresholdBootRaw(ss,:,ff);
@@ -154,64 +155,51 @@ for ss = 1:nSubjects
                 end
             end
             
-            %% Calculate sensitivity.
-            sensitivityRawLinear = 1./thresholds;
-            sensitivityRawLog = log10(sensitivityRawLinear);
+            %% Calculate log sensitivity.
+            %
+            % Raw data.
+            sensitivity = log10(1./thresholds);
+            sensitivityMedianBoot = log10(1./medianThresholdsBoot);
             
-            sensitivityMedianBootLinear = 1./medianThresholdsBoot;
-            sensitivityMedianBootLog = log10(sensitivityMedianBootLinear);
-            
-            % All bootstrapped values.
-            sensitivityBootLinear = 1./squeeze(thresholdsBoot);
-            sensitivityBootLog = log10(sensitivityBootLinear);
+            % Bootstrapped values. 
+            % 
+            % For calculation of confindence
+            % interval from bootstrap, (low) threshold becomes (high)
+            % sensitivity, and vice versa.
+            sensitivityBoot = log10(1./squeeze(thresholdsBoot));
+            sensitivityBootHigh = log10(1./lowThresholdBoot);
+            sensitivityBootLow = log10(1./highThresholdBoot);
             
             % Additional bootstrapped values for cross-validation.
-            sensitivityBootCross1Linear = 1./squeeze(thresholdsBootCross1);
-            sensitivityBootCross2Linear = 1./squeeze(thresholdsBootCross2);
-            
-            % For calculation of confindence interval from bootstrap,
-            % (low) threshold becomes (high) sensitivity, and vice
-            % versa.
-            sensitivityBootHighLinear = 1./lowThresholdBoot;
-            sensitivityBootHighLog = log10(sensitivityBootHighLinear);
-            
-            sensitivityBootLowLinear = 1./highThresholdBoot;
-            sensitivityBootLowLog = log10(sensitivityBootLowLinear);
-            
+            sensitivityBootCross1 = log10(1./squeeze(thresholdsBootCross1));
+            sensitivityBootCross2 = log10(1./squeeze(thresholdsBootCross2));
+                        
             % Calculate spatial frequency in log space.
             sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
             
             %% Sort each array in an ascending order of spatial frequency.
-            [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
-            sineFreqCyclesPerDegLogSorted = sineFreqCyclesPerDegLog(I);
+            [sineFreqCyclesPerDegLogSorted I] = sort(sineFreqCyclesPerDegLog,'ascend');
             
-            % Linear sorted according to spatial frequency.
-            sensitivityRawLinearSorted = sensitivityRawLinear(I);
-            sensitivityMedianBootLinearSorted = sensitivityMedianBootLinear(I);
-            sensitivityBootHighLinearSorted = sensitivityBootHighLinear(I);
-            sensitivityBootLowLinearSorted = sensitivityBootLowLinear(I);
-            sensitivityBootLinearSorted = sensitivityBootLinear(I,:);
-            sensitivityBootCross1LinearSorted = sensitivityBootCross1Linear(I,:);
-            sensitivityBootCross2LinearSorted = sensitivityBootCross2Linear(I,:);
-            
-            % Log sorted according to spatial frequency.
-            sensitivityRawLogSorted = sensitivityRawLog(I);
-            sensitivityMedianBootLogSorted = sensitivityMedianBootLog(I);
-            sensitivityBootHighLogSorted = sensitivityBootHighLog(I);
-            sensitivityBootLowLogSorted = sensitivityBootLowLog(I);
-            sensitivityBootLogSorted = sensitivityBootLog(I,:);
+            % Sorted according to the order of spatial frequency.
+            sensitivitySorted = sensitivity(I);
+            sensitivityMedianBootSorted = sensitivityMedianBoot(I);
+            sensitivityBootHighSorted = sensitivityBootHigh(I);
+            sensitivityBootLowSorted = sensitivityBootLow(I);
+            sensitivityBootSorted = sensitivityBoot(I,:);
+            sensitivityBootCross1Sorted = sensitivityBootCross1(I,:);
+            sensitivityBootCross2Sorted = sensitivityBootCross2(I,:);
             
             %% Set variables to fit CSF.
-            mySFVals = sineFreqCyclesPerDegNumSorted;
-            myCSVals = sensitivityRawLinearSorted;
-            myWs = 1./(sensitivityBootHighLinearSorted-sensitivityBootLowLinearSorted);
+            mySFVals = sineFreqCyclesPerDegLogSorted;
+            myCSVals = sensitivitySorted;
+            myWs = 1./(sensitivityBootHighSorted-sensitivityBootLowSorted);
             
             %% Fitting method 1) Asymmetric parabolic function.
             if (FitAsymmetricParabolic)
                 % Set parameters for optimazation of the parameter p.
-                p0 = [10 0.5 0.1 0.1];
-                p_lowerBound = [10 0.5 0.1 0.1];
-                p_higherBound = [400 18 10 10];
+                p0 = [log10(10) log10(0.5) 0.1 0.1];
+                p_lowerBound = [log10(10) log10(0.5) 0.1 0.1];
+                p_higherBound = [log10(400) log10(18) 10 10];
                 A = [];   % Set numbers for the condition of A*x <= b*x0 / x0 is the initial point
                 b = [];
                 Aeq = []; % Matrix for linear equality constraints
@@ -226,9 +214,9 @@ for ss = 1:nSubjects
             %% Fitting method 2) Smooth spline method.
             if (FitSmoothSpline)
                 % Load all bootstrapped values.
-                myCSValsBoot = sensitivityBootLinearSorted';
-                myCSValsCross1 = sensitivityBootCross1LinearSorted';
-                myCSValsCross2 = sensitivityBootCross2LinearSorted';
+                myCSValsBoot = sensitivityBootSorted';
+                myCSValsCross1 = sensitivityBootCross1Sorted';
+                myCSValsCross2 = sensitivityBootCross2Sorted';
                 nBootPoints = size(myCSValsBoot,1);
                 
                 %% Search smoothing parameter here.
@@ -385,7 +373,7 @@ for ss = 1:nSubjects
                         plot(crossSmoothingParams,smoothCrossError,'ko','MarkerSize',6);
                         plot(smoothingParam,smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline{oo},'Markeredgecolor','k');
                         xlabel('Smoothing parameter','fontsize',15);
-                        ylabel('Cross-validation errors','fontsize',15);
+                        ylabel('Cross-validation errors (linear)','fontsize',15);
                         title('Cross-validation error accoring to smoothing parameter','fontsize',15);
                         xlim([minSmoothingParam maxSmoothingParam]);
                     end
@@ -414,20 +402,20 @@ for ss = 1:nSubjects
             colorOptionsSmoothSpline = {'r-','g--','b:'};
             
             % Raw data.
-            plot(sineFreqCyclesPerDegNumSorted, sensitivityRawLinearSorted, colorOptionsRaw{ff},'markersize',20);
-            plot(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, colorOptionsBoot{ff},'markersize',20);
+            plot(sineFreqCyclesPerDegLogSorted, sensitivitySorted, colorOptionsRaw{ff},'markersize',20);
+            plot(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, colorOptionsBoot{ff},'markersize',20);
             
             % Confidence Interval.
-            errorNeg = abs(sensitivityMedianBootLinearSorted - sensitivityBootLowLinearSorted);
-            errorPos = abs(sensitivityBootHighLinearSorted - sensitivityMedianBootLinearSorted);
-            e = errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootLinearSorted, ...
+            errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
+            errorPos = abs(sensitivityBootHighSorted - sensitivityMedianBootSorted);
+            e = errorbar(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, ...
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
             % CSF fitting results with asymmetric parabolic (Method 1).
             if (FitAsymmetricParabolic)
-                SF_CSF_start = 3;
-                SF_CSF_end = 18;
+                SF_CSF_start = log10(3);
+                SF_CSF_end = log10(18);
                 nPointsCSF = 100;
                 sineFreqCyclesPerDegNumCSF = linspace(SF_CSF_start,SF_CSF_end,nPointsCSF);
                 sensitivityCSFLinear = asymmetricParabolicFunc(p_optimized, sineFreqCyclesPerDegNumCSF);
@@ -450,15 +438,16 @@ for ss = 1:nSubjects
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
                 ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
                 
-                xticks(sineFreqCyclesPerDegNumSorted);
-                xticklabels(sineFreqCyclesPerDegNumSorted);
+                xticks(sineFreqCyclesPerDegLogSorted);
+                xticklabels(10.^sineFreqCyclesPerDegLogSorted);
                 
-                yaxisRangeLinear = [0:50:300];
-                ylim([0 300]);
-                yticks(yaxisRangeLinear);
-                yticklabels(yaxisRangeLinear);
+                yaxisRange = log10([0:50:300]);
+                ylim(log10([0 300]));
+                yticks(yaxisRange);
+                yticklabels(10.^yaxisRange);
                 
                 title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
+                subtitle('Fitting was done on log-log space');
                 
                 % Add legend.
                 f_data = flip(get(gca, 'Children'));
@@ -506,13 +495,13 @@ for ss = 1:nSubjects
             xlabel('Spatial Frequency (cpd)','fontsize',15);
             ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
             
-            xticks(sineFreqCyclesPerDegNumSorted);
-            xticklabels(sineFreqCyclesPerDegNumSorted);
+            xticks(sineFreqCyclesPerDegLogSorted);
+            xticklabels(sineFreqCyclesPerDegLogSorted);
             
-            yaxisRangeLinear = [0:50:300];
+            yaxisRange = [0:50:300];
             ylim([0 300]);
-            yticks(yaxisRangeLinear);
-            yticklabels(yaxisRangeLinear);
+            yticks(yaxisRange);
+            yticklabels(yaxisRange);
             
             title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
             
