@@ -25,7 +25,7 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = true;
+WaitForKeyToPlot = false;
 SAVECSFPLOT = true;
 
 % Fitting options.
@@ -161,8 +161,8 @@ for ss = 1:nSubjects
             sensitivity = log10(1./thresholds);
             sensitivityMedianBoot = log10(1./medianThresholdsBoot);
             
-            % Bootstrapped values. 
-            % 
+            % Bootstrapped values.
+            %
             % For calculation of confindence
             % interval from bootstrap, (low) threshold becomes (high)
             % sensitivity, and vice versa.
@@ -173,7 +173,7 @@ for ss = 1:nSubjects
             % Additional bootstrapped values for cross-validation.
             sensitivityBootCross1 = log10(1./squeeze(thresholdsBootCross1));
             sensitivityBootCross2 = log10(1./squeeze(thresholdsBootCross2));
-                        
+            
             % Calculate spatial frequency in log space.
             sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
             
@@ -373,14 +373,14 @@ for ss = 1:nSubjects
                         plot(crossSmoothingParams,smoothCrossError,'ko','MarkerSize',6);
                         plot(smoothingParam,smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline{oo},'Markeredgecolor','k');
                         xlabel('Smoothing parameter','fontsize',15);
-                        ylabel('Cross-validation errors (linear)','fontsize',15);
+                        ylabel('Cross-validation errors','fontsize',15);
                         title('Cross-validation error accoring to smoothing parameter','fontsize',15);
                         xlim([minSmoothingParam maxSmoothingParam]);
                     end
                     
                     % Get the values for plotting smooth spline fitting curve.
                     smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
-                    smoothPlotSFVals{oo} = linspace(min(mySFVals),max(mySFVals),nSmoothPoints)';
+                    smoothPlotSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
                     smoothPlotPreds{oo} = feval(smoothFit,smoothPlotSFVals{oo});
                 end
                 
