@@ -127,7 +127,7 @@ switch options.PF
     case 'weibull'
         PF = @PAL_Weibull;
     case 'logistic'
-        PF = @PAL_Logistic
+        PF = @PAL_Logistic;
     otherwise
 end
 
