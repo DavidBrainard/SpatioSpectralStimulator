@@ -414,7 +414,8 @@ for ss = 1:nSubjects
                             end
                             
                             % If we make a loop for bootstrapping AUC, we
-                            % draw this part only for the first case.
+                            % plot this part only for the very first set.
+                            % This is the same for plotting the CSF.
                             if (aaa == 1)
                                 markerColorOptionsSmoothSpline = {'r','g','b','c'};
                                 plot(crossSmoothingParams,smoothCrossError(:,aaa),'ko','MarkerSize',6);
@@ -428,8 +429,8 @@ for ss = 1:nSubjects
                         
                         % Get the values for plotting smooth spline fitting curve.
                         smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
-                        smoothPlotSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
-                        smoothPlotPreds{oo} = feval(smoothFit,smoothPlotSFVals{oo});
+                        smoothPlotSFVals{oo,aaa} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
+                        smoothPlotPreds{oo,aaa} = feval(smoothFit,smoothPlotSFVals{oo,aaa});
                         
                         %% Get the area under the CSF curve (AUC).
                         if (CalAUC)
@@ -477,8 +478,6 @@ for ss = 1:nSubjects
             end
             
             % Confidence Interval.
-            
-            
             switch CSFFittingDomain
                 case 'log'
                     errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
@@ -509,7 +508,11 @@ for ss = 1:nSubjects
                     plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF2{ff},'LineWidth',4);
                 else
                     for oo = 1:nOptionsSearchSmoothParamSet
-                        plot(smoothPlotSFVals{oo},smoothPlotPreds{oo},colorOptionsSmoothSpline{oo},'LineWidth',4);
+                        % We will plot the CSF derived from the very first
+                        % set if we do bootstrapping for AUC.
+                        numBootstrapAUCToPlotCSF = 1;
+                        plot(smoothPlotSFVals{oo,numBootstrapAUCToPlotCSF},smoothPlotPreds{oo,numBootstrapAUCToPlotCSF},...
+                            colorOptionsSmoothSpline{oo},'LineWidth',4);
                     end
                 end
             end
@@ -591,7 +594,7 @@ for ss = 1:nSubjects
                 if (WaitForKeyToPlot)
                     fprintf('\t Press a key to draw next plot! \n');
                     pause;
-                    close all;                    
+                    close all;
                 end
             end
         end
