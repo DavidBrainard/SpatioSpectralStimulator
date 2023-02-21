@@ -176,6 +176,17 @@ for ss = 1:nSubjects
             sensitivityBoot = log10(1./squeeze(thresholdsBoot));
             sensitivityBootHigh = log10(1./lowThresholdBoot);
             sensitivityBootLow = log10(1./highThresholdBoot);
+
+            % Some checks that bookkeeping is working
+%             tempLow = min(sensitivityBoot,[],2)';
+%             if (any(tempLow ~= sensitivityBootLow))
+%                 error('Inconsistency in low bootstrapped sensitivities');
+%             end
+%             tempHigh = max(sensitivityBoot,[],2)';
+%             if (any(tempHigh ~= sensitivityBootHigh))
+%                 error('Inconsistency in high bootstrapped sensitivities');
+%             end
+%             clear tempLow tempHigh
             
             % Additional bootstrapped values for cross-validation.
             sensitivityBootCross1 = log10(1./squeeze(thresholdsBootCross1));
@@ -350,6 +361,7 @@ for ss = 1:nSubjects
                                         fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
                                     end
                                 end
+
                                 % Print out the progress of bootstrapping
                                 % AUC. It will take a while.
                                 fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
@@ -437,10 +449,15 @@ for ss = 1:nSubjects
                             nPointsCalAUC = 1000;
                             calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
                             calAUCPreds{oo} = feval(smoothFit,calAUCSFVals{oo});
-                            AUC(aaa) = 0;
-                            for aa = 1:nPointsCalAUC-1
-                                AUCTemp = (calAUCSFVals{oo}(aa+1)-calAUCSFVals{oo}(aa)) * calAUCPreds{oo}(aa);
-                                AUC(aaa) = AUC(aaa) + AUCTemp;
+                            useTrapZ = true;
+                            if (useTrapZ)
+                                AUC(aaa) = trapz(calAUCSFVals{oo},calAUCPreds{oo});
+                            else
+                                AUC(aaa) = 0;
+                                for aa = 1:nPointsCalAUC-1
+                                    AUCTemp = (calAUCSFVals{oo}(aa+1)-calAUCSFVals{oo}(aa)) * calAUCPreds{oo}(aa);
+                                    AUC(aaa) = AUC(aaa) + AUCTemp;
+                                end
                             end
                             fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
                                 aaa, nBootstrapAUC, AUC(aaa));
