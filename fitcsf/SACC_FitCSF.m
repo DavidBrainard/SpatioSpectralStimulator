@@ -36,7 +36,7 @@ PlotAUC = true;
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
-BootstrapAUC = false;
+BootstrapAUC = true;
 CSFFittingDomain = 'log';
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
