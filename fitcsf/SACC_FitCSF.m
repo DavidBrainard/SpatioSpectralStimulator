@@ -460,7 +460,7 @@ for ss = 1:nSubjects
             % Add details per each plot of the subject.
             if (~OneFigurePerSub)
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
-                ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
+                ylabel('Contrast Sensitivity','fontsize',15);
                 
                 xticks(sineFreqCyclesPerDegLogSorted);
                 xticklabels(10.^sineFreqCyclesPerDegLogSorted);
@@ -521,7 +521,7 @@ for ss = 1:nSubjects
         %% Add details per each plot of the subject.
         if (OneFigurePerSub)
             xlabel('Spatial Frequency (cpd)','fontsize',15);
-            ylabel('Contrast Sensitivity (Linear unit)','fontsize',15);
+            ylabel('Contrast Sensitivity','fontsize',15);
             
             xticks(sineFreqCyclesPerDegLogSorted);
             xticklabels(sineFreqCyclesPerDegLogSorted);
