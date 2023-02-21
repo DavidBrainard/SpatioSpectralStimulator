@@ -285,7 +285,11 @@ for ss = 1:nSubjects
                             end
 
                         case 'crossValBootAcross'
-                            % Make a loop for bootstrapping AUC if you want.
+                            % Make a loop for bootstrapping AUC if you
+                            % want. This should start before deciding the
+                            % searching method for smoothing param, but for
+                            % now we start from here as we are leaning to
+                            % use this method.
                             if (BootstrapAUC)
                                 nCrossValBootAcrossAUC = 10;
                             else
