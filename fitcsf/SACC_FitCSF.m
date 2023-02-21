@@ -37,7 +37,7 @@ FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
 BootstrapAUC = false;
-FittingDomain = 'linear';
+CSFFittingDomain = 'log';
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
 % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
@@ -197,7 +197,7 @@ for ss = 1:nSubjects
             sensitivityBootCross2Sorted = sensitivityBootCross2(I,:);
             
             %% Set variables to fit CSF.
-            switch FittingDomain
+            switch CSFFittingDomain
                 case 'log'
                     mySFVals = sineFreqCyclesPerDegLogSorted;
                     myCSVals = sensitivitySorted;
@@ -301,12 +301,12 @@ for ss = 1:nSubjects
                             % now we start from here as we are leaning to
                             % use this method.
                             if (BootstrapAUC)
-                                nCrossValBootAcrossAUC = 10;
+                                nBootstrapAUC = 10;
                             else
-                                nCrossValBootAcrossAUC = 1;
+                                nBootstrapAUC = 1;
                             end
                             
-                            for aaa = 1:nCrossValBootAcrossAUC
+                            for aaa = 1:nBootstrapAUC
                                 
                                 % Make a loop for testing smoothing paramemters.
                                 for sss = 1:length(crossSmoothingParams)
@@ -352,7 +352,7 @@ for ss = 1:nSubjects
                                 end
                                 % Print out the progress of bootstrapping
                                 % AUC. It will take a while.
-                                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nCrossValBootAcrossAUC);
+                                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
                             end
                             
                         case 'crossVal'
@@ -394,7 +394,7 @@ for ss = 1:nSubjects
                     %% Plot the bootstrapped results if we did.
                     %
                     % Make a loop to repeat this part to bootstrap AUC.
-                    for aaa = 1:nCrossValBootAcrossAUC
+                    for aaa = 1:nBootstrapAUC
                         
                         if any(strcmp(OptionSearchSmoothParam,{'crossValBootWithin','crossValBootAcross','crossVal'}))
                             % Set the smoothing params that has the smallest error.
@@ -442,7 +442,7 @@ for ss = 1:nSubjects
                                 AUC(aaa) = AUC(aaa) + AUCTemp;
                             end
                             fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
-                                aaa, nCrossValBootAcrossAUC, AUC(aaa));
+                                aaa, nBootstrapAUC, AUC(aaa));
                             meanAUC = mean(AUC);
                             stdAUC = std(AUC);
                         end
@@ -467,7 +467,7 @@ for ss = 1:nSubjects
             colorOptionsSmoothSpline = {'r-','g--','b:'};
             
             % Raw data.
-            switch FittingDomain
+            switch CSFFittingDomain
                 case 'log'
                     plot(sineFreqCyclesPerDegLogSorted, sensitivitySorted, colorOptionsRaw{ff},'markersize',20);
                     plot(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, colorOptionsBoot{ff},'markersize',20);
@@ -479,7 +479,7 @@ for ss = 1:nSubjects
             % Confidence Interval.
             
             
-            switch FittingDomain
+            switch CSFFittingDomain
                 case 'log'
                     errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
                     errorPos = abs(sensitivityBootHighSorted - sensitivityMedianBootSorted);
@@ -526,12 +526,12 @@ for ss = 1:nSubjects
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
                 ylabel('Contrast Sensitivity','fontsize',15);
                 
-                switch FittingDomain
+                switch CSFFittingDomain
                     case 'log'
                         xticks(sineFreqCyclesPerDegLogSorted);
                         xticklabels(10.^sineFreqCyclesPerDegLogSorted);
                         yaxisRange = log10([0:50:300]);
-                        ylim(log10([0 300]));
+                        ylim(log10([1 300]));
                         yticks(yaxisRange);
                         yticklabels(10.^yaxisRange);
                     case 'linear'
@@ -565,7 +565,7 @@ for ss = 1:nSubjects
                 
                 % Add AUC to the plot.
                 textAUC = sprintf('AUC = %.4f (%.4f)', meanAUC, stdAUC);
-                switch FittingDomain
+                switch CSFFittingDomain
                     case 'log'
                         text(log10(3),log10(1.5),textAUC,'color','r','fontsize',15);
                     case 'linear'
@@ -591,7 +591,7 @@ for ss = 1:nSubjects
                 if (WaitForKeyToPlot)
                     fprintf('\t Press a key to draw next plot! \n');
                     pause;
-                    close all;
+                    close all;                    
                 end
             end
         end
