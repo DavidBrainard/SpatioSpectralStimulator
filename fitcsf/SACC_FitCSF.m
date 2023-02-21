@@ -27,13 +27,14 @@ clear; close all;
 % Plotting options.
 OneFigurePerSub = false;
 WaitForKeyToPlot = true;
-SaveCSFPlot = true;
+SaveCSFPlot = false;
 PlotAUC = true;
 
 % Fitting options.
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
+BootstrapAUC = false;
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
 % 'crossValBootWithin', 'crossValBootAcross', 'type'}.
@@ -284,8 +285,13 @@ for ss = 1:nSubjects
                             end
 
                         case 'crossValBootAcross'
-                            % Make a loop for bootstrapping AUC.
-                            nCrossValBootAcrossAUC = 10;
+                            % Make a loop for bootstrapping AUC if you want.
+                            if (BootstrapAUC)
+                                nCrossValBootAcrossAUC = 10;
+                            else
+                                nCrossValBootAcrossAUC = 1;
+                            end
+                            
                             for aaa = 1:nCrossValBootAcrossAUC
 
                                 % Make a loop for testing smoothing paramemters.
@@ -520,7 +526,7 @@ for ss = 1:nSubjects
 
                 % Add AUC to the plot.
                 textAUC = sprintf('AUC = %.4f (%.4f)', meanAUC, stdAUC);
-                text(log10(3),log10(280),textAUC,'fontsize',15);
+                text(log10(3),log10(1.5),textAUC,'color','r','fontsize',15);
             end
 
             % Save the CSF plot if you want.
