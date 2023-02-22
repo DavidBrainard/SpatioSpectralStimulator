@@ -176,7 +176,7 @@ for ss = 1:nSubjects
             sensitivityBoot = log10(1./squeeze(thresholdsBoot));
             sensitivityBootHigh = log10(1./lowThresholdBoot);
             sensitivityBootLow = log10(1./highThresholdBoot);
-
+            
             % Some checks that bookkeeping is working. Note that
             % 'sensitivityBootHigh' and 'sensitivityBootLow' are the ends
             % of confidence interval (80%), not the entire range.
@@ -371,7 +371,7 @@ for ss = 1:nSubjects
                                         fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
                                     end
                                 end
-
+                                
                                 % Print out the progress of bootstrapping
                                 % AUC. It will take a while.
                                 fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
@@ -456,19 +456,41 @@ for ss = 1:nSubjects
                         
                         %% Get the area under the CSF curve (AUC).
                         if (CalAUC)
-                            nPointsCalAUC = 1000;
-                            calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
+                            % Set the points on the CSF curve to calculate
+                            % the area.
+                            switch CSFFittingDomain
+                                case 'log'
+                                    calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
+                                case 'linear'
+                                    calAUCSFVals{oo} = linspace(min(mySFVals),max(mySFVals),nPointsCalAUC)';
+                            end
                             calAUCPreds{oo} = feval(smoothFit,calAUCSFVals{oo});
+                            
+                            % Here we can use either trapz function or
+                            % simple calculation for AUC.
                             useTrapZ = true;
+                            
                             if (useTrapZ)
+                                % AUC using trapz function.
                                 AUC(aaa) = trapz(calAUCSFVals{oo},calAUCPreds{oo});
+                                
                             else
+                                % AUC not using the function.
+                                %
+                                % Set the number of points for calculation
+                                % of AUC.
+                                nPointsCalAUC = 1000;
+                                
+                                % Calculate each thin rectangle under the
+                                % curve and sum them up.
                                 AUC(aaa) = 0;
                                 for aa = 1:nPointsCalAUC-1
                                     AUCTemp = (calAUCSFVals{oo}(aa+1)-calAUCSFVals{oo}(aa)) * calAUCPreds{oo}(aa);
                                     AUC(aaa) = AUC(aaa) + AUCTemp;
                                 end
                             end
+                            
+                            % Print out the AUC calculation results.
                             fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
                                 aaa, nBootstrapAUC, AUC(aaa));
                             meanAUC = mean(AUC);
