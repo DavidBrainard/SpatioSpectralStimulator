@@ -450,7 +450,20 @@ for ss = 1:nSubjects
                         end
                         
                         % Get the values for plotting smooth spline fitting curve.
-                        smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
+                        % To bootstrap the AUC, here we will fit
+                        % bootstrapped CS values.
+                        %
+                        % Generate new CS values set to fit.
+                        for zz = 1:length(mySFVals)
+                            myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
+                        end
+                        
+                        % Fit happens here.
+                        if (aaa == 1)
+                            smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
+                        else
+                            smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParam);
+                        end
                         smoothPlotSFVals{oo,aaa} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
                         smoothPlotPreds{oo,aaa} = feval(smoothFit,smoothPlotSFVals{oo,aaa});
                         
@@ -458,6 +471,7 @@ for ss = 1:nSubjects
                         if (CalAUC)
                             % Set the points on the CSF curve to calculate
                             % the area.
+                            nPointsCalAUC = 1000;
                             switch CSFFittingDomain
                                 case 'log'
                                     calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
@@ -477,10 +491,6 @@ for ss = 1:nSubjects
                             else
                                 % AUC not using the function.
                                 %
-                                % Set the number of points for calculation
-                                % of AUC.
-                                nPointsCalAUC = 1000;
-                                
                                 % Calculate each thin rectangle under the
                                 % curve and sum them up.
                                 AUC(aaa) = 0;
