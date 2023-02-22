@@ -177,16 +177,26 @@ for ss = 1:nSubjects
             sensitivityBootHigh = log10(1./lowThresholdBoot);
             sensitivityBootLow = log10(1./highThresholdBoot);
 
-            % Some checks that bookkeeping is working
-%             tempLow = min(sensitivityBoot,[],2)';
-%             if (any(tempLow ~= sensitivityBootLow))
-%                 error('Inconsistency in low bootstrapped sensitivities');
-%             end
-%             tempHigh = max(sensitivityBoot,[],2)';
-%             if (any(tempHigh ~= sensitivityBootHigh))
-%                 error('Inconsistency in high bootstrapped sensitivities');
-%             end
-%             clear tempLow tempHigh
+            % Some checks that bookkeeping is working. Note that
+            % 'sensitivityBootHigh' and 'sensitivityBootLow' are the ends
+            % of confidence interval (80%), not the entire range.
+            bootConfInterval = 0.8;
+            sensitivityBootLowCheck = prctile(sensitivityBoot',100*(1-bootConfInterval)/2);
+            sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
+            
+            % Check low boot strap range, so 10% of the entire range.
+            numDigitsRound = 4;
+            if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
+                error('Inconsistency in low bootstrapped sensitivities');
+            end
+            
+            % Check high bootstrap range, so 90% of the entire range.
+            if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
+                error('Inconsistency in high bootstrapped sensitivities');
+            end
+            
+            % Clear the variables for checking the values.
+            clear sensitivityBootLowCheck sensitivityBootHighCheck;
             
             % Additional bootstrapped values for cross-validation.
             sensitivityBootCross1 = log10(1./squeeze(thresholdsBootCross1));
