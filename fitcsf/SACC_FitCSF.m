@@ -480,6 +480,11 @@ for ss = 1:nSubjects
                             end
                             calAUCPreds{oo} = feval(smoothFit,calAUCSFVals{oo});
                             
+                            if (aaa == 1)
+                                calAUCSFValsPlot = calAUCSFVals;
+                                calAUCPredsPlot = calAUCPreds;
+                            end 
+                            
                             % Here we can use either trapz function or
                             % simple calculation for AUC.
                             useTrapZ = true;
@@ -494,8 +499,8 @@ for ss = 1:nSubjects
                                 % Calculate each thin rectangle under the
                                 % curve and sum them up.
                                 AUC(aaa) = 0;
-                                for aa = 1:nPointsCalAUC-1
-                                    AUCTemp = (calAUCSFVals{oo}(aa+1)-calAUCSFVals{oo}(aa)) * calAUCPreds{oo}(aa);
+                                for aaa = 1:nPointsCalAUC-1
+                                    AUCTemp = (calAUCSFVals{oo}(aaa+1)-calAUCSFVals{oo}(aaa)) * calAUCPreds{oo}(aaa);
                                     AUC(aaa) = AUC(aaa) + AUCTemp;
                                 end
                             end
@@ -579,7 +584,7 @@ for ss = 1:nSubjects
             % Plot AUC results if you want.
             if (PlotAUC)
                 for aa = 1:nPointsCalAUC
-                    plot(ones(1,2)*calAUCSFVals{1}(aa), [0 calAUCPreds{1}(aa)],'color',[1 0 0 0.1]);
+                    plot(ones(1,2)*calAUCSFValsPlot{1}(aa), [0 calAUCPredsPlot{1}(aa)],'color',[1 0 0 0.1]);
                 end
             end
             
