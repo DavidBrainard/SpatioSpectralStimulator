@@ -62,6 +62,9 @@ end
 % Subject info.
 subjectName = theData.subjectNameOptions;
 
+% Filter options.
+filterOptions = theData.filterOptions;
+
 % Get threshold data. Each variable is aligned in [subject, SF, filter].
 thresholdFittedRaw = theData.thresholdFittedRaw;
 thresholdFittedBootRaw = theData.thresholdFittedBootRaw;
@@ -185,7 +188,7 @@ for ss = 1:nSubjects
             sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
             
             % Check low boot strap range, so 10% of the entire range.
-            numDigitsRound = 4;
+            numDigitsRound = 2;
             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
                 error('Inconsistency in low bootstrapped sensitivities');
             end
@@ -610,7 +613,7 @@ for ss = 1:nSubjects
                         yticklabels(yaxisRange);
                 end
                 
-                title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
+                title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
                 subtitle('Fitting was done on log-log space');
                 
                 % Add legend.
@@ -620,14 +623,13 @@ for ss = 1:nSubjects
                 idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 
-                filterWls = {'392 nm' '417 nm' '437 nm' '456 nm' '476 nm'};
                 for ll = 1:nSineFreqCyclesPerDeg
-                    contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterWls{ll});
-                    contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterWls{ll});
+                    contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterOptions{ll});
+                    contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterOptions{ll});
                 end
                 
                 % Add legend when drawing one figure per each filter.
-                legend(f_data([1,2,4:end]),[append(filterWls{ff},'-PF'), append(filterWls{ff},'-Boot'), ...
+                legend(f_data([1,2,4:end]),[append(filterOptions{ff},'-PF'), append(filterOptions{ff},'-Boot'), ...
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
                 
                 % Add AUC to the plot.
@@ -685,10 +687,9 @@ for ss = 1:nSubjects
             idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
             idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
             
-            filterWls = {'392 nm' '417 nm' '437 nm' '456 nm' '476 nm'};
             for ll = 1:nSineFreqCyclesPerDeg
-                contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterWls{ll});
-                contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterWls{ll});
+                contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterOptions{ll});
+                contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterOptions{ll});
             end
             
             % Add legend when drawing one figure per each subject.
