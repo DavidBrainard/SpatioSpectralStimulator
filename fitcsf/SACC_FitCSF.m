@@ -36,7 +36,7 @@ PlotAUC = true;
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
-BootstrapAUC = true;
+BootstrapAUC = false;
 CSFFittingDomain = 'log';
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
@@ -486,7 +486,7 @@ for ss = 1:nSubjects
                             if (aaa == 1)
                                 calAUCSFValsPlot = calAUCSFVals;
                                 calAUCPredsPlot = calAUCPreds;
-                            end 
+                            end
                             
                             % Here we can use either trapz function or
                             % simple calculation for AUC.
@@ -534,17 +534,33 @@ for ss = 1:nSubjects
             colorOptionsCI = {'k','r','g','b','c'};
             colorOptionsSmoothSpline = {'r-','g--','b:'};
             
-            % Raw data.
-            switch CSFFittingDomain
-                case 'log'
-                    plot(sineFreqCyclesPerDegLogSorted, sensitivitySorted, colorOptionsRaw{ff},'markersize',20);
-                    plot(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, colorOptionsBoot{ff},'markersize',20);
-                case 'linear'
-                    plot(10.^sineFreqCyclesPerDegLogSorted, 10.^sensitivitySorted, colorOptionsRaw{ff},'markersize',20);
-                    plot(10.^sineFreqCyclesPerDegLogSorted, 10.^sensitivityMedianBootSorted, colorOptionsBoot{ff},'markersize',20);
+            % Set marker color same if we plot it by filter.
+            if (~OneFigurePerSub)
+                colorOptionsRaw(:) = {'ro'};
+                colorOptionsBoot(:) = {'go'};
+                colorOptionsCI(:) = {'g'};
+                colorOptionsSmoothSpline(:) = {'r-'};
             end
             
-            % Confidence Interval.
+            % Set the marker size.
+            markerSizePF = 10;
+            markerSizeBootMedian = 7;
+            
+            % Plot raw data.
+            switch CSFFittingDomain
+                case 'log'
+                    plot(sineFreqCyclesPerDegLogSorted, sensitivitySorted, ...
+                        colorOptionsRaw{ff},'markerfacecolor','r','markersize',markerSizePF,'Markeredgecolor','k');
+                    plot(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, ...
+                        colorOptionsBoot{ff},'markerfacecolor','g','markersize',markerSizeBootMedian,'Markeredgecolor','k');
+                case 'linear'
+                    plot(10.^sineFreqCyclesPerDegLogSorted, 10.^sensitivitySorted, ...
+                        colorOptionsRaw{ff},'markersize',markerSizePF,'markeredgecolor','k');
+                    plot(10.^sineFreqCyclesPerDegLogSorted, 10.^sensitivityMedianBootSorted, ...
+                        colorOptionsBoot{ff},'markersize',markerSizeBootMedian,'markeredgecolor','k');
+            end
+            
+            % Plot confidence Interval.
             switch CSFFittingDomain
                 case 'log'
                     errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
@@ -623,13 +639,8 @@ for ss = 1:nSubjects
                 idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 
-                for ll = 1:nSineFreqCyclesPerDeg
-                    contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterOptions{ll});
-                    contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterOptions{ll});
-                end
-                
                 % Add legend when drawing one figure per each filter.
-                legend(f_data([1,2,4:end]),[append(filterOptions{ff},'-PF'), append(filterOptions{ff},'-Boot'), ...
+                legend(f_data([1,2,4:end]),[append(filterOptions{ff},' (PF)'), append(filterOptions{ff},' (Boot)'), ...
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
                 
                 % Add AUC to the plot.
@@ -647,8 +658,7 @@ for ss = 1:nSubjects
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    filterNames = {'A', 'B', 'C', 'D', 'E'};
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterNames{ff}));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                     testFileFormat = '.tiff';
                     saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
@@ -688,8 +698,8 @@ for ss = 1:nSubjects
             idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
             
             for ll = 1:nSineFreqCyclesPerDeg
-                contentLegendRaw{ll} = sprintf('%s (%s) -PF',theData.filterOptions{ll}, filterOptions{ll});
-                contentLegendBoot{ll} = sprintf('%s (%s) -Boot',theData.filterOptions{ll}, filterOptions{ll});
+                contentLegendRaw{ll} = sprintf('%s (PF)',filterOptions{ll});
+                contentLegendBoot{ll} = sprintf('%s (Boot)',filterOptions{ll});
             end
             
             % Add legend when drawing one figure per each subject.
@@ -701,8 +711,7 @@ for ss = 1:nSubjects
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    filterNames = {'A', 'B', 'C', 'D', 'E'};
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterNames{ff}));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                     testFileFormat = '.tiff';
                     saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
