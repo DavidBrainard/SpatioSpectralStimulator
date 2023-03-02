@@ -543,7 +543,7 @@ for ss = 1:nSubjects
             end
             
             % Set the marker size.
-            markerSizePF = 10;
+            markerSizePF = 7;
             markerSizeBootMedian = 7;
             
             % Plot raw data.
@@ -640,7 +640,7 @@ for ss = 1:nSubjects
                 idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 
                 % Add legend when drawing one figure per each filter.
-                legend(f_data([1,2,4:end]),[append(filterOptions{ff},' (PF)'), append(filterOptions{ff},' (Boot)'), ...
+                legend(f_data([1,2,4:end]),[sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
                 
                 % Add AUC to the plot.
