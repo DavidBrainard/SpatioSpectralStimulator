@@ -28,8 +28,8 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = true;
-SaveCSFPlot = false;
+WaitForKeyToPlot = false;
+SaveCSFPlot = true;
 PlotAUC = false;
 
 % Fitting options.
@@ -325,7 +325,7 @@ for ss = 1:nSubjects
                             % now we start from here as we are leaning to
                             % use this method.
                             if (BootstrapAUC)
-                                nBootstrapAUC = 10;
+                                nBootstrapAUC = 20;
                             else
                                 nBootstrapAUC = 1;
                             end
