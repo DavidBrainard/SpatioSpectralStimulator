@@ -30,13 +30,13 @@ clear; close all;
 OneFigurePerSub = false;
 WaitForKeyToPlot = true;
 SaveCSFPlot = false;
-PlotAUC = true;
+PlotAUC = false;
 
 % Fitting options.
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
-BootstrapAUC = false;
+BootstrapAUC = true;
 CSFFittingDomain = 'log';
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
@@ -464,6 +464,7 @@ for ss = 1:nSubjects
                         % Fit happens here.
                         if (aaa == 1)
                             smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
+                            smoothingParamToPrint = smoothingParam;
                         else
                             smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParam);
                         end
@@ -643,13 +644,38 @@ for ss = 1:nSubjects
                 legend(f_data([1,2,4:end]),[sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
                     optionSearchSmoothParamSet],'fontsize',13,'location', 'northeast');
                 
-                % Add AUC to the plot.
-                textAUC = sprintf('AUC = %.4f (%.4f)', meanAUC, stdAUC);
+                % Add some text to the plot.
+                % Smoothing param.
+                textSmoothingParam = sprintf('Smoothing parameter = %.2f', smoothingParamToPrint);
+                
+                % AUC.
+                confIntervals = 80;
+                fittedAUC = AUC(1);
+                medianBootAUC = median(AUC);
+                lowBootAUC = prctile(AUC,(100-confIntervals)/2);
+                highBootAUC = prctile(AUC,100 - (100-confIntervals)/2);
+                textFittedAUC = sprintf('AUC = %.4f', fittedAUC);
+                textBootAUC = sprintf('Median boot AUC = %.4f (CI %d: %.4f/%.4f)', ...
+                    medianBootAUC, confIntervals, lowBootAUC, highBootAUC);
+                
+                % Add texts here.
+                sizeTextOnPlot = 13;
+                
+                % We make equal spacing between the texts here.
+                textFirstlineYLoc = 4;
+                textThirdlineYLoc = 2;
+                tempTextLoc = logspace(log10(textThirdlineYLoc),log10(textFirstlineYLoc),3);
+                textSecondlineYLoc = tempTextLoc(2);
+                
                 switch CSFFittingDomain
                     case 'log'
-                        text(log10(3),log10(1.5),textAUC,'color','r','fontsize',15);
+                        text(log10(3),log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
+                        text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
+                        text(log10(3),log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
                     case 'linear'
-                        text(3,5,textAUC,'color','r','fontsize',15);
+                        text(3,textFirstlineYLoc,textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
+                        text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
+                        text(3,textThirdlineYLoc,textBootAUC,'color','k','fontsize',sizeTextOnPlot);
                 end
             end
             
