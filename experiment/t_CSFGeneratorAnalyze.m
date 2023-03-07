@@ -707,7 +707,7 @@ for ss = 1:nSubjects
         if (nSineFreqCyclesPerDeg == maxNSpatialFrequencies)
             % Make a new figure to plot CSF.
             figure; clf; hold on;
-            figureSize = 900;
+            figureSize = 550;
             figurePosition = [1000 500 figureSize figureSize];
             set(gcf,'position',figurePosition);
             
@@ -785,8 +785,8 @@ for ss = 1:nSubjects
             xticks(sineFreqCyclesPerDegLogSorted);
             xticklabels(sineFreqCyclesPerDegNumSorted);
             
-            yaxisRangeLinear = [0:20:300];
-            ylim(log10([0 300]));
+            yaxisRangeLinear = [0:50:300];
+            ylim(log10([1 300]));
             yticks(log10(yaxisRangeLinear));
             yticklabels(yaxisRangeLinear);
             
