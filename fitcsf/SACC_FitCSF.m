@@ -35,7 +35,6 @@ PlotAUC = true;
 % Fitting options.
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
-CalAUC = true;
 BootstrapAUC = false;
 CSFFittingDomain = 'log';
 
@@ -188,15 +187,15 @@ for ss = 1:nSubjects
             sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
             
             % Check low boot strap range, so 10% of the entire range.
-%             numDigitsRound = 2;
-%             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
-%                 error('Inconsistency in low bootstrapped sensitivities');
-%             end
-%             
-%             % Check high bootstrap range, so 90% of the entire range.
-%             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
-%                 error('Inconsistency in high bootstrapped sensitivities');
-%             end
+            %             numDigitsRound = 2;
+            %             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
+            %                 error('Inconsistency in low bootstrapped sensitivities');
+            %             end
+            %
+            %             % Check high bootstrap range, so 90% of the entire range.
+            %             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
+            %                 error('Inconsistency in high bootstrapped sensitivities');
+            %             end
             
             % Clear the variables for checking the values.
             clear sensitivityBootLowCheck sensitivityBootHighCheck;
@@ -416,7 +415,7 @@ for ss = 1:nSubjects
                             smoothingParam = 0.1;
                     end
                     
-                    %% Plot the bootstrapped results if we did.
+                    %% Calculate AUC.
                     %
                     % Make a loop to repeat this part to bootstrap AUC.
                     for aaa = 1:nBootstrapAUC
@@ -444,52 +443,55 @@ for ss = 1:nSubjects
                         smoothPlotPreds{oo,aaa} = feval(smoothFit,smoothPlotSFVals{oo,aaa});
                         
                         %% Get the area under the CSF curve (AUC).
-                        if (CalAUC)
-                            % Set the points on the CSF curve to calculate
-                            % the area.
-                            nPointsCalAUC = 1000;
-                            switch CSFFittingDomain
-                                case 'log'
-                                    calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
-                                case 'linear'
-                                    calAUCSFVals{oo} = linspace(min(mySFVals),max(mySFVals),nPointsCalAUC)';
-                            end
-                            calAUCPreds{oo} = feval(smoothFit,calAUCSFVals{oo});
-                            
-                            if (aaa == 1)
-                                calAUCSFValsPlot = calAUCSFVals;
-                                calAUCPredsPlot = calAUCPreds;
-                            end
-                            
-                            % Here we can use either trapz function or
-                            % simple calculation for AUC.
-                            useTrapZ = true;
-                            
-                            if (useTrapZ)
-                                % AUC using trapz function.
-                                AUC(aaa) = trapz(calAUCSFVals{oo},calAUCPreds{oo});
-                                
-                            else
-                                % AUC not using the function.
-                                %
-                                % Calculate each thin rectangle under the
-                                % curve and sum them up.
-                                AUC(aaa) = 0;
-                                for aaa = 1:nPointsCalAUC-1
-                                    AUCTemp = (calAUCSFVals{oo}(aaa+1)-calAUCSFVals{oo}(aaa)) * calAUCPreds{oo}(aaa);
-                                    AUC(aaa) = AUC(aaa) + AUCTemp;
-                                end
-                            end
-                            
-                            % Print out the AUC calculation results.
-                            fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
-                                aaa, nBootstrapAUC, AUC(aaa));
-                            meanAUC = mean(AUC);
-                            stdAUC = std(AUC);
+                        %
+                        % Set the points on the CSF curve to calculate
+                        % the area.
+                        nPointsCalAUC = 1000;
+                        switch CSFFittingDomain
+                            case 'log'
+                                calAUCSFVals{oo} = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
+                            case 'linear'
+                                calAUCSFVals{oo} = linspace(min(mySFVals),max(mySFVals),nPointsCalAUC)';
                         end
+                        calAUCPreds{oo} = feval(smoothFit,calAUCSFVals{oo});
+                        
+                        if (aaa == 1)
+                            calAUCSFValsPlot = calAUCSFVals;
+                            calAUCPredsPlot = calAUCPreds;
+                        end
+                        
+                        % Here we can use either trapz function or
+                        % simple calculation for AUC.
+                        useTrapZ = true;
+                        
+                        if (useTrapZ)
+                            % AUC using trapz function.
+                            AUC(aaa) = trapz(calAUCSFVals{oo},calAUCPreds{oo});
+                            
+                        else
+                            % AUC not using the function.
+                            %
+                            % Calculate each thin rectangle under the
+                            % curve and sum them up.
+                            AUC(aaa) = 0;
+                            for aaa = 1:nPointsCalAUC-1
+                                AUCTemp = (calAUCSFVals{oo}(aaa+1)-calAUCSFVals{oo}(aaa)) * calAUCPreds{oo}(aaa);
+                                AUC(aaa) = AUC(aaa) + AUCTemp;
+                            end
+                        end
+                        
+                        % Print out the AUC calculation results.
+                        fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
+                            aaa, nBootstrapAUC, AUC(aaa));
+                        meanAUC = mean(AUC);
+                        stdAUC = std(AUC);
                     end
                 end
             end
+            
+            
+            
+            
             
             %% Plot cross-validation smoothing param figure.
             if any(strcmp(OptionSearchSmoothParam,{'crossValBootWithin','crossValBootAcross','crossVal'}))
