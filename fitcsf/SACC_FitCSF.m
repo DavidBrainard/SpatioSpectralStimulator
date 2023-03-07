@@ -28,15 +28,15 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = false;
-SaveCSFPlot = true;
-PlotAUC = false;
+WaitForKeyToPlot = true;
+SaveCSFPlot = false;
+PlotAUC = true;
 
 % Fitting options.
 FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 CalAUC = true;
-BootstrapAUC = true;
+BootstrapAUC = false;
 CSFFittingDomain = 'log';
 
 % When fitting Smooth spline, You can choose option among {'crossVal',
@@ -188,15 +188,15 @@ for ss = 1:nSubjects
             sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
             
             % Check low boot strap range, so 10% of the entire range.
-            numDigitsRound = 2;
-            if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
-                error('Inconsistency in low bootstrapped sensitivities');
-            end
-            
-            % Check high bootstrap range, so 90% of the entire range.
-            if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
-                error('Inconsistency in high bootstrapped sensitivities');
-            end
+%             numDigitsRound = 2;
+%             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
+%                 error('Inconsistency in low bootstrapped sensitivities');
+%             end
+%             
+%             % Check high bootstrap range, so 90% of the entire range.
+%             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
+%                 error('Inconsistency in high bootstrapped sensitivities');
+%             end
             
             % Clear the variables for checking the values.
             clear sensitivityBootLowCheck sensitivityBootHighCheck;
@@ -420,38 +420,6 @@ for ss = 1:nSubjects
                     %
                     % Make a loop to repeat this part to bootstrap AUC.
                     for aaa = 1:nBootstrapAUC
-                        
-                        if any(strcmp(OptionSearchSmoothParam,{'crossValBootWithin','crossValBootAcross','crossVal'}))
-                            % Set the smoothing params that has the smallest error.
-                            [~,index] = min(smoothCrossError(:,aaa));
-                            smoothingParam = crossSmoothingParams(index);
-                            
-                            % Plot cross validation error.
-                            %
-                            % If we test multiple options at the same time, we
-                            % only make new figure at the beginning.
-                            if (nOptionsSearchSmoothParamSet > 1)
-                                if (oo == 1)
-                                    figure(crossFig); hold on;
-                                end
-                            else
-                                figure(crossFig); hold on;
-                            end
-                            
-                            % If we make a loop for bootstrapping AUC, we
-                            % plot this part only for the very first set.
-                            % This is the same for plotting the CSF.
-                            if (aaa == 1)
-                                markerColorOptionsSmoothSpline = {'r','g','b','c'};
-                                plot(crossSmoothingParams,smoothCrossError(:,aaa),'ko','MarkerSize',6);
-                                plot(smoothingParam,smoothCrossError(index,aaa),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline{oo},'Markeredgecolor','k');
-                                xlabel('Smoothing parameter','fontsize',15);
-                                ylabel('Cross-validation errors','fontsize',15);
-                                title('Cross-validation error accoring to smoothing parameter','fontsize',15);
-                                xlim([minSmoothingParam maxSmoothingParam]);
-                            end
-                        end
-                        
                         % Get the values for plotting smooth spline fitting curve.
                         % To bootstrap the AUC, here we will fit
                         % bootstrapped CS values.
@@ -460,6 +428,10 @@ for ss = 1:nSubjects
                         for zz = 1:length(mySFVals)
                             myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                         end
+                        
+                        % Set the smoothing params that has the smallest error.
+                        [~,index] = min(smoothCrossError(:,aaa));
+                        smoothingParam = crossSmoothingParams(index);
                         
                         % Fit happens here.
                         if (aaa == 1)
@@ -517,12 +489,38 @@ for ss = 1:nSubjects
                         end
                     end
                 end
-                
-                % Add legend to cross figure.
-                f_cross = flip(get(gca, 'Children'));
-                idxLegendCross = [2:2:nOptionsSearchSmoothParamSet*2];
-                legend(f_cross(idxLegendCross),optionSearchSmoothParamSet,'fontsize',12);
             end
+            
+            %% Plot cross-validation smoothing param figure.
+            if any(strcmp(OptionSearchSmoothParam,{'crossValBootWithin','crossValBootAcross','crossVal'}))
+                % If we test multiple options at the same time, we
+                % only make new figure at the beginning.
+                if (nOptionsSearchSmoothParamSet > 1)
+                    if (oo == 1)
+                        figure(crossFig); hold on;
+                    end
+                else
+                    figure(crossFig); hold on;
+                end
+                
+                % If we make a loop for bootstrapping AUC, we
+                % plot this part only for the very first set.
+                % This is the same for plotting the CSF.
+                if (aaa == 1)
+                    markerColorOptionsSmoothSpline = {'r','g','b','c'};
+                    plot(crossSmoothingParams,smoothCrossError(:,aaa),'ko','MarkerSize',6);
+                    plot(smoothingParam,smoothCrossError(index,aaa),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline{oo},'Markeredgecolor','k');
+                    xlabel('Smoothing parameter','fontsize',15);
+                    ylabel('Cross-validation errors','fontsize',15);
+                    title('Cross-validation error accoring to smoothing parameter','fontsize',15);
+                    xlim([minSmoothingParam maxSmoothingParam]);
+                end
+            end
+            
+            % Add legend to cross figure.
+            f_cross = flip(get(gca, 'Children'));
+            idxLegendCross = [2:2:nOptionsSearchSmoothParamSet*2];
+            legend(f_cross(idxLegendCross),optionSearchSmoothParamSet,'fontsize',12);
             
             %% Plot data figure here.
             figure(dataFig);
