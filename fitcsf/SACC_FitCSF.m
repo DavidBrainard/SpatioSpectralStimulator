@@ -27,7 +27,7 @@
 %% Initialize.
 clear; close all;
 
-%% Decide the options to fit CSF and how to plot.
+%% Set options to fit and plot CSF.
 %
 % Plotting options.
 OneFigurePerSub = false;
@@ -38,8 +38,11 @@ SaveCSFPlot = false;
 % Fitting options.
 BootstrapAUC = false;
 OptionSearchSmoothParam = 'crossValBootAcross';
+figureSize = 550;
+figurePositionData = [200 300 figureSize figureSize];
+figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
-%% Load the data.
+%% Load and read out the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
     testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
@@ -51,8 +54,6 @@ else
     error('Cannot find the data file!');
 end
 
-%% Read out the data.¸
-%
 % Subject info.
 subjectName = theData.subjectNameOptions;
 
@@ -68,7 +69,7 @@ highThresholdBootRaw = theData.highThresholdBootRaw;
 thresholdFittedBootCross1Raw = theData.thresholdFittedBootCross1Raw;
 thresholdFittedBootCross2Raw = theData.thresholdFittedBootCross2Raw;
 
-%% Fit CSF.
+%% Fitting CSF starts here.
 %
 % Get the number of available subjects and filters.
 nSubjects = length(theData.subjectNameOptions);
@@ -100,17 +101,12 @@ for ss = 1:nSubjects
         
         %% Make a new plot per each subject if you want.
         if (OneFigurePerSub)
-            % Set figure size.
-            figureSize = 550;
-            
             % Data figure info.
             dataFig = figure; clf; hold on;
-            figurePosition = [200 300 figureSize figureSize];
-            set(gcf,'position',figurePosition);
+            set(gcf,'position',figurePositionData);
             
             % Cross-validation figure info.
             crossFig = figure; hold on;
-            figurePositionCross = [200+figureSize 300 figureSize figureSize];
             set(gcf,'position',figurePositionCross);
         end
         
@@ -119,17 +115,12 @@ for ss = 1:nSubjects
         for ff = 1:nFilters
             % Make a new plot per each filter of the subject.
             if (~OneFigurePerSub)
-                % Set figure size.
-                figureSize = 550;
-                
                 % Data figure info.
                 dataFig = figure; clf; hold on;
-                figurePosition = [200 300 figureSize figureSize];
-                set(gcf,'position',figurePosition);
+                set(gcf,'position',figurePositionData);
                 
                 % Cross-validation figure info.
                 crossFig = figure; hold on;
-                figurePositionCross = [200+figureSize 300 figureSize figureSize];
                 set(gcf,'position',figurePositionCross);
             end
             
@@ -157,7 +148,7 @@ for ss = 1:nSubjects
             
             %% Calculate log sensitivity.
             %
-            % Raw data.
+            % PF fitted thresholds.
             sensitivity = log10(1./thresholds);
             sensitivityMedianBoot = log10(1./medianThresholdsBoot);
             
@@ -210,19 +201,17 @@ for ss = 1:nSubjects
             sensitivityBootCross1Sorted = sensitivityBootCross1(I,:);
             sensitivityBootCross2Sorted = sensitivityBootCross2(I,:);
             
-            %% Set variables to fit CSF.
+            % Set variables to fit CSF.
             mySFVals = sineFreqCyclesPerDegLogSorted;
             myCSVals = sensitivitySorted;
-            myWs = 1./(sensitivityBootHighSorted-sensitivityBootLowSorted);
             
-            %% Fitting Smooth spline.
-            % Load all bootstrapped values.
+            % Set all bootstrapped values.
             myCSValsBoot = sensitivityBootSorted';
             myCSValsCross1 = sensitivityBootCross1Sorted';
             myCSValsCross2 = sensitivityBootCross2Sorted';
             nBootPoints = size(myCSValsBoot,1);
             
-            %% Search smoothing parameter here.
+            %% Set searching options for smoothing parameter.
             %
             % Set the number of points for plotting the results.
             nSmoothPoints = 100;
@@ -233,140 +222,173 @@ for ss = 1:nSubjects
             maxSmoothingParam = 1;
             crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
             
-            % Switch the method how to search smoothing parameter.
+            %% Find optimal smoothing parameter for CCSF.
+            %
+            % Here we can use bootstrap method or just type a number.
             switch OptionSearchSmoothParam
                 case 'crossValBootAcross'
-                    % Make a loop for bootstrapping AUC if you
-                    % want. This should start before deciding the
-                    % searching method for smoothing param, but for
-                    % now we start from here as we are leaning to
-                    % use this method.
-                    if (BootstrapAUC)
-                        nBootstrapAUC = 20;
-                    else
-                        nBootstrapAUC = 1;
-                    end
-                    
-                    for aaa = 1:nBootstrapAUC
+                    % Make a loop for testing smoothing paramemters.
+                    for sss = 1:length(crossSmoothingParams)
+                        smoothCrossError(sss) = 0;
                         
-                        % Make a loop for testing smoothing paramemters.
-                        for sss = 1:length(crossSmoothingParams)
-                            smoothCrossError(sss,aaa) = 0;
+                        % Bootstrap for cross-validation happens here.
+                        nCrossValBootAcross = 20;
+                        for cc = 1:nCrossValBootAcross
                             
-                            % Bootstrap for cross-validation happens here.
-                            nCrossValBootAcross = 20;
-                            for cc = 1:nCrossValBootAcross
-                                
-                                % Draw new fit/cross dataset (N=20)
-                                % out of bootstrapped values
-                                % (N=100). Once we drew the set, we
-                                % will use the same set for all
-                                % smoothing params.
-                                if (sss == 1)
-                                    for zz = 1:length(mySFVals)
-                                        crossIndex = randi(nBootPoints,1,1);
-                                        bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                                        bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
-                                    end
+                            % Draw new fit/cross dataset (N=20)
+                            % out of bootstrapped values
+                            % (N=100). Once we drew the set, we
+                            % will use the same set for all
+                            % smoothing params.
+                            if (sss == 1)
+                                for zz = 1:length(mySFVals)
+                                    crossIndex = randi(nBootPoints,1,1);
+                                    bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                                    bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
                                 end
-                                
-                                % Fit curve with the training set.
-                                smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
-                                
-                                % Get the predicted result of testing value.
-                                smoothDataPredsCross = feval(smoothFitCross,mySFVals');
-                                
-                                % Calculate the error.
-                                smoothCrossError(sss,aaa) = smoothCrossError(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                             end
                             
-                            % Print out the progress.
-                            if (sss == round(length(crossSmoothingParams)*0.25))
-                                fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam, '25%');
-                            elseif (sss == round(length(crossSmoothingParams)*0.50))
-                                fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '50%');
-                            elseif (sss == round(length(crossSmoothingParams)*0.75))
-                                fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '75%');
-                            elseif (sss == length(crossSmoothingParams))
-                                fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
-                            end
+                            % Fit curve with the training set.
+                            smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
+                            
+                            % Get the predicted result of testing value.
+                            smoothDataPredsCross = feval(smoothFitCross,mySFVals');
+                            
+                            % Calculate the error.
+                            smoothCrossError(sss) = smoothCrossError(sss) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                         end
                         
-                        % Print out the progress of bootstrapping
-                        % AUC. It will take a while.
-                        fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
+                        % Print out the progress.
+                        if (sss == round(length(crossSmoothingParams)*0.25))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam, '25%');
+                        elseif (sss == round(length(crossSmoothingParams)*0.50))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '50%');
+                        elseif (sss == round(length(crossSmoothingParams)*0.75))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '75%');
+                        elseif (sss == length(crossSmoothingParams))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
+                        end
                     end
+                    
+                    % Set the smoothing params that has the smallest error.
+                    [~,index] = min(smoothCrossError);
+                    smoothingParam = crossSmoothingParams(index);
                     
                 case 'type'
                     % Type a number manually.
                     smoothingParam = 0.1;
             end
             
-            %% Calculate AUC.
+            %% Calculate AUC of CCSF.
             %
-            % Make a loop to repeat this part to bootstrap AUC.
+            % Fit the data with the optimal smoothing parameter.
+            smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
+            smoothingParamToPrint = smoothingParam;
+            
+            % Make smooth plot.
+            smoothPlotSFVals = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
+            smoothPlotPreds = feval(smoothFit,smoothPlotSFVals);
+            
+            % Get the area under the curve (AUC).
+            nPointsCalAUC = 1000;
+            calAUCSFVals = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
+            calAUCPreds = feval(smoothFit,calAUCSFVals);
+            
+            % Save the values for plotting. These two variables will be
+            % updated below.
+            calAUCSFValsPlot = calAUCSFVals;
+            calAUCPredsPlot = calAUCPreds;
+            
+            % Calculate AUC.
+            AUC = trapz(calAUCSFVals,calAUCPreds);
+            
+            % Make smooth plot.
+            smoothPlotSFValsBoot = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
+            smoothPlotPredsBoot = feval(smoothFit,smoothPlotSFValsBoot);
+            
+            % Show progress.
+            fprintf('\t CCSF fitting and AUC calculation completed! \n\n');
+            
+            %% Bootstrapping AUC.
+            %
+            % Here we will repeat the part above that find an optimal
+            % smoothing parameter and calculate AUC.
+            %
+            % Set the number of bootrapping the AUC.
+            nBootstrapAUC = 20;
+            fprintf('\t Bootstrapping AUC is going to be started! \n');
+            
             for aaa = 1:nBootstrapAUC
-                % Get the values for plotting smooth spline fitting curve.
-                % To bootstrap the AUC, here we will fit
-                % bootstrapped CS values.
-                %
-                % Generate new CS values set to fit.
-                for zz = 1:length(mySFVals)
-                    myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
+                % Make a loop for testing smoothing paramemters.
+                for sss = 1:length(crossSmoothingParams)
+                    smoothCrossError(sss,aaa) = 0;
+                    
+                    % Bootstrap for cross-validation happens here.
+                    nCrossValBootAcross = 20;
+                    for cc = 1:nCrossValBootAcross
+                        
+                        % Draw new fit/cross dataset (N=20)
+                        % out of bootstrapped values
+                        % (N=100). Once we drew the set, we
+                        % will use the same set for all
+                        % smoothing params.
+                        if (sss == 1)
+                            for zz = 1:length(mySFVals)
+                                crossIndex = randi(nBootPoints,1,1);
+                                bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                                bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                            end
+                        end
+                        
+                        % Fit curve with the training set.
+                        smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
+                        
+                        % Get the predicted result of testing value.
+                        smoothDataPredsCross = feval(smoothFitCross,mySFVals');
+                        
+                        % Calculate the error.
+                        smoothCrossError(sss,aaa) = smoothCrossError(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
+                    end
+                    
+                    % Print out the progress.
+                    if (sss == round(length(crossSmoothingParams)*0.25))
+                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam, '25%');
+                    elseif (sss == round(length(crossSmoothingParams)*0.50))
+                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '50%');
+                    elseif (sss == round(length(crossSmoothingParams)*0.75))
+                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '75%');
+                    elseif (sss == length(crossSmoothingParams))
+                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
+                    end
                 end
+                
+                % Print out the progress of bootstrapping
+                % AUC. It will take a while.
+                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
                 
                 % Set the smoothing params that has the smallest error.
                 [~,index] = min(smoothCrossError(:,aaa));
                 smoothingParam = crossSmoothingParams(index);
                 
-                % Fit happens here.
-                if (aaa == 1)
-                    smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
-                    smoothingParamToPrint = smoothingParam;
-                else
-                    smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParam);
+                % Generate new CS values set to fit the curve.
+                for zz = 1:length(mySFVals)
+                    myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                 end
-                smoothPlotSFVals{aaa} = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
-                smoothPlotPreds{aaa} = feval(smoothFit,smoothPlotSFVals{aaa});
                 
-                %% Get the area under the CSF curve (AUC).
-                %
-                % Set the points on the CSF curve to calculate
-                % the area.
+                % Fit happens here.
+                smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParam);
+                
+                % Get the area under the curve (AUC).
                 nPointsCalAUC = 1000;
                 calAUCSFVals = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
                 calAUCPreds = feval(smoothFit,calAUCSFVals);
                 
-                if (aaa == 1)
-                    calAUCSFValsPlot = calAUCSFVals;
-                    calAUCPredsPlot = calAUCPreds;
-                end
-                
-                % Here we can use either trapz function or
-                % simple calculation for AUC.
-                useTrapZ = true;
-                
-                if (useTrapZ)
-                    % AUC using trapz function.
-                    AUC(aaa) = trapz(calAUCSFVals,calAUCPreds);
-                    
-                else
-                    % AUC not using the function.
-                    %
-                    % Calculate each thin rectangle under the
-                    % curve and sum them up.
-                    AUC(aaa) = 0;
-                    for aaa = 1:nPointsCalAUC-1
-                        AUCTemp = (calAUCSFVals(aaa+1)-calAUCSFVals(aaa)) * calAUCPreds(aaa);
-                        AUC(aaa) = AUC(aaa) + AUCTemp;
-                    end
-                end
+                % Calculate AUC.
+                AUCBoot(aaa) = trapz(calAUCSFVals,calAUCPreds);
                 
                 % Print out the AUC calculation results.
                 fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
-                    aaa, nBootstrapAUC, AUC(aaa));
-                meanAUC = mean(AUC);
-                stdAUC = std(AUC);
+                    aaa, nBootstrapAUC, AUCBoot(aaa));
             end
             
             %% Plot cross-validation smoothing param figure.
@@ -384,7 +406,7 @@ for ss = 1:nSubjects
                 title('Cross-validation error accoring to smoothing parameter','fontsize',15);
                 xlim([minSmoothingParam maxSmoothingParam]);
             end
-            legend('All smoothing params', 'Optimal');
+            legend('All params', 'Optimal param', 'fontsize', 13);
             
             %% Plot data figure here.
             figure(dataFig);
@@ -393,9 +415,7 @@ for ss = 1:nSubjects
             colorOptionsRaw = {'k.','r.','g.','b.','c.'};
             colorOptionsBoot = {'k+','r+','g+','b+','c+'};
             colorOptionsCSF = {'k-','r-','g-','b-','c-'};
-            colorOptionsCSF2 = {'k--','r--','g--','b--','c--'};
             colorOptionsCI = {'k','r','g','b','c'};
-            colorOptionsSmoothSpline = 'r-';
             
             % Set marker color same if we plot it by filter.
             if (~OneFigurePerSub)
@@ -421,15 +441,11 @@ for ss = 1:nSubjects
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
-            % CSF fitting with smoothing spline (Method 2).
+            % Plot CCSF.
             if (OneFigurePerSub)
-                plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF2{ff},'LineWidth',4);
+                plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
             else
-                % We will plot the CSF derived from the very first
-                % set if we do bootstrapping for AUC.
-                numBootstrapAUCToPlotCSF = 1;
-                plot(smoothPlotSFVals{numBootstrapAUCToPlotCSF},smoothPlotPreds{numBootstrapAUCToPlotCSF},...
-                    colorOptionsSmoothSpline,'LineWidth',4);
+                plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{2},'LineWidth',4);
             end
             
             % Plot AUC results if you want.
