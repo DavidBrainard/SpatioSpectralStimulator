@@ -3,7 +3,7 @@
 % This is to fit CSF curve for SACC project.
 %
 % See also:
-%    asymmetricParabolicFunc
+%    asymmetricParabolicFunc, SACC_FitCSF_OLD
 
 % History:
 %    01/13/23   smo    - Started on it.
@@ -20,6 +20,9 @@
 %    02/21/23   smo    - Added an option to calculate and bootstrap AUC.
 %                        Also, we can choose which domain to fit CSF either
 %                        linear or log.
+%    03/08/23   smo    - Cleared up the options that we will not use
+%                        anymore. The one with all the options has been
+%                        saved as a separate file named SACC_FitCSF_OLD.m.
 
 %% Initialize.
 clear; close all;
@@ -33,7 +36,6 @@ SaveCSFPlot = false;
 PlotAUC = true;
 
 % Fitting options.
-FitAsymmetricParabolic = false;
 FitSmoothSpline = true;
 BootstrapAUC = false;
 CSFFittingDomain = 'log';
@@ -229,23 +231,6 @@ for ss = 1:nSubjects
                     mySFVals = 10.^sineFreqCyclesPerDegLogSorted;
                     myCSVals = 10.^sensitivitySorted;
                     myWs = 1./10.^(sensitivityBootHighSorted-sensitivityBootLowSorted);
-            end
-            
-            %% Fitting method 1) Asymmetric parabolic function.
-            if (FitAsymmetricParabolic)
-                % Set parameters for optimazation of the parameter p.
-                p0 = [log10(10) log10(0.5) 0.1 0.1];
-                p_lowerBound = [log10(10) log10(0.5) 0.1 0.1];
-                p_higherBound = [log10(400) log10(18) 10 10];
-                A = [];   % Set numbers for the condition of A*x <= b*x0 / x0 is the initial point
-                b = [];
-                Aeq = []; % Matrix for linear equality constraints
-                beq = []; % Vector for linear equality constraints
-                options = optimset('fmincon');
-                
-                % Optimize p here.
-                p_optimized = fmincon(@(p_unknown) norm(myWs .* (myCSVals - asymmetricParabolicFunc(p_unknown, mySFVals))), ...
-                    p0, A, b, Aeq, beq, p_lowerBound, p_higherBound, [], options);
             end
             
             %% Fitting method 2) Smooth spline method.
@@ -572,15 +557,7 @@ for ss = 1:nSubjects
             end
             e.LineStyle = 'none';
             
-            % CSF fitting results with asymmetric parabolic (Method 1).
-            if (FitAsymmetricParabolic)
-                SF_CSF_start = log10(3);
-                SF_CSF_end = log10(18);
-                nPointsCSF = 100;
-                sineFreqCyclesPerDegNumCSF = linspace(SF_CSF_start,SF_CSF_end,nPointsCSF);
-                sensitivityCSFLinear = asymmetricParabolicFunc(p_optimized, sineFreqCyclesPerDegNumCSF);
-                plot(sineFreqCyclesPerDegNumCSF, sensitivityCSFLinear, colorOptionsCSF{ff}, 'linewidth', 2);
-            end
+            
             
             % CSF fitting with smoothing spline (Method 2).
             if (FitSmoothSpline)
