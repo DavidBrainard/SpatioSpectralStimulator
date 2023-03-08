@@ -489,10 +489,6 @@ for ss = 1:nSubjects
                 end
             end
             
-            
-            
-            
-            
             %% Plot cross-validation smoothing param figure.
             if any(strcmp(OptionSearchSmoothParam,{'crossValBootWithin','crossValBootAcross','crossVal'}))
                 % If we test multiple options at the same time, we
