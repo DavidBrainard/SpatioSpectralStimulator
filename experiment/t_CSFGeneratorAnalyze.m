@@ -39,9 +39,10 @@ clear; close all;
 VERBOSE = true;
 CHECKADAPTIVEMODE = false;
 
-FITALLATONCE = true;
-SAVETHEPLOT = true;
+FITALLATONCE = false;
+SAVETHEPLOT = false;
 RECORDTESTIMAGEPROFILE = true;
+RECORDCSSUMMARY = true;
 
 PLOTCSFCURVE = true;
 SAVECSFCURVE = true;
@@ -124,8 +125,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'012'};
-    spatialFrequencyOptions = {'3'; '6'; '9'; '12'; '18'};
+    subjectNameOptions = {'039'};
+    spatialFrequencyOptions = {'3'};
 end
 
 %% Show the progress of the experiment.
@@ -908,113 +909,128 @@ if (CHECKADAPTIVEMODE)
     end
 end
 
-%% Find cases where the raw threshold is not within the confidence interval
-% for the second pass threshold.
-indexBigDiff = find(thresholdFittedRaw < lowThresholdBoot | thresholdFittedRaw > highThresholdBoot);
-
-% Summary plots comparing raw and final fits.
-index = ~isnan(thresholdFittedRaw);
-threshFig = figure; clf;
-subplot(1,2,1);  hold on
-plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
-h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
-    log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
-set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
-plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
-plot([-3 12],[-3 12],'k');
-xlim([-3 8]); ylim([-3 1]);
-xlabel('First pass log10 threshold');
-ylabel('Second pass log10 threshold');
-
-subplot(1,2,2); hold on
-plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
-h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
-    log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
-set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
-plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
-plot([-3 12],[-3 12],'k');
-xlim([-2.5 -0.5]); ylim([-2.5 -0.5]);
-xlabel('First pass log10 threshold');
-ylabel('Second pass log10 threshold');
-saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassLogThresholds',testFileFormat)));
-
-slopeFig = figure; clf; hold on
-plot(slopeFittedRaw(~isnan(slopeFittedRaw)),slopeFitted(~isnan(slopeFitted)),'ro','MarkerSize',8,'MarkerFaceColor','r');
-plot([0 16],[0 16],'k');
-xlim([0 16]); ylim([0 16]);
-xlabel('First pass slope');
-ylabel('Second pass slope');
-axis('square');
-saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassSlopes',testFileFormat)));
-
-% Confidence interval figure;
-confIntervalsLog = log10(highThresholdBoot) - log10(lowThresholdBoot);
-confIntervalsLin = highThresholdBoot - lowThresholdBoot;
-confHist = figure; clf; hold on;
-hist(confIntervalsLog(~isnan(confIntervalsLog)),50);
-xlabel('Threshold Confidence Interval Magnitude (Log10)');
-saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('ConfidenceIntervalHist',testFileFormat)));
-
-% Bootstrap on raw?
-if (BOOTSTRAP_RAWFITS)
-    confIntervalsRawLog = log10(highThresholdBootRaw) - log10(lowThresholdBootRaw);
-    confIntervalsRawLin = highThresholdBootRaw - lowThresholdBootRaw;
-end
-
-% Let's write out the confidence intervals in a sorted order
-clear writeCellArray
-[~,sortIndex] = sort(confIntervalsLog(:),'descend');
-writeCellArray{1,1} = 'Subject';
-writeCellArray{1,2} = 'Spatial Freq';
-writeCellArray{1,3} = 'Filter';
-writeCellArray{1,4} = 'Date';
-writeCellArray{1,5} = 'Threshold';
-writeCellArray{1,6} = 'Log10 Threshold';
-writeCellArray{1,7} = 'Slope';
-writeCellArray{1,8} = sprintf('Conf (%d%%)',round(100*bootConfInterval));
-writeCellArray{1,9} = sprintf('Log10 Conf (%d%%)',round(100*bootConfInterval));
-writeCellArray{1,10} = 'Threshold Raw';
-writeCellArray{1,11} = 'Log10 Threshold Raw';
-writeCellArray{1,12} = 'Slope Raw';
-if (BOOTSTRAP_RAWFITS)
-    writeCellArray{1,13} = sprintf('Conf Raw (%d%%)',round(100*bootConfInterval));
-    writeCellArray{1,14} = sprintf('Log10 Conf Raw (%d%%)',round(100*bootConfInterval));
-end
-
-cellIndex = 2;
-for ii = 1:length(sortIndex)
-    if (~isnan(confIntervalsLog(sortIndex(ii))))
-        writeCellArray{cellIndex,1} = subjectBigList{sortIndex(ii)};
-        writeCellArray{cellIndex,2} = spatialFrequencyBigList{sortIndex(ii)};
-        writeCellArray{cellIndex,3} = filterBigList{sortIndex(ii)};
-        writeCellArray{cellIndex,4} = dateBigList{sortIndex(ii)};
-        writeCellArray{cellIndex,5} = thresholdFitted(sortIndex(ii));
-        writeCellArray{cellIndex,6} = log10(thresholdFitted(sortIndex(ii)));
-        writeCellArray{cellIndex,7} = slopeFitted(sortIndex(ii));
-        writeCellArray{cellIndex,8} = confIntervalsLin(sortIndex(ii));
-        writeCellArray{cellIndex,9} = confIntervalsLog(sortIndex(ii));
-        writeCellArray{cellIndex,10} = thresholdFittedRaw(sortIndex(ii));
-        writeCellArray{cellIndex,11} = log10(thresholdFittedRaw(sortIndex(ii)));
-        writeCellArray{cellIndex,12} = slopeFittedRaw(sortIndex(ii));
-        if (BOOTSTRAP_RAWFITS)
-            writeCellArray{cellIndex,13} = confIntervalsRawLin(sortIndex(ii));
-            writeCellArray{cellIndex,14} = confIntervalsRawLog(sortIndex(ii));
-        end
-        cellIndex = cellIndex+1;
+%% Save out summary text file per subject.
+if (RECORDCSSUMMARY)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+        testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
     end
+    tableCSSummary = table(Subject,SpatialFrequency,);
+    
+    % Write a table to the excel file.
+    sheet = 1;
+    range = 'B2';
+    writetable(tableCSSummary,testFilename,'Sheet',sheet,'Range',range);
 end
 
-% We will write the info in the cell only if we run the fitting for all
-% cases so that we will not over-write the data.
+%% Run this part only when fitting all at once.
+%
+% This part saves some summary text file and plots, we will not run this
+% part when fitting one subject to prevent overwriting the data and figure.
 if (FITALLATONCE)
+    % Find cases where the raw threshold is not within the confidence
+    % interval for the second pass threshold.
+    indexBigDiff = find(thresholdFittedRaw < lowThresholdBoot | thresholdFittedRaw > highThresholdBoot);
+    
+    % Summary plots comparing raw and final fits.
+    index = ~isnan(thresholdFittedRaw);
+    threshFig = figure; clf;
+    subplot(1,2,1);  hold on
+    plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
+    h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
+        log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
+    set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
+    plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
+    plot([-3 12],[-3 12],'k');
+    xlim([-3 8]); ylim([-3 1]);
+    xlabel('First pass log10 threshold');
+    ylabel('Second pass log10 threshold');
+    
+    subplot(1,2,2); hold on
+    plot(log10(thresholdFittedRaw(index)),log10(thresholdFitted(index)),'bo','MarkerSize',9,'MarkerFaceColor','b');
+    h = errorbarY(log10(thresholdFittedRaw(index)),log10(medianThresholdBoot(index)), ...
+        log10(medianThresholdBoot(index))-log10(lowThresholdBoot(index)),log10(highThresholdBoot(index))-log10(medianThresholdBoot(index)),'go');
+    set(h,'Color','g'); set(h,'MarkerSize',8); set(h,'MarkerFaceColor','g');
+    plot(log10(thresholdFittedRaw(indexBigDiff)),log10(thresholdFitted(indexBigDiff)),'ro','MarkerSize',7,'MarkerFaceColor','r');
+    plot([-3 12],[-3 12],'k');
+    xlim([-2.5 -0.5]); ylim([-2.5 -0.5]);
+    xlabel('First pass log10 threshold');
+    ylabel('Second pass log10 threshold');
+    saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassLogThresholds',testFileFormat)));
+    
+    slopeFig = figure; clf; hold on
+    plot(slopeFittedRaw(~isnan(slopeFittedRaw)),slopeFitted(~isnan(slopeFitted)),'ro','MarkerSize',8,'MarkerFaceColor','r');
+    plot([0 16],[0 16],'k');
+    xlim([0 16]); ylim([0 16]);
+    xlabel('First pass slope');
+    ylabel('Second pass slope');
+    axis('square');
+    saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('SecondVsFirstPassSlopes',testFileFormat)));
+    
+    % Confidence interval figure;
+    confIntervalsLog = log10(highThresholdBoot) - log10(lowThresholdBoot);
+    confIntervalsLin = highThresholdBoot - lowThresholdBoot;
+    confHist = figure; clf; hold on;
+    hist(confIntervalsLog(~isnan(confIntervalsLog)),50);
+    xlabel('Threshold Confidence Interval Magnitude (Log10)');
+    saveas(gcf,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('ConfidenceIntervalHist',testFileFormat)));
+    
+    % Bootstrap on raw?
+    if (BOOTSTRAP_RAWFITS)
+        confIntervalsRawLog = log10(highThresholdBootRaw) - log10(lowThresholdBootRaw);
+        confIntervalsRawLin = highThresholdBootRaw - lowThresholdBootRaw;
+    end
+    
+    % Let's write out the confidence intervals in a sorted order
+    clear writeCellArray
+    [~,sortIndex] = sort(confIntervalsLog(:),'descend');
+    writeCellArray{1,1} = 'Subject';
+    writeCellArray{1,2} = 'Spatial Freq';
+    writeCellArray{1,3} = 'Filter';
+    writeCellArray{1,4} = 'Date';
+    writeCellArray{1,5} = 'Threshold';
+    writeCellArray{1,6} = 'Log10 Threshold';
+    writeCellArray{1,7} = 'Slope';
+    writeCellArray{1,8} = sprintf('Conf (%d%%)',round(100*bootConfInterval));
+    writeCellArray{1,9} = sprintf('Log10 Conf (%d%%)',round(100*bootConfInterval));
+    writeCellArray{1,10} = 'Threshold Raw';
+    writeCellArray{1,11} = 'Log10 Threshold Raw';
+    writeCellArray{1,12} = 'Slope Raw';
+    if (BOOTSTRAP_RAWFITS)
+        writeCellArray{1,13} = sprintf('Conf Raw (%d%%)',round(100*bootConfInterval));
+        writeCellArray{1,14} = sprintf('Log10 Conf Raw (%d%%)',round(100*bootConfInterval));
+    end
+    
+    cellIndex = 2;
+    for ii = 1:length(sortIndex)
+        if (~isnan(confIntervalsLog(sortIndex(ii))))
+            writeCellArray{cellIndex,1} = subjectBigList{sortIndex(ii)};
+            writeCellArray{cellIndex,2} = spatialFrequencyBigList{sortIndex(ii)};
+            writeCellArray{cellIndex,3} = filterBigList{sortIndex(ii)};
+            writeCellArray{cellIndex,4} = dateBigList{sortIndex(ii)};
+            writeCellArray{cellIndex,5} = thresholdFitted(sortIndex(ii));
+            writeCellArray{cellIndex,6} = log10(thresholdFitted(sortIndex(ii)));
+            writeCellArray{cellIndex,7} = slopeFitted(sortIndex(ii));
+            writeCellArray{cellIndex,8} = confIntervalsLin(sortIndex(ii));
+            writeCellArray{cellIndex,9} = confIntervalsLog(sortIndex(ii));
+            writeCellArray{cellIndex,10} = thresholdFittedRaw(sortIndex(ii));
+            writeCellArray{cellIndex,11} = log10(thresholdFittedRaw(sortIndex(ii)));
+            writeCellArray{cellIndex,12} = slopeFittedRaw(sortIndex(ii));
+            if (BOOTSTRAP_RAWFITS)
+                writeCellArray{cellIndex,13} = confIntervalsRawLin(sortIndex(ii));
+                writeCellArray{cellIndex,14} = confIntervalsRawLog(sortIndex(ii));
+            end
+            cellIndex = cellIndex+1;
+        end
+    end
+    
+    % Save out all experiment results.
     writecell(writeCellArray,fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),append('DataSummary','.xlsx')), ...
         'WriteMode',"replacefile");
-end
-
-% Save out full run info.
-if (FITALLATONCE)
+    
+    % Save out full run info.
     save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
 end
 
-% Close all.
+%% Close all.
 close all;
