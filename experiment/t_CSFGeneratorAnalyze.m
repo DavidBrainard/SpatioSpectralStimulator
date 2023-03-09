@@ -45,7 +45,7 @@ VERBOSE = true;
 FITALLATONCE = false;
 SAVETHEPLOT = false;
 RECORDTESTIMAGEPROFILE = true;
-RECORDCSSUMMARY = true;
+RECORDTEXTSUMMARYPERSUB = true;
 
 PLOTCSFCURVE = true;
 SAVECSFCURVE = true;
@@ -835,7 +835,7 @@ for ss = 1:nSubjects
     end
     
     %% Save out summary text file per subject.
-    if (RECORDCSSUMMARY)
+    if (RECORDTEXTSUMMARYPERSUB)
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
             testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
