@@ -31,14 +31,15 @@
 %                             once.
 %    11/14/22  dhb          - Bootstrapping
 %    11/17/22  dhb          - Two pass fitting.  Needs a code cleaning pass.
+%    03/09/23  smo          - Removed the part checking Quest+ adaptive
+%                             mode. It has been saved in the copy of this
+%                             code, t_CSFGeneratorAnalyze_OLD.m.
 
 %% Start over.
 clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-CHECKADAPTIVEMODE = false;
-
 FITALLATONCE = false;
 SAVETHEPLOT = false;
 RECORDTESTIMAGEPROFILE = true;
@@ -848,65 +849,6 @@ if (FITALLATONCE)
         writetable(tableImageProfile,testFilename,'Sheet',sheet,'Range',range);
     end
     fprintf('\t Test image profile has been successfully recorded! \n');
-end
-
-%% Here we check if the Adaptive mode works fine if you want.
-if (CHECKADAPTIVEMODE)
-    figure; clf; hold on;
-    for ss = 1:nSineFreqCyclesPerDeg
-        
-        % Set target spatial frequency.
-        sineFreqCyclesPerDegTemp = sineFreqCyclesPerDeg(ss);
-        
-        % Load the data.
-        if (ispref('SpatioSpectralStimulator','SACCData'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),...
-                subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-            testFilename = GetMostRecentFileName(testFiledir,...
-                'CS','olderDate',olderDate);
-            theData = load(testFilename);
-        else
-            error('Cannot find data file');
-        end
-        
-        % Set variables here.
-        nTrial = theData.estimator.nTrial;
-        testTrials = linspace(1,nTrial,nTrial);
-        testContrasts = 10.^stimVec;
-        testPerformances = {structVec.outcome};
-        
-        % Set the color of the data point according to the subject's
-        % performance. We will differenciate the marker point based on
-        % each response either correct of incorrect.
-        %
-        % In testPerformances, correct response is allocated to 2 and
-        % incorrect to 1. We will differenciate the marekr color based on
-        % these.
-        responseCorrect   = 2;
-        responseIncorrect = 1;
-        markerColorCorrect   = 5;
-        markerColorIncorrect = 10;
-        
-        for tt = 1:nTrial
-            markerFaceColor(1,tt) = testPerformances{tt};
-            markerFaceColor(find(markerFaceColor == responseCorrect)) = markerColorCorrect;
-            markerFaceColor(find(markerFaceColor == responseIncorrect)) = markerColorIncorrect;
-        end
-        
-        if (SUBPLOT)
-            subplot(sizeSubplot(1),sizeSubplot(2),ss); hold on;
-        end
-        
-        % Plot it.
-        markerSize = 40;
-        scatter(testTrials, testContrasts, markerSize, markerFaceColor, 'filled', 'MarkerEdgeColor', zeros(1,3));
-        xlabel('Number of Trials', 'fontsize', 15);
-        ylabel('Contrast', 'fontsize', 15);
-        title(sprintf('%d cpd',sineFreqCyclesPerDegTemp),'fontsize', 15);
-        legend('Blue = correct / Yellow = incorrect','location','northeast','fontsize',15);
-        
-        clear markerFaceColor;
-    end
 end
 
 %% Save out summary text file per subject.
