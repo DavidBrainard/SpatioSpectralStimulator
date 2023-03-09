@@ -35,12 +35,13 @@ WaitForKeyToPlot = true;
 PlotAUC = true;
 SaveCSFPlot = false;
 
-% Fitting options.
-BootstrapAUC = false;
-OptionSearchSmoothParam = 'crossValBootAcross';
 figureSize = 550;
 figurePositionData = [200 300 figureSize figureSize];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
+
+% Fitting options.
+BootstrapAUC = false;
+OptionSearchSmoothParam = 'crossValBootAcross';
 
 %% Load and read out the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -222,7 +223,7 @@ for ss = 1:nSubjects
             maxSmoothingParam = 1;
             crossSmoothingParams = linspace(minSmoothingParam,maxSmoothingParam,nSmoothingParams);
             
-            %% Find optimal smoothing parameter for CCSF.
+            %% Find optimal smoothing parameter for CSF.
             %
             % Here we can use bootstrap method or just type a number.
             switch OptionSearchSmoothParam
@@ -279,11 +280,10 @@ for ss = 1:nSubjects
                     smoothingParam = 0.1;
             end
             
-            %% Calculate AUC of CCSF.
+            %% Calculate AUC of CSF.
             %
             % Fit the data with the optimal smoothing parameter.
             smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
-            smoothingParamToPrint = smoothingParam;
             
             % Make smooth plot.
             smoothPlotSFVals = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
@@ -307,7 +307,7 @@ for ss = 1:nSubjects
             smoothPlotPredsBoot = feval(smoothFit,smoothPlotSFValsBoot);
             
             % Show progress.
-            fprintf('\t CCSF fitting and AUC calculation completed! \n\n');
+            fprintf('\t CSF fitting and AUC calculation completed! \n\n');
             
             %% Bootstrapping AUC.
             %
@@ -315,10 +315,10 @@ for ss = 1:nSubjects
             % smoothing parameter and calculate AUC.
             %
             % Set the number of bootrapping the AUC.
-            nBootstrapAUC = 20;
+            nBootAUC = 20;
             fprintf('\t Bootstrapping AUC is going to be started! \n');
             
-            for aaa = 1:nBootstrapAUC
+            for aaa = 1:nBootAUC
                 % Make a loop for testing smoothing paramemters.
                 for sss = 1:length(crossSmoothingParams)
                     smoothCrossErrorBootAUC(sss,aaa) = 0;
@@ -364,11 +364,11 @@ for ss = 1:nSubjects
                 
                 % Print out the progress of bootstrapping
                 % AUC. It will take a while.
-                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
+                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootAUC);
                 
                 % Set the smoothing params that has the smallest error.
-                [~,index] = min(smoothCrossErrorBootAUC(:,aaa));
-                smoothingParam = crossSmoothingParams(index);
+                [~,indexBootAUC] = min(smoothCrossErrorBootAUC(:,aaa));
+                smoothingParamBootAUC = crossSmoothingParams(indexBootAUC);
                 
                 % Generate new CS values set to fit the curve.
                 for zz = 1:length(mySFVals)
@@ -376,7 +376,7 @@ for ss = 1:nSubjects
                 end
                 
                 % Fit happens here.
-                smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParam);
+                smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParamBootAUC);
                 
                 % Get the area under the curve (AUC).
                 nPointsCalAUC = 1000;
@@ -388,15 +388,15 @@ for ss = 1:nSubjects
                 
                 % Print out the AUC calculation results.
                 fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
-                    aaa, nBootstrapAUC, AUCBoot(aaa));
+                    aaa, nBootAUC, AUCBoot(aaa));
             end
             
             %% Plot cross-validation smoothing param figure.
             figure(crossFig); hold on;
             
-            markerColorOptionsSmoothSpline = 'r';
-            plot(crossSmoothingParams,smoothCrossError,'ko','MarkerSize',6);
-            plot(smoothingParam,smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline,'Markeredgecolor','k');
+            plot(crossSmoothingParams, smoothCrossError,'ko','MarkerSize',6);
+            plot(smoothingParam, smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','r','Markeredgecolor','k');
+            
             xlabel('Smoothing parameter','fontsize',15);
             ylabel('Cross-validation errors','fontsize',15);
             title('Cross-validation error accoring to smoothing parameter','fontsize',15);
@@ -436,7 +436,7 @@ for ss = 1:nSubjects
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
-            % Plot CCSF.
+            % Plot CSF.
             if (OneFigurePerSub)
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
             else
@@ -465,20 +465,16 @@ for ss = 1:nSubjects
                 
                 % Add legend.
                 f_data = flip(get(gca, 'Children'));
-                
                 numSpaceLegend = 4;
                 idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
                 idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
-                
-                % Add legend when drawing one figure per each filter.
                 legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
-                    sprintf('CCSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
+                    sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
                 
-                % Add some text to the plot.
-                % Smoothing param.
-                textSmoothingParam = sprintf('Smoothing parameter = %.2f', smoothingParamToPrint);
+                % Make text Smoothing param for the plot.
+                textSmoothingParam = sprintf('Smoothing parameter = %.2f', smoothingParam);
                 
-                % AUC.
+                % Make text AUC for the plot.
                 confIntervals = 80;
                 fittedAUC = AUC(1);
                 medianBootAUC = median(AUC);
@@ -488,7 +484,7 @@ for ss = 1:nSubjects
                 textBootAUC = sprintf('Median boot AUC = %.4f (CI %d: %.4f/%.4f)', ...
                     medianBootAUC, confIntervals, lowBootAUC, highBootAUC);
                 
-                % Add texts here.
+                % Set the size of the texts in the plot.
                 sizeTextOnPlot = 13;
                 
                 % We make equal spacing between the texts here.
@@ -497,6 +493,7 @@ for ss = 1:nSubjects
                 tempTextLoc = logspace(log10(textThirdlineYLoc),log10(textFirstlineYLoc),3);
                 textSecondlineYLoc = tempTextLoc(2);
                 
+                % Add texts.
                 text(log10(3),log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
                 text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
                 text(log10(3),log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
@@ -514,7 +511,7 @@ for ss = 1:nSubjects
                 end
             end
             
-            % Key stroke to start measurement.
+            % Key stroke to draw next plot.
             if (~OneFigurePerSub)
                 if (WaitForKeyToPlot)
                     fprintf('\t Press a key to draw next plot! \n');
@@ -567,7 +564,7 @@ for ss = 1:nSubjects
                 end
             end
             
-            % Key stroke to start measurement.
+            % Key stroke to draw next plot.
             if (WaitForKeyToPlot)
                 disp('Press a key to draw next plot!');
                 pause;
