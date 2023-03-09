@@ -33,7 +33,9 @@
 %    11/17/22  dhb          - Two pass fitting.  Needs a code cleaning pass.
 %    03/09/23  smo          - Removed the part checking Quest+ adaptive
 %                             mode. It has been saved in the copy of this
-%                             code, t_CSFGeneratorAnalyze_OLD.m.
+%                             code, t_CSFGeneratorAnalyze_OLD.m. Also,
+%                             added the part that creates a text file
+%                             containing all CS values per each subject
 
 %% Start over.
 clear; close all;
