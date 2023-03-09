@@ -842,16 +842,16 @@ for ss = 1:nSubjects
         end
         
         % Sort each data in a single column.
-        numCSPerSub = nFilters * nSineFreqCyclesPerDeg;
+        nCSPerSub = nFilters * nSineFreqCyclesPerDeg;
         
-        NumCount_CSSummary = linspace(1,numCSPerSub,numCSPerSub)';
-        Subject_CSSummary = reshape(squeeze(subjectBigList(ss,:,:)),numCSPerSub,1);
-        Filter_CSSummary = reshape(squeeze(filterBigList(ss,:,:)),numCSPerSub,1);
-        SpatialFrequency_CSSummary = reshape(squeeze(spatialFrequencyBigList(ss,:,:)),numCSPerSub,1);
-        ThresholdPF_CSSummary = reshape(squeeze(thresholdFittedRaw(ss,:,:)),numCSPerSub,1);
-        MedianThresholdBoot_CSSummary = reshape(squeeze(medianThresholdBootRaw(ss,:,:)),numCSPerSub,1);
-        BootCILow_CSSummary = reshape(squeeze(lowThresholdBootRaw(ss,:,:)),numCSPerSub,1);
-        BootCIHigh_CSSummary = reshape(squeeze(highThresholdBootRaw(ss,:,:)),numCSPerSub,1);
+        NumCount_CSSummary = linspace(1,nCSPerSub,nCSPerSub)';
+        Subject_CSSummary = reshape(squeeze(subjectBigList(ss,:,:)),nCSPerSub,1);
+        Filter_CSSummary = reshape(squeeze(filterBigList(ss,:,:)),nCSPerSub,1);
+        SpatialFrequency_CSSummary = reshape(squeeze(spatialFrequencyBigList(ss,:,:)),nCSPerSub,1);
+        ThresholdPF_CSSummary = reshape(squeeze(thresholdFittedRaw(ss,:,:)),nCSPerSub,1);
+        MedianThresholdBoot_CSSummary = reshape(squeeze(medianThresholdBootRaw(ss,:,:)),nCSPerSub,1);
+        BootCILow_CSSummary = reshape(squeeze(lowThresholdBootRaw(ss,:,:)),nCSPerSub,1);
+        BootCIHigh_CSSummary = reshape(squeeze(highThresholdBootRaw(ss,:,:)),nCSPerSub,1);
         
         LogSensitivityPF_CSSummary = log10(1./ThresholdPF_CSSummary);
         LogSensitivityMedianBoot_CSSummary = log10(1./MedianThresholdBoot_CSSummary);
