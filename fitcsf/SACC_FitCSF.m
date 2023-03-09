@@ -43,6 +43,9 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 BootstrapAUC = false;
 OptionSearchSmoothParam = 'crossValBootAcross';
 
+% Save text summary file.
+RECORDTEXTSUMMARYPERSUB = true;
+
 %% Load and read out the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
@@ -75,6 +78,13 @@ thresholdFittedBootCross2Raw = theData.thresholdFittedBootCross2Raw;
 % Get the number of available subjects and filters.
 nSubjects = length(theData.subjectNameOptions);
 nFilters = length(theData.filterOptions);
+
+% Set up big lists of what was run.  Want these at full dimension.
+subjectBigList = cell(nSubjects,nFilters);
+AUCBigList = cell(nSubjects,nFilters);
+medianBootAUCBigList = cell(nSubjects,nFilters);
+lowBootCIAUCBigList = cell(nSubjects,nFilters);
+highBootCIAUCBigList = cell(nSubjects,nFilters);
 
 % Fitting happens here one by one per subject.
 for ss = 1:nSubjects
@@ -316,79 +326,84 @@ for ss = 1:nSubjects
             %
             % Set the number of bootrapping the AUC.
             nBootAUC = 20;
-            fprintf('\t Bootstrapping AUC is going to be started! \n');
-            
-            for aaa = 1:nBootAUC
-                % Make a loop for testing smoothing paramemters.
-                for sss = 1:length(crossSmoothingParams)
-                    smoothCrossErrorBootAUC(sss,aaa) = 0;
-                    
-                    % Bootstrap for cross-validation happens here.
-                    nCrossValBootAcross = 20;
-                    for cc = 1:nCrossValBootAcross
+            if (BootstrapAUC)    
+                fprintf('\t Bootstrapping AUC is going to be started! \n');
+                
+                for aaa = 1:nBootAUC
+                    % Make a loop for testing smoothing paramemters.
+                    for sss = 1:length(crossSmoothingParams)
+                        smoothCrossErrorBootAUC(sss,aaa) = 0;
                         
-                        % Draw new fit/cross dataset (N=20)
-                        % out of bootstrapped values
-                        % (N=100). Once we drew the set, we
-                        % will use the same set for all
-                        % smoothing params.
-                        if (sss == 1)
-                            for zz = 1:length(mySFVals)
-                                crossIndex = randi(nBootPoints,1,1);
-                                bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                                bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                        % Bootstrap for cross-validation happens here.
+                        nCrossValBootAcross = 20;
+                        for cc = 1:nCrossValBootAcross
+                            
+                            % Draw new fit/cross dataset (N=20)
+                            % out of bootstrapped values
+                            % (N=100). Once we drew the set, we
+                            % will use the same set for all
+                            % smoothing params.
+                            if (sss == 1)
+                                for zz = 1:length(mySFVals)
+                                    crossIndex = randi(nBootPoints,1,1);
+                                    bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                                    bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                                end
                             end
+                            
+                            % Fit curve with the training set.
+                            smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
+                            
+                            % Get the predicted result of testing value.
+                            smoothDataPredsCross = feval(smoothFitCross,mySFVals');
+                            
+                            % Calculate the error.
+                            smoothCrossErrorBootAUC(sss,aaa) = smoothCrossErrorBootAUC(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                         end
                         
-                        % Fit curve with the training set.
-                        smoothFitCross = fit(mySFVals',bootCSFDataFit{cc}','smoothingspline','SmoothingParam',crossSmoothingParams(sss));
-                        
-                        % Get the predicted result of testing value.
-                        smoothDataPredsCross = feval(smoothFitCross,mySFVals');
-                        
-                        % Calculate the error.
-                        smoothCrossErrorBootAUC(sss,aaa) = smoothCrossErrorBootAUC(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
+                        % Print out the progress.
+                        if (sss == round(length(crossSmoothingParams)*0.25))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam, '25%');
+                        elseif (sss == round(length(crossSmoothingParams)*0.50))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '50%');
+                        elseif (sss == round(length(crossSmoothingParams)*0.75))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '75%');
+                        elseif (sss == length(crossSmoothingParams))
+                            fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
+                        end
                     end
                     
-                    % Print out the progress.
-                    if (sss == round(length(crossSmoothingParams)*0.25))
-                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam, '25%');
-                    elseif (sss == round(length(crossSmoothingParams)*0.50))
-                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '50%');
-                    elseif (sss == round(length(crossSmoothingParams)*0.75))
-                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '75%');
-                    elseif (sss == length(crossSmoothingParams))
-                        fprintf('Method = (%s) / Smoothing param testing progress - (%s) \n', OptionSearchSmoothParam,  '100%');
+                    % Print out the progress of bootstrapping
+                    % AUC. It will take a while.
+                    fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootAUC);
+                    
+                    % Set the smoothing params that has the smallest error.
+                    [~,indexBootAUC] = min(smoothCrossErrorBootAUC(:,aaa));
+                    smoothingParamBootAUC = crossSmoothingParams(indexBootAUC);
+                    
+                    % Generate new CS values set to fit the curve.
+                    for zz = 1:length(mySFVals)
+                        myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                     end
+                    
+                    % Fit happens here.
+                    smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParamBootAUC);
+                    
+                    % Get the area under the curve (AUC).
+                    nPointsCalAUC = 1000;
+                    calAUCSFVals = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
+                    calAUCPreds = feval(smoothFit,calAUCSFVals);
+                    
+                    % Calculate AUC.
+                    AUCBoot(aaa) = trapz(calAUCSFVals,calAUCPreds);
+                    
+                    % Print out the AUC calculation results.
+                    fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
+                        aaa, nBootAUC, AUCBoot(aaa));
                 end
-                
-                % Print out the progress of bootstrapping
-                % AUC. It will take a while.
-                fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootAUC);
-                
-                % Set the smoothing params that has the smallest error.
-                [~,indexBootAUC] = min(smoothCrossErrorBootAUC(:,aaa));
-                smoothingParamBootAUC = crossSmoothingParams(indexBootAUC);
-                
-                % Generate new CS values set to fit the curve.
-                for zz = 1:length(mySFVals)
-                    myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
-                end
-                
-                % Fit happens here.
-                smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParamBootAUC);
-                
-                % Get the area under the curve (AUC).
-                nPointsCalAUC = 1000;
-                calAUCSFVals = log10(logspace(min(mySFVals),max(mySFVals),nPointsCalAUC))';
-                calAUCPreds = feval(smoothFit,calAUCSFVals);
-                
-                % Calculate AUC.
-                AUCBoot(aaa) = trapz(calAUCSFVals,calAUCPreds);
-                
-                % Print out the AUC calculation results.
-                fprintf('Calculated AUC (%d/%d) is (%.5f) \n',...
-                    aaa, nBootAUC, AUCBoot(aaa));
+            else
+                fprintf('\t Skipping Bootstrapping AUC! \n');
+                AUCBoot = zeros(1,nBootAUC);
             end
             
             %% Plot cross-validation smoothing param figure.
@@ -476,13 +491,12 @@ for ss = 1:nSubjects
                 
                 % Make text AUC for the plot.
                 confIntervals = 80;
-                fittedAUC = AUC(1);
-                medianBootAUC = median(AUC);
-                lowBootAUC = prctile(AUC,(100-confIntervals)/2);
-                highBootAUC = prctile(AUC,100 - (100-confIntervals)/2);
-                textFittedAUC = sprintf('AUC = %.4f', fittedAUC);
+                medianBootAUC = median(AUCBoot);
+                lowBootCIAUC = prctile(AUCBoot,(100-confIntervals)/2);
+                highBootCIAUC = prctile(AUCBoot,100 - (100-confIntervals)/2);
+                textFittedAUC = sprintf('AUC = %.4f', AUC);
                 textBootAUC = sprintf('Median boot AUC = %.4f (CI %d: %.4f/%.4f)', ...
-                    medianBootAUC, confIntervals, lowBootAUC, highBootAUC);
+                    medianBootAUC, confIntervals, lowBootCIAUC, highBootCIAUC);
                 
                 % Set the size of the texts in the plot.
                 sizeTextOnPlot = 13;
@@ -511,6 +525,14 @@ for ss = 1:nSubjects
                 end
             end
             
+            % Record the data. We will make a text summary file.
+            subjectBigList{ss,ff} = subjectName;
+            filterBigList{ss,ff} = filterOptions{ff};
+            AUCBigList{ss,ff} = AUC;
+            medianBootAUCBigList{ss,ff} = medianBootAUC;
+            lowBootCIAUCBigList{ss,ff} = lowBootCIAUC;
+            highBootCIAUCBigList{ss,ff} = highBootCIAUC;
+            
             % Key stroke to draw next plot.
             if (~OneFigurePerSub)
                 if (WaitForKeyToPlot)
@@ -519,6 +541,37 @@ for ss = 1:nSubjects
                     close all;
                 end
             end
+        end
+        
+        %% Save out the text summary file per each subject.
+        if (RECORDTEXTSUMMARYPERSUB)
+            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
+            end
+            
+            % Sort each data in a single column.
+            nAUCPerSub = 5;
+            NumCount_Summary = linspace(1,nAUCPerSub,nAUCPerSub)';
+            Subject_Summary = subjectBigList(ss,:)';
+            Filter_Summary = filterBigList(ss,:)';
+            AUC_Summary = AUCBigList(ss,:)';
+            medianBootAUC_Summary = medianBootAUCBigList(ss,:)';
+            lowBootCIAUC_Summary = lowBootCIAUCBigList(ss,:)';
+            highBootCIAUC_Summary = highBootCIAUCBigList(ss,:)';
+            
+            % Make a table.
+            tableAUCummary = table(NumCount_Summary,Subject_Summary,Filter_Summary,AUC_Summary,...
+                medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary);
+            
+            % Change the variable name as desired.
+            tableAUCummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'AUC', ...
+                'MedianBootAUC', 'LowBootCIAUC', 'HighBootCIAUC'};
+            
+            % Write a table to the excel file.
+            sheet = 1;
+            range = 'B2';
+            writetable(tableAUCummary,testFilename,'Sheet',sheet,'Range',range);
         end
         
         %% Add details per each plot of the subject.
