@@ -126,8 +126,8 @@ if (FITALLATONCE)
     end
 else
     % Load single subject to fit one by one.
-    subjectNameOptions = {'039'};
-    spatialFrequencyOptions = {'3'};
+    subjectNameOptions = {'002'};
+    spatialFrequencyOptions = {'3'; '6'; '9'; '12'; '18'};
 end
 
 %% Show the progress of the experiment.
@@ -831,6 +831,46 @@ for ss = 1:nSubjects
             end
         end
     end
+    
+    %% Save out summary text file per subject.
+    if (RECORDCSSUMMARY)
+        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+            testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
+        end
+        
+        % Sort each data in a single column.
+        numCSPerSub = nFilters * nSineFreqCyclesPerDeg;
+        
+        NumCount_CSSummary = linspace(1,numCSPerSub,numCSPerSub)';
+        Subject_CSSummary = reshape(squeeze(subjectBigList(ss,:,:)),numCSPerSub,1);
+        Filter_CSSummary = reshape(squeeze(filterBigList(ss,:,:)),numCSPerSub,1);
+        SpatialFrequency_CSSummary = reshape(squeeze(spatialFrequencyBigList(ss,:,:)),numCSPerSub,1);
+        ThresholdPF_CSSummary = reshape(squeeze(thresholdFittedRaw(ss,:,:)),numCSPerSub,1);
+        MedianThresholdBoot_CSSummary = reshape(squeeze(medianThresholdBootRaw(ss,:,:)),numCSPerSub,1);
+        BootCILow_CSSummary = reshape(squeeze(lowThresholdBootRaw(ss,:,:)),numCSPerSub,1);
+        BootCIHigh_CSSummary = reshape(squeeze(highThresholdBootRaw(ss,:,:)),numCSPerSub,1);
+        
+        LogSensitivityPF_CSSummary = log10(1./ThresholdPF_CSSummary);
+        LogSensitivityMedianBoot_CSSummary = log10(1./MedianThresholdBoot_CSSummary);
+        LogSensitivitiyBootCILow_CSSummary = log10(1./BootCILow_CSSummary);
+        LogSensitivitiyBootCIHigh_CSSummary = log10(1./BootCIHigh_CSSummary);
+        
+        % Make a table.
+        tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,SpatialFrequency_CSSummary,Filter_CSSummary, ThresholdPF_CSSummary, ...
+            MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
+            LogSensitivityPF_CSSummary,LogSensitivityMedianBoot_CSSummary,LogSensitivitiyBootCILow_CSSummary,LogSensitivitiyBootCIHigh_CSSummary);
+        
+        % Change the variable name as desired.
+        tableCSSummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'SpatialFrequency',...
+            'ThresholdPF', 'MedianThresholdBoot', 'BootCILow', 'BootCIHigh',...
+            'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh'};
+        
+        % Write a table to the excel file.
+        sheet = 1;
+        range = 'B2';
+        writetable(tableCSSummary,testFilename,'Sheet',sheet,'Range',range);
+    end
 end
 
 %% Record test image info to excel file.
@@ -849,20 +889,6 @@ if (FITALLATONCE)
         writetable(tableImageProfile,testFilename,'Sheet',sheet,'Range',range);
     end
     fprintf('\t Test image profile has been successfully recorded! \n');
-end
-
-%% Save out summary text file per subject.
-if (RECORDCSSUMMARY)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-        testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
-    end
-    tableCSSummary = table(Subject,SpatialFrequency,);
-    
-    % Write a table to the excel file.
-    sheet = 1;
-    range = 'B2';
-    writetable(tableCSSummary,testFilename,'Sheet',sheet,'Range',range);
 end
 
 %% Run this part only when fitting all at once.
