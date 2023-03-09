@@ -321,7 +321,7 @@ for ss = 1:nSubjects
             for aaa = 1:nBootstrapAUC
                 % Make a loop for testing smoothing paramemters.
                 for sss = 1:length(crossSmoothingParams)
-                    smoothCrossError(sss,aaa) = 0;
+                    smoothCrossErrorBootAUC(sss,aaa) = 0;
                     
                     % Bootstrap for cross-validation happens here.
                     nCrossValBootAcross = 20;
@@ -347,7 +347,7 @@ for ss = 1:nSubjects
                         smoothDataPredsCross = feval(smoothFitCross,mySFVals');
                         
                         % Calculate the error.
-                        smoothCrossError(sss,aaa) = smoothCrossError(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
+                        smoothCrossErrorBootAUC(sss,aaa) = smoothCrossErrorBootAUC(sss,aaa) + sum((bootCSFDataCross{cc}' - smoothDataPredsCross).^2);
                     end
                     
                     % Print out the progress.
@@ -367,7 +367,7 @@ for ss = 1:nSubjects
                 fprintf('\t Bootstrapping AUC progress - (%d/%d) \n', aaa, nBootstrapAUC);
                 
                 % Set the smoothing params that has the smallest error.
-                [~,index] = min(smoothCrossError(:,aaa));
+                [~,index] = min(smoothCrossErrorBootAUC(:,aaa));
                 smoothingParam = crossSmoothingParams(index);
                 
                 % Generate new CS values set to fit the curve.
@@ -394,18 +394,13 @@ for ss = 1:nSubjects
             %% Plot cross-validation smoothing param figure.
             figure(crossFig); hold on;
             
-            % If we make a loop for bootstrapping AUC, we
-            % plot this part only for the very first set.
-            % This is the same for plotting the CSF.
-            if (aaa == 1)
-                markerColorOptionsSmoothSpline = 'r';
-                plot(crossSmoothingParams,smoothCrossError(:,aaa),'ko','MarkerSize',6);
-                plot(smoothingParam,smoothCrossError(index,aaa),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline,'Markeredgecolor','k');
-                xlabel('Smoothing parameter','fontsize',15);
-                ylabel('Cross-validation errors','fontsize',15);
-                title('Cross-validation error accoring to smoothing parameter','fontsize',15);
-                xlim([minSmoothingParam maxSmoothingParam]);
-            end
+            markerColorOptionsSmoothSpline = 'r';
+            plot(crossSmoothingParams,smoothCrossError,'ko','MarkerSize',6);
+            plot(smoothingParam,smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor',markerColorOptionsSmoothSpline,'Markeredgecolor','k');
+            xlabel('Smoothing parameter','fontsize',15);
+            ylabel('Cross-validation errors','fontsize',15);
+            title('Cross-validation error accoring to smoothing parameter','fontsize',15);
+            xlim([minSmoothingParam maxSmoothingParam]);
             legend('All params', 'Optimal param', 'fontsize', 13);
             
             %% Plot data figure here.
