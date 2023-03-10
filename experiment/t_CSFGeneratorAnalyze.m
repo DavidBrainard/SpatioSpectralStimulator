@@ -42,8 +42,8 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 RECORDTEXTSUMMARYPERSUB = true;
 
@@ -836,42 +836,46 @@ for ss = 1:nSubjects
     
     %% Save out summary text file per subject.
     if (RECORDTEXTSUMMARYPERSUB)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-            testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
+        % We only run this part for the subjects who completed study, so
+        % having data for all spatial frequencies.
+        if (nSineFreqCyclesPerDeg == maxNSpatialFrequencies)
+            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
+            end
+            
+            % Sort each data in a single column.
+            nCSPerSub = nFilters * nSineFreqCyclesPerDeg;
+            
+            NumCount_CSSummary = linspace(1,nCSPerSub,nCSPerSub)';
+            Subject_CSSummary = reshape(squeeze(subjectBigList(ss,:,:)),nCSPerSub,1);
+            Filter_CSSummary = reshape(squeeze(filterBigList(ss,:,:)),nCSPerSub,1);
+            SpatialFrequency_CSSummary = reshape(squeeze(spatialFrequencyBigList(ss,:,:)),nCSPerSub,1);
+            ThresholdPF_CSSummary = reshape(squeeze(thresholdFittedRaw(ss,:,:)),nCSPerSub,1);
+            MedianThresholdBoot_CSSummary = reshape(squeeze(medianThresholdBootRaw(ss,:,:)),nCSPerSub,1);
+            BootCILow_CSSummary = reshape(squeeze(lowThresholdBootRaw(ss,:,:)),nCSPerSub,1);
+            BootCIHigh_CSSummary = reshape(squeeze(highThresholdBootRaw(ss,:,:)),nCSPerSub,1);
+            
+            LogSensitivityPF_CSSummary = log10(1./ThresholdPF_CSSummary);
+            LogSensitivityMedianBoot_CSSummary = log10(1./MedianThresholdBoot_CSSummary);
+            LogSensitivitiyBootCILow_CSSummary = log10(1./BootCILow_CSSummary);
+            LogSensitivitiyBootCIHigh_CSSummary = log10(1./BootCIHigh_CSSummary);
+            
+            % Make a table.
+            tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,Filter_CSSummary, SpatialFrequency_CSSummary, ThresholdPF_CSSummary, ...
+                MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
+                LogSensitivityPF_CSSummary,LogSensitivityMedianBoot_CSSummary,LogSensitivitiyBootCILow_CSSummary,LogSensitivitiyBootCIHigh_CSSummary);
+            
+            % Change the variable name as desired.
+            tableCSSummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'SpatialFrequency',...
+                'ThresholdPF', 'MedianThresholdBoot', 'BootCILow', 'BootCIHigh',...
+                'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh'};
+            
+            % Write a table to the excel file.
+            sheet = 1;
+            range = 'B2';
+            writetable(tableCSSummary,testFilename,'Sheet',sheet,'Range',range);
         end
-        
-        % Sort each data in a single column.
-        nCSPerSub = nFilters * nSineFreqCyclesPerDeg;
-        
-        NumCount_CSSummary = linspace(1,nCSPerSub,nCSPerSub)';
-        Subject_CSSummary = reshape(squeeze(subjectBigList(ss,:,:)),nCSPerSub,1);
-        Filter_CSSummary = reshape(squeeze(filterBigList(ss,:,:)),nCSPerSub,1);
-        SpatialFrequency_CSSummary = reshape(squeeze(spatialFrequencyBigList(ss,:,:)),nCSPerSub,1);
-        ThresholdPF_CSSummary = reshape(squeeze(thresholdFittedRaw(ss,:,:)),nCSPerSub,1);
-        MedianThresholdBoot_CSSummary = reshape(squeeze(medianThresholdBootRaw(ss,:,:)),nCSPerSub,1);
-        BootCILow_CSSummary = reshape(squeeze(lowThresholdBootRaw(ss,:,:)),nCSPerSub,1);
-        BootCIHigh_CSSummary = reshape(squeeze(highThresholdBootRaw(ss,:,:)),nCSPerSub,1);
-        
-        LogSensitivityPF_CSSummary = log10(1./ThresholdPF_CSSummary);
-        LogSensitivityMedianBoot_CSSummary = log10(1./MedianThresholdBoot_CSSummary);
-        LogSensitivitiyBootCILow_CSSummary = log10(1./BootCILow_CSSummary);
-        LogSensitivitiyBootCIHigh_CSSummary = log10(1./BootCIHigh_CSSummary);
-        
-        % Make a table.
-        tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,Filter_CSSummary, SpatialFrequency_CSSummary, ThresholdPF_CSSummary, ...
-            MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
-            LogSensitivityPF_CSSummary,LogSensitivityMedianBoot_CSSummary,LogSensitivitiyBootCILow_CSSummary,LogSensitivitiyBootCIHigh_CSSummary);
-        
-        % Change the variable name as desired.
-        tableCSSummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'SpatialFrequency',...
-            'ThresholdPF', 'MedianThresholdBoot', 'BootCILow', 'BootCIHigh',...
-            'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh'};
-        
-        % Write a table to the excel file.
-        sheet = 1;
-        range = 'B2';
-        writetable(tableCSSummary,testFilename,'Sheet',sheet,'Range',range);
     end
 end
 
