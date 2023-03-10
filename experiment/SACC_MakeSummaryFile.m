@@ -62,17 +62,59 @@ end
 
 %% Read out CS text file.
 nSubjects = length(subjectNameOptions);
+subjectCompletedCS = {};
+subjectCompletedAUC = {};
 for ss = 1:nSubjects
     subjectName = subjectNameOptions{ss};
     testFilename = fullfile(testFiledir,subjectName,'CSF',sprintf('CS_Summary_%s.xlsx',subjectName));
-      
+    
     if isfile(testFilename)
-       dataCS = load(testFilename);
+        dataCS{:,ss} = readtable(testFilename);
+        subjectCompletedCS{end+1} = subjectName;
     end
 end
 
-%% Read out AUC text file.
+% Combine the tables.
+tableCS = vertcat(dataCS{:});
 
+% Update the numbering.
+nRows = size(tableCS,1);
+tableCS{:,'No'} = linspace(1,nRows,nRows)';
+
+disp('CS data has been merged successfully!');
+
+%% Read out AUC text file.
+for ss = 1:nSubjects
+    subjectName = subjectNameOptions{ss};
+    testFilename = fullfile(testFiledir,subjectName,'CSF',sprintf('AUC_Summary_%s.xlsx',subjectName));
+    
+    if isfile(testFilename)
+        dataAUC{:,ss} = readtable(testFilename);
+        subjectCompletedAUC{end+1} = subjectName;
+    end
+end
+
+% Combine the tables.
+tableAUC = vertcat(dataAUC{:});
+
+% Update the numbering.
+nRows = size(tableAUC,1);
+tableAUC{:,'No'} = linspace(1,nRows,nRows)';
+
+disp('AUC data has been merged successfully!');
 
 %% Save out the result.
+%
+% We will create one new excel file that contains all data loaded here with
+% two separate spreadsheets, one with CS results and the other containing
+% the AUC results.
+% Write a table to the excel file.
+sheetCS = 1;
+sheetAUC = 2;
+range = 'B2';
+testFilename = fullfile(testFiledir, 'SACC_Experiment_Results_Summary.xlsx');
 
+writetable(tableCS, testFilename,'Sheet','CS', 'Range',range);
+writetable(tableAUC,testFilename,'Sheet','AUC','Range',range);
+
+disp('Summary (CS+AUC) file has been saved successfully!');
