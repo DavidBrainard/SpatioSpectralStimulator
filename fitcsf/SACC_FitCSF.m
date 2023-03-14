@@ -23,6 +23,8 @@
 %    03/08/23   smo    - Cleared up the options that we will not use
 %                        anymore. The one with all the options has been
 %                        saved as a separate file named SACC_FitCSF_OLD.m.
+%    03/14/23   smo    - Added an option to choose subject and filter to
+%                        fit.
 
 %% Initialize.
 clear; close all;
@@ -42,6 +44,10 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 % Fitting options.
 BootstrapAUC = false;
 OptionSearchSmoothParam = 'crossValBootAcross';
+
+pickSubjectAndFilter = true;
+whichSubject = '030';
+whichFilter = 'D';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -91,6 +97,13 @@ for ss = 1:nSubjects
     % Set a target subject.
     subjectName = subjectNameOptions{ss};
     
+    % If we run one specific subject, we will pass the other subjects.
+    if (pickSubjectAndFilter)
+        if ~strcmp(subjectName,whichSubject)
+            continue;
+        end
+    end
+    
     % Set available spatial frequency data for the subject.
     sineFreqCyclesPerDeg = theData.spatialFrequencyOptions(:,ss);
     
@@ -133,6 +146,28 @@ for ss = 1:nSubjects
                 % Cross-validation figure info.
                 crossFig = figure; hold on;
                 set(gcf,'position',figurePositionCross);
+            end
+            
+            % Here we can choose filters to run as desired. Allocate number
+            % to each filter as [A=1, B=2, C=3, D=4, E=5].
+            if (pickSubjectAndFilter)
+                switch whichFilter
+                    case 'A'
+                        numWhichFilter = 1;
+                    case 'B'
+                        numWhichFilter = 2;
+                    case 'C'
+                        numWhichFilter = 3;
+                    case 'D'
+                        numWhichFilter = 4;
+                    case 'E'
+                        numWhichFilter = 5;
+                end
+                
+                % Skip happens here.
+                if ~(ff == numWhichFilter)
+                    continue;
+                end
             end
             
             % Read out the variables per each filter. These values are
