@@ -59,7 +59,7 @@ else
 end
 
 % Subject info.
-subjectName = theData.subjectNameOptions;
+subjectNameOptions = theData.subjectNameOptions;
 
 % Filter options.
 filterOptions = theData.filterOptions;
@@ -76,8 +76,8 @@ thresholdFittedBootCross2Raw = theData.thresholdFittedBootCross2Raw;
 %% Fitting CSF starts here.
 %
 % Get the number of available subjects and filters.
-nSubjects = length(theData.subjectNameOptions);
-nFilters = length(theData.filterOptions);
+nSubjects = length(subjectNameOptions);
+nFilters = length(filterOptions);
 
 % Set up big lists of what was run.  Want these at full dimension.
 subjectBigList = cell(nSubjects,nFilters);
@@ -89,7 +89,7 @@ highBootCIAUCBigList = cell(nSubjects,nFilters);
 % Fitting happens here one by one per subject.
 for ss = 1:nSubjects
     % Set a target subject.
-    subjectName = theData.subjectNameOptions{ss};
+    subjectName = subjectNameOptions{ss};
     
     % Set available spatial frequency data for the subject.
     sineFreqCyclesPerDeg = theData.spatialFrequencyOptions(:,ss);
