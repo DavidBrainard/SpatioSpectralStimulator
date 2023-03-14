@@ -861,6 +861,19 @@ for ss = 1:nSubjects
             LogSensitivitiyBootCILow_CSSummary = log10(1./BootCILow_CSSummary);
             LogSensitivitiyBootCIHigh_CSSummary = log10(1./BootCIHigh_CSSummary);
             
+            % Sort the array as the ascending order of spatial frequency.
+            [SpatialFrequency_CSSummary I] = sort(SpatialFrequency_CSSummary, 'ascend');
+            Subject_CSSummary = Subject_CSSummary(I);
+            Filter_CSSummary = Filter_CSSummary(I);
+            ThresholdPF_CSSummary = ThresholdPF_CSSummary(I);
+            MedianThresholdBoot_CSSummary = MedianThresholdBoot_CSSummary(I);
+            BootCILow_CSSummary = BootCILow_CSSummary(I);
+            BootCIHigh_CSSummary = BootCIHigh_CSSummary(I);
+            LogSensitivityPF_CSSummary = LogSensitivityPF_CSSummary(I);
+            LogSensitivityMedianBoot_CSSummary = LogSensitivityMedianBoot_CSSummary(I);
+            LogSensitivitiyBootCILow_CSSummary = LogSensitivitiyBootCILow_CSSummary(I);
+            LogSensitivitiyBootCIHigh_CSSummary = LogSensitivitiyBootCIHigh_CSSummary(I);
+            
             % Make a table.
             tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,Filter_CSSummary, SpatialFrequency_CSSummary, ThresholdPF_CSSummary, ...
                 MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
