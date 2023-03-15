@@ -861,19 +861,6 @@ for ss = 1:nSubjects
             LogSensitivitiyBootCILow_CSSummary = log10(1./BootCILow_CSSummary);
             LogSensitivitiyBootCIHigh_CSSummary = log10(1./BootCIHigh_CSSummary);
             
-            % Sort the array as the ascending order of spatial frequency.
-            [SpatialFrequency_CSSummary I] = sort(SpatialFrequency_CSSummary, 'ascend');
-            Subject_CSSummary = Subject_CSSummary(I);
-            Filter_CSSummary = Filter_CSSummary(I);
-            ThresholdPF_CSSummary = ThresholdPF_CSSummary(I);
-            MedianThresholdBoot_CSSummary = MedianThresholdBoot_CSSummary(I);
-            BootCILow_CSSummary = BootCILow_CSSummary(I);
-            BootCIHigh_CSSummary = BootCIHigh_CSSummary(I);
-            LogSensitivityPF_CSSummary = LogSensitivityPF_CSSummary(I);
-            LogSensitivityMedianBoot_CSSummary = LogSensitivityMedianBoot_CSSummary(I);
-            LogSensitivitiyBootCILow_CSSummary = LogSensitivitiyBootCILow_CSSummary(I);
-            LogSensitivitiyBootCIHigh_CSSummary = LogSensitivitiyBootCIHigh_CSSummary(I);
-            
             % Make a table.
             tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,Filter_CSSummary, SpatialFrequency_CSSummary, ThresholdPF_CSSummary, ...
                 MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
@@ -883,6 +870,12 @@ for ss = 1:nSubjects
             tableCSSummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'SpatialFrequency',...
                 'ThresholdPF', 'MedianThresholdBoot', 'BootCILow', 'BootCIHigh',...
                 'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh'};
+            
+            % Sort the array in the ascending order of filter and SFs.
+            tableCSSummary = sortrows(tableCSSummary,{'Filter','SpatialFrequency'});
+            
+            % Correct the numbering of each row.
+            tableCSSummary.No = NumCount_CSSummary;
             
             % Write a table to the excel file.
             sheet = 1;
