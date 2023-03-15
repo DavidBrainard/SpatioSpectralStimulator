@@ -361,7 +361,7 @@ for ss = 1:nSubjects
             %
             % Set the number of bootrapping the AUC.
             nBootAUC = 20;
-            if (BootstrapAUC)    
+            if (BootstrapAUC)
                 fprintf('\t Bootstrapping AUC is going to be started! \n');
                 
                 for aaa = 1:nBootAUC
@@ -580,33 +580,35 @@ for ss = 1:nSubjects
         
         %% Save out the text summary file per each subject.
         if (RECORDTEXTSUMMARYPERSUB)
-            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-                testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
+            if (~pickSubjectAndFilter)
+                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                    testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
+                end
+                
+                % Sort each data in a single column.
+                nAUCPerSub = 5;
+                NumCount_Summary = linspace(1,nAUCPerSub,nAUCPerSub)';
+                Subject_Summary = subjectBigList(ss,:)';
+                Filter_Summary = filterBigList(ss,:)';
+                AUC_Summary = AUCBigList(ss,:)';
+                medianBootAUC_Summary = medianBootAUCBigList(ss,:)';
+                lowBootCIAUC_Summary = lowBootCIAUCBigList(ss,:)';
+                highBootCIAUC_Summary = highBootCIAUCBigList(ss,:)';
+                
+                % Make a table.
+                tableAUCummary = table(NumCount_Summary,Subject_Summary,Filter_Summary,AUC_Summary,...
+                    medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary);
+                
+                % Change the variable name as desired.
+                tableAUCummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'AUC', ...
+                    'MedianBootAUC', 'LowBootCIAUC', 'HighBootCIAUC'};
+                
+                % Write a table to the excel file.
+                sheet = 1;
+                range = 'B2';
+                writetable(tableAUCummary,testFilename,'Sheet',sheet,'Range',range);
             end
-            
-            % Sort each data in a single column.
-            nAUCPerSub = 5;
-            NumCount_Summary = linspace(1,nAUCPerSub,nAUCPerSub)';
-            Subject_Summary = subjectBigList(ss,:)';
-            Filter_Summary = filterBigList(ss,:)';
-            AUC_Summary = AUCBigList(ss,:)';
-            medianBootAUC_Summary = medianBootAUCBigList(ss,:)';
-            lowBootCIAUC_Summary = lowBootCIAUCBigList(ss,:)';
-            highBootCIAUC_Summary = highBootCIAUCBigList(ss,:)';
-            
-            % Make a table.
-            tableAUCummary = table(NumCount_Summary,Subject_Summary,Filter_Summary,AUC_Summary,...
-                medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary);
-            
-            % Change the variable name as desired.
-            tableAUCummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'AUC', ...
-                'MedianBootAUC', 'LowBootCIAUC', 'HighBootCIAUC'};
-            
-            % Write a table to the excel file.
-            sheet = 1;
-            range = 'B2';
-            writetable(tableAUCummary,testFilename,'Sheet',sheet,'Range',range);
         end
         
         %% Add details per each plot of the subject.
