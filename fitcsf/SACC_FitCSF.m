@@ -42,13 +42,17 @@ figurePositionData = [200 300 figureSize figureSize];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Fitting options.
+%
+% You can type smoothing paramters by skipping cross-validation. It could
+% be a single number or multiple.
 BootstrapAUC = false;
 OptionSearchSmoothParam = 'type';
-smoothingParamType = 0.99995;
+smoothingParamType = [0.99:0.00001:1];
 
+% Pick subject and filter to fit.
 pickSubjectAndFilter = true;
 whichSubject = '015';
-whichFilter = 'D';
+whichFilter = 'A';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -332,12 +336,20 @@ for ss = 1:nSubjects
             
             %% Calculate AUC of CSF.
             %
-            % Fit the data with the optimal smoothing parameter.
-            smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam);
-            
-            % Make smooth plot.
-            smoothPlotSFVals = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
-            smoothPlotPreds = feval(smoothFit,smoothPlotSFVals);
+            % We make this part in a loop so that we can fit multiple
+            % smoothing parameters at once.
+            nSmoothingParams = length(smoothingParam);
+            for mm = 1:nSmoothingParams
+                % Fit the data with the optimal smoothing parameter.
+                smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam(mm));
+                
+                % Make smooth plot.
+                smoothPlotSFVals = log10(logspace(min(mySFVals),max(mySFVals),nSmoothPoints))';
+                smoothPlotPreds(:,mm) = feval(smoothFit,smoothPlotSFVals);
+                
+                % Show progress.
+                fprintf('Smoothing param fitting progress - (%d/%d) \n', mm, nSmoothingParams);
+            end
             
             % Get the area under the curve (AUC).
             nPointsCalAUC = 1000;
@@ -448,7 +460,7 @@ for ss = 1:nSubjects
             
             %% Plot cross-validation smoothing param figure.
             if ~strcmp(OptionSearchSmoothParam,'type')
-                figure(crossFig); hold on;    
+                figure(crossFig); hold on;
                 plot(crossSmoothingParams, smoothCrossError,'ko','MarkerSize',6);
                 plot(smoothingParam, smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','r','Markeredgecolor','k');
                 xlabel('Smoothing parameter','fontsize',15);
@@ -495,7 +507,20 @@ for ss = 1:nSubjects
             if (OneFigurePerSub)
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
             else
-                plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{2},'LineWidth',4);
+                % When fitting multiple smoothing params at once.
+                if ~(nSmoothingParams == 1)
+                    color = zeros(1,4);
+                    color(1) = 1;
+                    colorTransparency = linspace(0.1,0.5,nSmoothingParams);
+                    colorTransparency = sort(colorTransparency,'descend');
+                    for mm = 1:nSmoothingParams
+                        color(4) = colorTransparency(mm);
+                        plot(smoothPlotSFVals,smoothPlotPreds(:,mm),'r-','color',color,'LineWidth',4);
+                    end
+                    % When fitting just one smoothing param.
+                else
+                    plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{2},'LineWidth',4);
+                end
             end
             
             % Plot AUC results if you want.
@@ -572,6 +597,11 @@ for ss = 1:nSubjects
             medianBootAUCBigList{ss,ff} = medianBootAUC;
             lowBootCIAUCBigList{ss,ff} = lowBootCIAUC;
             highBootCIAUCBigList{ss,ff} = highBootCIAUC;
+            
+            % We will end the code here when we pick sujbect and filter.
+            if (pickSubjectAndFilter)
+                return;
+            end
             
             % Key stroke to draw next plot.
             if (~OneFigurePerSub)
