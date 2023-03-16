@@ -43,10 +43,11 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Fitting options.
 BootstrapAUC = false;
-OptionSearchSmoothParam = 'crossValBootAcross';
+OptionSearchSmoothParam = 'type';
+smoothingParamType = 0.99995;
 
 pickSubjectAndFilter = true;
-whichSubject = '030';
+whichSubject = '015';
 whichFilter = 'D';
 
 % Save text summary file.
@@ -129,9 +130,11 @@ for ss = 1:nSubjects
             dataFig = figure; clf; hold on;
             set(gcf,'position',figurePositionData);
             
-            % Cross-validation figure info.
-            crossFig = figure; hold on;
-            set(gcf,'position',figurePositionCross);
+            if ~strcmp(OptionSearchSmoothParam,'type')
+                % Cross-validation figure info.
+                crossFig = figure; hold on;
+                set(gcf,'position',figurePositionCross);
+            end
         end
         
         % Here we read out five values of the thresholds (so, five spatial
@@ -143,9 +146,11 @@ for ss = 1:nSubjects
                 dataFig = figure; clf; hold on;
                 set(gcf,'position',figurePositionData);
                 
-                % Cross-validation figure info.
-                crossFig = figure; hold on;
-                set(gcf,'position',figurePositionCross);
+                if ~strcmp(OptionSearchSmoothParam,'type')
+                    % Cross-validation figure info.
+                    crossFig = figure; hold on;
+                    set(gcf,'position',figurePositionCross);
+                end
             end
             
             % Here we can choose filters to run as desired. Allocate number
@@ -322,7 +327,7 @@ for ss = 1:nSubjects
                     
                 case 'type'
                     % Type a number manually.
-                    smoothingParam = 0.1;
+                    smoothingParam = smoothingParamType;
             end
             
             %% Calculate AUC of CSF.
@@ -442,16 +447,16 @@ for ss = 1:nSubjects
             end
             
             %% Plot cross-validation smoothing param figure.
-            figure(crossFig); hold on;
-            
-            plot(crossSmoothingParams, smoothCrossError,'ko','MarkerSize',6);
-            plot(smoothingParam, smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','r','Markeredgecolor','k');
-            
-            xlabel('Smoothing parameter','fontsize',15);
-            ylabel('Cross-validation errors','fontsize',15);
-            title('Cross-validation error accoring to smoothing parameter','fontsize',15);
-            xlim([minSmoothingParam maxSmoothingParam]);
-            legend('All params', 'Optimal param', 'fontsize', 13);
+            if ~strcmp(OptionSearchSmoothParam,'type')
+                figure(crossFig); hold on;    
+                plot(crossSmoothingParams, smoothCrossError,'ko','MarkerSize',6);
+                plot(smoothingParam, smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','r','Markeredgecolor','k');
+                xlabel('Smoothing parameter','fontsize',15);
+                ylabel('Cross-validation errors','fontsize',15);
+                title('Cross-validation error accoring to smoothing parameter','fontsize',15);
+                xlim([minSmoothingParam maxSmoothingParam]);
+                legend('All params', 'Optimal param', 'fontsize', 13);
+            end
             
             %% Plot data figure here.
             figure(dataFig);
