@@ -518,11 +518,10 @@ for ss = 1:nSubjects
                 % When fitting multiple smoothing params at once.
                 if ~(nSmoothingParamsType == 1)
                     color = zeros(1,4);
-                    color(1) = 1;
-                    colorTransparency = linspace(0.1,0.3,nSmoothingParamsType);
-                    colorTransparency = sort(colorTransparency,'descend');
+                    color(1) = 1;                    
+                    colorTransparency = 0.1;
                     for mm = 1:nSmoothingParamsType
-                        color(4) = colorTransparency(mm);
+                        color(4) = colorTransparency;
                         plot(smoothPlotSFVals,smoothPlotPreds(:,mm),'r-','color',color,'LineWidth',3);
                     end
                     % When fitting just one smoothing param.
