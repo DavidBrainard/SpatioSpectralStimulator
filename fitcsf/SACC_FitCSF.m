@@ -25,6 +25,9 @@
 %                        saved as a separate file named SACC_FitCSF_OLD.m.
 %    03/14/23   smo    - Added an option to choose subject and filter to
 %                        fit.
+%    03/16/23   smo    - Added an option to fit CSF with desired smoothing
+%                        parameter. It can be a single value or as many as
+%                        we want.
 
 %% Initialize.
 clear; close all;
@@ -34,7 +37,7 @@ clear; close all;
 % Plotting options.
 OneFigurePerSub = false;
 WaitForKeyToPlot = true;
-PlotAUC = true;
+PlotAUC = false;
 SaveCSFPlot = false;
 
 figureSize = 550;
@@ -46,9 +49,14 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 % You can type smoothing paramters by skipping cross-validation. It could
 % be a single number or multiple.
 BootstrapAUC = false;
-OptionSearchSmoothParam = 'type';
-smoothingParamType = [0.99:0.00001:1];
 
+OptionSearchSmoothParam = 'type';
+minSmoothingParamType = 0.99;
+maxSmoothingParamType = 1;
+intervalSmoothingParamType = 0.00005;
+smoothingParamsType = [minSmoothingParamType : intervalSmoothingParamType : maxSmoothingParamType];
+nSmoothingParamsType = length(smoothingParamsType);
+                
 % Pick subject and filter to fit.
 pickSubjectAndFilter = true;
 whichSubject = '015';
@@ -331,7 +339,7 @@ for ss = 1:nSubjects
                     
                 case 'type'
                     % Type a number manually.
-                    smoothingParam = smoothingParamType;
+                    smoothingParam = smoothingParamsType;
             end
             
             %% Calculate AUC of CSF.
@@ -508,14 +516,14 @@ for ss = 1:nSubjects
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
             else
                 % When fitting multiple smoothing params at once.
-                if ~(nSmoothingParams == 1)
+                if ~(nSmoothingParamsType == 1)
                     color = zeros(1,4);
                     color(1) = 1;
-                    colorTransparency = linspace(0.1,0.5,nSmoothingParams);
+                    colorTransparency = linspace(0.1,0.3,nSmoothingParamsType);
                     colorTransparency = sort(colorTransparency,'descend');
-                    for mm = 1:nSmoothingParams
+                    for mm = 1:nSmoothingParamsType
                         color(4) = colorTransparency(mm);
-                        plot(smoothPlotSFVals,smoothPlotPreds(:,mm),'r-','color',color,'LineWidth',4);
+                        plot(smoothPlotSFVals,smoothPlotPreds(:,mm),'r-','color',color,'LineWidth',3);
                     end
                     % When fitting just one smoothing param.
                 else
@@ -573,9 +581,19 @@ for ss = 1:nSubjects
                 textSecondlineYLoc = tempTextLoc(2);
                 
                 % Add texts.
-                text(log10(3),log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
-                text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
-                text(log10(3),log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
+                if strcmp(OptionSearchSmoothParam,'type')
+                    text(log10(3),log10(textFirstlineYLoc),...
+                        sprintf('Smoothing parameter tested = (%.2f / %.5f / %.2f) \n',...
+                        minSmoothingParamType,intervalSmoothingParamType,maxSmoothingParamType),...
+                        'color','k','fontsize',sizeTextOnPlot);
+                    text(log10(3),log10(textSecondlineYLoc),...
+                        sprintf('Number of paramters tested = %d',nSmoothingParamsType),...
+                        'color','k','fontsize',sizeTextOnPlot);
+                else
+                    text(log10(3),log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
+                    text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
+                    text(log10(3),log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
+                end
             end
             
             % Save the CSF plot if you want.
