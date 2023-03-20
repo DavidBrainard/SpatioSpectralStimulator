@@ -28,6 +28,8 @@
 %    03/16/23   smo    - Added an option to fit CSF with desired smoothing
 %                        parameter. It can be a single value or as many as
 %                        we want.
+%    03/20/23   smo    - Added an option to use fmincon to search smoothing
+%                        parameter when using Smooth spline function.
 
 %% Initialize.
 clear; close all;
@@ -50,7 +52,7 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 % be a single number or multiple.
 BootstrapAUC = false;
 
-OptionSearchSmoothParam = 'crossValBootAcross';
+OptionSearchSmoothParam = 'crossValBootAcrossFmincon';
 minSmoothingParamType = 0.99;
 maxSmoothingParamType = 1;
 intervalSmoothingParamType = 0.00005;
@@ -62,8 +64,8 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
-whichSubject = '015';
+pickSubjectAndFilter = false;
+whichSubject = '021';
 whichFilter = 'A';
 
 % Save text summary file.
@@ -341,58 +343,36 @@ for ss = 1:nSubjects
                     [~,index] = min(smoothCrossError);
                     smoothingParam = crossSmoothingParams(index);
                     
-%                 case 'crossValBootAcrossFmincon'
-%                     % Set up csfSfs, fitData, and evaluateData
-%                     % You already have these in your code, from the
-%                     % place where you loop over each smoothness parameter
-%                     % value and check.
-%                     csfCsf = ...
-%                     fitData = ...
-%                     evalutationData = ...
-%                         
-%                     % Set bounds for parameter x to 0 and 1
-%                     vlb = 0;
-%                     vub = 1;
-%                     x0 = 0.5;
-%                     
-%                     % Set up fmincon options
-%                     options = ...
-%                         
-%                 % Run fmincon to find best cross validation smoothness parameter
-%                 x = fmincon(@(x)SmoothnessSearchErrorFunction(x,csfSfs,fitData,evaluateData), ...)
-%                 smoothingParam = x(1);
-% 
-%                 % This function computes the cross validated error.  This is really just
-%                 % computing the same thing you are already plotting in your grid search
-%                 % over smoothness parameter values, placed into a function that fmincon
-%                 % understands.
-%                 function fitError = SmoothnessSearchErrorFunction(x,csfSfs,fitData,evaluateData)
-%                 
-%                 % Grab current smoothness param from parameter vector
-%                 smoothnessParam = x(1);
-%                 
-%                 % Use the spline to fit the fit data, for each cross valiation iteration
-%                 % Each fit/evaluate csf pair in a column of fitData/evaluteData
-%                 fitError = 0;
-%                 for ii = 1:size(fitData,2)
-%                     % Use spline to fit the data with passed smoothness param
-%                     prediction(:,ii) = fit(csfSfs,fitData(:,ii),smoothnessParam);
-%                     
-%                     % Evaluate against matched evaluation data
-%                     diff = evaluateData(:,ii)-prediction(:,ii);
-%                     fitError = fitError + sum(diff.^2);
-%                 end
-%                 fitError = sqrt(fitError/(size(fitData,2)*length(csfSfs)));
-%                 
-%                 end
-%                 
-                
-                
-                
+                case 'crossValBootAcrossFmincon'
+                    % Draw new fit/cross dataset (N=20)
+                    % out of bootstrapped values
+                    % (N=100). Once we drew the set, we
+                    % will use the same set for all
+                    % smoothing params.
+                    nCrossValBootAcross = 20;
+                    for cc = 1:nCrossValBootAcross
+                        for zz = 1:length(mySFVals)
+                            crossIndex = randi(nBootPoints,1,1);
+                            bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                            bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                        end
+                    end
                     
+                    % Set bounds for parameter x to 0 and 1.
+                    x0 = 0.5;
+                    vlb = 0;
+                    vub = 1;
+                    A = [];
+                    b = [];
+                    Aeq = [];
+                    beq = [];
+                    options = optimset('fmincon');
                     
-                    
-                    
+                    % Run fmincon to find best cross validation smoothness
+                    % parameter.
+                    x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
+                        x0, A, b, Aeq, beq, vlb, vub, [], options);
+                    smoothingParam = x_found(1);
                     
                 case 'type'
                     % Type a number manually.
@@ -524,7 +504,7 @@ for ss = 1:nSubjects
             end
             
             %% Plot cross-validation smoothing param figure.
-            if ~strcmp(OptionSearchSmoothParam,'type')
+            if strcmp(OptionSearchSmoothParam,'CrossValBootAcross')
                 figure(crossFig); hold on;
                 plot(crossSmoothingParams, smoothCrossError,'ko','MarkerSize',6);
                 plot(smoothingParam, smoothCrossError(index),'co','MarkerSize',8,'Markerfacecolor','r','Markeredgecolor','k');
@@ -575,7 +555,7 @@ for ss = 1:nSubjects
                 % When fitting multiple smoothing params at once.
                 if ~(nSmoothingParamsType == 1)
                     color = zeros(1,4);
-                    color(1) = 1;                    
+                    color(1) = 1;
                     colorTransparency = 0.1;
                     for mm = 1:nSmoothingParamsType
                         color(4) = colorTransparency;
@@ -616,7 +596,7 @@ for ss = 1:nSubjects
                     sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
                 
                 % Make text Smoothing param for the plot.
-                textSmoothingParam = sprintf('Smoothing parameter = %.2f', smoothingParam);
+                textSmoothingParam = sprintf('Smoothing parameter = %.8f', smoothingParam);
                 
                 % Make text AUC for the plot.
                 confIntervals = 80;
