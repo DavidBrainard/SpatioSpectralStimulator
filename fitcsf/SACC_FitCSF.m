@@ -37,7 +37,7 @@ clear; close all;
 % Plotting options.
 OneFigurePerSub = false;
 WaitForKeyToPlot = true;
-PlotAUC = false;
+PlotAUC = true;
 SaveCSFPlot = false;
 
 figureSize = 550;
@@ -50,13 +50,17 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 % be a single number or multiple.
 BootstrapAUC = false;
 
-OptionSearchSmoothParam = 'type';
+OptionSearchSmoothParam = 'crossValBootAcross';
 minSmoothingParamType = 0.99;
 maxSmoothingParamType = 1;
 intervalSmoothingParamType = 0.00005;
 smoothingParamsType = [minSmoothingParamType : intervalSmoothingParamType : maxSmoothingParamType];
-nSmoothingParamsType = length(smoothingParamsType);
-                
+if strcmp(OptionSearchSmoothParam,'type')
+    nSmoothingParamsType = length(smoothingParamsType);
+else
+    nSmoothingParamsType = 1;
+end
+
 % Pick subject and filter to fit.
 pickSubjectAndFilter = true;
 whichSubject = '015';
@@ -336,6 +340,59 @@ for ss = 1:nSubjects
                     % Set the smoothing params that has the smallest error.
                     [~,index] = min(smoothCrossError);
                     smoothingParam = crossSmoothingParams(index);
+                    
+%                 case 'crossValBootAcrossFmincon'
+%                     % Set up csfSfs, fitData, and evaluateData
+%                     % You already have these in your code, from the
+%                     % place where you loop over each smoothness parameter
+%                     % value and check.
+%                     csfCsf = ...
+%                     fitData = ...
+%                     evalutationData = ...
+%                         
+%                     % Set bounds for parameter x to 0 and 1
+%                     vlb = 0;
+%                     vub = 1;
+%                     x0 = 0.5;
+%                     
+%                     % Set up fmincon options
+%                     options = ...
+%                         
+%                 % Run fmincon to find best cross validation smoothness parameter
+%                 x = fmincon(@(x)SmoothnessSearchErrorFunction(x,csfSfs,fitData,evaluateData), ...)
+%                 smoothingParam = x(1);
+% 
+%                 % This function computes the cross validated error.  This is really just
+%                 % computing the same thing you are already plotting in your grid search
+%                 % over smoothness parameter values, placed into a function that fmincon
+%                 % understands.
+%                 function fitError = SmoothnessSearchErrorFunction(x,csfSfs,fitData,evaluateData)
+%                 
+%                 % Grab current smoothness param from parameter vector
+%                 smoothnessParam = x(1);
+%                 
+%                 % Use the spline to fit the fit data, for each cross valiation iteration
+%                 % Each fit/evaluate csf pair in a column of fitData/evaluteData
+%                 fitError = 0;
+%                 for ii = 1:size(fitData,2)
+%                     % Use spline to fit the data with passed smoothness param
+%                     prediction(:,ii) = fit(csfSfs,fitData(:,ii),smoothnessParam);
+%                     
+%                     % Evaluate against matched evaluation data
+%                     diff = evaluateData(:,ii)-prediction(:,ii);
+%                     fitError = fitError + sum(diff.^2);
+%                 end
+%                 fitError = sqrt(fitError/(size(fitData,2)*length(csfSfs)));
+%                 
+%                 end
+%                 
+                
+                
+                
+                    
+                    
+                    
+                    
                     
                 case 'type'
                     % Type a number manually.
