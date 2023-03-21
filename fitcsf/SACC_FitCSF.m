@@ -63,9 +63,9 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
+pickSubjectAndFilter = true;
 whichSubject = '014';
-whichFilter = 'E';
+whichFilter = 'A';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
