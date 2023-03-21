@@ -384,7 +384,7 @@ for ss = 1:nSubjects
                     smoothingParam = smoothingParamsType;
             end
             
-            %% Calculate AUC of CSF.
+            %% Fit CCSF and Calculate AUC.
             %
             % We make this part in a loop so that we can fit multiple
             % smoothing parameters at once.
