@@ -63,9 +63,9 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
+pickSubjectAndFilter = false;
 whichSubject = '014';
-whichFilter = 'A';
+whichFilter = 'E';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -147,7 +147,7 @@ for ss = 1:nSubjects
             dataFig = figure; clf; hold on;
             set(gcf,'position',figurePositionData);
             
-            if ~strcmp(OptionSearchSmoothParam,'type')
+            if strcmp(OptionSearchSmoothParam,'CrossValBootAcross')
                 % Cross-validation figure info.
                 crossFig = figure; hold on;
                 set(gcf,'position',figurePositionCross);
@@ -163,7 +163,7 @@ for ss = 1:nSubjects
                 dataFig = figure; clf; hold on;
                 set(gcf,'position',figurePositionData);
                 
-                if ~strcmp(OptionSearchSmoothParam,'type')
+                if strcmp(OptionSearchSmoothParam,'CrossValBootAcross')
                     % Cross-validation figure info.
                     crossFig = figure; hold on;
                     set(gcf,'position',figurePositionCross);
