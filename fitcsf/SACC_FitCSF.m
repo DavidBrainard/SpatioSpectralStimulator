@@ -47,11 +47,10 @@ figurePositionData = [200 300 figureSize figureSize];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Fitting options.
-%
-% You can type smoothing paramters by skipping cross-validation. It could
-% be a single number or multiple.
 BootstrapAUC = false;
 
+% OptionSearchSmoothParam can be one of the followings {'crossValBootAcross',
+% 'crossValBootAcrossFmincon', 'type'}.
 OptionSearchSmoothParam = 'crossValBootAcrossFmincon';
 minSmoothingParamType = 0.99;
 maxSmoothingParamType = 1;
@@ -64,8 +63,8 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
-whichSubject = '021';
+pickSubjectAndFilter = true;
+whichSubject = '014';
 whichFilter = 'A';
 
 % Save text summary file.
@@ -368,11 +367,17 @@ for ss = 1:nSubjects
                     beq = [];
                     options = optimset('fmincon');
                     
+                    % Show message before running fmincon.
+                    fprintf('Method = (%s) / Starting... \n',OptionSearchSmoothParam);
+                    
                     % Run fmincon to find best cross validation smoothness
                     % parameter.
                     x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                         x0, A, b, Aeq, beq, vlb, vub, [], options);
                     smoothingParam = x_found(1);
+                    
+                    % Show message again after completing fmincon.
+                    fprintf('Method = (%s) / Completed! \n',OptionSearchSmoothParam);
                     
                 case 'type'
                     % Type a number manually.
