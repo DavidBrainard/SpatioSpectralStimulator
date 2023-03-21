@@ -370,7 +370,7 @@ for ss = 1:nSubjects
                     % Show message before running fmincon.
                     fprintf('Method = (%s) / Starting... \n',OptionSearchSmoothParam);
                     
-                    % Run fmincon to find best cross validation smoothness
+                    % Run fmincon to find best cross validation smoothing
                     % parameter.
                     x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                         x0, A, b, Aeq, beq, vlb, vub, [], options);
