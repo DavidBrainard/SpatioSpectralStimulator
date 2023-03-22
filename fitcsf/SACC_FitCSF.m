@@ -343,46 +343,41 @@ for ss = 1:nSubjects
                     smoothingParam = crossSmoothingParams(index);
                     
                 case 'crossValBootAcrossFmincon'
-                    % Make a loop if you want to bootstrap the fits.
-                    nFitsFmincon = 5;
-                    
-                    for nn = 1:nFitsFmincon
-                        % Draw new fit/cross dataset (N=20)
-                        % out of bootstrapped values
-                        % (N=100). Once we drew the set, we
-                        % will use the same set for all
-                        % smoothing params.
-                        nCrossValBootAcross = 20;
-                        for cc = 1:nCrossValBootAcross
-                            for zz = 1:length(mySFVals)
-                                crossIndex = randi(nBootPoints,1,1);
-                                bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                                bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
-                            end
+                    % Draw new fit/cross dataset (N=20)
+                    % out of bootstrapped values
+                    % (N=100). Once we drew the set, we
+                    % will use the same set for all
+                    % smoothing params.
+                    nCrossValBootAcross = 20;
+                    for cc = 1:nCrossValBootAcross
+                        for zz = 1:length(mySFVals)
+                            crossIndex = randi(nBootPoints,1,1);
+                            bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                            bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
                         end
-                        
-                        % Set bounds for parameter x to 0 and 1.
-                        x0 = 0.5;
-                        vlb = 0;
-                        vub = 1;
-                        A = [];
-                        b = [];
-                        Aeq = [];
-                        beq = [];
-                        options = optimset('fmincon');
-                        
-                        % Show message before running fmincon.
-                        fprintf('Method = (%s) / Starting...(%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
-                        
-                        % Run fmincon to find best cross validation smoothing
-                        % parameter.
-                        x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
-                            x0, A, b, Aeq, beq, vlb, vub, [], options);
-                        smoothingParam(nn) = x_found(1);
-                        
-                        % Show message again after completing fmincon.
-                        fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
                     end
+                    
+                    % Set bounds for parameter x to 0 and 1.
+                    x0 = 0.5;
+                    vlb = 0;
+                    vub = 1;
+                    A = [];
+                    b = [];
+                    Aeq = [];
+                    beq = [];
+                    options = optimset('fmincon');
+                    
+                    % Show message before running fmincon.
+                    fprintf('Method = (%s) / Starting...(%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
+                    
+                    % Run fmincon to find best cross validation smoothing
+                    % parameter.
+                    x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
+                        x0, A, b, Aeq, beq, vlb, vub, [], options);
+                    smoothingParam(nn) = x_found(1);
+                    
+                    % Show message again after completing fmincon.
+                    fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
                     
                 case 'type'
                     % Type a number manually.
@@ -425,6 +420,59 @@ for ss = 1:nSubjects
             
             % Show progress.
             fprintf('\t CSF fitting and AUC calculation completed! \n\n');
+            
+            %% Bootstrapping to fit CCSF.
+            if strcmp(OptionSearchSmoothParam,'CrossValBootAcrossFmincon')
+                nBootFits = 20;
+                for nn = 1:nBootFits
+                    % Generate new CS values set to fit the curve.
+                    for zz = 1:length(mySFVals)
+                        myCSValsBootFmincon(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
+                    end
+                    
+                    % Draw new fit/cross dataset (N=20)
+                    % out of bootstrapped values
+                    % (N=100). Once we drew the set, we
+                    % will use the same set for all
+                    % smoothing params.
+                    nCrossValBootAcross = 20;
+                    for cc = 1:nCrossValBootAcross
+                        for zz = 1:length(mySFVals)
+                            crossIndex = randi(nBootPoints,1,1);
+                            bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                            bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                        end
+                    end
+                    
+                    % Set bounds for parameter x to 0 and 1.
+                    x0 = 0.5;
+                    vlb = 0;
+                    vub = 1;
+                    A = [];
+                    b = [];
+                    Aeq = [];
+                    beq = [];
+                    options = optimset('fmincon');
+                    
+                    % Show message before running fmincon.
+                    fprintf('Method = (%s) / Starting...(%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
+                    
+                    % Run fmincon to find best cross validation smoothing
+                    % parameter.
+                    x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
+                        x0, A, b, Aeq, beq, vlb, vub, [], options);
+                    smoothingParam(nn) = x_found(1);
+                    
+                    % Show message again after completing fmincon.
+                    fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
+                    
+                    % Fit happens here.
+                    smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParamBootAUC);
+                    
+                    % Get the predicted values to plot.
+                    smoothPlotPredsBoot(:,nn) = feval(smoothFit,smoothPlotSFVals);
+                end
+            end
             
             %% Bootstrapping AUC.
             %
@@ -576,6 +624,13 @@ for ss = 1:nSubjects
                     plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{2},'LineWidth',4);
                 end
             end
+            
+            % Plot CSF Boot if you did.
+            
+            smoothPlotPredsBoot
+            
+            
+            
             
             % Plot AUC results if you want.
             if (PlotAUC)
