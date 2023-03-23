@@ -368,16 +368,16 @@ for ss = 1:nSubjects
                     options = optimset('fmincon');
                     
                     % Show message before running fmincon.
-                    fprintf('Method = (%s) / Starting...(%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
+                    fprintf('Method = (%s) / Starting... \n',OptionSearchSmoothParam);
                     
                     % Run fmincon to find best cross validation smoothing
                     % parameter.
                     x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                         x0, A, b, Aeq, beq, vlb, vub, [], options);
-                    smoothingParam(nn) = x_found(1);
+                    smoothingParam = x_found(1);
                     
                     % Show message again after completing fmincon.
-                    fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nFitsFmincon);
+                    fprintf('Method = (%s) / Completed! \n',OptionSearchSmoothParam);
                     
                 case 'type'
                     % Type a number manually.
@@ -422,8 +422,8 @@ for ss = 1:nSubjects
             fprintf('\t CSF fitting and AUC calculation completed! \n\n');
             
             %% Bootstrapping to fit CCSF.
-            if strcmp(OptionSearchSmoothParam,'CrossValBootAcrossFmincon')
-                nBootFits = 20;
+            if strcmp(OptionSearchSmoothParam,'crossValBootAcrossFmincon')
+                nBootFits = 3;
                 for nn = 1:nBootFits
                     % Generate new CS values set to fit the curve.
                     for zz = 1:length(mySFVals)
@@ -461,13 +461,13 @@ for ss = 1:nSubjects
                     % parameter.
                     x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                         x0, A, b, Aeq, beq, vlb, vub, [], options);
-                    smoothingParam(nn) = x_found(1);
+                    smoothingParamBootFmincon(nn) = x_found(1);
                     
                     % Show message again after completing fmincon.
                     fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
                     
                     % Fit happens here.
-                    smoothFit = fit(mySFVals',myCSValsBootAUC','smoothingspline','SmoothingParam',smoothingParamBootAUC);
+                    smoothFit = fit(mySFVals',myCSValsBootFmincon','smoothingspline','SmoothingParam',smoothingParamBootFmincon(nn));
                     
                     % Get the predicted values to plot.
                     smoothPlotPredsBoot(:,nn) = feval(smoothFit,smoothPlotSFVals);
@@ -626,16 +626,14 @@ for ss = 1:nSubjects
             end
             
             % Plot CSF Boot if you did.
-            
-            smoothPlotPredsBoot
-            
-            
-            
+            if exist('smoothPlotPredsBoot')
+                plot(smoothPlotSFVals, smoothPlotPredsBoot,'r-','color',[1 0 0 0.2],'LineWidth',2);
+            end
             
             % Plot AUC results if you want.
             if (PlotAUC)
                 for aa = 1:nPointsCalAUC
-                    plot(ones(1,2)*calAUCSFValsPlot(aa), [0 calAUCPredsPlot(aa)],'color',[1 0 0 0.1]);
+                    plot(ones(1,2)*calAUCSFValsPlot(aa), [0 calAUCPredsPlot(aa)],'color',[1 1 0 0.1]);
                 end
             end
             
