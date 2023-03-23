@@ -38,9 +38,9 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = true;
+WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = false;
+SaveCSFPlot = true;
 
 figureSize = 550;
 figurePositionData = [200 300 figureSize figureSize];
@@ -48,22 +48,24 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Fitting options.
 BootstrapAUC = false;
+BootstrapCSF = true;
 
 % OptionSearchSmoothParam can be one of the followings {'crossValBootAcross',
 % 'crossValBootAcrossFmincon', 'type'}.
 OptionSearchSmoothParam = 'crossValBootAcrossFmincon';
-minSmoothingParamType = 0.99;
-maxSmoothingParamType = 1;
-intervalSmoothingParamType = 0.00005;
-smoothingParamsType = [minSmoothingParamType : intervalSmoothingParamType : maxSmoothingParamType];
+
 if strcmp(OptionSearchSmoothParam,'type')
+    minSmoothingParamType = 0.99;
+    maxSmoothingParamType = 1;
+    intervalSmoothingParamType = 0.00005;
+    smoothingParamsType = [minSmoothingParamType : intervalSmoothingParamType : maxSmoothingParamType];
     nSmoothingParamsType = length(smoothingParamsType);
 else
     nSmoothingParamsType = 1;
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
+pickSubjectAndFilter = false;
 whichSubject = '014';
 whichFilter = 'B';
 
@@ -423,53 +425,57 @@ for ss = 1:nSubjects
             
             %% Bootstrapping to fit CCSF.
             if strcmp(OptionSearchSmoothParam,'crossValBootAcrossFmincon')
-                nBootFits = 20;
-                for nn = 1:nBootFits
-                    % Generate new CS values set to fit the curve.
-                    for zz = 1:length(mySFVals)
-                        myCSValsBootFmincon(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
-                    end
-                    
-                    % Draw new fit/cross dataset (N=20)
-                    % out of bootstrapped values
-                    % (N=100). Once we drew the set, we
-                    % will use the same set for all
-                    % smoothing params.
-                    nCrossValBootAcross = 20;
-                    for cc = 1:nCrossValBootAcross
+                if (BootstrapCSF)
+                    nBootCSF = 20;
+                    for nn = 1:nBootCSF
+                        % Generate new CS values set to fit the curve.
                         for zz = 1:length(mySFVals)
-                            crossIndex = randi(nBootPoints,1,1);
-                            bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                            bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                            myCSValsBootFmincon(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
                         end
+                        
+                        % Draw new fit/cross dataset (N=20)
+                        % out of bootstrapped values
+                        % (N=100). Once we drew the set, we
+                        % will use the same set for all
+                        % smoothing params.
+                        nCrossValBootAcross = 20;
+                        for cc = 1:nCrossValBootAcross
+                            for zz = 1:length(mySFVals)
+                                crossIndex = randi(nBootPoints,1,1);
+                                bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
+                                bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                            end
+                        end
+                        
+                        % Set bounds for parameter x to 0 and 1.
+                        x0 = 0.5;
+                        vlb = 0;
+                        vub = 1;
+                        A = [];
+                        b = [];
+                        Aeq = [];
+                        beq = [];
+                        options = optimset('fmincon');
+                        
+                        % Run fmincon to find best cross validation smoothing
+                        % parameter.
+                        x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
+                            x0, A, b, Aeq, beq, vlb, vub, [], options);
+                        smoothingParamBootFmincon(nn) = x_found(1);
+                        
+                        % Show message again after completing fmincon.
+                        fprintf('Method = (%s) / Bootstrapping in progress (%d/%d) \n',OptionSearchSmoothParam,nn,nBootCSF);
+                        
+                        % Fit happens here.
+                        smoothFit = fit(mySFVals',myCSValsBootFmincon','smoothingspline','SmoothingParam',smoothingParamBootFmincon(nn));
+                        
+                        % Get the predicted values to plot.
+                        smoothPlotPredsBoot(:,nn) = feval(smoothFit,smoothPlotSFVals);
+                        
+                        % Calculate AUC.
+                        calAUCPreds = feval(smoothFit,calAUCSFVals);
+                        AUCBoot(nn) = trapz(calAUCSFVals,calAUCPreds);
                     end
-                    
-                    % Set bounds for parameter x to 0 and 1.
-                    x0 = 0.5;
-                    vlb = 0;
-                    vub = 1;
-                    A = [];
-                    b = [];
-                    Aeq = [];
-                    beq = [];
-                    options = optimset('fmincon');
-                    
-                    % Run fmincon to find best cross validation smoothing
-                    % parameter.
-                    x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
-                        x0, A, b, Aeq, beq, vlb, vub, [], options);
-                    smoothingParamBootFmincon(nn) = x_found(1);
-%                     
-                    % Show message again after completing fmincon.
-                    fprintf('Method = (%s) / Bootstrapping in progress (%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
-                    
-                    % Fit happens here.
-                    smoothFit = fit(mySFVals',myCSValsBootFmincon','smoothingspline','SmoothingParam',smoothingParamBootFmincon(nn));
-%                   myCSValsBootFmincon
-%                   smoothingParamBootFmincon(nn)
-
-                    % Get the predicted values to plot.
-                    smoothPlotPredsBoot(:,nn) = feval(smoothFit,smoothPlotSFVals);
                 end
             end
             
@@ -557,7 +563,9 @@ for ss = 1:nSubjects
                 end
             else
                 fprintf('\t Skipping Bootstrapping AUC! \n');
-                AUCBoot = zeros(1,nBootAUC);
+                if ~(BootstrapCSF)
+                    AUCBoot = zeros(1,nBootAUC);
+                end
             end
             
             %% Plot cross-validation smoothing param figure.
@@ -572,7 +580,7 @@ for ss = 1:nSubjects
                 legend('All params', 'Optimal param', 'fontsize', 13);
             end
             
-            %% Plot data figure here.
+            %% Plot data figure from here.
             figure(dataFig);
             
             % Set marker/line options for the plot.
@@ -605,7 +613,7 @@ for ss = 1:nSubjects
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
-            % Plot CSF.
+            %% Plot CSF.
             if (OneFigurePerSub)
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
             else
@@ -625,11 +633,11 @@ for ss = 1:nSubjects
             end
             
             % Plot CSF Boot if you did.
-            if exist('smoothPlotPredsBoot')
+            if (BootstrapCSF)
                 plot(smoothPlotSFVals, smoothPlotPredsBoot,'r-','color',[1 0 0 0.1],'LineWidth',2);
             end
             
-            % Plot AUC results if you want.
+            %% Plot AUC results if you want.
             if (PlotAUC)
                 for aa = 1:nPointsCalAUC
                     plot(ones(1,2)*calAUCSFValsPlot(aa), [0 calAUCPredsPlot(aa)],'color',[1 1 0 0.1]);
@@ -653,7 +661,7 @@ for ss = 1:nSubjects
                 f_data = flip(get(gca, 'Children'));
                 if exist('smoothPlotPredsBoot')
                     legend(f_data([1,2,4,5]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
-                        sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootFits),'fontsize',13,'location', 'northeast');
+                        sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootCSF),'fontsize',13,'location', 'northeast');
                 else
                     legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
                         sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
@@ -696,19 +704,19 @@ for ss = 1:nSubjects
                 end
             end
             
-            % Save the CSF plot if you want.
+            %% Save the CSF plot if you want.
             if (SaveCSFPlot)
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}, OptionSearchSmoothParam));
                     testFileFormat = '.tiff';
                     saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
                 end
             end
             
-            % Record the data. We will make a text summary file.
+            %% Record the data. We will make a text summary file.
             subjectBigList{ss,ff} = subjectName;
             filterBigList{ss,ff} = filterOptions{ff};
             AUCBigList{ss,ff} = AUC;
@@ -716,7 +724,7 @@ for ss = 1:nSubjects
             lowBootCIAUCBigList{ss,ff} = lowBootCIAUC;
             highBootCIAUCBigList{ss,ff} = highBootCIAUC;
             
-            % We will end the code here when we pick sujbect and filter.
+            %% We will end the code here when we pick sujbect and filter.
             if (pickSubjectAndFilter)
                 return;
             end
@@ -800,7 +808,7 @@ for ss = 1:nSubjects
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}, OptionSearchSmoothParam));
                     testFileFormat = '.tiff';
                     saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
