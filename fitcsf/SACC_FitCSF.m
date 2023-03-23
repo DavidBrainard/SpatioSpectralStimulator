@@ -651,11 +651,13 @@ for ss = 1:nSubjects
                 
                 % Add legend.
                 f_data = flip(get(gca, 'Children'));
-                numSpaceLegend = 4;
-                idxLegendRaw = linspace(1, 1+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
-                idxLegendBoot = linspace(2, 2+numSpaceLegend*(nSineFreqCyclesPerDeg-1), nSineFreqCyclesPerDeg);
-                legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
-                    sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
+                if exist('smoothPlotPredsBoot')
+                    legend(f_data([1,2,4,5]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
+                        sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootFits),'fontsize',13,'location', 'northeast');
+                else
+                    legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
+                        sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
+                end
                 
                 % Make text Smoothing param for the plot.
                 textSmoothingParam = sprintf('Smoothing parameter = %.8f', smoothingParam);
