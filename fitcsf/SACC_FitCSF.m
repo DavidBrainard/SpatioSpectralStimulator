@@ -65,7 +65,7 @@ end
 % Pick subject and filter to fit.
 pickSubjectAndFilter = true;
 whichSubject = '014';
-whichFilter = 'A';
+whichFilter = 'B';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -423,7 +423,7 @@ for ss = 1:nSubjects
             
             %% Bootstrapping to fit CCSF.
             if strcmp(OptionSearchSmoothParam,'crossValBootAcrossFmincon')
-                nBootFits = 3;
+                nBootFits = 20;
                 for nn = 1:nBootFits
                     % Generate new CS values set to fit the curve.
                     for zz = 1:length(mySFVals)
@@ -454,21 +454,20 @@ for ss = 1:nSubjects
                     beq = [];
                     options = optimset('fmincon');
                     
-                    % Show message before running fmincon.
-                    fprintf('Method = (%s) / Starting...(%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
-                    
                     % Run fmincon to find best cross validation smoothing
                     % parameter.
                     x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                         x0, A, b, Aeq, beq, vlb, vub, [], options);
                     smoothingParamBootFmincon(nn) = x_found(1);
-                    
+%                     
                     % Show message again after completing fmincon.
-                    fprintf('Method = (%s) / Completed! (%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
+                    fprintf('Method = (%s) / Bootstrapping in progress (%d/%d) \n',OptionSearchSmoothParam,nn,nBootFits);
                     
                     % Fit happens here.
                     smoothFit = fit(mySFVals',myCSValsBootFmincon','smoothingspline','SmoothingParam',smoothingParamBootFmincon(nn));
-                    
+%                   myCSValsBootFmincon
+%                   smoothingParamBootFmincon(nn)
+
                     % Get the predicted values to plot.
                     smoothPlotPredsBoot(:,nn) = feval(smoothFit,smoothPlotSFVals);
                 end
@@ -627,7 +626,7 @@ for ss = 1:nSubjects
             
             % Plot CSF Boot if you did.
             if exist('smoothPlotPredsBoot')
-                plot(smoothPlotSFVals, smoothPlotPredsBoot,'r-','color',[1 0 0 0.2],'LineWidth',2);
+                plot(smoothPlotSFVals, smoothPlotPredsBoot,'r-','color',[1 0 0 0.1],'LineWidth',2);
             end
             
             % Plot AUC results if you want.
