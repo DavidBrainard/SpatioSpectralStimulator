@@ -197,12 +197,12 @@ for ss = 1:nSubjects
             % Read out the variables per each filter. These values are
             % linear units, which we will conver them on log space.
             thresholds = thresholdFittedRaw(ss,:,ff);
-            thresholdsBoot = thresholdFittedBootRaw(ss,:,ff,:);
-            medianThresholdsBoot = medianThresholdBootRaw(ss,:,ff);
-            lowThresholdBoot = lowThresholdBootRaw(ss,:,ff);
-            highThresholdBoot = highThresholdBootRaw(ss,:,ff);
-            thresholdsBootCross1 = thresholdFittedBootCross1Raw(ss,:,ff,:);
-            thresholdsBootCross2 = thresholdFittedBootCross2Raw(ss,:,ff,:);
+            thresholdsBoot = real(thresholdFittedBootRaw(ss,:,ff,:));
+            medianThresholdsBoot = real(medianThresholdBootRaw(ss,:,ff));
+            lowThresholdBoot = real(lowThresholdBootRaw(ss,:,ff));
+            highThresholdBoot = real(highThresholdBootRaw(ss,:,ff));
+            thresholdsBootCross1 = real(thresholdFittedBootCross1Raw(ss,:,ff,:));
+            thresholdsBootCross2 = real(thresholdFittedBootCross2Raw(ss,:,ff,:));
             
             % Convert NaN to 0 here.
             for tt = 1:length(thresholds)
@@ -239,15 +239,15 @@ for ss = 1:nSubjects
             sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
             
             % Check low boot strap range, so 10% of the entire range.
-            %             numDigitsRound = 2;
-            %             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
-            %                 error('Inconsistency in low bootstrapped sensitivities');
-            %             end
-            %
-            %             % Check high bootstrap range, so 90% of the entire range.
-            %             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
-            %                 error('Inconsistency in high bootstrapped sensitivities');
-            %             end
+            numDigitsRound = 2;
+            if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
+                error('Inconsistency in low bootstrapped sensitivities');
+            end
+            
+            % Check high bootstrap range, so 90% of the entire range.
+            if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
+                error('Inconsistency in high bootstrapped sensitivities');
+            end
             
             % Clear the variables for checking the values.
             clear sensitivityBootLowCheck sensitivityBootHighCheck;
