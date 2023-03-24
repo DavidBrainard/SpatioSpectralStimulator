@@ -42,6 +42,7 @@ WaitForKeyToPlot = false;
 PlotAUC = true;
 SaveCSFPlot = false;
 
+% Figure size and position.
 figureSize = 550;
 figurePositionData = [200 300 figureSize figureSize];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
@@ -50,10 +51,11 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 BootstrapAUC = false;
 BootstrapCSF = true;
 
-minThresholdContrast = 0.0003;
-maxThresholdContrast = 0.1;
-minSensitivity = log10(1/maxThresholdContrast);
-maxSensitivity = log10(1/minThresholdContrast);
+% Set the sensitivity range to pick for bootstrapped values.
+minThresholdContrastBoot = 0.0003;
+maxThresholdContrastBoot = 0.1;
+minSensitivityBoot = log10(1/maxThresholdContrastBoot);
+maxSensitivityBoot = log10(1/minThresholdContrastBoot);
 
 % OptionSearchSmoothParam can be one of the followings {'crossValBootAcross',
 % 'crossValBootAcrossFmincon', 'type'}.
@@ -70,7 +72,7 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
+pickSubjectAndFilter = false;
 whichSubject = '014';
 whichFilter = 'C';
 
@@ -352,8 +354,8 @@ for ss = 1:nSubjects
                                 crossIndex = randi(nBootPoints,1,1);
                                 bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
                                 bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
-                                if (bootCSFDataFitTemp >= minSensitivity & bootCSFDataFitTemp <= maxSensitivity)
-                                    if (bootCSFDataCrossTemp >= minSensitivity & bootCSFDataCrossTemp <= maxSensitivity)
+                                if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
+                                    if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
                                         break;
                                     end
                                 end
@@ -460,8 +462,8 @@ for ss = 1:nSubjects
                                     crossIndex = randi(nBootPoints,1,1);
                                     bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
                                     bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
-                                    if (bootCSFDataFitTemp >= minSensitivity & bootCSFDataFitTemp <= maxSensitivity)
-                                        if (bootCSFDataCrossTemp >= minSensitivity & bootCSFDataCrossTemp <= maxSensitivity)
+                                    if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
+                                        if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
                                             break;
                                         end
                                     end
