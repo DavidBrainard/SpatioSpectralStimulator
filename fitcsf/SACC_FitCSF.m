@@ -655,6 +655,14 @@ for ss = 1:nSubjects
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
+            % Plot the end points of bootstrapped values.
+            maxSensitivityBootPlot = max(sensitivityBootSorted,[],2);
+            minSensitivityBootPlot = min(sensitivityBootSorted,[],2);
+            minSensitivityBootPlot(minSensitivityBootPlot<0) = 0;
+
+            plot(sineFreqCyclesPerDegLogSorted,maxSensitivityBootPlot','g*','markerSize',7);
+            plot(sineFreqCyclesPerDegLogSorted,minSensitivityBootPlot','g*','markerSize',7);
+            
             %% Plot CSF.
             if (OneFigurePerSub)
                 plot(smoothPlotSFVals,smoothPlotPreds,colorOptionsCSF{ff},'LineWidth',4);
@@ -702,7 +710,7 @@ for ss = 1:nSubjects
                 % Add legend.
                 f_data = flip(get(gca, 'Children'));
                 if exist('smoothPlotPredsBoot')
-                    legend(f_data([1,2,4,5]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
+                    legend(f_data([1,2,6,7]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
                         sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootCSF),'fontsize',13,'location', 'northeast');
                 else
                     legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
