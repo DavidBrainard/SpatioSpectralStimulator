@@ -195,26 +195,35 @@ for ss = 1:nSubjects
             end
             
             % Read out the variables per each filter. These values are
-            % linear units, which we will conver them on log space.
+            % linear units, which we will be converted on log space.
             thresholds = thresholdFittedRaw(ss,:,ff);
-            thresholdsBoot = real(thresholdFittedBootRaw(ss,:,ff,:));
-            medianThresholdsBoot = real(medianThresholdBootRaw(ss,:,ff));
-            lowThresholdBoot = real(lowThresholdBootRaw(ss,:,ff));
-            highThresholdBoot = real(highThresholdBootRaw(ss,:,ff));
-            thresholdsBootCross1 = real(thresholdFittedBootCross1Raw(ss,:,ff,:));
-            thresholdsBootCross2 = real(thresholdFittedBootCross2Raw(ss,:,ff,:));
+            thresholdsBoot = squeeze(thresholdFittedBootRaw(ss,:,ff,:));
+            medianThresholdsBoot = medianThresholdBootRaw(ss,:,ff);
+            lowThresholdBoot = lowThresholdBootRaw(ss,:,ff);
+            highThresholdBoot = highThresholdBootRaw(ss,:,ff);
+            thresholdsBootCross1 = squeeze(thresholdFittedBootCross1Raw(ss,:,ff,:));
+            thresholdsBootCross2 = squeeze(thresholdFittedBootCross2Raw(ss,:,ff,:));
             
-            % Convert NaN to 0 here.
-            for tt = 1:length(thresholds)
-                if isnan(thresholds(tt))
-                    thresholds(tt) = 0;
-                end
+            % Some checks that bookkeeping is working. Note that
+            % 'thresholdBootLow' and 'thresholdBootHigh' are the ends
+            % of confidence interval (80%), not the entire range.
+            bootConfInterval = 0.8;
+            thresholdBootLowCheck = prctile(thresholdsBoot',100*(1-bootConfInterval)/2);
+            thresholdBootHighCheck = prctile(thresholdsBoot',100-100*(1-bootConfInterval)/2);
+            
+            % Check low boot strap range, so 10% of the entire range.
+            numDigitsRound = 4;
+            if (any(round(thresholdBootLowCheck,numDigitsRound) ~= round(lowThresholdBoot,numDigitsRound)))
+                error('Inconsistency in low bootstrapped threshold');
             end
-            for tt = 1:length(medianThresholdsBoot)
-                if isnan(medianThresholdsBoot(tt))
-                    medianThresholdsBoot(tt) = 0;
-                end
+
+            % Check high bootstrap range, so 90% of the entire range.
+            if (any(round(thresholdBootHighCheck,numDigitsRound) ~= round(highThresholdBoot,numDigitsRound)))
+                error('Inconsistency in high bootstrapped threshold');
             end
+            
+            % Clear the variables for checking the values.
+            clear thresholdBootLowCheck thresholdBootHighCheck;
             
             %% Calculate log sensitivity.
             %
@@ -227,34 +236,13 @@ for ss = 1:nSubjects
             % For calculation of confindence
             % interval from bootstrap, (low) threshold becomes (high)
             % sensitivity, and vice versa.
-            sensitivityBoot = log10(1./squeeze(thresholdsBoot));
+            sensitivityBoot = log10(1./thresholdsBoot);
             sensitivityBootHigh = log10(1./lowThresholdBoot);
             sensitivityBootLow = log10(1./highThresholdBoot);
             
-            % Some checks that bookkeeping is working. Note that
-            % 'sensitivityBootHigh' and 'sensitivityBootLow' are the ends
-            % of confidence interval (80%), not the entire range.
-            bootConfInterval = 0.8;
-            sensitivityBootLowCheck = prctile(sensitivityBoot',100*(1-bootConfInterval)/2);
-            sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
-            
-            % Check low boot strap range, so 10% of the entire range.
-%             numDigitsRound = 2;
-%             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
-%                 error('Inconsistency in low bootstrapped sensitivities');
-%             end
-%             
-%             % Check high bootstrap range, so 90% of the entire range.
-%             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
-%                 error('Inconsistency in high bootstrapped sensitivities');
-%             end
-            
-            % Clear the variables for checking the values.
-            clear sensitivityBootLowCheck sensitivityBootHighCheck;
-            
             % Additional bootstrapped values for cross-validation.
-            sensitivityBootCross1 = log10(1./squeeze(thresholdsBootCross1));
-            sensitivityBootCross2 = log10(1./squeeze(thresholdsBootCross2));
+            sensitivityBootCross1 = log10(1./thresholdsBootCross1);
+            sensitivityBootCross2 = log10(1./thresholdsBootCross2);
             
             % Calculate spatial frequency in log space.
             sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
