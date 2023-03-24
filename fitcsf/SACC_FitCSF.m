@@ -380,6 +380,13 @@ for ss = 1:nSubjects
             % smoothing parameters at once.
             nSmoothingParams = length(smoothingParam);
             for mm = 1:nSmoothingParams
+                % Check if smoothing parameter is in the range.
+                if (smoothingParam(mm) > 1)
+                    smoothingParam(mm) = 1;
+                elseif (smoothingParam(mm) < 1)
+                    smoothingParam(mm) = 0;
+                end
+                
                 % Fit the data with the optimal smoothing parameter.
                 smoothFit = fit(mySFVals',myCSVals','smoothingspline','SmoothingParam',smoothingParam(mm));
                 
@@ -450,6 +457,13 @@ for ss = 1:nSubjects
                         x_found = fmincon(@(x) SmoothnessSearchErrorFunction(x, mySFVals, bootCSFDataFit, bootCSFDataCross), ...
                             x0, A, b, Aeq, beq, vlb, vub, [], options);
                         smoothingParamBootFmincon(nn) = x_found(1);
+                        
+                        % Make sure smoothing param is in the range.
+                        if (smoothingParamBootFmincon(nn) > 1)
+                            smoothingParamBootFmincon(nn) = 1;
+                        elseif (smoothingParamBootFmincon(nn) < 1)
+                            smoothingParamBootFmincon(nn) = 0;
+                        end
                         
                         % Show message again after completing fmincon.
                         fprintf('Method = (%s) / Bootstrapping in progress (%d/%d) \n',OptionSearchSmoothParam,nn,nBootCSF);
@@ -532,6 +546,13 @@ for ss = 1:nSubjects
                     % Generate new CS values set to fit the curve.
                     for zz = 1:length(mySFVals)
                         myCSValsBootAUC(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
+                    end
+                    
+                    % Check if smoothing param is within the range.
+                    if (smoothingParamBootAUC > 1)
+                        smoothingParamBootAUC = 1;
+                    elseif (smoothingParamBootAUC < 1)
+                        smoothingParamBootAUC = 0;
                     end
                     
                     % Fit happens here.
