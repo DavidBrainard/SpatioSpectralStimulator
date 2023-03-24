@@ -50,6 +50,11 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 BootstrapAUC = false;
 BootstrapCSF = true;
 
+minThresholdContrast = 0.0003;
+maxThresholdContrast = 0.1;
+minSensitivity = log10(1/maxThresholdContrast);
+maxSensitivity = log10(1/minThresholdContrast);
+
 % OptionSearchSmoothParam can be one of the followings {'crossValBootAcross',
 % 'crossValBootAcrossFmincon', 'type'}.
 OptionSearchSmoothParam = 'crossValBootAcrossFmincon';
@@ -216,7 +221,7 @@ for ss = 1:nSubjects
             if (any(round(thresholdBootLowCheck,numDigitsRound) ~= round(lowThresholdBoot,numDigitsRound)))
                 error('Inconsistency in low bootstrapped threshold');
             end
-
+            
             % Check high bootstrap range, so 90% of the entire range.
             if (any(round(thresholdBootHighCheck,numDigitsRound) ~= round(highThresholdBoot,numDigitsRound)))
                 error('Inconsistency in high bootstrapped threshold');
@@ -341,9 +346,22 @@ for ss = 1:nSubjects
                     nCrossValBootAcross = 20;
                     for cc = 1:nCrossValBootAcross
                         for zz = 1:length(mySFVals)
-                            crossIndex = randi(nBootPoints,1,1);
-                            bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                            bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                            % Here make a while loop until it draws
+                            % reasonable values.
+                            while 1
+                                crossIndex = randi(nBootPoints,1,1);
+                                bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
+                                bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
+                                if (bootCSFDataFitTemp >= minSensitivity & bootCSFDataFitTemp <= maxSensitivity)
+                                    if (bootCSFDataCrossTemp >= minSensitivity & bootCSFDataCrossTemp <= maxSensitivity)
+                                        break;
+                                    end
+                                end
+                            end
+                            
+                            % Save the values.
+                            bootCSFDataFit{cc}(zz) = bootCSFDataFitTemp;
+                            bootCSFDataCross{cc}(zz) = bootCSFDataCrossTemp;
                         end
                     end
                     
@@ -436,9 +454,22 @@ for ss = 1:nSubjects
                         nCrossValBootAcross = 20;
                         for cc = 1:nCrossValBootAcross
                             for zz = 1:length(mySFVals)
-                                crossIndex = randi(nBootPoints,1,1);
-                                bootCSFDataFit{cc}(zz) = myCSValsCross1(crossIndex,zz);
-                                bootCSFDataCross{cc}(zz) = myCSValsCross2(crossIndex,zz);
+                                % Here make a while loop until it draws
+                                % reasonable values.
+                                while 1
+                                    crossIndex = randi(nBootPoints,1,1);
+                                    bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
+                                    bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
+                                    if (bootCSFDataFitTemp >= minSensitivity & bootCSFDataFitTemp <= maxSensitivity)
+                                        if (bootCSFDataCrossTemp >= minSensitivity & bootCSFDataCrossTemp <= maxSensitivity)
+                                            break;
+                                        end
+                                    end
+                                end
+                                
+                                % Save the results.
+                                bootCSFDataFit{cc}(zz) = bootCSFDataFitTemp;
+                                bootCSFDataCross{cc}(zz) = bootCSFDataCrossTemp;
                             end
                         end
                         
