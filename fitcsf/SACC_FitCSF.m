@@ -40,7 +40,7 @@ clear; close all;
 OneFigurePerSub = false;
 WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = false;
+SaveCSFPlot = true;
 
 % Figure size and position.
 figureSize = 550;
@@ -445,7 +445,20 @@ for ss = 1:nSubjects
                     for nn = 1:nBootCSF
                         % Generate new CS values set to fit the curve.
                         for zz = 1:length(mySFVals)
-                            myCSValsBootFmincon(zz) = myCSValsBoot(randi(nBootPoints,1,1),zz);
+                            % Make a loop to pick a value within the set
+                            % range of sensitivity. This prevents to pick
+                            % not sensible results from the bootstrapped
+                            % values.
+                            while 1
+                                randIndex = randi(nBootPoints,1,1);
+                                myCSValsBootFminconTemp = myCSValsBoot(randIndex,zz);
+                                if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                    if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                        break;
+                                    end
+                                end
+                            end
+                            myCSValsBootFmincon(zz) = myCSValsBootFminconTemp;
                         end
                         
                         % Draw new fit/cross dataset (N=20)
