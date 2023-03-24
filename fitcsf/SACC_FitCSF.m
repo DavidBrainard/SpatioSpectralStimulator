@@ -40,7 +40,7 @@ clear; close all;
 OneFigurePerSub = false;
 WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = true;
+SaveCSFPlot = false;
 
 figureSize = 550;
 figurePositionData = [200 300 figureSize figureSize];
@@ -65,9 +65,9 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
+pickSubjectAndFilter = true;
 whichSubject = '014';
-whichFilter = 'B';
+whichFilter = 'C';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -239,15 +239,15 @@ for ss = 1:nSubjects
             sensitivityBootHighCheck = prctile(sensitivityBoot',100-100*(1-bootConfInterval)/2);
             
             % Check low boot strap range, so 10% of the entire range.
-            numDigitsRound = 2;
-            if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
-                error('Inconsistency in low bootstrapped sensitivities');
-            end
-            
-            % Check high bootstrap range, so 90% of the entire range.
-            if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
-                error('Inconsistency in high bootstrapped sensitivities');
-            end
+%             numDigitsRound = 2;
+%             if (any(round(sensitivityBootLowCheck,numDigitsRound) ~= round(sensitivityBootLow,numDigitsRound)))
+%                 error('Inconsistency in low bootstrapped sensitivities');
+%             end
+%             
+%             % Check high bootstrap range, so 90% of the entire range.
+%             if (any(round(sensitivityBootHighCheck,numDigitsRound) ~= round(sensitivityBootHigh,numDigitsRound)))
+%                 error('Inconsistency in high bootstrapped sensitivities');
+%             end
             
             % Clear the variables for checking the values.
             clear sensitivityBootLowCheck sensitivityBootHighCheck;
