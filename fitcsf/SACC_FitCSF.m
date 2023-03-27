@@ -38,9 +38,9 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = false;
+WaitForKeyToPlot = true;
 PlotAUC = true;
-SaveCSFPlot = true;
+SaveCSFPlot = false;
 
 % Figure size and position.
 figureSize = 550;
@@ -72,9 +72,9 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
-whichSubject = '014';
-whichFilter = 'C';
+pickSubjectAndFilter = true;
+whichSubject = '008';
+whichFilter = 'B';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
@@ -232,6 +232,14 @@ for ss = 1:nSubjects
             % Clear the variables for checking the values.
             clear thresholdBootLowCheck thresholdBootHighCheck;
             
+            % Remove odd bootstrapping results. There are some negative
+            % threshold bootstrapping fitting results on linear space. It
+            % does not make sense, so we convert the number into 'nan' so
+            % that it won't affect our sampling procedure.
+            thresholdsBoot(thresholdsBoot<0) = nan;
+            thresholdsBootCross1(thresholdsBootCross1<0) = nan;
+            thresholdsBootCross2(thresholdsBootCross2<0) = nan;
+            
             %% Calculate log sensitivity.
             %
             % PF fitted thresholds.
@@ -354,9 +362,11 @@ for ss = 1:nSubjects
                                 crossIndex = randi(nBootPoints,1,1);
                                 bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
                                 bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
-                                if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
-                                    if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
-                                        break;
+                                if (~isnan(bootCSFDataFitTemp) && ~isnan(bootCSFDataCrossTemp))
+                                    if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
+                                        if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
+                                            break;
+                                        end
                                     end
                                 end
                             end
@@ -452,9 +462,11 @@ for ss = 1:nSubjects
                             while 1
                                 randIndex = randi(nBootPoints,1,1);
                                 myCSValsBootFminconTemp = myCSValsBoot(randIndex,zz);
-                                if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                if ~isnan(myCSValsBootFminconTemp)
                                     if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
-                                        break;
+                                        if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                            break;
+                                        end
                                     end
                                 end
                             end
@@ -672,7 +684,7 @@ for ss = 1:nSubjects
             maxSensitivityBootPlot = max(sensitivityBootSorted,[],2);
             minSensitivityBootPlot = min(sensitivityBootSorted,[],2);
             minSensitivityBootPlot(minSensitivityBootPlot<0) = 0;
-
+            
             plot(sineFreqCyclesPerDegLogSorted,maxSensitivityBootPlot','g*','markerSize',7);
             plot(sineFreqCyclesPerDegLogSorted,minSensitivityBootPlot','g*','markerSize',7);
             
