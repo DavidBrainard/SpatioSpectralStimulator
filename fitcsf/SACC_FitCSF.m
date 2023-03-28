@@ -413,7 +413,7 @@ for ss = 1:nSubjects
                 % Check if smoothing parameter is in the range.
                 if (smoothingParam(mm) > 1)
                     smoothingParam(mm) = 1;
-                elseif (smoothingParam(mm) < 1)
+                elseif (smoothingParam(mm) < 0)
                     smoothingParam(mm) = 0;
                 end
                 
@@ -519,7 +519,7 @@ for ss = 1:nSubjects
                         % Make sure smoothing param is in the range.
                         if (smoothingParamBootFmincon(nn) > 1)
                             smoothingParamBootFmincon(nn) = 1;
-                        elseif (smoothingParamBootFmincon(nn) < 1)
+                        elseif (smoothingParamBootFmincon(nn) < 0)
                             smoothingParamBootFmincon(nn) = 0;
                         end
                         
@@ -609,7 +609,7 @@ for ss = 1:nSubjects
                     % Check if smoothing param is within the range.
                     if (smoothingParamBootAUC > 1)
                         smoothingParamBootAUC = 1;
-                    elseif (smoothingParamBootAUC < 1)
+                    elseif (smoothingParamBootAUC < 0)
                         smoothingParamBootAUC = 0;
                     end
                     
