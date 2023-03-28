@@ -12,7 +12,16 @@
 clear; close all;
 
 %% Set variables.
+%
+% If oneFigure set to true, we will plot all results on one figure.
+% Otherwise, we will make a separate plot per each filter.
+oneFigure = true;
+
 fittingMode = 'crossValBootAcrossFmincon';
+filterOptions = {'A', 'B', 'C', 'D', 'E'};
+imgFormat = 'tiff';
+figureSize = 2000;
+figurePosition = [200 300 figureSize figureSize];
 
 %% Check the subjects with all data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -54,18 +63,46 @@ end
 
 %% Prompt which subject result to read.
 while 1
-    for 
-    textSubAvailable = 
-    end 
-    inputMessage = sprintf('Which subject to test: \n %s',);
+    inputMessage = sprintf('\t Choose a subject to see the results: \n \t [%s] \n',strjoin(subjectAvailable));
     whichSub = input(inputMessage, 's');
-    whichFilterOptions = {'A', 'B', 'C', 'D', 'E'};
     
-    if ismember(whichSub, whichFilterOptions)
+    if ismember(whichSub, subjectAvailable)
         break
     end
     
-    disp('Filter should be chose within [A, B, C, D, E]!');
+    disp('Choose a number within the numbers displaying!');
 end
 
-%% Display the result.
+fprintf('Subject (%s) results will be displaying...\n',whichSub);
+
+%% Display the results.
+testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+testFiledir = fullfile(testFiledir,whichSub,'CSF');
+
+% If we make only one plot to have all results.
+if (oneFigure)
+    figure;
+    set(gcf,'position',figurePosition);
+end
+
+% Make a loop to load all results of the filters.
+for ff = 1:length(filterOptions)
+    % Draw everything on one figure or separate.
+    if (oneFigure)
+        subplot(2,3,ff);
+    else
+        figure;
+        set(gcf,'position',figurePosition);
+    end
+    
+    % Get the filename to plot.
+    testFilename = fullfile(testFiledir,...
+        sprintf('CSF_%s_%s_%s.%s',whichSub,filterOptions{ff},fittingMode,imgFormat));
+    image = imread(testFilename);
+    
+    % Resize the image to see it better.
+    image = imresize(image,2);
+    
+    % Plot the image.
+    imshow(image);
+end
