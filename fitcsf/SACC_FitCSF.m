@@ -30,6 +30,8 @@
 %                        we want.
 %    03/20/23   smo    - Added an option to use fmincon to search smoothing
 %                        parameter when using Smooth spline function.
+%    03/29/23   smo    - Added an option to lock randomization per each
+%                        filter/subject combination.
 
 %% Initialize.
 clear; close all;
@@ -78,6 +80,9 @@ whichFilter = 'B';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
+
+% Fix the randomization if you want.
+lockRand = true;
 
 %% Load and read out the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -166,6 +171,13 @@ for ss = 1:nSubjects
         % Here we read out five values of the thresholds (so, five spatial
         % frequency) to fit CSF curve.
         for ff = 1:nFilters
+            % Lock randomization order if you want. We will assign an
+            % unique seed number to each filter/subject combination.
+            if (lockRand)
+                rngSeed = ff+(ss-1)*nFilters;
+                rng(rngSeed);
+            end
+            
             % Make a new plot per each filter of the subject.
             if (~OneFigurePerSub)
                 % Data figure info.
