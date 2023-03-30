@@ -36,6 +36,8 @@
 %                             code, t_CSFGeneratorAnalyze_OLD.m. Also,
 %                             added the part that creates a text file
 %                             containing all CS values per each subject
+%    03/30/23  smo          - Added an option to lock randomization when
+%                             bootstrapping thresholds.
 
 %% Start over.
 clear; close all;
@@ -49,6 +51,8 @@ RECORDTEXTSUMMARYPERSUB = true;
 
 PLOTCSFCURVE = true;
 SAVECSFCURVE = true;
+
+lockRand = true;
 
 % Psychometric function information.
 % The paramsFree slope field is overridden
@@ -273,6 +277,12 @@ for ss = 1:nSubjects
         
         % Do initial fit for each filter
         for ff = 1:nFilters
+            % Lock randomization if you want.
+            if (lockRand)
+                rngSeed = ff+(ss-1)*nFilters;
+                rng(rngSeed);
+            end
+            
             % Set target filter.
             whichFilter = filterOptions{ff};
             
