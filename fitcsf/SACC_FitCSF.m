@@ -737,8 +737,8 @@ for ss = 1:nSubjects
                 ylabel('Contrast Sensitivity','fontsize',15);
                 xticks(sineFreqCyclesPerDegLogSorted);
                 xticklabels(10.^sineFreqCyclesPerDegLogSorted);
-                yaxisRange = log10([0:50:300]);
-                ylim(log10([1 300]));
+                yaxisRange = log10([0:100:600]);
+                ylim(log10([1 600]));
                 yticks(yaxisRange);
                 yticklabels(10.^yaxisRange);
                 title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
@@ -867,8 +867,8 @@ for ss = 1:nSubjects
             xticks(sineFreqCyclesPerDegLogSorted);
             xticklabels(sineFreqCyclesPerDegLogSorted);
             
-            yaxisRange = [0:50:300];
-            ylim([0 300]);
+            yaxisRange = [0:100:600];
+            ylim([0 600]);
             yticks(yaxisRange);
             yticklabels(yaxisRange);
             
