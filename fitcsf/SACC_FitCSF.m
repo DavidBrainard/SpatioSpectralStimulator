@@ -30,6 +30,8 @@
 %                        we want.
 %    03/20/23   smo    - Added an option to use fmincon to search smoothing
 %                        parameter when using Smooth spline function.
+%    03/29/23   smo    - Added an option to lock randomization per each
+%                        filter/subject combination.
 
 %% Initialize.
 clear; close all;
@@ -38,9 +40,9 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = false;
+WaitForKeyToPlot = true;
 PlotAUC = true;
-SaveCSFPlot = true;
+SaveCSFPlot = false;
 
 % Figure size and position.
 figureSize = 550;
@@ -72,12 +74,15 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
-whichSubject = '014';
-whichFilter = 'C';
+pickSubjectAndFilter = true;
+whichSubject = '008';
+whichFilter = 'B';
 
 % Save text summary file.
 RECORDTEXTSUMMARYPERSUB = true;
+
+% Fix the randomization if you want.
+lockRand = true;
 
 %% Load and read out the data.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -166,6 +171,13 @@ for ss = 1:nSubjects
         % Here we read out five values of the thresholds (so, five spatial
         % frequency) to fit CSF curve.
         for ff = 1:nFilters
+            % Lock randomization order if you want. We will assign an
+            % unique seed number to each filter/subject combination.
+            if (lockRand)
+                rngSeed = ff+(ss-1)*nFilters;
+                rng(rngSeed);
+            end
+            
             % Make a new plot per each filter of the subject.
             if (~OneFigurePerSub)
                 % Data figure info.
@@ -231,6 +243,14 @@ for ss = 1:nSubjects
             
             % Clear the variables for checking the values.
             clear thresholdBootLowCheck thresholdBootHighCheck;
+            
+            % Remove odd bootstrapping results. There are some negative
+            % threshold bootstrapping fitting results on linear space. It
+            % does not make sense, so we convert the number into 'nan' so
+            % that it won't affect our sampling procedure.
+            thresholdsBoot(thresholdsBoot<0) = nan;
+            thresholdsBootCross1(thresholdsBootCross1<0) = nan;
+            thresholdsBootCross2(thresholdsBootCross2<0) = nan;
             
             %% Calculate log sensitivity.
             %
@@ -354,9 +374,11 @@ for ss = 1:nSubjects
                                 crossIndex = randi(nBootPoints,1,1);
                                 bootCSFDataFitTemp = myCSValsCross1(crossIndex,zz);
                                 bootCSFDataCrossTemp = myCSValsCross2(crossIndex,zz);
-                                if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
-                                    if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
-                                        break;
+                                if (~isnan(bootCSFDataFitTemp) && ~isnan(bootCSFDataCrossTemp))
+                                    if (bootCSFDataFitTemp >= minSensitivityBoot & bootCSFDataFitTemp <= maxSensitivityBoot)
+                                        if (bootCSFDataCrossTemp >= minSensitivityBoot & bootCSFDataCrossTemp <= maxSensitivityBoot)
+                                            break;
+                                        end
                                     end
                                 end
                             end
@@ -403,7 +425,7 @@ for ss = 1:nSubjects
                 % Check if smoothing parameter is in the range.
                 if (smoothingParam(mm) > 1)
                     smoothingParam(mm) = 1;
-                elseif (smoothingParam(mm) < 1)
+                elseif (smoothingParam(mm) < 0)
                     smoothingParam(mm) = 0;
                 end
                 
@@ -452,9 +474,11 @@ for ss = 1:nSubjects
                             while 1
                                 randIndex = randi(nBootPoints,1,1);
                                 myCSValsBootFminconTemp = myCSValsBoot(randIndex,zz);
-                                if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                if ~isnan(myCSValsBootFminconTemp)
                                     if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
-                                        break;
+                                        if (myCSValsBootFminconTemp >= minSensitivityBoot & myCSValsBootFminconTemp <= maxSensitivityBoot)
+                                            break;
+                                        end
                                     end
                                 end
                             end
@@ -507,7 +531,7 @@ for ss = 1:nSubjects
                         % Make sure smoothing param is in the range.
                         if (smoothingParamBootFmincon(nn) > 1)
                             smoothingParamBootFmincon(nn) = 1;
-                        elseif (smoothingParamBootFmincon(nn) < 1)
+                        elseif (smoothingParamBootFmincon(nn) < 0)
                             smoothingParamBootFmincon(nn) = 0;
                         end
                         
@@ -597,7 +621,7 @@ for ss = 1:nSubjects
                     % Check if smoothing param is within the range.
                     if (smoothingParamBootAUC > 1)
                         smoothingParamBootAUC = 1;
-                    elseif (smoothingParamBootAUC < 1)
+                    elseif (smoothingParamBootAUC < 0)
                         smoothingParamBootAUC = 0;
                     end
                     
@@ -672,7 +696,7 @@ for ss = 1:nSubjects
             maxSensitivityBootPlot = max(sensitivityBootSorted,[],2);
             minSensitivityBootPlot = min(sensitivityBootSorted,[],2);
             minSensitivityBootPlot(minSensitivityBootPlot<0) = 0;
-
+            
             plot(sineFreqCyclesPerDegLogSorted,maxSensitivityBootPlot','g*','markerSize',7);
             plot(sineFreqCyclesPerDegLogSorted,minSensitivityBootPlot','g*','markerSize',7);
             
@@ -713,8 +737,8 @@ for ss = 1:nSubjects
                 ylabel('Contrast Sensitivity','fontsize',15);
                 xticks(sineFreqCyclesPerDegLogSorted);
                 xticklabels(10.^sineFreqCyclesPerDegLogSorted);
-                yaxisRange = log10([0:50:300]);
-                ylim(log10([1 300]));
+                yaxisRange = log10([0:100:600]);
+                ylim(log10([1 600]));
                 yticks(yaxisRange);
                 yticklabels(10.^yaxisRange);
                 title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
@@ -843,8 +867,8 @@ for ss = 1:nSubjects
             xticks(sineFreqCyclesPerDegLogSorted);
             xticklabels(sineFreqCyclesPerDegLogSorted);
             
-            yaxisRange = [0:50:300];
-            ylim([0 300]);
+            yaxisRange = [0:100:600];
+            ylim([0 600]);
             yticks(yaxisRange);
             yticklabels(yaxisRange);
             
