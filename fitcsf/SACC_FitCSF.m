@@ -174,7 +174,8 @@ for ss = 1:nSubjects
             % Lock randomization order if you want. We will assign an
             % unique seed number to each filter/subject combination.
             if (lockRand)
-                rngSeed = ff+(ss-1)*nFilters;
+                numSubject = str2double(subjectName);
+                rngSeed = ff+(numSubject-1)*nFilters;
                 rng(rngSeed);
             end
             

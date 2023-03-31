@@ -279,7 +279,8 @@ for ss = 1:nSubjects
         for ff = 1:nFilters
             % Lock randomization if you want.
             if (lockRand)
-                rngSeed = ff+(ss-1)*nFilters;
+                numSubject = str2double(subjectName);
+                rngSeed = ff+(numSubject-1)*nFilters;
                 rng(rngSeed);
             end
             
