@@ -97,6 +97,9 @@ function [paramsFitted, ...
 %                                trials.
 %   11/14/22  dhb              - Bootstrapping
 %   02/06/23  smo              - Now print out all bootstrap values.
+%   04/03/23  smo              - Modified to prevent generating negative
+%                                threshold values on linear space when
+%                                bootstrapping.
 
 %% Set parameters.
 arguments
@@ -182,60 +185,70 @@ slopeFitted = paramsFitted(2);
 if (options.nBootstraps > 0)
     paramsFittedBoot = zeros(options.nBootstraps,4);
     for bb = 1:options.nBootstraps
-        % Set the array size for bootstrapped data.
-        zeroBaseArrayBoot = zeros(size(nCorrect));
-        
-        % Set an array for saving the bootstrapped data.
-        nCorrectBoot = zeroBaseArrayBoot;
-        
-        % Additional bootstrap data arrays for cross-validation for fitting
-        % CSF. We make two more.
-        nCorrectCross1 = zeroBaseArrayBoot;
-        nCorrectCross2 = zeroBaseArrayBoot;
-        nTrialsPerContrastCross1 = zeroBaseArrayBoot;
-        nTrialsPerContrastCross2 = zeroBaseArrayBoot;
-        
-        for cc = 1:length(nTrialsPerContrast)
-            % Generate the bootstrapped data.
-            trialsBoot = zeros(1,nTrialsPerContrast(cc));
-            trialsBoot(1:nCorrect(cc)) = 1;
-            index = randi(nTrialsPerContrast(cc),1,nTrialsPerContrast(cc));
-            nCorrectBoot(cc) = sum(trialsBoot(index));
+        % Here we makes While loop to prevent having negative values of
+        % threshold in linear unit. It simply redraw the bootstrapping
+        % values when we have negatvie threshold values.
+        while 1
+            % Set the array size for bootstrapped data.
+            zeroBaseArrayBoot = zeros(size(nCorrect));
             
-            % Here we shuffle the bootstrapped data to generate the
-            % additional data. Here we make two more separate dataset, each
-            % uses the half size of trials per each contrast.
-            %
-            % Therefore, if the original dataset uses a total of 20 trials
-            % per each contrast, these additional data will use 10 trials.
-            trialsShuffle = Shuffle(trialsBoot);
-            splitN = round(length(trialsShuffle)/2);
+            % Set an array for saving the bootstrapped data.
+            nCorrectBoot = zeroBaseArrayBoot;
             
-            nCorrectCross1(cc) = sum(trialsShuffle(1:splitN));
-            nCorrectCross2(cc) = sum(trialsShuffle((splitN+1):end));
-            nTrialsPerContrastCross1(cc) = length(trialsShuffle(1:splitN));
-            nTrialsPerContrastCross2(cc) = length(trialsShuffle((splitN+1):end));
-        end
-        
-        %% Fit the bootstrap data in the same way we fit actual data.
-        %
-        % 1) Main bootstrapped data.
-        if (~isempty(options.beta))
-            paramsFreeUse = options.paramsFree;
-            paramsFreeUse(2) = 0;
-            for ss = 1:length(options.beta)
-                searchGridUse = searchGrid;
-                searchGridUse.beta = options.beta(ss);
-                [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
-                    nTrialsPerContrast, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+            % Additional bootstrap data arrays for cross-validation for fitting
+            % CSF. We make two more.
+            nCorrectCross1 = zeroBaseArrayBoot;
+            nCorrectCross2 = zeroBaseArrayBoot;
+            nTrialsPerContrastCross1 = zeroBaseArrayBoot;
+            nTrialsPerContrastCross2 = zeroBaseArrayBoot;
+            
+            for cc = 1:length(nTrialsPerContrast)
+                % Generate the bootstrapped data.
+                trialsBoot = zeros(1,nTrialsPerContrast(cc));
+                trialsBoot(1:nCorrect(cc)) = 1;
+                index = randi(nTrialsPerContrast(cc),1,nTrialsPerContrast(cc));
+                nCorrectBoot(cc) = sum(trialsBoot(index));
+                
+                % Here we shuffle the bootstrapped data to generate the
+                % additional data. Here we make two more separate dataset, each
+                % uses the half size of trials per each contrast.
+                %
+                % Therefore, if the original dataset uses a total of 20 trials
+                % per each contrast, these additional data will use 10 trials.
+                trialsShuffle = Shuffle(trialsBoot);
+                splitN = round(length(trialsShuffle)/2);
+                
+                nCorrectCross1(cc) = sum(trialsShuffle(1:splitN));
+                nCorrectCross2(cc) = sum(trialsShuffle((splitN+1):end));
+                nTrialsPerContrastCross1(cc) = length(trialsShuffle(1:splitN));
+                nTrialsPerContrastCross2(cc) = length(trialsShuffle((splitN+1):end));
             end
-            [~,index] = max(LL);
-            paramsFittedBoot(bb,:) = paramsFittedList(index,:);
-        else
-            paramsFittedBoot(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
-                nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+            
+            %% Fit the bootstrap data in the same way we fit actual data.
+            %
+            % 1) Main bootstrapped data.
+            if (~isempty(options.beta))
+                paramsFreeUse = options.paramsFree;
+                paramsFreeUse(2) = 0;
+                for ss = 1:length(options.beta)
+                    searchGridUse = searchGrid;
+                    searchGridUse.beta = options.beta(ss);
+                    [paramsFittedList(ss,:) LL(ss)] = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
+                        nTrialsPerContrast, searchGridUse, paramsFreeUse, PF, 'lapseLimits', lapseLimits);
+                end
+                [~,index] = max(LL);
+                paramsFittedBoot(bb,:) = paramsFittedList(index,:);
+            else
+                paramsFittedBoot(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
+                    nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+            end
+            
+            % Break the While loop here if it's in the right range.
+            % Otherwise, do it again.
+            if (paramsFittedBoot(bb,1) >= 0)
+                break;
+            end
         end
-        
         % Grab bootstrapped threshold.
         thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
         
