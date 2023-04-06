@@ -549,6 +549,8 @@ for ss = 1:nSubjects
                         calAUCPreds = feval(smoothFit,calAUCSFVals);
                         AUCBoot(nn) = trapz(calAUCSFVals,calAUCPreds);
                     end
+                else
+                    nBootCSF = 0;
                 end
             end
             
