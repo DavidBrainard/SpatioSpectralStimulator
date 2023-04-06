@@ -45,8 +45,8 @@ PlotAUC = true;
 SaveCSFPlot = false;
 
 % Figure size and position.
-figureSize = 550;
-figurePositionData = [200 300 figureSize figureSize];
+figureSize = 800;
+figurePositionData = [200 300 figureSize figureSize-200];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Fitting options.
@@ -679,7 +679,7 @@ for ss = 1:nSubjects
             end
             
             % Set the marker size.
-            markerSizePF = 7;
+            markerSizePF = 11;
             markerSizeBootMedian = 7;
             
             % Plot raw data.
@@ -751,10 +751,10 @@ for ss = 1:nSubjects
                 f_data = flip(get(gca, 'Children'));
                 if exist('smoothPlotPredsBoot')
                     legend(f_data([1,2,6,7]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
-                        sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootCSF),'fontsize',13,'location', 'northeast');
+                        sprintf('CSF - %s',OptionSearchSmoothParam), sprintf('CSF Bootstrapped (N=%d)', nBootCSF),'fontsize',13,'location', 'northeastoutside');
                 else
                     legend(f_data([1,2,4]),sprintf('Filter %s (PF)',filterOptions{ff}), sprintf('Filter %s (Boot)',filterOptions{ff}), ...
-                        sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeast');
+                        sprintf('CSF - %s',OptionSearchSmoothParam), 'fontsize',13,'location', 'northeastoutside');
                 end
                 
                 % Make text Smoothing param for the plot.
