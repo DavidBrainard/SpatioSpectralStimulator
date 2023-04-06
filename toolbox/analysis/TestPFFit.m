@@ -9,6 +9,9 @@
 % History:
 %    4/6/23    smo    - Wrote it.
 
+%% Initialize.
+clear; close all;
+
 %% Set parameters to fit.
 % This is the same setting that we do.
 nBootstraps = 100;
@@ -28,6 +31,9 @@ pCorrect = [0.8500 0.9500 1.0000 0.9500 0.9500 1.0000 1.0000 1.0000];
 [paramsFitted,thresholdFitted,thresholdFittedBoot,~,~,~,~,~,~,~,~,~,~] = ...
     FitPFToData(stimLevels,pCorrect,'paramsFree', paramsFree,'nBootstraps',nBootstraps,'beta',slopeValList);
 
+ % Set the range for the x-axis on the Figure.
+ xlim([-3.3 -1]);
+ 
 %% Check the Bootstrapped values.
 I = find(thresholdFittedBoot<0);
 nNegVals = length(I);
