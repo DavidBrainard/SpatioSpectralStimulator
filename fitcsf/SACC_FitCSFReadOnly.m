@@ -51,8 +51,7 @@ if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
         nFiles = 0;
         for ff = 1:length(fileList)
             fileNameTemp = string(fileList(ff).name);
-            % THIS PART SHOULD BE MODIFIED TO READ FILES PROPERLY
-            nFiles = nFiles;
+            nFiles = nFiles + contains(fileNameTemp,append(whichSub,'_'));
         end
         
         % Save if the subject has all available figures.
@@ -104,12 +103,28 @@ for ff = 1:length(filterOptions)
     % Resize the image if you want.
     imgMagnifyIndex = 1;
     image = imresize(image,imgMagnifyIndex);
+    [imgSizeHorz, imgSizeVert, ~] = size(image);
     
     % Display the image.
-    imshow(image);
+    % Crop image to remove the legend which is outside the plot.
+    if (oneFigure)
+        imageCropped = imcrop(image,[0 0 imgSizeVert-650 imgSizeHorz]);
+        imshow(imageCropped);
+    else
+        imshow(image);
+    end
     
     % Add title per each image.
     if (oneFigure)
         title(sprintf('Filter %s',filterOptions{ff}),'fontsize',20);
+    end
+    
+    % Add legend.
+    if (oneFigure)
+        if ff == length(filterOptions)
+            subplot(2,3,ff+1);
+            imageLegend = imcrop(image,[1040 90 525 150]);
+            imshow(imageLegend);
+        end
     end
 end
