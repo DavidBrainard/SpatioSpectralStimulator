@@ -51,7 +51,8 @@ if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
         nFiles = 0;
         for ff = 1:length(fileList)
             fileNameTemp = string(fileList(ff).name);
-            nFiles = nFiles + contains(fileNameTemp,fittingMode);
+            % THIS PART SHOULD BE MODIFIED TO READ FILES PROPERLY
+            nFiles = nFiles;
         end
         
         % Save if the subject has all available figures.
@@ -97,7 +98,7 @@ for ff = 1:length(filterOptions)
     
     % Get the filename to plot.
     testFilename = fullfile(testFiledir,...
-        sprintf('CSF_%s_%s_%s.%s',whichSub,filterOptions{ff},fittingMode,imgFormat));
+        sprintf('CSF_%s_%s.%s',whichSub,filterOptions{ff},imgFormat));
     image = imread(testFilename);
     
     % Resize the image to see it better.
