@@ -97,6 +97,9 @@ function [paramsFitted, ...
 %                                trials.
 %   11/14/22  dhb              - Bootstrapping
 %   02/06/23  smo              - Now print out all bootstrap values.
+%   04/03/23  smo              - Modified to prevent generating negative
+%                                threshold values on linear space when
+%                                bootstrapping.
 
 %% Set parameters.
 arguments
@@ -173,7 +176,7 @@ if (~isempty(options.beta))
     % Otherwise use Palamedes grid search
 else
     paramsFitted = PAL_PFML_Fit(stimLevels, nCorrect, ...
-        nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+        nTrialsPerContrast, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
 end
 thresholdFitted = PF(paramsFitted, options.thresholdCriterion, 'inv');
 slopeFitted = paramsFitted(2);
@@ -182,6 +185,12 @@ slopeFitted = paramsFitted(2);
 if (options.nBootstraps > 0)
     paramsFittedBoot = zeros(options.nBootstraps,4);
     for bb = 1:options.nBootstraps
+        % WHILE LOOP COMMENTED OUT FOR NOW (SEMIN, 4/6/23)
+        %
+        % Here we makes While loop to prevent having negative values of
+        % threshold in linear unit. It simply redraw the bootstrapping
+        % values when we have negatvie threshold values.
+        %         while 1
         % Set the array size for bootstrapped data.
         zeroBaseArrayBoot = zeros(size(nCorrect));
         
@@ -233,8 +242,17 @@ if (options.nBootstraps > 0)
             paramsFittedBoot(bb,:) = paramsFittedList(index,:);
         else
             paramsFittedBoot(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectBoot, ...
-                nTrialsPerContrast, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+                nTrialsPerContrast, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
         end
+        
+        % WHILE LOOP COMMENTED OUT FOR NOW (SEMIN, 4/6/23)
+        %
+        % Break the While loop here if it's in the right range.
+        % Otherwise, do it again.
+        %             if (paramsFittedBoot(bb,1) >= 0)
+        %                 break;
+        %             end
+        %         end
         
         % Grab bootstrapped threshold.
         thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
@@ -254,7 +272,7 @@ if (options.nBootstraps > 0)
             paramsFittedBootCross1(bb,:) = paramsFittedList(index,:);
         else
             paramsFittedBootCross1(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectCross1, ...
-                nTrialsPerContrastCross1, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+                nTrialsPerContrastCross1, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
         end
         
         % Grab bootstrapped threshold.
@@ -275,7 +293,7 @@ if (options.nBootstraps > 0)
             paramsFittedBootCross2(bb,:) = paramsFittedList(index,:);
         else
             paramsFittedBootCross2(bb,:) = PAL_PFML_Fit(stimLevels, nCorrectCross2, ...
-                nTrialsPerContrastCross2, searchGrid, paramsFree, PF, 'lapseLimits', lapseLimits);
+                nTrialsPerContrastCross2, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
         end
         
         % Grab bootstrapped threshold.

@@ -101,9 +101,15 @@ for ff = 1:length(filterOptions)
         sprintf('CSF_%s_%s.%s',whichSub,filterOptions{ff},imgFormat));
     image = imread(testFilename);
     
-    % Resize the image to see it better.
-    image = imresize(image,2);
+    % Resize the image if you want.
+    imgMagnifyIndex = 1;
+    image = imresize(image,imgMagnifyIndex);
     
-    % Plot the image.
+    % Display the image.
     imshow(image);
+    
+    % Add title per each image.
+    if (oneFigure)
+        title(sprintf('Filter %s',filterOptions{ff}),'fontsize',20);
+    end
 end

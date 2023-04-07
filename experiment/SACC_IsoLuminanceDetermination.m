@@ -121,7 +121,7 @@ switch whichMode
         %
         % We will repeat the whole session twice so that subject will do a total of
         % 4 flicker sessions (2 repeatitions x 2 starting points either top or bottom).
-        nTrials = 2;
+        nTrials = 4;
         dataPractice = GetMatchingRedForRGFlicker('nTrials',nTrials,'bgColor',bgColor,...
             'leftButton',leftButton,'gaussianWindow',gaussianWindow,'frequencyFlicker',frequencyFlicker);
     
