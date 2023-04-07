@@ -799,9 +799,9 @@ for ss = 1:nSubjects
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}, OptionSearchSmoothParam));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                     testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat));
+                    saveas(dataFig, append(testFilename,testFileFormat)); 
                     disp('CSF plot has been saved successfully!');
                 end
             end
@@ -898,7 +898,7 @@ for ss = 1:nSubjects
                 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}, OptionSearchSmoothParam));
+                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                     testFileFormat = '.tiff';
                     saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
