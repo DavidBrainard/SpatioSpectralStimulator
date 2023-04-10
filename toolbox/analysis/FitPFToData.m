@@ -100,6 +100,8 @@ function [paramsFitted, ...
 %   04/03/23  smo              - Modified to prevent generating negative
 %                                threshold values on linear space when
 %                                bootstrapping.
+%   04/10/23  smo              - Deleted the while loop and set the lowest
+%                                possible threshold to 0.00001.
 
 %% Set parameters.
 arguments
@@ -185,12 +187,6 @@ slopeFitted = paramsFitted(2);
 if (options.nBootstraps > 0)
     paramsFittedBoot = zeros(options.nBootstraps,4);
     for bb = 1:options.nBootstraps
-        % WHILE LOOP COMMENTED OUT FOR NOW (SEMIN, 4/6/23)
-        %
-        % Here we makes While loop to prevent having negative values of
-        % threshold in linear unit. It simply redraw the bootstrapping
-        % values when we have negatvie threshold values.
-        %         while 1
         % Set the array size for bootstrapped data.
         zeroBaseArrayBoot = zeros(size(nCorrect));
         
@@ -245,18 +241,13 @@ if (options.nBootstraps > 0)
                 nTrialsPerContrast, searchGrid, options.paramsFree, PF, 'lapseLimits', lapseLimits);
         end
         
-        % WHILE LOOP COMMENTED OUT FOR NOW (SEMIN, 4/6/23)
-        %
-        % Break the While loop here if it's in the right range.
-        % Otherwise, do it again.
-        %             if (paramsFittedBoot(bb,1) >= 0)
-        %                 break;
-        %             end
-        %         end
-        
         % Grab bootstrapped threshold.
         thresholdFittedBoot(bb) = PF(paramsFittedBoot(bb,:), options.thresholdCriterion, 'inv');
         
+        % Limit the lowest contrast threshold value here. For some cases,
+        % it gives the negative threshold results and we will convert them
+        lowLimitContrastThresholdLinear = 0.00001;
+        thresholdFittedBoot(thresholdFittedBoot<lowLimitContrastThresholdLinear) = lowLimitContrastThresholdLinear;
         
         % 2) Cross data 1.
         if (~isempty(options.beta))
@@ -278,6 +269,8 @@ if (options.nBootstraps > 0)
         % Grab bootstrapped threshold.
         thresholdFittedBootCross1(bb) = PF(paramsFittedBootCross1(bb,:), options.thresholdCriterion, 'inv');
         
+        % Limit the lowest contrast threshold value.
+        thresholdFittedBootCross1(thresholdFittedBootCross1<lowLimitContrastThresholdLinear) = lowLimitContrastThresholdLinear;
         
         % 3) Cross data 2.
         if (~isempty(options.beta))
@@ -299,7 +292,10 @@ if (options.nBootstraps > 0)
         % Grab bootstrapped threshold.
         thresholdFittedBootCross2(bb) = PF(paramsFittedBootCross2(bb,:), options.thresholdCriterion, 'inv');
         
+        % Limit the lowest contrast threshold value.
+        thresholdFittedBootCross2(thresholdFittedBootCross2<lowLimitContrastThresholdLinear) = lowLimitContrastThresholdLinear;
     end
+    
     % Extract some useful data from main bootstrapped data.
     medianThresholdBoot = median(thresholdFittedBoot);
     lowThresholdBoot = prctile(thresholdFittedBoot,100*(1-options.bootConfInterval)/2);
@@ -351,6 +347,10 @@ if (options.verbose)
     
     % Plot bootstraps
     for bb = 1:options.nBootstraps
+        % We will skip plotting if threshold was found at negative values.
+        if (paramsFittedBoot(bb,1)<0)
+            continue;
+        end
         smoothPsychometricBoot = PF(paramsFittedBoot(bb,:), fineStimLevels);
         h_bsfit = plot(fineStimLevelsPlot,smoothPsychometricBoot,'Color',[0.9 0.8 0.8],'LineWidth',0.5);
     end
