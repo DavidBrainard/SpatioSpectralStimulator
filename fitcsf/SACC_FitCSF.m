@@ -698,7 +698,13 @@ for ss = 1:nSubjects
             % Plot the end points of bootstrapped values.
             maxSensitivityBootPlot = max(sensitivityBootSorted,[],2);
             minSensitivityBootPlot = min(sensitivityBootSorted,[],2);
-            minSensitivityBootPlot(minSensitivityBootPlot<0) = 0;
+            
+            % If some points out of sensible range, mapping the points
+            % within the range.
+            limitMaxSensitivityBoot = log10(600);
+            limitMinSensitivityBoot = 0;
+            maxSensitivityBootPlot(maxSensitivityBootPlot>limitMaxSensitivityBoot) = limitMaxSensitivityBoot;
+            minSensitivityBootPlot(minSensitivityBootPlot<limitMinSensitivityBoot) = limitMinSensitivityBoot;
             
             plot(sineFreqCyclesPerDegLogSorted,maxSensitivityBootPlot','g*','markerSize',7);
             plot(sineFreqCyclesPerDegLogSorted,minSensitivityBootPlot','g*','markerSize',7);
