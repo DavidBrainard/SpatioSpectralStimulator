@@ -32,6 +32,8 @@
 %                        parameter when using Smooth spline function.
 %    03/29/23   smo    - Added an option to lock randomization per each
 %                        filter/subject combination.
+%    04/17/23   smo    - Fitting has been updated to be done in log CS and
+%                        linear SF space.
 
 %% Initialize.
 clear; close all;
@@ -276,7 +278,7 @@ for ss = 1:nSubjects
             sineFreqCyclesPerDegLog = log10(sineFreqCyclesPerDegNum);
             
             %% Sort each array in an ascending order of spatial frequency.
-            [sineFreqCyclesPerDegLogSorted I] = sort(sineFreqCyclesPerDegLog,'ascend');
+            [sineFreqCyclesPerDegNumSorted I] = sort(sineFreqCyclesPerDegNum,'ascend');
             
             % Sorted according to the order of spatial frequency.
             sensitivitySorted = sensitivity(I);
@@ -288,7 +290,7 @@ for ss = 1:nSubjects
             sensitivityBootCross2Sorted = sensitivityBootCross2(I,:);
             
             % Set variables to fit CSF.
-            mySFVals = sineFreqCyclesPerDegLogSorted;
+            mySFVals = sineFreqCyclesPerDegNumSorted;
             myCSVals = sensitivitySorted;
             
             % Set all bootstrapped values.
@@ -683,15 +685,15 @@ for ss = 1:nSubjects
             markerSizeBootMedian = 7;
             
             % Plot raw data.
-            plot(sineFreqCyclesPerDegLogSorted, sensitivitySorted, ...
+            plot(sineFreqCyclesPerDegNumSorted, sensitivitySorted, ...
                 colorOptionsRaw{ff},'markerfacecolor','r','markersize',markerSizePF,'Markeredgecolor','k');
-            plot(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, ...
+            plot(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootSorted, ...
                 colorOptionsBoot{ff},'markerfacecolor','g','markersize',markerSizeBootMedian,'Markeredgecolor','k');
             
             % Plot confidence Interval.
             errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
             errorPos = abs(sensitivityBootHighSorted - sensitivityMedianBootSorted);
-            e = errorbar(sineFreqCyclesPerDegLogSorted, sensitivityMedianBootSorted, ...
+            e = errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootSorted, ...
                 errorNeg, errorPos, colorOptionsCI{ff});
             e.LineStyle = 'none';
             
@@ -706,8 +708,8 @@ for ss = 1:nSubjects
             maxSensitivityBootPlot(maxSensitivityBootPlot>limitMaxSensitivityBoot) = limitMaxSensitivityBoot;
             minSensitivityBootPlot(minSensitivityBootPlot<limitMinSensitivityBoot) = limitMinSensitivityBoot;
             
-            plot(sineFreqCyclesPerDegLogSorted,maxSensitivityBootPlot','g*','markerSize',7);
-            plot(sineFreqCyclesPerDegLogSorted,minSensitivityBootPlot','g*','markerSize',7);
+            plot(sineFreqCyclesPerDegNumSorted,maxSensitivityBootPlot','g*','markerSize',7);
+            plot(sineFreqCyclesPerDegNumSorted,minSensitivityBootPlot','g*','markerSize',7);
             
             %% Plot CSF.
             if (OneFigurePerSub)
@@ -744,14 +746,14 @@ for ss = 1:nSubjects
             if (~OneFigurePerSub)
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
                 ylabel('Contrast Sensitivity','fontsize',15);
-                xticks(sineFreqCyclesPerDegLogSorted);
-                xticklabels(10.^sineFreqCyclesPerDegLogSorted);
+                xticks(sineFreqCyclesPerDegNumSorted);
+                xticklabels(sineFreqCyclesPerDegNumSorted);
                 yaxisRange = log10([0:100:600]);
                 ylim(log10([1 600]));
                 yticks(yaxisRange);
                 yticklabels(10.^yaxisRange);
                 title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
-                subtitle('Fitting was done on log-log space');
+                subtitle('Fitting was done on log CS - linear SF space');
                 
                 % Add legend.
                 f_data = flip(get(gca, 'Children'));
@@ -794,9 +796,9 @@ for ss = 1:nSubjects
                         sprintf('Number of paramters tested = %d',nSmoothingParamsType),...
                         'color','k','fontsize',sizeTextOnPlot);
                 else
-                    text(log10(3),log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
-                    text(log10(3),log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
-                    text(log10(3),log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
+                    text(3,log10(textFirstlineYLoc),textSmoothingParam,'color','k','fontsize',sizeTextOnPlot);
+                    text(3,log10(textSecondlineYLoc),textFittedAUC,'color','k','fontsize',sizeTextOnPlot);
+                    text(3,log10(textThirdlineYLoc),textBootAUC,'color','k','fontsize',sizeTextOnPlot);
                 end
             end
             
@@ -873,8 +875,8 @@ for ss = 1:nSubjects
             xlabel('Spatial Frequency (cpd)','fontsize',15);
             ylabel('Contrast Sensitivity','fontsize',15);
             
-            xticks(sineFreqCyclesPerDegLogSorted);
-            xticklabels(sineFreqCyclesPerDegLogSorted);
+            xticks(sineFreqCyclesPerDegNumSorted);
+            xticklabels(sineFreqCyclesPerDegNumSorted);
             
             yaxisRange = [0:100:600];
             ylim([0 600]);
