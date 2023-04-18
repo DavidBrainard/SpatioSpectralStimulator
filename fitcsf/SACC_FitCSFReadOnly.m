@@ -108,7 +108,7 @@ for ff = 1:length(filterOptions)
     % Display the image.
     % Crop image to remove the legend which is outside the plot.
     if (oneFigure)
-        imageCropped = imcrop(image,[0 0 imgSizeVert-650 imgSizeHorz]);
+        imageCropped = imcrop(image,[0 0 imgSizeVert-625 imgSizeHorz]);
         imshow(imageCropped);
     else
         imshow(image);
