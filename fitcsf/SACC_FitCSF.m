@@ -855,13 +855,25 @@ for ss = 1:nSubjects
                 lowBootCIAUC_Summary = lowBootCIAUCBigList(ss,:)';
                 highBootCIAUC_Summary = highBootCIAUCBigList(ss,:)';
                 
+                CS_3cpd_Summary  = myCSVals(1);
+                CS_6cpd_Summary  = myCSVals(2);
+                CS_9cpd_Summary  = myCSVals(3);
+                CS_12cpd_Summary = myCSVals(4);
+                CS_18cpd_Summary = myCSVals(5);
+               
+                SmoothingParam_Summary = smoothingParam;
+                
                 % Make a table.
                 tableAUCummary = table(NumCount_Summary,Subject_Summary,Filter_Summary,AUC_Summary,...
-                    medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary);
+                    medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary,...
+                    CS_3cpd_Summary,CS_6cpd_Summary,CS_9cpd_Summary,CS_12cpd_Summary,CS_18cpd_Summary,...
+                    SmoothingParam_Summary);
                 
                 % Change the variable name as desired.
                 tableAUCummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'AUC', ...
-                    'MedianBootAUC', 'LowBootCIAUC', 'HighBootCIAUC'};
+                    'MedianBootAUC', 'LowBootCIAUC', 'HighBootCIAUC', ...
+                    'Log Sensitivity (3cpd)','Log Sensitivity (6cpd)','Log Sensitivity (9cpd)','Log Sensitivity (12cpd)','Log Sensitivity (18cpd)',...
+                    'Smoothing parameter'};
                 
                 % Write a table to the excel file.
                 sheet = 1;
