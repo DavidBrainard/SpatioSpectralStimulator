@@ -9,43 +9,10 @@
 
 % History:
 %    03/10/23   smo    Started on it.
+%    04/24/23   smo    Now making CS and AUD files separately.
 
 %% Initialize.
 clear; close all;
-
-% %% Find available subjects.
-% %
-% % Here we find out the subjects who completed study by reading out the
-% % Matlab summary file.
-% if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-%     testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-%     testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
-%     theData = load(testFilename);
-%
-%     % Close the plots if any pops up.
-%     close all;
-% else
-%     error('Cannot find the data file!');
-% end
-%
-% % Get some useful info.
-% subjectName = theData.subjectNameOptions;
-% sineFreqCyclesPerDeg = theData.spatialFrequencyOptions;
-%
-% % Find subjects who completed the study.
-% nSubjects = size(sineFreqCyclesPerDeg,2);
-% maxNSpatialFrequencies = theData.maxNSpatialFrequencies;
-% for ss = 1:nSubjects
-%     for dd = 1:maxNSpatialFrequencies
-%         nSFCompleted(dd,ss) = ~isempty(sineFreqCyclesPerDeg{dd,ss});
-%     end
-% end
-% nSFCompleted = sum(nSFCompleted,1);
-% index = find(nSFCompleted==maxNSpatialFrequencies);
-%
-% % Take only subjects with all data.
-% subjectName = subjectName(index);
-% nSubjects = size(subjectName,2);
 
 %% Get available subjects.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -105,16 +72,16 @@ disp('AUC data has been merged successfully!');
 
 %% Save out the result.
 %
-% We will create one new excel file that contains all data loaded here with
-% two separate spreadsheets, one with CS results and the other containing
-% the AUC results.
-% Write a table to the excel file.
-sheetCS = 1;
-sheetAUC = 2;
+% We will create two separate excel files, one contaning the CS results and
+% the other containing the AUC results.
 range = 'B2';
-testFilename = fullfile(testFiledir, 'SACC_Experiment_Results_Summary.xlsx');
+testFilenameCS = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_CS.xlsx');
+testFilenameAUC = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_AUC.xlsx');
 
-writetable(tableCS, testFilename,'Sheet','CS', 'Range',range);
-writetable(tableAUC,testFilename,'Sheet','AUC','Range',range);
+% Make CS summary file.
+writetable(tableCS, testFilenameCS,'Range',range);
+disp('Summary file has been saved successfully! - (CS)');
 
-disp('Summary (CS+AUC) file has been saved successfully!');
+% Make AUC summary file.
+writetable(tableAUC,testFilenameAUC,'Range',range);
+disp('Summary file has been saved successfully! - (AUC)');
