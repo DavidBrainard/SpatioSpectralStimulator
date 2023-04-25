@@ -42,9 +42,9 @@ clear; close all;
 %
 % Plotting options.
 OneFigurePerSub = false;
-WaitForKeyToPlot = true;
+WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = false;
+SaveCSFPlot = true;
 
 % Figure size and position.
 figureSize = 800;
@@ -76,7 +76,7 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
+pickSubjectAndFilter = false;
 whichSubject = '008';
 whichFilter = 'B';
 
@@ -125,6 +125,8 @@ AUCBigList = cell(nSubjects,nFilters);
 medianBootAUCBigList = cell(nSubjects,nFilters);
 lowBootCIAUCBigList = cell(nSubjects,nFilters);
 highBootCIAUCBigList = cell(nSubjects,nFilters);
+smoothingParamBigList = cell(nSubjects,nFilters);
+myCSValsBigList = cell(nSubjects,nFilters);
 
 % Fitting happens here one by one per subject.
 for ss = 1:nSubjects
@@ -809,7 +811,7 @@ for ss = 1:nSubjects
                         subjectName,'CSF');
                     testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                     testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat)); 
+                    saveas(dataFig, append(testFilename,testFileFormat));
                     disp('CSF plot has been saved successfully!');
                 end
             end
@@ -821,6 +823,8 @@ for ss = 1:nSubjects
             medianBootAUCBigList{ss,ff} = medianBootAUC;
             lowBootCIAUCBigList{ss,ff} = lowBootCIAUC;
             highBootCIAUCBigList{ss,ff} = highBootCIAUC;
+            myCSValsBigList{ss,ff} = myCSVals;
+            smoothingParamBigList{ss,ff} = smoothingParam;
             
             %% We will end the code here when we pick sujbect and filter.
             if (pickSubjectAndFilter)
@@ -855,18 +859,21 @@ for ss = 1:nSubjects
                 lowBootCIAUC_Summary = lowBootCIAUCBigList(ss,:)';
                 highBootCIAUC_Summary = highBootCIAUCBigList(ss,:)';
                 
-                CS_3cpd_Summary  = myCSVals(1);
-                CS_6cpd_Summary  = myCSVals(2);
-                CS_9cpd_Summary  = myCSVals(3);
-                CS_12cpd_Summary = myCSVals(4);
-                CS_18cpd_Summary = myCSVals(5);
-               
-                SmoothingParam_Summary = smoothingParam;
+                nCSPerFilter = length(myCSVals);
+                for cc = 1:nCSPerFilter
+                    CS_3cpd_Summary(cc)  = myCSValsBigList{ss,cc}(1);
+                    CS_6cpd_Summary(cc)  = myCSValsBigList{ss,cc}(2);
+                    CS_9cpd_Summary(cc)  = myCSValsBigList{ss,cc}(3);
+                    CS_12cpd_Summary(cc) = myCSValsBigList{ss,cc}(4);
+                    CS_18cpd_Summary(cc) = myCSValsBigList{ss,cc}(5);
+                end
+                
+                SmoothingParam_Summary = smoothingParamBigList(ss,:)';
                 
                 % Make a table.
                 tableAUCummary = table(NumCount_Summary,Subject_Summary,Filter_Summary,AUC_Summary,...
                     medianBootAUC_Summary,lowBootCIAUC_Summary,highBootCIAUC_Summary,...
-                    CS_3cpd_Summary,CS_6cpd_Summary,CS_9cpd_Summary,CS_12cpd_Summary,CS_18cpd_Summary,...
+                    CS_3cpd_Summary',CS_6cpd_Summary',CS_9cpd_Summary',CS_12cpd_Summary',CS_18cpd_Summary',...
                     SmoothingParam_Summary);
                 
                 % Change the variable name as desired.
@@ -879,6 +886,7 @@ for ss = 1:nSubjects
                 sheet = 1;
                 range = 'B2';
                 writetable(tableAUCummary,testFilename,'Sheet',sheet,'Range',range);
+                disp('AUC summary table has been successfully created!');
             end
         end
         
