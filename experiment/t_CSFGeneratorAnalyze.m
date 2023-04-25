@@ -455,12 +455,7 @@ for ss = 1:nSubjects
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
                 fprintf('\t Plot has been saved successfully! \n');
-                close(gcf);
-                
-                % TEMP TO DELETE THE FILE THAT WE DON'T USE
-                testFilenameToDelete = fullfile(testFiledir,...
-                    sprintf('CS_%s_%d_cpd_%s_raw.tiff',subjectName,sineFreqCyclesPerDegTemp,dateStr));
-                delete(testFilenameToDelete);
+                close(gcf);    
             end
         end
         
@@ -846,10 +841,6 @@ for ss = 1:nSubjects
                     saveas(gcf,append(testFilename,testFileFormat));
                     fprintf('\t Plot has been saved successfully! \n');
                     close(gcf);
-                    
-                    % TEMP - DELETE THE FILE THAT WE DON't USE
-                    testFilenameToDelete = fullfile(testFiledir,sprintf('CSF_%s.tiff',subjectName));
-                    delete(testFilenameToDelete);
                 end
             end
         end
