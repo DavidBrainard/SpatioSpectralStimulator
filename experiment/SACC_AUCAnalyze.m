@@ -52,14 +52,16 @@ stdAUC = std(AUCPerFilter,1);
 % 1) Mean AUC results - bar graph.
 figure; hold on;
 xAxisBar = [1:length(meanAUC)];
-bar(xAxisBar,meanAUC);
+for ff = 1:nFilters
+    bar(xAxisBar(ff),meanAUC(ff),'facecolor',[ff*0.2 ff*0.2 0]);
+end
 xticks(xAxisBar);
 xticklabels(filterOptions);
 xlabel('Filter','Fontsize',15);
 ylabel('Mean AUC','Fontsize',15);
 errorbar(xAxisBar,meanAUC,stdAUC,'k','linewidth',1);
-legend(sprintf('Mean AUC (N=%d)',nAUCPerSub),'FontSize',13);
 title('Mean AUC results over the Filters','Fontsize',15);
+subtitle(sprintf('Each bar is the average of (%d) subjects',nAUCPerSub),'FontSize',13);
 
 % 2) AUC over the subjects - bar graph.
 indvFig = figure; clf; hold on;
@@ -69,7 +71,7 @@ subjectNames = T.Subject(1:nAUCPerSub);
 for ff = 1:nFilters
     subplot(2,3,ff);
     xAxisBar = [1:size(AUCPerFilter,1)];
-    bar(xAxisBar,AUCPerFilter(:,ff));
+    bar(xAxisBar,AUCPerFilter(:,ff),'facecolor',[ff*0.2 ff*0.2 0]);
     xticks(xAxisBar);
     xticklabels(subjectNames);
     xlabel('Subject','Fontsize',15);
@@ -93,3 +95,4 @@ legendLinePlot = append('Sub ',subjectNames);
 legendLinePlot{end+1} = 'Mean';
 legend(legendLinePlot,'location','northeastoutside');
 title('AUC results over the filters per each subject','fontsize',15);
+subtitle(sprintf('Mean result is the average of (%d) subjects',nAUCPerSub),'FontSize',13);
