@@ -367,7 +367,7 @@ if (options.verbose)
             h_bsthresh = errorbarX(log10(medianThresholdBoot),options.thresholdCriterion,log10(medianThresholdBoot)-log10(lowThresholdBoot),log10(highThresholdBoot)-log10(medianThresholdBoot),'go');
             set(h_bsthresh,'MarkerSize',9); set(h_bsthresh,'MarkerFaceColor','g'); set(h_bsthresh,'MarkerEdgeColor','g'); set(h_bsthresh,'LineWidth',3);
         end
-        xlabel('Contrast (log)', 'FontSize', 15);
+        xlabel('log(Contrast)', 'FontSize', 15);
     else
         h_thresh = plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
         if (options.nBootstraps > 0)
