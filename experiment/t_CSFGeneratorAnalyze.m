@@ -796,16 +796,16 @@ for ss = 1:nSubjects
             
             % Set axis and stuffs.
             xlabel('Spatial Frequency (cpd)','fontsize',15);
-            ylabel('Contrast Sensitivity','fontsize',15);
+            ylabel('Log Contrast Sensitivity','fontsize',15);
             
             xticks(sineFreqCyclesPerDegNumSorted);
             xticklabels(sineFreqCyclesPerDegNumSorted);
-            
-            yaxisRangeLinear = [0:100:600];
+
             ylim(log10([1 600]));
-            yticks(log10(yaxisRangeLinear));
-            yticklabels(yaxisRangeLinear);
-            
+            yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
+            yticks(yaxisRange);
+            ytickformat('%.2f');
+
             title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
             subtitle('Log CS vs. Linear SF', 'fontsize',13);
             
