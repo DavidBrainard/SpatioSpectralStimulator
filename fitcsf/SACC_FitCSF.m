@@ -747,13 +747,13 @@ for ss = 1:nSubjects
             % Add details per each plot of the subject.
             if (~OneFigurePerSub)
                 xlabel('Spatial Frequency (cpd)','fontsize',15);
-                ylabel('Contrast Sensitivity','fontsize',15);
+                ylabel('Log Contrast Sensitivity','fontsize',15);
                 xticks(sineFreqCyclesPerDegNumSorted);
                 xticklabels(sineFreqCyclesPerDegNumSorted);
-                yaxisRange = log10([0:100:600]);
+                yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
                 ylim(log10([1 600]));
                 yticks(yaxisRange);
-                yticklabels(10.^yaxisRange);
+                yticklabels(yaxisRange);
                 title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
                 subtitle('Fitting was done on log CS - linear SF space');
                 
@@ -893,13 +893,13 @@ for ss = 1:nSubjects
         %% Add details per each plot of the subject.
         if (OneFigurePerSub)
             xlabel('Spatial Frequency (cpd)','fontsize',15);
-            ylabel('Contrast Sensitivity','fontsize',15);
+            ylabel('Log Contrast Sensitivity','fontsize',15);
             
             xticks(sineFreqCyclesPerDegNumSorted);
             xticklabels(sineFreqCyclesPerDegNumSorted);
             
-            yaxisRange = [0:100:600];
-            ylim([0 600]);
+            yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
+            ylim(log10([1 600]));
             yticks(yaxisRange);
             yticklabels(yaxisRange);
             
