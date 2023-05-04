@@ -753,7 +753,7 @@ for ss = 1:nSubjects
                 yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
                 ylim(log10([1 600]));
                 yticks(yaxisRange);
-                yticklabels(yaxisRange);
+                ytickformat('%.2f');
                 title(sprintf('CSF curve - Sub %s / Filter %s',subjectName,filterOptions{ff}),'fontsize',15);
                 subtitle('Fitting was done on log CS - linear SF space');
                 
@@ -901,7 +901,7 @@ for ss = 1:nSubjects
             yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
             ylim(log10([1 600]));
             yticks(yaxisRange);
-            yticklabels(yaxisRange);
+            ytickformat('%.2f');
             
             title(sprintf('CSF curve - Sub %s',subjectName),'fontsize',15);
             
