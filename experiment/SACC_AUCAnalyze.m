@@ -9,6 +9,10 @@
 %% Initialize.
 clear; close all;
 
+%% Save the plots if you want.
+SAVEPLOTS = false;
+imgFileFormat = '.tiff';
+
 %% Read the AUC summary table.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
@@ -16,83 +20,109 @@ if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     T = readtable(testFilename);
 end
 
-%% Sort the AUC data over the filters.
+%% Calculate mean and std of AUC.
 %
-% Sort the table over the filter type.
-sortingCriteria = 'Filter';
-T = sortrows(T,sortingCriteria);
-
-% Filter options.
-filterOptions = {'A', 'B', 'C', 'D', 'E'};
+% Read some variables that we need.
+filterOptions = unique(T.Filter);
+subjectOptions = unique(T.Subject);
 nFilters = length(filterOptions);
-
-% Subjects.
 nSubjects = length(unique(T.Subject));
 
-% Count the number of subjects per each filter. This part will be
-% elaborated later on. For now, it works fine.
-nAUCPerSub = 0;
-for nn = 1:size(T,1)
-    if (T.Filter{nn} == filterOptions{1})
-        nAUCPerSub = nAUCPerSub + 1;
-    end
-end
-
 % Extract AUC over the filters.
+% The array of AUC is looks like Subjects (rows) x Filters (columns).
 for ff = 1:nFilters
-    AUCPerFilter(:,ff) = T.AUC(1+nAUCPerSub*(ff-1):nAUCPerSub*ff);
+    AUC(:,ff) = T.AUC(strcmp(T.Filter, filterOptions(ff)));
 end
 
-% Calculate mean and standard deviations.
-meanAUC = mean(AUCPerFilter,1);
-stdAUC = std(AUCPerFilter,1);
+% Calculate mean and standard deviations of AUC.
+meanAUC = mean(AUC,1);
+stdAUC = std(AUC,1);
 
 %% Plot the results.
 %
-% 1) Mean AUC results - bar graph.
+% 1) AUC over the filters (bar graph)
 figure; hold on;
-xAxisBar = [1:length(meanAUC)];
+xAxisTicks = [1:nFilters];
 for ff = 1:nFilters
-    bar(xAxisBar(ff),meanAUC(ff),'facecolor',[ff*0.2 ff*0.2 0]);
+    bar(xAxisTicks(ff),meanAUC(ff),'facecolor',[ff*0.2 ff*0.2 0]);
 end
-xticks(xAxisBar);
+xticks(xAxisTicks);
 xticklabels(filterOptions);
 xlabel('Filter','Fontsize',15);
 ylabel('Mean AUC','Fontsize',15);
-errorbar(xAxisBar,meanAUC,stdAUC,'k','linewidth',1);
+errorbar(xAxisTicks,meanAUC,stdAUC,'k+','linewidth',1);
+text(xAxisTicks, meanAUC/2, num2str(round(meanAUC,2)'),...
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
+    'fontsize', 14, 'fontweight', 'bold', 'color', [0.75 0.75 0.75]);
 title('Mean AUC results over the Filters','Fontsize',15);
-subtitle(sprintf('Each bar is the average of (%d) subjects',nAUCPerSub),'FontSize',13);
+subtitle(sprintf('Each bar is the average of (%d) subjects',nSubjects),'FontSize',13);
 
-% 2) AUC over the subjects - bar graph.
-indvFig = figure; clf; hold on;
+% Save the plot.
+if (SAVEPLOTS)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+        testFilename = fullfile(testFiledir, append('AUC_Over_Filters',imgFileFormat));
+        saveas(gcf,testFilename);
+        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+    end
+end
+
+% 2) AUC over the subjects (bar graph)
+AUCSubFig = figure; clf; hold on;
 figPosition = [100 100 1500 1000];
-set(indvFig, 'position', figPosition);
-subjectNames = T.Subject(1:nAUCPerSub);
+set(AUCSubFig, 'position', figPosition);
 for ff = 1:nFilters
     subplot(2,3,ff);
-    xAxisBar = [1:size(AUCPerFilter,1)];
-    bar(xAxisBar,AUCPerFilter(:,ff),'facecolor',[ff*0.2 ff*0.2 0]);
-    xticks(xAxisBar);
-    xticklabels(subjectNames);
+    xAxisTicks = [1:nSubjects];
+    bar(xAxisTicks,AUC(:,ff),'facecolor',[ff*0.2 ff*0.2 0]);
+    xticks(xAxisTicks);
+    xticklabels(subjectOptions);
     xlabel('Subject','Fontsize',15);
     ylabel('AUC','Fontsize',15);
     title(sprintf('Filter = %s',filterOptions{ff}),'fontsize',15);
+    text(xAxisTicks(1),34,sprintf('Max = (%.2f) / Min = (%.2f) / Avg = (%.2f)', ...
+        max(AUC(:,ff)), min(AUC(:,ff)), mean(AUC(:,ff))),...
+        'fontsize',12);
 end
-sgtitle('AUC results of individual subjects per each Filter','Fontsize',20);
+sgtitle('AUC results over the subjects per each Filter','Fontsize',20);
 
-% 3) AUC results over the filters - line graph.
+% Save the plot.
+if (SAVEPLOTS)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+        testFilename = fullfile(testFiledir, append('AUC_Over_Subjects',imgFileFormat));
+        saveas(gcf,testFilename);
+        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+    end
+end
+
+% 3) AUC over the subjects and filters (line graph)
 figure; clf; hold on;
-xAxisBar = [1:nFilters];
-xticks(xAxisBar);
+xAxisTicks = [1:nFilters];
+xticks(xAxisTicks);
 xticklabels(filterOptions);
 xlabel('Filter','Fontsize',15);
 ylabel('AUC','Fontsize',15);
 for ss = 1:nSubjects
-    plot(xAxisBar,AUCPerFilter(ss,:),'o-','linewidth',0.7);
+    plot(xAxisTicks,AUC(ss,:),'o-','linewidth',0.7);
 end
-plot(xAxisBar,meanAUC,'k+-','color',[0 0 0 0.4],'linewidth',7);
-legendLinePlot = append('Sub ',subjectNames);
-legendLinePlot{end+1} = 'Mean';
-legend(legendLinePlot,'location','northeastoutside');
-title('AUC results over the filters per each subject','fontsize',15);
-subtitle(sprintf('Mean result is the average of (%d) subjects',nAUCPerSub),'FontSize',13);
+plot(xAxisTicks,meanAUC,'k+-','color',[0 0 0 0.4],'linewidth',7);
+text(xAxisTicks, meanAUC+0.3, num2str(round(meanAUC,2)'),...
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
+    'fontsize', 11, 'fontweight', 'bold', 'color', 'k');
+title('Mean AUC results over the Filters','Fontsize',15);
+legendPlot = append('Sub ',subjectOptions);
+legendPlot{end+1} = 'Mean';
+legend(legendPlot,'location','northeastoutside');
+title('AUC results over the filters and subjects','fontsize',15);
+subtitle(sprintf('Mean result is the average of (%d) subjects',nSubjects),'FontSize',13);
+
+% Save the plot.
+if (SAVEPLOTS)
+    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+        testFilename = fullfile(testFiledir, append('AUC_Over_SubjetsAndFilters',imgFileFormat));
+        saveas(gcf,testFilename);
+        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+    end
+end
