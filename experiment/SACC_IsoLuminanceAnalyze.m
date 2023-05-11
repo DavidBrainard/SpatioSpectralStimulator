@@ -173,7 +173,7 @@ legend('Raw data (red)','Reference (green)','Mean (red)','fontsize',fontSize,'lo
 if (SAVETHEPLOT)
     if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir,'Results_FlickerPhotom_Normalized');
+        testFilename = fullfile(testFiledir,'Results_FlickerPhotom_normalized');
         testFileFormat = '.tiff';
         saveas(gcf,append(testFilename,testFileFormat));
         disp('Iso-luminance determination result plot has been successfully saved! - (normalized)');
