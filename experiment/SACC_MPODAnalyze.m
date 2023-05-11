@@ -85,9 +85,6 @@ title('MPOD results','fontsize',fontSize);
 subtitle('Left eye = (triangle) / right eye = (circle)','fontsize',fontSize);
 
 for ss = 1:nSubjectName
-    numSubject = subjectNameOptions(ss);
-    numSubject = str2double(numSubject);
-    
     % For the plot, we will set different marker for dominant and
     % non-dominant eyes.
     %
@@ -121,20 +118,23 @@ for ss = 1:nSubjectName
     % Plot mpod and its standard deviation.
     %
     % Left eye.
-    plot(numSubject, mpodLeftEye(ss), markerTypeLeftEye,'markersize',markerSizeLeftEye,...
+    plot(ss, mpodLeftEye(ss), markerTypeLeftEye,'markersize',markerSizeLeftEye,...
         'markeredgecolor','k','markerfacecolor',markerColorLeftEye);
-    errorbar(numSubject, mpodLeftEye(ss), stdLeftEye(ss), markerColorLeftEye,'linewidth',1);
+    errorbar(ss, mpodLeftEye(ss), stdLeftEye(ss), markerColorLeftEye,'linewidth',1);
     
     % Right eye.
-    plot(numSubject, mpodRightEye(ss), markerTypeRightEye,'markersize',markerSizeRightEye,...
+    plot(ss, mpodRightEye(ss), markerTypeRightEye,'markersize',markerSizeRightEye,...
         'markeredgecolor','k','markerfacecolor',markerColorRightEye);
-    errorbar(numSubject, mpodRightEye(ss), stdRightEye(ss), markerColorRightEye,'linewidth',1);
+    errorbar(ss, mpodRightEye(ss), stdRightEye(ss), markerColorRightEye,'linewidth',1);
     
     % Connect data points between left and right eyes.
-    plot([numSubject numSubject], [mpodLeftEye(ss) mpodRightEye(ss) ],'k:','LineWidth',1);
-    
+    plot([ss ss], [mpodLeftEye(ss) mpodRightEye(ss) ],'k:','LineWidth',1);  
 end
-legend('Dominant eye (red)','','Non-dominant eye (black)', 'fontSize', fontSize)
+xlim([0 nSubjectName+1]);
+xticks([1:1:32]);
+xticklabels(subjectNameOptions);
+
+legend('Dominant eye (red)','','Non-dominant eye (black)', 'fontSize', 13)
 
 %% Save the plot.
 SAVETHEPLOT = true;
@@ -144,5 +144,6 @@ if (SAVETHEPLOT)
         testFilename = fullfile(testFiledir,'Results_MPOD');
         testFileFormat = '.tiff';
         saveas(gcf,append(testFilename,testFileFormat));
+        disp('MPOD result plot has been saved successfully!');
     end
 end

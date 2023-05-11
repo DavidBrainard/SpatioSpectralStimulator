@@ -89,15 +89,18 @@ for ss = 1:nSubjects
     stdRedOutputSettings = std(redOutputSettings);
     
     % Plot raw data (Red).
-    plot(numSubject*ones(1,length(redOutputSettings)), redOutputSettings,'ko');
+    plot(ss*ones(1,length(redOutputSettings)), redOutputSettings,'ko');
     
     % Plot the reference (Green).
-    plot(numSubject, greenOutputSetting,'go','markersize',9,'markeredgecolor','k','markerfacecolor','g');
+    plot(ss, greenOutputSetting,'go','markersize',9,'markeredgecolor','k','markerfacecolor','g');
     
     % Plot mean and its standard deviation (Red).
-    plot(numSubject, meanRedOutputSettings,'ro','markersize',9,'markeredgecolor','k','markerfacecolor','r');
-    errorbar(numSubject, meanRedOutputSettings, stdRedOutputSettings, 'r', 'linewidth', 1);
+    plot(ss, meanRedOutputSettings,'ro','markersize',9,'markeredgecolor','k','markerfacecolor','r');
+    errorbar(ss, meanRedOutputSettings, stdRedOutputSettings, 'r', 'linewidth', 1);
 end
+xlim([0,nSubjects+1]);
+xticks([1:1:nSubjects]);
+xticklabels(numSubjects);
 legend('Raw data (red)','Reference (green)','Mean (red)','fontsize',fontSize,'location','southeast');
 
 %% Save the plot.
@@ -108,5 +111,6 @@ if (SAVETHEPLOT)
         testFilename = fullfile(testFiledir,'Results_FlickerPhotom');
         testFileFormat = '.tiff';
         saveas(gcf,append(testFilename,testFileFormat));
+        disp('Iso-luminance determination result plot has been successfully saved!');
     end
 end
