@@ -28,7 +28,9 @@ filterOptions = unique(T.Filter);
 subjectOptions = unique(T.Subject);
 nFilters = length(filterOptions);
 nSubjects = length(unique(T.Subject));
-SFVals = [3 6 9 12 18];
+SFOptionsStr = {'3 cpd', '6 cpd', '9 cpd', '12 cpd', '18 cpd'};
+SFOptions = [3 6 9 12 18];
+nSFs = length(SFOptions);
 
 % Extract AUC over the filters.
 % The array of AUC is looks like Subjects (rows) x Filters (columns).
@@ -152,9 +154,9 @@ set(grandFig, 'position', figPosition);
 
 for ff = 1:nFilters
     subplot(2,3,ff);
-    plot(SFVals, meanLogSensitivity(:,:,ff), 'ko-','color',[ff*0.2 ff*0.2 0],'linewidth',3);
-    xticks(SFVals);
-    xticklabels(SFVals);
+    plot(SFOptions, meanLogSensitivity(:,:,ff), 'ko-','color',[ff*0.2 ff*0.2 0],'linewidth',3);
+    xticks(SFOptions);
+    xticklabels(SFOptions);
     xlabel('Spatial Frequency','Fontsize',15);
     ylabel(sprintf('Mean Log Contrast Sensitivity (N=%d)', nSubjects),'Fontsize',15);
     yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
@@ -168,9 +170,9 @@ sgtitle(sprintf('Each figure is the averaged results of (%d) subjects', nSubject
 % Grand grand mean.
 meanLogSensitivityAllFilters = mean(squeeze(meanLogSensitivity),2);
 subplot(2,3,6)
-plot(SFVals, meanLogSensitivityAllFilters, 'k+-','color',[0 0 0 0.4],'linewidth',7);
-xticks(SFVals);
-xticklabels(SFVals);
+plot(SFOptions, meanLogSensitivityAllFilters, 'k+-','color',[0 0 0 0.4],'linewidth',7);
+xticks(SFOptions);
+xticklabels(SFOptions);
 xlabel('Spatial Frequency','Fontsize',15);
 ylabel(sprintf('Mean Log Contrast Sensitivity (N=%d)', nSubjects*nFilters),'Fontsize',15);
 yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
@@ -196,15 +198,15 @@ end
 figure; clf; hold on;
 
 for ff = 1:nFilters
-    plot(SFVals, meanLogSensitivity(:,:,ff), 'ko-','color',[ff*0.2 ff*0.2 0],'linewidth',2);
-    xticks(SFVals);
-    xticklabels(SFVals);
+    plot(SFOptions, meanLogSensitivity(:,:,ff), 'ko-','color',[ff*0.2 ff*0.2 0],'linewidth',2);
+    xticks(SFOptions);
+    xticklabels(SFOptions);
     xlabel('Spatial Frequency','Fontsize',15);
     ylabel(sprintf('Mean Log Contrast Sensitivity (N=%d)', nSubjects),'Fontsize',15);
     yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
     ylim(log10([1 600]));
     yticks(yaxisRange);
-    ytickformat('%.2f');    
+    ytickformat('%.2f');
 end
 legend(filterOptions, 'fontsize', 15);
 title('Mean log sensitivity over spatial frequency per each filter','fontsize',15);
@@ -217,5 +219,56 @@ if (SAVEPLOTS)
         testFilename = fullfile(testFiledir, append('AUC_GrandMean_Overlap',imgFileFormat));
         saveas(gcf,testFilename);
         fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+    end
+end
+
+%% 5) Sensitivity over the filters.
+logSensitivityFilterA = logSensitivity(:,:,1);
+
+% Loop over the filters.
+for ff = 2:nFilters
+    logSensitivityFilterTest = logSensitivity(:,:,ff);
+    
+    fig = figure; clf; hold on;
+    set(fig,'position', figPosition);
+    
+    % Loop over spatial frequency.
+    for ss = 1:nSFs
+        subplot(2,3,ss); hold on;
+        
+        % Calculate error.
+        logSensitivityError = logSensitivityFilterTest(:,ss)-logSensitivityFilterA(:,ss);
+        meanLogSensitivityError = mean(logSensitivityError);
+        stdErrorLogSensitivityError = std(logSensitivityError)/length(logSensitivityError);
+        
+        % Plot it.
+        plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
+            'markeredgecolor','k','markersize',8,'markerfacecolor','y');
+        plot(2.55, meanLogSensitivityError, 'o',...
+            'markeredgecolor','k','markersize',8,'markerfacecolor','b');
+        errorbar(2.55, meanLogSensitivityError, stdErrorLogSensitivityError, 'k','linewidth',1);
+        plot([-3 +3], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.4]);
+        
+        xlabel('Log sensitivity (Filter A)','fontsize',15);
+        ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',15);
+        xlim([1 2.6]);
+        ylim([-0.6 0.6]);
+        yticks([-0.6:0.2:0.6]);
+        yticklabels([-0.6:0.2:0.6]);
+        title(SFOptionsStr{ss},'fontsize',15);
+        text(1.05,0.55,sprintf('Max abs error = %.2f (log) / %.2f (linear)', max(abs(logSensitivityError)), 10^max(abs(logSensitivityError))),'fontsize',14);
+        text(1.01,0.03,'No difference line','fontsize',11);
+        legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',12);
+    end
+    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',20);
+    
+    % Save the plot.
+    if (SAVEPLOTS)
+        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s',filterOptions{ff}),imgFileFormat));
+            saveas(gcf,testFilename);
+            fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+        end
     end
 end
