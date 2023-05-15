@@ -243,7 +243,7 @@ for ff = 2:nFilters
         
         % Plot it.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
-            'markeredgecolor','k','markersize',8,'markerfacecolor','y');
+            'markeredgecolor','k','markersize',8,'markerfacecolor',[ff*0.2 ff*0.2 0]);
         plot(2.55, meanLogSensitivityError, 'o',...
             'markeredgecolor','k','markersize',8,'markerfacecolor','b');
         errorbar(2.55, meanLogSensitivityError, stdErrorLogSensitivityError, 'k','linewidth',1);
