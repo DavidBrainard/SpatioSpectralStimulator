@@ -239,7 +239,7 @@ for ff = 2:nFilters
         % Calculate error.
         logSensitivityError = logSensitivityFilterTest(:,ss)-logSensitivityFilterA(:,ss);
         meanLogSensitivityError = mean(logSensitivityError);
-        stdErrorLogSensitivityError = std(logSensitivityError)/length(logSensitivityError);
+        stdErrorLogSensitivityError = std(logSensitivityError)/sqrt(length(logSensitivityError));
         
         % Plot it.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
