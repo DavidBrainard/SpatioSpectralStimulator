@@ -71,6 +71,9 @@ if (ispref('SpatioSpectralStimulator','SACCMaterials'))
             mpodRightEye(ss) = mpodFirstMeasure;
             stdRightEye(ss) = stdFirstMeasure;
         end
+        
+        % Collect MPOD values of the dominant eye.
+        mpodDominant(ss) = mpodSecondMeasure;
     end
 end
 
