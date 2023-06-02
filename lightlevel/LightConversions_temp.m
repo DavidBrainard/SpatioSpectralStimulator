@@ -45,8 +45,9 @@ inFilename = fullfile(LEDSpectraDir,append(LEDInFileName,'_',LEDMeasDateStr,'.ma
 outFilename = fullfile(LEDSpectraDir,append(LEDOutFileName,'_',LEDMeasDateStr,'.mat'));
 xlsFilename = fullfile(LEDSpectraDir,append(XLSOutFileName,'_',LEDMeasDateStr,'.xlsx'));
 
-%% (TEMP) Read out the spectrum to test.
-%% Load the target spectrum.
+%% (TEMP) Read out the spectrum to test. - (SEMIN, 6/2/23)
+%
+% Load the target spectrum.
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
     testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck');
@@ -62,13 +63,13 @@ S_temp = data.theData.S;
 % Here we set the spectrum as the background of the stimuli (null
 % stimulus).
 spd = SplineSpd(S_temp, spds(:,1), S);
-spd_w = spd;
 
 %% Get full on spectrum
 white = load(inFilename);
 spd_w = SplineSpd(white.S, white.spd, S);
 spd_blk = zeros(size(spd_w));
 
+% Plot the target spectrum instead of the white.
 spd_w = spd;
 
 figure; clf; hold on
