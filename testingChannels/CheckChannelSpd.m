@@ -16,12 +16,12 @@
 
 %% Set parameters.
 nPrimaries = 3;
-projectorModeNormal = false;
+projectorModeNormal = true;
 powerMeterWl = 550;
 VERBOSE = true;
 
 % Set this number to 0 if you are not willing to use Dataset 1,2,3.
-POWERDATASET = 4;
+POWERDATASET = 3;
 
 %% Load spectrum data here.
 DEVICE = 'PR670';
@@ -41,11 +41,11 @@ end
 % 3/30 and 4/19 are black corrected.
 switch POWERDATASET
     case 1
-        olderDate = 2;
+        olderDate = 3;
     case 2
         olderDate = 2;
     case 3
-        olderDate = 0;
+        olderDate = 1;
     otherwise
         olderDate = 0;
 end
