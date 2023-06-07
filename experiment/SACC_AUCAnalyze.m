@@ -256,7 +256,7 @@ for ff = 2:nFilters
         yticks([-0.6:0.2:0.6]);
         yticklabels([-0.6:0.2:0.6]);
         title(SFOptionsStr{ss},'fontsize',15);
-        text(1.05,0.55,sprintf('Max abs error = %.2f (log) / %.2f (linear)', max(abs(logSensitivityError)), 10^max(abs(logSensitivityError))),'fontsize',14);
+        text(1.05,0.55,sprintf('Max abs diffrence = %.2f (log) / %.2f (linear)', max(abs(logSensitivityError)), 10^max(abs(logSensitivityError))),'fontsize',14);
         text(1.01,0.03,'No difference line','fontsize',11);
         legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',12);
     end
