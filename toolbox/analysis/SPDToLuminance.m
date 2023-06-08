@@ -7,7 +7,7 @@ function luminance = SPDToLuminance(spd, options)
 % Description:
 %    This is basically a function version of the script,
 %    LightConversions.m. We made it as a function to calculate multiple
-%    specta at the same time.
+%    spectra at the same time.
 %
 % Inputs:
 %    spd                        - Test spectrum that you want to calculate
