@@ -31,7 +31,7 @@ nChannels = 16;
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 peaks = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
 index = [1:1:length(peaks)];
-whichChannelPrimary1 = 12;
+whichChannelPrimary1 = 15;
 whichChannelPrimary2 = [];
 whichChannelPrimary3 = [];
 
@@ -75,18 +75,33 @@ switch ScreenPatternType
         
         cyclesPerDeg = 3;
         
+        % On the optical system.
         switch cyclesPerDeg
             case 3
-                barWidthPixel = 80;
+                barWidthPixel = 23;
             case 6
-                barWidthPixel = 42;
+                barWidthPixel = 11;
             case 9
-                barWidthPixel = 28;
+                barWidthPixel = 8;
             case 12
-                barWidthPixel = 21;
+                barWidthPixel = 6;
             case 18
-                barWidthPixel = 14;
+                barWidthPixel = 4;
         end
+        
+        % Raw (old projector).
+%         switch cyclesPerDeg
+%             case 3
+%                 barWidthPixel = 80;
+%             case 6
+%                 barWidthPixel = 42;
+%             case 9
+%                 barWidthPixel = 28;
+%             case 12
+%                 barWidthPixel = 21;
+%             case 18
+%                 barWidthPixel = 14;
+%         end
         whichSideBar = 'vertical'; 
 
         % Set stripe pattern.    
