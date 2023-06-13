@@ -29,11 +29,13 @@ nChannels = 16;
 % Peak wavelength in order of channel number. Note that it is not ascending
 % order.
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
-whichChannelPrimary1 = [1:16];
-whichChannelPrimary2 = [1:16];
-whichChannelPrimary3 = [1:16];
+peaks = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
+index = [1:1:length(peaks)];
+whichChannelPrimary1 = 12;
+whichChannelPrimary2 = [];
+whichChannelPrimary3 = [];
 
-channelIntensityPrimary1 = 0.3;
+channelIntensityPrimary1 = 1;
 channelIntensityPrimary2 = 0.3;
 channelIntensityPrimary3 = 0.3;
 
@@ -67,8 +69,24 @@ switch ScreenPatternType
         rectColor = [0 0 0];
 
         % Set the barwidth and directions.
+        % 18 cpd = 14 pixels / 12 cpd = 21 pixels / 9 cpd = 28 pixels / 6
+        % cpd = 42 pixels / 3 cpd = 80 pixels.
         rectColor = [0 0 0];
-        barWidthPixel = 20; 
+        
+        cyclesPerDeg = 3;
+        
+        switch cyclesPerDeg
+            case 3
+                barWidthPixel = 80;
+            case 6
+                barWidthPixel = 42;
+            case 9
+                barWidthPixel = 28;
+            case 12
+                barWidthPixel = 21;
+            case 18
+                barWidthPixel = 14;
+        end
         whichSideBar = 'vertical'; 
 
         % Set stripe pattern.    
