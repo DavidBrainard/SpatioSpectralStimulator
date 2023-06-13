@@ -12,6 +12,10 @@ clear; close all;
 %
 % Set target spatial frequency.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
+
+% Set the data type. 'set1' is raw measurement, 'set2' is on the SACCSFA
+% optical system.
+dataType = 'set2';
 measureDate = '0613';
 
 % Choose channel within {2, 5, 9, 12, 15}. Which corresponds, respectively,
@@ -23,7 +27,7 @@ nImages = length(targetCyclePerDeg);
 for tt = 1:nImages
     if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-        testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,whichChannel);
+        testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,dataType,whichChannel);
         testFilename = GetMostRecentFileName(testFiledir,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
         image{tt} = imread(testFilename);
     else
