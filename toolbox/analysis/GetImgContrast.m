@@ -40,23 +40,26 @@ imageCrop75 = image(round(0.75*Ypixel),:);
 imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
 
 % Calculate contrast here.
-whiteCropImage = max(imageCropAvg);
-blackCropImage = min(imageCropAvg);
-contrast = (whiteCropImage-blackCropImage)/(whiteCropImage+blackCropImage);
+white = max(imageCropAvg);
+black = min(imageCropAvg);
+contrast = (white-black)/(white+black);
 
 %% Show the results if you want.
 if (options.verbose)
     % Show image.
-    figure; imshow(image);
+%     figure; imshow(image);
     
     % Plot it.
-    figure; hold on;
+%     figure; hold on;
+      hold on;
     plot(imageCrop25, 'r-', 'LineWidth',1);
     plot(imageCrop50, 'g-', 'LineWidth',1);
     plot(imageCrop75, 'b-', 'LineWidth',1);
-    plot(imageCropAvg, 'k--', 'LineWidth',2.5);
-    xlabel('Pixel position (horizontal)');
-    ylabel('dRGB');
+    plot(imageCropAvg, 'k-', 'color', [0 0 0 0.2], 'LineWidth',5);
+%     plot(imageCropAvg, 'k-', 'LineWidth',1);
+    xlabel('Pixel position (horizontal)','fontsize',15);
+    ylabel('dRGB','fontsize',15);
     legend('25%','50%','75%','Avg');
+%     legend(sprintf('Contrast = %.2f',contrast));
 end
 end
