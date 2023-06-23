@@ -70,7 +70,7 @@ paramsFree = [1 1 0 1];
 olderDate = 0;
 
 % Control things about the plots
-SUBPLOT = true;
+SUBPLOT = false;
 axisLog = true;
 addInitialThresholdEst = true;
 addQuestFit = false;
@@ -136,7 +136,7 @@ if (FITALLATONCE)
 else
     % Load single subject to fit one by one.
     subjectNameOptions = {'002'};
-    spatialFrequencyOptions = {'3'; '6'; '9'; '12'; '18'};
+    spatialFrequencyOptions = {'6'};
 end
 
 %% Show the progress of the experiment.
@@ -347,6 +347,8 @@ for ss = 1:nSubjects
             figure(rawFig);
             if (SUBPLOT)
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
+            else
+                hold on;
             end
             if (~BOOTSTRAP_RAWFITS)
                 [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff), ...
@@ -544,6 +546,8 @@ for ss = 1:nSubjects
                 figure(psychoFig);
                 if (SUBPLOT)
                     subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
+                else
+                    hold on;
                 end
                 
                 % Figure out slope range based on raw fits
