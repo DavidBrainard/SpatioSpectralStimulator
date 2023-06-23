@@ -11,7 +11,7 @@
 clear; close all;
 
 %% Save the plots if you want.
-SAVEPLOTS = true;
+SAVEPLOTS = false;
 imgFileFormat = '.tiff';
 
 %% Read the AUC summary table.
@@ -59,13 +59,18 @@ end
 
 % Mean log sensitivity per each filter.
 meanLogSensitivity = mean(logSensitivity);
+for ss = 1:nSFs
+    logSensitivityAllFiltersTemp = squeeze(logSensitivity(:,ss,:));
+    logSensitivityAllFiltersTemp = reshape(logSensitivityAllFiltersTemp, [size(logSensitivityAllFiltersTemp,1)*size(logSensitivityAllFiltersTemp,2) 1]);
+    stdErrorAllFiltersAndSubjects(ss) = std(logSensitivityAllFiltersTemp)/sqrt(length(logSensitivityAllFiltersTemp));
+end 
 
 %% Plotting the results from here.
 %% 1) Plot AUC over the filters (bar graph)
 figure; hold on;
 xAxisTicks = [1:nFilters];
 for ff = 1:nFilters
-    bar(xAxisTicks(ff),meanAUC(ff),'facecolor',[ff*0.2 ff*0.2 0]);
+    bar(xAxisTicks(ff),meanAUC(ff),'facecolor',[0.2 0.2 0.2]);
 end
 xticks(xAxisTicks);
 xticklabels(filterOptions);
@@ -74,7 +79,7 @@ ylabel('Mean AUC','Fontsize',15);
 errorbar(xAxisTicks,meanAUC,errorAUC,'k+','linewidth',1);
 text(xAxisTicks, meanAUC/2, num2str(round(meanAUC,2)'),...
     'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
-    'fontsize', 14, 'fontweight', 'bold', 'color', [0.75 0.75 0.75]);
+    'fontsize', 14, 'fontweight', 'bold', 'color', [1 1 1]);
 title('Mean AUC results over the Filters','Fontsize',15);
 subtitle(sprintf('Each bar is the average of (%d) subjects',nSubjects),'FontSize',13);
 
@@ -167,19 +172,27 @@ for ff = 1:nFilters
 end
 sgtitle(sprintf('Each figure is the averaged results of (%d) subjects', nSubjects), 'Fontsize',20);
 
-% Grand grand mean.
+%% Grand grand mean.
 meanLogSensitivityAllFilters = mean(squeeze(meanLogSensitivity),2);
-subplot(2,3,6)
-plot(SFOptions, meanLogSensitivityAllFilters, 'k+-','color',[0 0 0 0.4],'linewidth',7);
+% subplot(2,3,6); hold on;
+figure; hold on;
+
+% Plot error bar and delete the lines between adjacent points.
+errorbar(SFOptions, meanLogSensitivityAllFilters, stdErrorAllFiltersAndSubjects, 'k-');
+set(get(gca, 'Children'), 'LineStyle', 'none');
+
+% Plot the mean sensitivity data.
+plot(SFOptions, meanLogSensitivityAllFilters, 'k.-', 'markersize',5, 'color',[0 0 0 0.4],'linewidth',4);
 xticks(SFOptions);
 xticklabels(SFOptions);
 xlabel('Spatial Frequency','Fontsize',15);
 ylabel(sprintf('Mean Log Contrast Sensitivity (N=%d)', nSubjects*nFilters),'Fontsize',15);
 yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
+xlim([min(SFOptions)-2 max(SFOptions)+2]);
 ylim(log10([1 600]));
 yticks(yaxisRange);
 ytickformat('%.2f');
-legend('Mean of all filters', 'fontsize', 15);
+legend('SEM of all filters and subjects (N=160)', 'Mean of all filters and subjects (N=160)', 'fontsize', 12);
 title('This is the mean results of all filters and all subjects', 'fontsize',13);
 
 % Save the plot.
@@ -211,7 +224,6 @@ end
 legend(filterOptions, 'fontsize', 15);
 title('Mean log sensitivity over spatial frequency per each filter','fontsize',15);
 
-
 % Save the plot.
 if (SAVEPLOTS)
     if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
@@ -242,11 +254,21 @@ for ff = 2:nFilters
         stdErrorLogSensitivityError = std(logSensitivityError)/sqrt(length(logSensitivityError));
         
         % Plot it.
+        % 
+        % Sensitivity difference data.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
             'markeredgecolor','k','markersize',8,'markerfacecolor',[ff*0.2 ff*0.2 0]);
-        plot(2.55, meanLogSensitivityError, 'o',...
-            'markeredgecolor','k','markersize',8,'markerfacecolor','b');
-        errorbar(2.55, meanLogSensitivityError, stdErrorLogSensitivityError, 'k','linewidth',1);
+        
+        % Mean sensitivity line.
+        plot([-3 +3], [meanLogSensitivityError meanLogSensitivityError], 'b-','linewidth',2,'color',[0 0 0.8 0.7]);
+       
+        % Standard error line.
+        stdError_pos = meanLogSensitivityError + stdErrorLogSensitivityError;
+        stdError_neg = meanLogSensitivityError - stdErrorLogSensitivityError;
+        plot([-3 +3], [stdError_pos stdError_pos], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
+        plot([-3 +3], [stdError_neg stdError_neg], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
+       
+        % No difference line for the reference.
         plot([-3 +3], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.4]);
         
         xlabel('Log sensitivity (Filter A)','fontsize',15);
