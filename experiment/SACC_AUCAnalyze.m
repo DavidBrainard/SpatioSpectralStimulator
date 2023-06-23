@@ -241,6 +241,10 @@ logSensitivityFilterA = logSensitivity(:,:,1);
 for ff = 2:nFilters
     logSensitivityFilterTest = logSensitivity(:,:,ff);
     
+    % Temp option for Semin's Laptop.
+    figPosition = [0 0 1000 1000];
+    fontSize = 10;
+
     fig = figure; clf; hold on;
     set(fig,'position', figPosition);
     
@@ -257,7 +261,7 @@ for ff = 2:nFilters
         % 
         % Sensitivity difference data.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
-            'markeredgecolor','k','markersize',8,'markerfacecolor',[ff*0.2 ff*0.2 0]);
+            'markeredgecolor','k','markersize',6,'markerfacecolor',[ff*0.2 ff*0.2 0]);
         
         % Mean sensitivity line.
         plot([-3 +3], [meanLogSensitivityError meanLogSensitivityError], 'b-','linewidth',2,'color',[0 0 0.8 0.7]);
@@ -271,18 +275,18 @@ for ff = 2:nFilters
         % No difference line for the reference.
         plot([-3 +3], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.4]);
         
-        xlabel('Log sensitivity (Filter A)','fontsize',15);
-        ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',15);
+        xlabel('Log sensitivity (Filter A)','fontsize',fontSize);
+        ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',fontSize);
         xlim([1 2.6]);
         ylim([-0.6 0.6]);
         yticks([-0.6:0.2:0.6]);
         yticklabels([-0.6:0.2:0.6]);
-        title(SFOptionsStr{ss},'fontsize',15);
-        text(1.05,0.55,sprintf('Max abs diffrence = %.2f (log) / %.2f (linear)', max(abs(logSensitivityError)), 10^max(abs(logSensitivityError))),'fontsize',14);
-        text(1.01,0.03,'No difference line','fontsize',11);
-        legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',12);
+        title(SFOptionsStr{ss},'fontsize',fontSize);
+        text(1.05,0.55,sprintf('Max abs diffrence = %.2f (log) / %.2f (linear)', max(abs(logSensitivityError)), 10^max(abs(logSensitivityError))),'fontsize',fontSize-2);
+        text(1.01,0.04,'No difference line','fontsize',fontSize-2);
+        legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',fontSize-3);
     end
-    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',20);
+    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+5);
     
     % Save the plot.
     if (SAVEPLOTS)
