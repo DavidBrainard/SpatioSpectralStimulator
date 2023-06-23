@@ -44,12 +44,15 @@ clear; close all;
 OneFigurePerSub = false;
 WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = true;
+SaveCSFPlot = false;
 
 % Figure size and position.
 figureSize = 800;
 figurePositionData = [200 300 figureSize figureSize-200];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
+
+% Temp option for Semin's laptop.
+figurePositionData = [0 0 1000 1000];
 
 % Fitting options.
 BootstrapAUC = false;
@@ -76,8 +79,8 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = false;
-whichSubject = '008';
+pickSubjectAndFilter = true;
+whichSubject = '002';
 whichFilter = 'B';
 
 % Save text summary file.
@@ -679,7 +682,7 @@ for ss = 1:nSubjects
             if (~OneFigurePerSub)
                 colorOptionsRaw(:) = {'ro'};
                 colorOptionsBoot(:) = {'go'};
-                colorOptionsCI(:) = {'g'};
+                colorOptionsCI(:) = {[0.1 0.7 0.1]};
             end
             
             % Set the marker size.
@@ -690,13 +693,13 @@ for ss = 1:nSubjects
             plot(sineFreqCyclesPerDegNumSorted, sensitivitySorted, ...
                 colorOptionsRaw{ff},'markerfacecolor','r','markersize',markerSizePF,'Markeredgecolor','k');
             plot(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootSorted, ...
-                colorOptionsBoot{ff},'markerfacecolor','g','markersize',markerSizeBootMedian,'Markeredgecolor','k');
+                colorOptionsBoot{ff},'markerfacecolor',[0.1 0.7 0.1],'markersize',markerSizeBootMedian,'Markeredgecolor','k');
             
             % Plot confidence Interval.
             errorNeg = abs(sensitivityMedianBootSorted - sensitivityBootLowSorted);
             errorPos = abs(sensitivityBootHighSorted - sensitivityMedianBootSorted);
             e = errorbar(sineFreqCyclesPerDegNumSorted, sensitivityMedianBootSorted, ...
-                errorNeg, errorPos, colorOptionsCI{ff});
+                errorNeg, errorPos, 'color', colorOptionsCI{ff});
             e.LineStyle = 'none';
             
             % Plot the end points of bootstrapped values.
@@ -710,8 +713,8 @@ for ss = 1:nSubjects
             maxSensitivityBootPlot(maxSensitivityBootPlot>limitMaxSensitivityBoot) = limitMaxSensitivityBoot;
             minSensitivityBootPlot(minSensitivityBootPlot<limitMinSensitivityBoot) = limitMinSensitivityBoot;
             
-            plot(sineFreqCyclesPerDegNumSorted,maxSensitivityBootPlot','g*','markerSize',7);
-            plot(sineFreqCyclesPerDegNumSorted,minSensitivityBootPlot','g*','markerSize',7);
+            plot(sineFreqCyclesPerDegNumSorted,maxSensitivityBootPlot','g*','color',[0.1 0.7 0.1],'markerSize',7);
+            plot(sineFreqCyclesPerDegNumSorted,minSensitivityBootPlot','g*','color',[0.1 0.7 0.1],'markerSize',7);
             
             %% Plot CSF.
             if (OneFigurePerSub)
