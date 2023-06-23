@@ -363,16 +363,19 @@ if (options.verbose)
     % Mark the threshold point (red point).
     if(options.axisLog)
         h_thresh = plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        
+        % Mark the median bootstrapped threshold point (green point) and
+        % its confidence interval (green line).
         if (options.nBootstraps > 0)
             h_bsthresh = errorbarX(log10(medianThresholdBoot),options.thresholdCriterion,log10(medianThresholdBoot)-log10(lowThresholdBoot),log10(highThresholdBoot)-log10(medianThresholdBoot),'go');
-            set(h_bsthresh,'MarkerSize',9); set(h_bsthresh,'MarkerFaceColor','g'); set(h_bsthresh,'MarkerEdgeColor','g'); set(h_bsthresh,'LineWidth',3);
+            set(h_bsthresh,'MarkerSize',9); set(h_bsthresh,'MarkerFaceColor',[0.1 0.7 0.1]); set(h_bsthresh,'MarkerEdgeColor','k'); set(h_bsthresh(2),'LineWidth',0.5); set(h_bsthresh(1),'LineWidth',3); set(h_bsthresh(1),'color',[0.1 0.7 0.1]);
         end
         xlabel('Log Contrast', 'FontSize', 15);
     else
         h_thresh = plot(thresholdFitted,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
         if (options.nBootstraps > 0)
             h_bsthresh = errorbarX(medianThresholdBoot,options.thresholdCriterion,medianThresholdBoot-lowThresholdBoot,highThresholdBoot-medianThresholdBoot,'go');
-            set(h_bsthresh,'MarkerSize',9); set(h_bsthresh,'MarkerFaceColor','g'); set(h_bsthresh,'MarkerEdgeColor','g'); set(h_bsthresh,'LineWidth',3);
+            set(h_bsthresh,'MarkerSize',9); set(h_bsthresh,'MarkerFaceColor',[0.1 0.7 0.1]); set(h_bsthresh,'MarkerEdgeColor','k'); set(h_bsthresh(2),'LineWidth',0.5); set(h_bsthresh(1),'LineWidth',3); set(h_bsthresh(1),'color',[0.1 0.7 0.1]);
         end
         xlabel('Contrast', 'FontSize', 15);
     end
