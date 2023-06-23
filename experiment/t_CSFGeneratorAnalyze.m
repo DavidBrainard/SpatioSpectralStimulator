@@ -46,8 +46,8 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-FITALLATONCE = true;
-SAVETHEPLOT = true;
+FITALLATONCE = false;
+SAVETHEPLOT = false;
 RECORDTESTIMAGEPROFILE = true;
 RECORDTEXTSUMMARYPERSUB = true;
 
@@ -343,11 +343,13 @@ for ss = 1:nSubjects
             % Set the contrast levels in linear unit.
             examinedContrastsLinear = 10.^dataOut.examinedContrasts;
             
-            % First fit without bootstrapping or plotting to get slopes for each filter
-            figure(rawFig);
+            % First fit without bootstrapping or plotting to get slopes for
+            % each filter.
             if (SUBPLOT)
+                figure(rawFig);
                 subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
             else
+                figure;
                 hold on;
             end
             if (~BOOTSTRAP_RAWFITS)
@@ -542,11 +544,13 @@ for ss = 1:nSubjects
                     questPara = [];
                 end
                 
-                % PF fitting here. Use the initial fit to determine slope range
-                figure(psychoFig);
+                % PF fitting here. Use the initial fit to determine slope
+                % range.
                 if (SUBPLOT)
+                    figure(psychoFig);
                     subplot(sizeSubplot(1),sizeSubplot(2),ff); hold on;
                 else
+                    figure;
                     hold on;
                 end
                 
