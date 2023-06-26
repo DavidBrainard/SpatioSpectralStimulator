@@ -109,7 +109,7 @@ for ss = 1:nSubjects
     plot(ss*ones(1,length(redLuminance)), redLuminance,'ko');
     
     % Plot the reference (Green).
-    plot(ss, greenLuminance,'go','markersize',9,'markeredgecolor','k','markerfacecolor','g');
+    plot(ss, greenLuminance,'go','markersize',9,'markeredgecolor','k','markerfacecolor',[0.1 0.7 0.1]);
     
     % Plot mean and its standard deviation (Red).
     plot(ss, meanRedLuminance,'ro','markersize',9,'markeredgecolor','k','markerfacecolor','r');
@@ -166,7 +166,7 @@ for ss = 1:nSubjects
     plot(ss*ones(1,length(redLuminance)), redLuminance,'ko');
     
     % Plot the reference (Green).
-    plot(ss, greenLuminance,'go','markersize',9,'markeredgecolor','k','markerfacecolor','g');
+    plot(ss, greenLuminance,'go','markersize',9,'markeredgecolor','k','markerfacecolor',[0.1 0.7 0.1]);
     
     % Plot mean and its standard deviation (Red).
     plot(ss, meanRedLuminance,'ro','markersize',9,'markeredgecolor','k','markerfacecolor','r');
