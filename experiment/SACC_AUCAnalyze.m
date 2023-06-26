@@ -178,7 +178,7 @@ meanLogSensitivityAllFilters = mean(squeeze(meanLogSensitivity),2);
 figure; hold on;
 
 % Plot error bar and delete the lines between adjacent points.
-errorbar(SFOptions, meanLogSensitivityAllFilters, stdErrorAllFiltersAndSubjects, 'k-');
+errorbar(SFOptions, meanLogSensitivityAllFilters, std(squeeze(meanLogSensitivity)')./sqrt(nFilters), 'k-');
 set(get(gca, 'Children'), 'LineStyle', 'none');
 
 % Plot the mean sensitivity data.
@@ -192,7 +192,7 @@ xlim([min(SFOptions)-2 max(SFOptions)+2]);
 ylim(log10([1 600]));
 yticks(yaxisRange);
 ytickformat('%.2f');
-legend('SEM of all filters and subjects (N=160)', 'Mean of all filters and subjects (N=160)', 'fontsize', 12);
+legend('SEM of the filters (N=5)', 'Mean of all filters and subjects (N=160)', 'fontsize', 12);
 title('This is the mean results of all filters and all subjects', 'fontsize',13);
 
 % Save the plot.
