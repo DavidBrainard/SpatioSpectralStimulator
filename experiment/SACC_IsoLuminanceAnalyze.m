@@ -13,7 +13,7 @@
 clear; close all;
 
 %% Set the options.
-SAVETHEPLOT = true;
+SAVETHEPLOT = false;
 
 %% Load the data.
 if (ispref('SpatioSpectralStimulator','SACCData'))
@@ -119,6 +119,7 @@ for ss = 1:nSubjects
     redLuminanceStruct{ss} = redLuminance;
     greenLuminanceStruct{ss} = greenLuminance;
     greenLuminanceALL(ss) = greenLuminance;
+    Flicker.MeanRedRaw(ss) = meanRedLuminance;
 
     % Print out the progress.
     fprintf('Progress - subject (%d/%d) \n', ss, nSubjects);
@@ -161,7 +162,7 @@ for ss = 1:nSubjects
     % Calculate mean and std of the output settings.
     meanRedLuminance = mean(redLuminance);
     stdRedLuminance = std(redLuminance);
-
+    
     % Plot raw data (Red).
     plot(ss*ones(1,length(redLuminance)), redLuminance,'ko');
 
@@ -171,6 +172,9 @@ for ss = 1:nSubjects
     % Plot mean and its standard deviation (Red).
     plot(ss, meanRedLuminance,'ro','markersize',9,'markeredgecolor','k','markerfacecolor','r');
     errorbar(ss, meanRedLuminance, stdRedLuminance, 'r', 'linewidth', 1);
+
+    % Save out the data.
+     Flicker.MeanRedNormalized(ss) = meanRedLuminance;
 end
 xlim([0,nSubjects+1]);
 xticks([1:1:nSubjects]);
@@ -186,6 +190,17 @@ if (SAVETHEPLOT)
         saveas(gcf,append(testFilename,testFileFormat));
         disp('Iso-luminance determination result plot has been successfully saved! - (normalized)');
     end
+end
+
+%% Save out the results.
+Flicker.Subject = numSubjects;
+Flicker.RawDataRed = redLuminanceStruct;
+Flicker.RawDataGreen = greenLuminanceStruct;
+
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+    testFilename = fullfile(testFiledir, 'IsoLuminanceDetermination.mat');
+    save(testFilename,'Flicker');
 end
 
 %% Settings vs. Luminance.
