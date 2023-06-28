@@ -73,8 +73,20 @@ if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         end
         
         % Collect MPOD values of the dominant eye.
+        mpodNondominant(ss) = mpodFirstMeasure;
         mpodDominant(ss) = mpodSecondMeasure;
     end
+end
+
+% Save the MPOD results.
+MPOD.Subject = subjectNameOptions;
+MPOD.dominantEye = mpodDominant;
+MPOD.nonDominantEye = mpodNondominant;
+
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+    testFilename = fullfile(testFiledir, 'MPOD.mat');
+    save(testFilename,'MPOD');
 end
 
 %% Plot it.
