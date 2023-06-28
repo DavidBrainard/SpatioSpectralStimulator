@@ -157,7 +157,10 @@ clear rawRadianceMicrowattsPerCm2Sr;
 
 %% Save out the corneal power in uW/nm as well as pupil diameter in mm
 maxSpdUWPerCm2 = maxSpdUW/(pi*(pupilDiamMm/20)^2);
-save(outFilename,'wls','maxSpdUW','maxSpdUWPerCm2','pupilDiamMm','stimulusAreaDegrees2');
+
+% This part has been deactivated as we don't need to save out these for
+% calculating Luminance (SEMIN, as of 06/28/23).
+% save(outFilename,'wls','maxSpdUW','maxSpdUWPerCm2','pupilDiamMm','stimulusAreaDegrees2');
 
 %% Pupil adjustment factor for Ansi MPE
 mpePupilDiamMm = 3;
