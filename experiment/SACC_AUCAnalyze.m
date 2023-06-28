@@ -63,7 +63,32 @@ for ss = 1:nSFs
     logSensitivityAllFiltersTemp = squeeze(logSensitivity(:,ss,:));
     logSensitivityAllFiltersTemp = reshape(logSensitivityAllFiltersTemp, [size(logSensitivityAllFiltersTemp,1)*size(logSensitivityAllFiltersTemp,2) 1]);
     stdErrorAllFiltersAndSubjects(ss) = std(logSensitivityAllFiltersTemp)/sqrt(length(logSensitivityAllFiltersTemp));
-end 
+end
+
+%% Get subject gender info, MPOD, Iso-luminance results.
+%
+% Subject gender.
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+    testFilename = fullfile(testFiledir, 'Experiment_Progress.xlsx');
+    tableGender = readtable(testFilename,'UseExcel',true,'sheet','SACC_Exp_Progress','range','B2:C48');
+end
+
+% MPOD.
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+    testFilename = fullfile(testFiledir, 'MPOD.mat');
+    dataMPOD = load(testFilename);
+end
+MPOD = dataMPOD.MPOD;
+
+% Iso-luminance determination results.
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+    testFilename = fullfile(testFiledir, 'IsoLuminanceDetermination.mat');
+    dataFlicker = load(testFilename);
+end
+Flicker = dataFlicker.Flicker;
 
 %% Plotting the results from here.
 %% 1) Plot AUC over the filters (bar graph)
@@ -240,41 +265,41 @@ logSensitivityFilterA = logSensitivity(:,:,1);
 % Loop over the filters.
 for ff = 2:nFilters
     logSensitivityFilterTest = logSensitivity(:,:,ff);
-    
+
     % Temp option for Semin's Laptop.
     figPosition = [0 0 1000 1000];
     fontSize = 10;
 
     fig = figure; clf; hold on;
     set(fig,'position', figPosition);
-    
+
     % Loop over spatial frequency.
     for ss = 1:nSFs
         subplot(2,3,ss); hold on;
-        
+
         % Calculate error.
         logSensitivityError = logSensitivityFilterTest(:,ss)-logSensitivityFilterA(:,ss);
         meanLogSensitivityError = mean(logSensitivityError);
         stdErrorLogSensitivityError = std(logSensitivityError)/sqrt(length(logSensitivityError));
-        
+
         % Plot it.
-        % 
+        %
         % Sensitivity difference data.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
             'markeredgecolor','k','markersize',6,'markerfacecolor',[ff*0.2 ff*0.2 0]);
-        
+
         % Mean sensitivity line.
         plot([-3 +3], [meanLogSensitivityError meanLogSensitivityError], 'b-','linewidth',2,'color',[0 0 0.8 0.7]);
-       
+
         % Standard error line.
         stdError_pos = meanLogSensitivityError + stdErrorLogSensitivityError;
         stdError_neg = meanLogSensitivityError - stdErrorLogSensitivityError;
         plot([-3 +3], [stdError_pos stdError_pos], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
         plot([-3 +3], [stdError_neg stdError_neg], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
-       
+
         % No difference line for the reference.
         plot([-3 +3], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.4]);
-        
+
         xlabel('Log sensitivity (Filter A)','fontsize',fontSize);
         ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',fontSize);
         xlim([1 2.6]);
@@ -287,7 +312,7 @@ for ff = 2:nFilters
         legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',fontSize-3);
     end
     sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+5);
-    
+
     % Save the plot.
     if (SAVEPLOTS)
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
