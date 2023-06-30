@@ -52,7 +52,7 @@ figurePositionData = [200 300 figureSize figureSize-200];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
 % Temp option for Semin's laptop.
-figurePositionData = [0 0 1000 1000];
+% figurePositionData = [0 0 1000 1000];
 
 % Fitting options.
 BootstrapAUC = false;
