@@ -46,8 +46,8 @@ clear; close all;
 
 %% Set parameters here.
 VERBOSE = true;
-FITALLATONCE = false;
-SAVETHEPLOT = false;
+FITALLATONCE = true;
+SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 RECORDTEXTSUMMARYPERSUB = true;
 
@@ -70,7 +70,7 @@ paramsFree = [1 1 0 1];
 olderDate = 0;
 
 % Control things about the plots
-SUBPLOT = false;
+SUBPLOT = true;
 axisLog = true;
 addInitialThresholdEst = true;
 addQuestFit = false;

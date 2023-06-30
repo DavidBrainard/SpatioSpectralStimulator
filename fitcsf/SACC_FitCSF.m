@@ -44,7 +44,7 @@ clear; close all;
 OneFigurePerSub = false;
 WaitForKeyToPlot = false;
 PlotAUC = true;
-SaveCSFPlot = false;
+SaveCSFPlot = true;
 
 % Figure size and position.
 figureSize = 800;
@@ -79,7 +79,7 @@ else
 end
 
 % Pick subject and filter to fit.
-pickSubjectAndFilter = true;
+pickSubjectAndFilter = false;
 whichSubject = '002';
 whichFilter = 'B';
 
