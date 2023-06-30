@@ -259,47 +259,47 @@ if (SAVEPLOTS)
     end
 end
 
-%% 5) Sensitivity over the filters.
+%% 5-1) Sensitivity difference across the filters.
+% As a function of log sensitivity (filter A).
 logSensitivityFilterA = logSensitivity(:,:,1);
 
 % Loop over the filters.
 for ff = 2:nFilters
     logSensitivityFilterTest = logSensitivity(:,:,ff);
-
+    
     % Temp option for Semin's Laptop.
     figPosition = [0 0 1000 1000];
     fontSize = 10;
-
+    
+    % Figure to plot it as a function of log sensitivity (filter A).
     fig = figure; clf; hold on;
     set(fig,'position', figPosition);
-
+    
     % Loop over spatial frequency.
     for ss = 1:nSFs
         subplot(2,3,ss); hold on;
-
+        
         % Calculate error.
         logSensitivityError = logSensitivityFilterTest(:,ss)-logSensitivityFilterA(:,ss);
         meanLogSensitivityError = mean(logSensitivityError);
         stdErrorLogSensitivityError = std(logSensitivityError)/sqrt(length(logSensitivityError));
-
-        % Plot it.
-        %
+        
         % Sensitivity difference data.
         plot(logSensitivityFilterA(:,ss), logSensitivityError, 'o',...
             'markeredgecolor','k','markersize',6,'markerfacecolor',[ff*0.2 ff*0.2 0]);
-
+        
         % Mean sensitivity line.
         plot([-3 +3], [meanLogSensitivityError meanLogSensitivityError], 'b-','linewidth',2,'color',[0 0 0.8 0.7]);
-
+        
         % Standard error line.
         stdError_pos = meanLogSensitivityError + stdErrorLogSensitivityError;
         stdError_neg = meanLogSensitivityError - stdErrorLogSensitivityError;
         plot([-3 +3], [stdError_pos stdError_pos], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
         plot([-3 +3], [stdError_neg stdError_neg], 'k--','linewidth',1,'color',[0 0 0.8 0.9]);
-
+        
         % No difference line for the reference.
         plot([-3 +3], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.4]);
-
+        
         xlabel('Log sensitivity (Filter A)','fontsize',fontSize);
         ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',fontSize);
         xlim([1 2.6]);
@@ -312,12 +312,68 @@ for ff = 2:nFilters
         legend('Individual data', sprintf('Mean (N=%d)', nSubjects),'location','southeast','fontsize',fontSize-3);
     end
     sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+5);
-
+    
     % Save the plot.
     if (SAVEPLOTS)
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
             testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s',filterOptions{ff}),imgFileFormat));
+            saveas(gcf,testFilename);
+            fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+        end
+    end
+end
+
+%% 5-2) Sensitivity difference across the filters.
+% As a function of spatial frequency.
+logSensitivityFilterA = logSensitivity(:,:,1);
+
+% Loop over the filters.
+for ff = 2:nFilters
+    logSensitivityFilterTest = logSensitivity(:,:,ff);
+    
+    % Temp option for Semin's Laptop.
+    fontSize = 10;
+    
+    % Figure to plot it as a function of log sensitivity (filter A).
+    figure; clf; hold on;
+    
+    % Loop over spatial frequency.
+    for ss = 1:nSubjects
+        % Calculate error.
+        logSensitivityError = logSensitivityFilterTest(ss,:)-logSensitivityFilterA(ss,:);
+        meanLogSensitivityError = mean(logSensitivityError);
+        stdErrorLogSensitivityError = std(logSensitivityError)/sqrt(length(logSensitivityError));
+        
+        % Sensitivity difference data.
+        plot(SFOptions, logSensitivityError, 'o-','markersize',6);
+        
+        xlabel('Spatial Frequency (cpd)','fontsize',fontSize);
+        ylabel(sprintf('Log sensitivity Difference (Filter %s-A)',filterOptions{ff}),'fontsize',fontSize);
+        xlim([min(SFOptions)-1 max(SFOptions)+1]);
+        xticks(SFOptions);
+        xticklabels(SFOptions);
+        ylim([-0.6 0.6]);
+        yticks([-0.6:0.2:0.6]);
+        yticklabels([-0.6:0.2:0.6]);
+    end
+    
+    % No difference line.
+    plot([min(SFOptions)-1 max(SFOptions+1)], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.8]);
+    text(min(SFOptions),0.02,'No difference line','fontsize',fontSize-2);
+    
+    % Add legend.
+    legendHandles = {subjectOptions{:}, 'Mean'};
+    legend(legendHandles,'location','southeastoutside','fontsize',fontSize-3);
+    
+    % Add title.
+    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+5);
+    
+    %% Save the plot.
+    if (SAVEPLOTS)
+        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s_over_SFs',filterOptions{ff}),imgFileFormat));
             saveas(gcf,testFilename);
             fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
         end
