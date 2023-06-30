@@ -267,9 +267,9 @@ logSensitivityFilterA = logSensitivity(:,:,1);
 for ff = 2:nFilters
     logSensitivityFilterTest = logSensitivity(:,:,ff);
     
-    % Temp option for Semin's Laptop.
-    figPosition = [0 0 1000 1000];
-    fontSize = 10;
+    % Set the figure and font size on axes.
+    figPosition = [0 0 1200 1000];
+    fontSize = 15;
     
     % Figure to plot it as a function of log sensitivity (filter A).
     fig = figure; clf; hold on;
@@ -332,9 +332,6 @@ logSensitivityFilterA = logSensitivity(:,:,1);
 for ff = 2:nFilters
     logSensitivityFilterTest = logSensitivity(:,:,ff);
     
-    % Temp option for Semin's Laptop.
-    fontSize = 10;
-    
     % Figure to plot it as a function of log sensitivity (filter A).
     figure; clf; hold on;
     
@@ -362,16 +359,22 @@ for ff = 2:nFilters
     plot(SFOptions, mean(logSensitivityFilterTest-logSensitivityFilterA), 'k+-', 'color', [0 0 1 0.5], ...
         'markerfacecolor', 'b', 'markeredgecolor', 'b', 'markersize', 5, 'linewidth', 5);
     
+    % Standard Error.
+    errorbar(SFOptions, mean(logSensitivityFilterTest-logSensitivityFilterA), std(logSensitivityFilterTest-logSensitivityFilterA)/sqrt(length(logSensitivityFilterTest)),...
+        'b','linewidth',2);
+    ee = get(gca,'Children');
+    set(ee(1),'LineStyle','none');
+    
     % No difference line.
     plot([min(SFOptions)-1 max(SFOptions+1)], [0 0], 'k-','linewidth', 4,'color',[0 0 0 0.5]);
-    text(min(SFOptions)-0.8,0.03,'No difference line','fontsize',fontSize);
+    text(min(SFOptions)-0.8,0.05,'No difference line','fontsize',fontSize);
     
     % Add legend.
     legendHandles = {subjectOptions{:}, 'Mean'};
-    legend(legendHandles,'location','southeastoutside','fontsize',fontSize-3);
+    legend(legendHandles,'location','southeastoutside','fontsize',8);
     
     % Add title.
-    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+5);
+    sgtitle(sprintf('Log sensitivity difference between Filter ( A ) and Filter ( %s )',filterOptions{ff}),'Fontsize',fontSize+2);
     
     %% Save the plot.
     if (SAVEPLOTS)
