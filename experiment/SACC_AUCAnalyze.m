@@ -11,7 +11,7 @@
 clear; close all;
 
 %% Save the plots if you want.
-SAVEPLOTS = false;
+SAVEPLOTS = true;
 imgFileFormat = '.tiff';
 
 %% Read the AUC summary table.
@@ -358,9 +358,13 @@ for ff = 2:nFilters
         yticklabels([-0.6:0.2:0.6]);
     end
     
+    % Mean results.
+    plot(SFOptions, mean(logSensitivityFilterTest-logSensitivityFilterA), 'k+-', 'color', [0 0 1 0.5], ...
+        'markerfacecolor', 'b', 'markeredgecolor', 'b', 'markersize', 5, 'linewidth', 5);
+    
     % No difference line.
-    plot([min(SFOptions)-1 max(SFOptions+1)], [0 0], 'k-','linewidth',5,'color',[0.3 0.3 0.3 0.8]);
-    text(min(SFOptions),0.02,'No difference line','fontsize',fontSize-2);
+    plot([min(SFOptions)-1 max(SFOptions+1)], [0 0], 'k-','linewidth', 4,'color',[0 0 0 0.5]);
+    text(min(SFOptions)-0.8,0.03,'No difference line','fontsize',fontSize);
     
     % Add legend.
     legendHandles = {subjectOptions{:}, 'Mean'};
