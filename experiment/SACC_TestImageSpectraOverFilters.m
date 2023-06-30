@@ -97,6 +97,9 @@ for tt = 1:length(testSpectra)
     % Make a subplot per each test spectra.    
     subplot(3,1,tt); hold on;
     
+    % Raw spectra without using filters.
+    plot(wls, testSpectra{tt}.*max(max(spd_Filters)), 'k-','color', [0 0 0 0.4],'linewidth', 6);
+    
     % Calculate the spectra over the filters here.
     for ff = 1:nFilters
         plot(wls, testSpectra{tt}.*spd_Filters(:,ff),...
@@ -105,6 +108,6 @@ for tt = 1:length(testSpectra)
     xlabel('Wavelength (nm)');
     ylabel('Spectral Power');
     ylim([0 0.3]);
-    legend(filterOptions);
+    legend({'Raw' filterOptions{:}});
     title(testSpectraName{tt});
 end
