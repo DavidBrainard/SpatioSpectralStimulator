@@ -119,10 +119,13 @@ end
 T_cones = spdTestData.theData.T_cones;
 
 % Get all spectra with filters.
+%
+% We will normalize the filter transmittance to have the maximum as 1.
+normFactorSpdFilter = max(max(spd_Filters));
 for ff = 1:nFilters
-    spd_BG_AllFilters(:,ff) = spd_BG .* spd_Filters(:,ff);
-    spd_Red_AllFilters(:,ff) = spd_Red .* spd_Filters(:,ff);
-    spd_Green_AllFilters(:,ff) = spd_Green .* spd_Filters(:,ff);
+    spd_BG_AllFilters(:,ff) = spd_BG .* spd_Filters(:,ff)./normFactorSpdFilter;
+    spd_Red_AllFilters(:,ff) = spd_Red .* spd_Filters(:,ff)./normFactorSpdFilter;
+    spd_Green_AllFilters(:,ff) = spd_Green .* spd_Filters(:,ff)./normFactorSpdFilter;
 end
 
 % Cone excitations.
@@ -160,11 +163,12 @@ for cc = 1:length(coneOptions)
     subplot(1,3,cc); hold on;
     
     % By filter.
-    for ff = 1:nFilters+1
+    nTests = size(contrastsAll_Red,2);
+    for ff = 1:nTests
         bar(ff, contrastsAll_Red(cc,ff), 'FaceColor',[0.2*(ff-1) 0.2*(ff-1) 0],'EdgeColor',[0 0 0]);
     end
     ylim([-0.3 0.25]);
-    xticks([1:1:6]);
+    xticks([1:1:nTests]);
     xticklabels(xaxisHandles)
     xlabel('Filters','fontsize',14);
     ylabel('Cone Contrast','fontsize',14);
@@ -181,11 +185,12 @@ for cc = 1:length(coneOptions)
     subplot(1,3,cc); hold on;
     
     % By filter.
-    for ff = 1:nFilters+1
+    nTests = size(contrastsAll_Green,2);
+    for ff = 1:nTests
         bar(ff, contrastsAll_Green(cc,ff), 'FaceColor',[0.2*(ff-1) 0.2*(ff-1) 0],'EdgeColor',[0 0 0]);
     end
     ylim([-0.3 0.25]);
-    xticks([1:1:6]);
+    xticks([1:1:nTests]);
     xticklabels(xaxisHandles)
     xlabel('Filters','fontsize',15);
     ylabel('Cone Contrast','fontsize',15);
