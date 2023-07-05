@@ -7,7 +7,9 @@
 
 % History:
 %    12/05/22   smo    - Started on it.
-%    06/07/23   smp    - Now we plot the results using the luminance value.
+%    06/07/23   smo    - Now we plot the results using the luminance value.
+%    07/05/23   smo    - Added a new plot to save out the calibration plot
+%                        Settings vs. Luminance.
 
 %% Initialize.
 clear; close all;
@@ -44,7 +46,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
             data = load(testFilenameTemp);
 
             % Load the calibration file used for the experiment.
-            [dir filename format] = fileparts(testFilenameTemp);
+            [directory filename format] = fileparts(testFilenameTemp);
             numExtract = regexp(filename,'\d+','match');
             date = sprintf('%s-%s-%s',numExtract{2},numExtract{3},numExtract{4});
 
@@ -52,7 +54,8 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
             calDataFilename = GetMostRecentFileName(calFiledir,...
                 sprintf('checkFlickerPhotom_%s',date));
             calData = load(calDataFilename);
-
+            calData.filename = filename;
+            
             % Save subject name and the data.
             numSubjects{end+1} = subjectNameTemp;
             allData{end+1} = data.data;
@@ -100,7 +103,11 @@ for ss = 1:nSubjects
     p = polyfit(x, y, 1);
     redLuminance = polyval(p, redInputSettings);
     greenLuminance = SPDToLuminance(allCalData{ss}.dataBC.spdGreenBC);
-
+    
+    % Save out luminance info for further plot.
+    allCalData{ss}.luminance.red = y;
+    allCalData{ss}.luminance.green = greenLuminance;
+    
     % Calculate mean and std of the output settings.
     meanRedLuminance = mean(redLuminance);
     stdRedLuminance = std(redLuminance);
@@ -205,15 +212,24 @@ end
 
 %% Settings vs. Luminance.
 %
-% This part can be run after reading one of the measurement data. We will
-% elaborate it later on.
+% Here we update the plot that made when measuring the stimuli.
+for ss = 1:nSubjects
 figure; clf; hold on;
-for ss = 1:size(dataBC.spdRedBC,2)
-    luminance_Red(ss) = SPDToLuminance(dataBC.spdRedBC(:,ss));
-end
-luminance_Green = SPDToLuminance(dataBC.spdGreenBC);
-plot(data.greenIntensity, luminance_Green,'ko','markersize',11,'markerfacecolor',[0.1 0.7 0.1]);
-plot(data.redIntensity, luminance_Red,'ko','markersize',11,'markerfacecolor','r')
+plot(allCalData{ss}.data.greenIntensity, allCalData{ss}.luminance.green,'ko','markersize',11,'markerfacecolor',[0.1 0.7 0.1]);
+plot(allCalData{ss}.data.redIntensity, allCalData{ss}.luminance.red,'ko','markersize',11,'markerfacecolor','r')
 xlabel('Input settings (8-bit)','fontsize',13)
 ylabel('Luminance (cd/m2)','fontsize',13);
 legend('Green', 'Red','fontsize',13,'location','southeast');
+
+% Save the plot.
+if (SAVETHEPLOT)
+if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+    testFiledir = fullfile(testFiledir,'CheckFlickerPhotom');
+    testFilename = fullfile(testFiledir,allCalData{ss}.filename);
+    testFileFormat = '.tiff';
+    saveas(gcf,append(testFilename,testFileFormat));
+    disp('Luminance vs. settings plot has been saved!');
+end
+end
+end 
