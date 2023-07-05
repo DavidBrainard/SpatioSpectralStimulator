@@ -327,11 +327,11 @@ if (options.debugMode)
         case 'gamepad'
             if (options.rotateImageDeg == 0)
                 numButtonUp    = 4;
-                numButtonRight = 3;
+                numButtonRight = 2;
                 responseDebug  = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',options.verbose);
             else
-                numButtonLeft  = 1;
-                numButtonRight = 3;
+                numButtonLeft  = 3;
+                numButtonRight = 2;
                 responseDebug  = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
             end
     end
@@ -384,11 +384,11 @@ if (isempty(options.autoResponse))
                     case 'PTB-directional'
                         if (options.rotateImageDeg == 0)
                             numButtonUp    = 4;
-                            numButtonRight = 3;
+                            numButtonRight = 2;
                             responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonUp, 'numButtonB',numButtonRight,'verbose',options.verbose);
                         else
-                            numButtonLeft = 1;
-                            numButtonRight = 3;
+                            numButtonLeft = 3;
+                            numButtonRight = 2;
                             responseGamePad = GetGamepadResp2AFC('numButtonA', numButtonLeft, 'numButtonB',numButtonRight,'verbose',options.verbose);
                         end
                 end
