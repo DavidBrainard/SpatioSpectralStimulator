@@ -36,7 +36,7 @@ function [buttonPress] = GetGamepadResp2AFC(options)
 
 %% Set parameters.
 arguments
-    options.numButtonA (1,1) = 4
+    options.numButtonA (1,1) = 3
     options.numButtonB (1,1) = 2
     options.pause (1,1) = 0.5
     options.verbose (1,1) = true

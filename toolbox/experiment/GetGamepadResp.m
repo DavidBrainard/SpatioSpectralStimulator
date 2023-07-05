@@ -27,9 +27,9 @@ function [buttonPressStr] = GetGamepadResp(options)
 %% Set parameters.
 arguments
     options.numButtonUp (1,1) = 4
-    options.numButtonDown (1,1) = 2
-    options.numButtonLeft (1,1) = 1
-    options.numButtonRight (1,1) = 3
+    options.numButtonDown (1,1) = 1
+    options.numButtonLeft (1,1) = 3
+    options.numButtonRight (1,1) = 2
     options.pause (1,1) = 0.5
     options.verbose (1,1) = true
 end
