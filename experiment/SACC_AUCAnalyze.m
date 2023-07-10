@@ -11,7 +11,7 @@
 clear; close all;
 
 %% Save the plots if you want.
-SAVEPLOTS = true;
+SAVEPLOTS = false;
 imgFileFormat = '.tiff';
 
 %% Read the AUC summary table.
@@ -508,9 +508,20 @@ for ss = 1:nFemales
     plot(xAxisTicks,AUCFemale(ss,:),'ro-','linewidth',0.7);
 end
 
+% Get standard error.
+stdErrorAUCMale = std(AUCMale)./sqrt(nMales);
+stdErrorAUCFemale = std(AUCFemale)./sqrt(nFemales);
+
 % Plot mean results.
 plot(xAxisTicks,meanAUCMale,'k+-','color',[0 0 1 0.5],'linewidth',7);
 plot(xAxisTicks,meanAUCFemale,'k+-','color',[1 0 0 0.5],'linewidth',7);
+
+% Plot errorbar.
+errorbar(xAxisTicks,meanAUCMale,stdErrorAUCMale,'b','linewidth',2);
+errorbar(xAxisTicks,meanAUCFemale,stdErrorAUCFemale,'r','linewidth',2);
+a = get(gca,'children');
+a(1).LineStyle = 'none';
+a(2).LineStyle = 'none';
 
 % Add texts for the mean values.
 text(xAxisTicks, meanAUCMale+0.3, num2str(round(meanAUCMale,2)'),...
