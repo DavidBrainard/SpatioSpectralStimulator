@@ -15,7 +15,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
     SF = '18_cpd';
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFiledir = fullfile(testFiledir,subjectName,SF);
-    fileList = dir(fullfile(testFiledir,'CS_Semin_*'));
+    fileList = dir(fullfile(testFiledir,sprintf('CS_%s_*',subjectName)));
 end
 
 % Read out the file names.
@@ -36,7 +36,7 @@ slopeValList = 10.^linspace(log10(minSlope),log10(maxSlope),nSlopes);
 axisLog = true;
 VERBOSE = false;
 bootConfInterval = 0.8;
-focusLevels = {'focus','+0.5D','+1.5D','+2.5D'};
+focusLevels = {'focus','+0.5D','+1.0D'};
 
 %% Fitting happens here.
 for ff = 1:nFiles
@@ -78,11 +78,11 @@ end
 %
 % 1) One grand plot that contain everything.
 figure;
-figPosition = [0 0 1600 400];
+figPosition = [0 0 1500 400];
 set(gcf,'position',figPosition);
 
 for ff = 1:nFiles
-    subplot(1,4,ff); hold on;
+    subplot(1,nFiles,ff); hold on;
     ylim([0 1]);
     xlim([-2.2 -1.2]);
     xlabel('Log contrast','fontsize',15);
@@ -109,11 +109,11 @@ xlim([-2.2 -1.2]);
 xlabel('Log contrast','fontsize',15);
 ylabel('pCorrect','fontsize',15);
 
-lineTransparency = [1 0.6 0.4 0.15];
+lineTransparency = [1 0.5 0.2];
 for ff = 1:nFiles
     plot(fineStimLevelsPlotHandles{ff},smoothPsychometricHandles{ff},'color',[1 0 0 lineTransparency(ff)], 'LineWidth',3);
     h_thresh = plot(thresholdFittedLogHandles{ff},thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
 end
 
 f = get(gca,'children');
-legend(flip(f([2:2:8])),focusLevels,'fontsize',14,'location','southwest');
+legend(flip(f([2:2:length(f)])),focusLevels,'fontsize',14,'location','southwest');
