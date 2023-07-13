@@ -1,4 +1,4 @@
-% GetImageContrastWithFunction.
+% SACC_GetImageContrastWithFunction.
 %
 % It calculates the image contrasts using the function.
 
