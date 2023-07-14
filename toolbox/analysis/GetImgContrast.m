@@ -23,6 +23,7 @@ function contrasts = GetImgContrast(image, options)
 
 % History:
 %    06/13/23  smo   Wrote it.
+%    07/14/23  smo   Updated method to find the valley points on the image.
 
 %% Set variables.
 arguments
@@ -40,29 +41,31 @@ imageCrop50 = image(round(0.50*Ypixel),:);
 imageCrop75 = image(round(0.75*Ypixel),:);
 imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
 
-% Find the peaks.
+% Find the peaks and valleys. We set the minimum height for both peak and
+% valley.
 minPeakHeight = max(imageCropAvg) * 0.8;
-findpeaks(imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minPeakHeight);
+minValleyHeight = min(-imageCropAvg) * 0.2;
+[peaks, locs_peaks] = findpeaks(imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minPeakHeight);
+[valleys, locs_valleys] = findpeaks(-imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minValleyHeight);
+
+% Set valley values to the right domain.
+valleys = -valleys;
 
 % Calculate contrast here.
-%
-% We will calculate the contrast per each cycle.
-[peaks, locs_peaks] = findpeaks(imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minPeakHeight);
-
 nPeaks = length(peaks);
-for pp = 1:nPeaks-1
-    % Find the valley locations.
-    locs_valleys(pp) = round(locs_peaks(pp) + (locs_peaks(pp+1)-locs_peaks(pp))/2);
+nValleys = length(valleys);
 
-    % Calculate contrast here.
+for pp = 1:nPeaks-1
+    % Get contrast per each cycle.
     white = peaks(pp);
-    black = imageCropAvg(locs_valleys(pp));
+    black = valleys(pp);
     contrasts(pp) = (white-black)/(white+black);
 end
 
 % white = max(imageCropAvg);
 % black = min(imageCropAvg);
 % contrast = (white-black)/(white+black);
+% contrasts(:) = contrast;
 
 %% Show the results if you want.
 if (options.verbose)
@@ -76,8 +79,9 @@ if (options.verbose)
     plot(imageCrop75, 'b-', 'LineWidth',1);
     plot(imageCropAvg, 'k-', 'color', [0 0 0 0.2], 'LineWidth',5);
 
-    % Plot the valley points.
-    plot(locs_valleys,imageCropAvg(locs_valleys),'ro','markersize',4,'markerfacecolor','r')
+    % Plot the peak and valley points.
+    plot(locs_peaks,imageCropAvg(locs_peaks),'bo','markersize',4,'markerfacecolor','b','markeredgecolor','k');
+    plot(locs_valleys,imageCropAvg(locs_valleys),'ro','markersize',4,'markerfacecolor','r','markeredgecolor','k');
     xlabel('Pixel position (horizontal)','fontsize',15);
     ylabel('dRGB','fontsize',15);
     legend('25%','50%','75%','Avg');

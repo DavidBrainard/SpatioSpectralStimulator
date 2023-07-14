@@ -16,7 +16,7 @@ clear; close all;
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
 dataTypeSetting = {'Raw','SACCSFA'};
-measureDate = '0613';
+measureDate = '0714';
 channels = {'Ch2', 'Ch5', 'Ch9', 'Ch12', 'Ch15'};
 
 %% Plot the spectrum used.
