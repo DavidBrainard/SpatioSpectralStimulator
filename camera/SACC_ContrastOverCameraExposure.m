@@ -57,7 +57,7 @@ if (PLOTSLICEDIMAGE)
     set(gcf,'position',figurePosition);
     
     % Add a grand title of the figure.
-    sgtitle('Contrast vs. Camera Exposure','FontSize',15);
+    sgtitle('Image contrast vs. Camera Exposure','FontSize',15);
     
     % Set the minimum distance between two peaks.
     minPeakDistance = 4;
@@ -97,9 +97,9 @@ end
 % Make a new figure.
 figure; hold on;
 xticks(exposureOptions);
-xlabel('Exposure (mm)');
-ylabel('Mean Contrast');
-title('Contrasts over exposure')
+xlabel('Exposure (mm)','fontsize',15);
+ylabel('Mean Contrast','fontsize',15);
+title('Image contrasts over camera exposure','fontsize',15)
 ylim([0.5 1.05]);
 plot(exposureOptions,cell2mat(meanContrasts),'r.','markersize',11);
 errorbar(exposureOptions,cell2mat(meanContrasts),cell2mat(stdErrorContrasts),'r');

@@ -15,9 +15,8 @@ clear; close all;
 %
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
-dataTypeSetting = {'Raw','SACCSFA'};
+projectorSettings = {'Raw','SACCSFA'};
 measureDate = '0714';
-channels = {'Ch2', 'Ch5', 'Ch9', 'Ch12', 'Ch15'};
 
 %% Plot the spectrum used.
 if (ispref('SpatioSpectralStimulator','SACCMaterials'))
@@ -51,7 +50,7 @@ switch measureDate
     case '0613'
         numChannelUsed_newProjector = [2 5 9 12 15];
         numChannelUsed_oldProjector = [2 5 9 12 15];
-    case '0713'
+    case '0714'
         numChannelUsed_newProjector = [1 3 7 12 15];
         numChannelUsed_oldProjector = [1 3 7 11 14];
 end
@@ -117,29 +116,41 @@ for pp = 1:length(peaksUsed_newProjector)
 end
 
 %% Load all images here.
-nChannels = length(channels);
 nSFs = length(targetCyclePerDeg);
-nDataTypes = length(dataTypeSetting);
+nProjectorSettings = length(projectorSettings);
 
 % Data type.
-for dd = 1:length(dataTypeSetting)
-    dataType = dataTypeSetting{dd};
-    % Channel.
+for dd = 1:length(projectorSettings)
+    projectorSettingTemp = projectorSettings{dd};
+    
+    % Get channel name from the existing folders.
+    if (ispref('SpatioSpectralStimulator','SACCMaterials'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+        if dd == 3
+            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,projectorSettingTemp,'Focus Separately');
+        else
+            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,projectorSettingTemp);
+        end
+        
+        testFileList = dir(fullfile(testFiledir,'Ch*'));
+    else
+        error('Cannot find data file list!');
+    end
+    
+    % Make a loop for Channel and Spatial frequency.
+    nChannels = length(testFileList);
     for cc = 1:nChannels
-        whichChannel = channels{cc};
-        % Spatial frequency.
+        channelTemp = testFileList(cc).name;
+        channels{dd,cc} = channelTemp;
+        
         for tt = 1:nSFs
-            if (ispref('SpatioSpectralStimulator','SACCMaterials'))
-                testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-                testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,dataType,whichChannel);
-                testFilename = GetMostRecentFileName(testFiledir,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
-                
-                % We save all images here. The array looks like {dataType,
-                % channel, SF}.
-                images{dd,cc,tt} = imread(testFilename);
-            else
-                error('Cannot find data file');
-            end
+            % Get the file name of the images.
+            testFiledirTemp = fullfile(testFiledir,channelTemp);
+            testFilename = GetMostRecentFileName(testFiledirTemp,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
+            
+            % We save all images here. The array looks like {dataType,
+            % channel, SF}.
+            images{dd,cc,tt} = imread(testFilename);
         end
     end
 end
@@ -147,7 +158,7 @@ end
 %% Plot the camera images.
 PLOTIMAGE = false;
 if (PLOTIMAGE)
-    for dd = 1:nDataTypes
+    for dd = 1:nProjectorSettings
         % We will make two figures.
         figure;
         figurePosition = [0 0 800 800];
@@ -166,7 +177,7 @@ end
 %% Plot the sliced images.
 PLOTSLICEDIMAGE = true;
 if (PLOTSLICEDIMAGE)
-    for dd = 1:nDataTypes
+    for dd = 1:nProjectorSettings
         for cc = 1:nChannels
             % Make a new figure per each channel.
             figure;
@@ -174,7 +185,7 @@ if (PLOTSLICEDIMAGE)
             set(gcf,'position',figurePosition);
             
             % Add a grand title of the figure.
-            sgtitle(sprintf('%s - %s (%s nm)',dataTypeSetting{dd},channels{cc},peakWls{cc}),'FontSize',15);
+            sgtitle(sprintf('%s - %s (%s nm)',projectorSettings{dd},channels{dd,cc},peakWls{cc}),'FontSize',15);
             
             % We will set the min peak distance differently to pick the peaks
             % correct for contrast calculation.
@@ -196,13 +207,13 @@ if (PLOTSLICEDIMAGE)
             end
             
             % Print out progress.
-            fprintf('Progress - (%d/%d) \n',cc+nChannels*(dd-1),nChannels*nDataTypes);
+            fprintf('Progress - (%d/%d) \n',cc+nChannels*(dd-1),nChannels*nProjectorSettings);
             
             % Save the plot if you want.
             SAVETHEPLOT = false;
             if (SAVETHEPLOT)
                 testFileFormat = '.tiff';
-                testFilename = sprintf('%s_%s',dataTypeSetting{dd},channels{cc});
+                testFilename = sprintf('%s_%s',projectorSettings{dd},channels{cc});
                 saveas(gcf,append(testFilename,testFileFormat));
                 disp('Plot has been saved successfully!');
             end
@@ -269,7 +280,7 @@ lineStyles = {'-','--'};
 for cc = 1:nChannels
     subplot(2,3,cc); hold on;
     
-    for dd = 1:nDataTypes
+    for dd = 1:nProjectorSettings
         numDataType = dd;
         meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
         stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
@@ -287,5 +298,5 @@ for cc = 1:nChannels
     % Legend.
     ss = get(gca,'Children');
     set(ss([1,3]),'LineStyle','none');
-    legend(flip(ss([2,4])),dataTypeSetting,'location','southwest');
+    legend(flip(ss([2,4])),projectorSettings,'location','southwest');
 end

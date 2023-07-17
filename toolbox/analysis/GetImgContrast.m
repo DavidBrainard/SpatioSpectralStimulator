@@ -55,7 +55,8 @@ valleys = -valleys;
 nPeaks = length(peaks);
 nValleys = length(valleys);
 
-for pp = 1:nPeaks-1
+nContrasts = min(nPeaks,nValleys);
+for pp = 1:nContrasts-1
     % Get contrast per each cycle.
     white = peaks(pp);
     black = valleys(pp);
