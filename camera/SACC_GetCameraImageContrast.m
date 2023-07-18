@@ -16,7 +16,7 @@ clear; close all;
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
 projectorSettings = {'Raw','SACCSFA'};
-measureDate = '0714';
+measureDate = '0718';
 
 %% Plot the spectrum used.
 if (ispref('SpatioSpectralStimulator','SACCMaterials'))
@@ -53,6 +53,9 @@ switch measureDate
     case '0714'
         numChannelUsed_newProjector = [1 3 7 12 15];
         numChannelUsed_oldProjector = [1 3 7 11 14];
+    case '0718'
+        numChannelUsed_newProjector = [1 3 7 10 15];
+        numChannelUsed_oldProjector = [1 3 7 9 14];
 end
 
 spdsUsed_newProjector = spds_newProjector(:,numChannelUsed_newProjector);
