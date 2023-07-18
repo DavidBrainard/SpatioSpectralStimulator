@@ -146,11 +146,21 @@ for dd = 1:length(projectorSettings)
     % Make a loop for Channel and Spatial frequency.
     nChannels = length(testFileList);
     for cc = 1:nChannels
-        channels{dd,cc} = testFileList(cc).name;
+        channels{cc} = testFileList(cc).name;
+       
+        % Extract only numbers. We are going to sort the array in an
+        % ascending order.
+        numChannelTemp = regexp(channels{cc}, '\d+', 'match');
+        numChannels(cc) = str2double(numChannelTemp);
     end
-    numChannels = regexp(channels, '\d+', 'match');
+    % Sorting the array (double array).
+    [numChannelsSorted i] = sort(numChannels,'ascend');
+    
+    % We sort the channels in an ascending order (string array).
+    channelsSorted = channels(i);
     
     for cc = 1:nChannels
+    channelTemp = channelsSorted{cc};
     
         for tt = 1:nSFs
             % Get the file name of the images.
@@ -194,7 +204,7 @@ if (PLOTSLICEDIMAGE)
             set(gcf,'position',figurePosition);
             
             % Add a grand title of the figure.
-            sgtitle(sprintf('%s - %s (%s nm)',projectorSettings{dd},channels{dd,cc},peakWls{cc}),'FontSize',15);
+            sgtitle(sprintf('%s - %s (%s nm)',projectorSettings{dd},channels{cc},peakWls{cc}),'FontSize',15);
             
             % We will set the min peak distance differently to pick the peaks
             % correct for contrast calculation.
