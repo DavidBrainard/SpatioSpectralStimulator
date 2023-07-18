@@ -81,8 +81,9 @@ xticks([380:80:780]);
 xticklabels([380:80:780]);
 ylim([0 max(max(spds_newProjector))*1.05])
 f = get(gca, 'children');
-legend(f(flip([1 17])),'All channels','Used channels')
-title('New proejctor','fontsize',15);
+legend(f(flip([1 17])),'All channels','Used channels',...
+    'location','northwest','fontsize',13)
+title('SACCSFA','fontsize',15);
 subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_newProjector)),'fontsize',14);
 
 % Old projector.
@@ -95,8 +96,9 @@ xticks([380:80:780]);
 xticklabels([380:80:780]);
 ylim([0 max(max(spds_newProjector))*1.05])
 f = get(gca, 'children');
-legend(f(flip([1 17])),'All channels','Used channels')
-title('Old Projector','fontsize',15);
+legend(f(flip([1 17])),'All channels','Used channels',...
+    'location','northwest','fontsize',13)
+title('Raw (Old Projector)','fontsize',15);
 subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_oldProjector)),'fontsize',14);
 
 % Comparison New vs. Old projector.
@@ -109,8 +111,9 @@ xticks([380:80:780]);
 xticklabels([380:80:780]);
 ylim([0 max(max(spds_newProjector))*1.05])
 f = get(gca, 'children');
-legend(flip(f([1 6])),'New','Old')
-title('New vs. Old','fontsize',15);
+legend(flip(f([1 6])),'SACCSFA','Raw (Old Projector)',...
+    'location','northwest','fontsize',13)
+title('SACCSFA vs. Raw','fontsize',15);
 
 % Save the peak wavelengths in string. We will use this for legend in the
 % following plot.
@@ -143,9 +146,12 @@ for dd = 1:length(projectorSettings)
     % Make a loop for Channel and Spatial frequency.
     nChannels = length(testFileList);
     for cc = 1:nChannels
-        channelTemp = testFileList(cc).name;
-        channels{dd,cc} = channelTemp;
-        
+        channels{dd,cc} = testFileList(cc).name;
+    end
+    numChannels = regexp(channels, '\d+', 'match');
+    
+    for cc = 1:nChannels
+    
         for tt = 1:nSFs
             % Get the file name of the images.
             testFiledirTemp = fullfile(testFiledir,channelTemp);
