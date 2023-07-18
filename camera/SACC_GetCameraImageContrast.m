@@ -247,9 +247,9 @@ figure; hold on;
 SFs = cell2mat(targetCyclePerDeg);
 xticks(SFs);
 xticklabels(SFs);
-xlabel('Spatial Frequency (cpd)');
-ylabel('Mean Contrast');
-title('Without optical system (Raw)')
+xlabel('Spatial Frequency (cpd)','fontsize',15);
+ylabel('Mean Contrast','fontsize',15);
+title('Raw (Old projector)','fontsize',15)
 ylim([0.5 1.05]);
 
 % Raw image
@@ -263,7 +263,7 @@ for cc = 1:nChannels
 end
 r = get(gca,'Children');
 set(r([1:2:7]),'LineStyle','none');
-legend(flip(r([2:2:10])),append(peakWls,' nm'),'location','southwest');
+legend(flip(r([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 
 %% Plot the contrasts results - SACCSFA.
 %
@@ -272,9 +272,9 @@ figure; hold on;
 SFs = cell2mat(targetCyclePerDeg);
 xticks(SFs);
 xticklabels(SFs);
-xlabel('Spatial Frequency (cpd)');
-ylabel('Mean Contrast');
-title('With optical system (SACCSFA)')
+xlabel('Spatial Frequency (cpd)','fontsize',15);
+ylabel('Mean Contrast','fontsize',15);
+title('SACCSFA','fontsize',15)
 ylim([0.5 1.05]);
 
 for cc = 1:nChannels
@@ -287,7 +287,7 @@ end
 
 s = get(gca,'Children');
 set(s([1:2:7]),'LineStyle','none');
-legend(flip(s([2:2:10])),append(peakWls,' nm'),'location','southwest');
+legend(flip(s([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 
 %% Plot the contrasts comparing within the same channel.
 %
@@ -309,13 +309,13 @@ for cc = 1:nChannels
     % Add plot details.
     xticks(SFs);
     xticklabels(SFs);
-    xlabel('Spatial Frequency (cpd)');
-    ylabel('Mean Contrast');
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrast','fontsize',15);
     ylim([0.5 1.05]);
-    title(append(peakWls(cc),' nm'));
+    title(append(peakWls(cc),' nm'),'fontsize',15);
     
     % Legend.
     ss = get(gca,'Children');
     set(ss([1,3]),'LineStyle','none');
-    legend(flip(ss([2,4])),projectorSettings,'location','southwest');
+    legend(flip(ss([2,4])),projectorSettings,'location','southwest','fontsize',15);
 end
