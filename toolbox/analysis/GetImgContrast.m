@@ -44,7 +44,7 @@ imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
 % Find the peaks and valleys. We set the minimum height for both peak and
 % valley.
 minPeakHeight = max(imageCropAvg) * 0.8;
-minValleyHeight = min(-imageCropAvg) * 0.2;
+minValleyHeight = min(-imageCropAvg) * 0.2 + max(-imageCropAvg);
 [peaks, locs_peaks] = findpeaks(imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minPeakHeight);
 [valleys, locs_valleys] = findpeaks(-imageCropAvg,'minpeakdistance',options.minPeakDistance,'minpeakheight',minValleyHeight);
 
