@@ -31,13 +31,13 @@ nChannels = 16;
 % [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 peaks = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
 index = [1:1:length(peaks)];
-whichChannelPrimary1 = 15;
+whichChannelPrimary1 = 14;
 whichChannelPrimary2 = [];
 whichChannelPrimary3 = [];
 
 channelIntensityPrimary1 = 1;
-channelIntensityPrimary2 = 0.3;
-channelIntensityPrimary3 = 0.3;
+channelIntensityPrimary2 = 1;
+channelIntensityPrimary3 = 1;
 
 channelSettings = zeros(nChannels, nPrimaries);
 channelSettings(whichChannelPrimary1, 1) = channelIntensityPrimary1;
@@ -54,7 +54,7 @@ GetChannelSettings;
 ScreenPatternType = 'Contrast';
 
 switch ScreenPatternType
-     case 'Circle'
+    case 'Circle'
         [xCenter, yCenter] = RectCenter(windowRect);
         sizeCirclePixel = 200;
         baseRect = [0 0 sizeCirclePixel sizeCirclePixel];
@@ -63,48 +63,66 @@ switch ScreenPatternType
         rectColor = [0 0 0];
         Screen('FillOval', window, rectColor, centeredRect, maxDiameter);
         Screen('Flip', window);
-
+        
     case 'Contrast'
         [xCenter, yCenter] = RectCenter(windowRect);
         rectColor = [0 0 0];
-
+        
         % Set the barwidth and directions.
-        % 18 cpd = 14 pixels / 12 cpd = 21 pixels / 9 cpd = 28 pixels / 6
-        % cpd = 42 pixels / 3 cpd = 80 pixels.
-        rectColor = [0 0 0];
+        cyclesPerDeg = 18;
+        projectorOption = 'SACCSFA';
         
-        cyclesPerDeg = 3;
-        
-        % On the optical system.
-        switch cyclesPerDeg
-            case 3
-                barWidthPixel = 23;
-            case 6
-                barWidthPixel = 11;
-            case 9
-                barWidthPixel = 8;
-            case 12
-                barWidthPixel = 6;
-            case 18
-                barWidthPixel = 4;
+        if strcmp(projectorOption,'Raw')
+            measurementposition = 3;
         end
         
-        % Raw (old projector).
-%         switch cyclesPerDeg
-%             case 3
-%                 barWidthPixel = 80;
-%             case 6
-%                 barWidthPixel = 42;
-%             case 9
-%                 barWidthPixel = 28;
-%             case 12
-%                 barWidthPixel = 21;
-%             case 18
-%                 barWidthPixel = 14;
-%         end
-        whichSideBar = 'vertical'; 
-
-        % Set stripe pattern.    
+        % On the optical system (SACCSFA, new projector).
+        if strcmp(projectorOption,'SACCSFA')
+            switch cyclesPerDeg
+                case 3
+                    barWidthPixel = 23;
+                case 6
+                    barWidthPixel = 11;
+                case 9
+                    barWidthPixel = 8;
+                case 12
+                    barWidthPixel = 6;
+                case 18
+                    barWidthPixel = 4;
+            end
+            
+            % Raw (without SACCSFA, old projector).
+        elseif strcmp(projectorOption,'Raw')
+            switch cyclesPerDeg
+                case 3
+                    barWidthPixel = 80;
+                case 6
+                    barWidthPixel = 42;
+                case 9
+                    barWidthPixel = 28;
+                case 12
+                    barWidthPixel = 21;
+                case 18
+                    switch measurementposition
+                        case 1
+                            barWidthPixel = 12;
+                        case 2
+                            barWidthPixel = 13;
+                        case 3
+                            barWidthPixel = 14;
+                        case 4
+                            barWidthPixel = 16;
+                        case 5
+                            barWidthPixel = 18;
+                        otherwise
+                            barWidthPixel = 14;
+                    end
+            end
+        end
+        
+        whichSideBar = 'vertical';
+        
+        % Set stripe pattern.
         switch whichSideBar
             case 'horizontal'
             baseRect = [0 0 screenXpixels barWidthPixel]; 
