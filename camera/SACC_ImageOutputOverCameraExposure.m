@@ -1,4 +1,4 @@
-% SACC_ContrastOverCameraExposure.
+% SACC_ImageOutputOverCameraExposure.
 %
 % It calculates the image contrasts over different camera exposure based on
 % the measured images.
@@ -17,10 +17,10 @@ targetCyclePerDeg = 18;
 exposureOptions = [10:2.5:30];
 
 % Choose which data to load either '0714' or '0719'.
-measureDate = '0714';
+measureDate = '0719';
 
 if strcmp(measureDate,'0719')
-    numTrial = '2nd';
+    numTrial = '1st';
 end
 
 %% Load all images here.
