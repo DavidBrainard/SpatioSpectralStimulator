@@ -18,8 +18,8 @@ exposureOptions = [10:2.5:30];
 measureDate = '0714';
 
 %% Load all images here.
-nExposures = length(exposureOptions);
-for ee = 1:nExposures
+nImages = length(exposureOptions);
+for ee = 1:nImages
     if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
         testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','Exposure',measureDate);
@@ -40,7 +40,7 @@ if (PLOTIMAGE)
     figurePosition = [0 0 800 800];
     set(gcf,'position',figurePosition);
     
-    for ee = 1:nExposures
+    for ee = 1:nImages
         subplot(3,3, ee);
         imshow(images{ee});
         title(sprintf('Exposure = %s mm',num2str(exposureOptions(ee))),'FontSize',15);
@@ -66,7 +66,7 @@ if (PLOTSLICEDIMAGE)
     %
     % We will skip the first image with exposure = 10 mm, which is fully
     % closed, where we cannot measure the contrast.
-    for ee = 1 : nExposures
+    for ee = 1 : nImages
         if ee == 1
             contrastsRaw{ee} = 0;
             meanContrasts{ee} = 0;
@@ -105,3 +105,15 @@ plot(exposureOptions,cell2mat(meanContrasts),'r.','markersize',11);
 errorbar(exposureOptions,cell2mat(meanContrasts),cell2mat(stdErrorContrasts),'r');
 e = get(gca,'children');
 e(1).LineStyle = 'none';
+
+%% Plot the mean power over exposure level.
+%
+% Get mean power of the images.
+for ii = 1:nImages
+    meanPowerImages(ii) = mean(images{ii},'all');
+end
+figure; hold on;
+xticks(exposureOptions);
+xlabel('Exposure (mm)','fontsize',15);
+ylabel('Mean power (dRGB)','fontsize',15);
+plot(exposureOptions,meanPowerImages,'ro','markersize',11,'markerfacecolor','r','markeredgecolor','k');
