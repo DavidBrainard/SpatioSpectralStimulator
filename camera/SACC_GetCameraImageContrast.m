@@ -253,7 +253,7 @@ xticklabels(SFs);
 xlabel('Spatial Frequency (cpd)','fontsize',15);
 ylabel('Mean Contrast','fontsize',15);
 title('Raw (Old projector)','fontsize',15)
-ylim([0.5 1.05]);
+ylim([0 1.05]);
 
 % Raw image
 colorLines = {'b','c','g',[0.8 0.6 0],'r'};
@@ -261,7 +261,7 @@ for cc = 1:nChannels
     numDataType = 1;
     meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
     stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-    plot(SFs,meanContrastTemp,'color',colorLines{cc});
+    plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
     errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
 end
 r = get(gca,'Children');
@@ -278,13 +278,13 @@ xticklabels(SFs);
 xlabel('Spatial Frequency (cpd)','fontsize',15);
 ylabel('Mean Contrast','fontsize',15);
 title('SACCSFA','fontsize',15)
-ylim([0.5 1.05]);
+ylim([0 1.05]);
 
 for cc = 1:nChannels
     numDataType = 2;
     meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
     stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-    plot(SFs,meanContrastTemp,'color',colorLines{cc});
+    plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
     errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
 end
 
