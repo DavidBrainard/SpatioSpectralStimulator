@@ -1,4 +1,4 @@
-% SACC_ImageOutputOverCameraExposure.
+% SACC_GetCameraImageOverExposure.
 %
 % It calculates the image contrasts over different camera exposure based on
 % the measured images.
