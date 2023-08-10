@@ -120,6 +120,22 @@ switch ScreenPatternType
             end
         end
         
+        % Calculate the cycles/pixel.
+        CalCyclesPerPixel = true;
+        if (CalCyclesPerPixel)
+            % Resoultion of DLP and camera.
+            DLPResolution = [1920 1024];
+            CameraResolution = [3088 2064];
+            
+            % Get the number of cycles on the DLP.
+            pixelDLPHorizontal = DLPResolution(1);
+            pixelOneCycleOnDLP = barWidthPixel*2;
+            numCyclesOnDLP = pixelDLPHorizontal/pixelOneCycleOnDLP;
+            
+            % Calculate the cycles per pixel on DLP.
+            numCyclesOnDLPPerPixel = round(numCyclesOnDLP/pixelDLPHorizontal,3)
+        end
+        
         whichSideBar = 'vertical';
         
         % Set stripe pattern.
