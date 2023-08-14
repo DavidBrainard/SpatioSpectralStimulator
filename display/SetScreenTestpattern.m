@@ -133,7 +133,7 @@ switch ScreenPatternType
             numCyclesOnDLP = pixelDLPHorizontal/pixelOneCycleOnDLP;
             
             % Calculate the cycles per pixel on DLP.
-            numCyclesOnDLPPerPixel = round(numCyclesOnDLP/pixelDLPHorizontal,3)
+            numCyclesOnDLPPerPixel = round(numCyclesOnDLP/pixelDLPHorizontal,3);
         end
         
         whichSideBar = 'vertical';
