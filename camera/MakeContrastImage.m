@@ -13,7 +13,7 @@ imageHeight = 1080;
 image = ones(imageHeight, imageWidth);
 
 % Define the number of stripes and total stripe width
-numStripes = 30;
+numStripes = 150;
 totalStripeWidth = imageWidth / numStripes;
 
 %% Generate the alternating black and white stripes
