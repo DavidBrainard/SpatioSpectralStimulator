@@ -15,113 +15,118 @@ clear; close all;
 %
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
-projectorSettings = {'Raw','SACCSFA'};
-measureDate = '0719';
+projectorSettings = {'Raw'};
+measureDate = '0815';
 
 %% Plot the spectrum used.
-if (ispref('SpatioSpectralStimulator','SACCMaterials'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-    testFiledir = fullfile(testFiledir,'Calibration');
-    testFilename = GetMostRecentFileName(testFiledir,'SACCPrimary1');
+PLOTSPECTRUM = false;
+if (PLOTSPECTRUM)
+    if (ispref('SpatioSpectralStimulator','SACCMaterials'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+        testFiledir = fullfile(testFiledir,'Calibration');
+        testFilename = GetMostRecentFileName(testFiledir,'SACCPrimary1');
+        
+        % We save all images here. The array looks like {dataType,
+        % channel, SF}.
+        data = load(testFilename);
+    end
     
-    % We save all images here. The array looks like {dataType,
-    % channel, SF}.
-    data = load(testFilename);
-end
-
-% Here we read out both old and new projector calibration files. For new
-% projector, we read the most recent one. For old projector, we read the
-% last one measured which is stored in 17th of the calibration file in
-% SACCPriamry1.
-idxFileOldProjector = 17;
-calData_oldProjector = data.cals{idxFileOldProjector};
-calData_newProjector = data.cals{end};
-S = calData_newProjector.rawData.S;
-wls = SToWls(S);
-spds_newProjector = calData_newProjector.processedData.P_device;
-spds_oldProjector = calData_oldProjector.processedData.P_device;
-
-% Get spds of the channels used.
-%
-% We used the same channels for both old and new projector [2 5 9 12 15] on
-% the date of 0613. We will set these numbers differently so that the
-% actual peaks are matched each other.
-switch measureDate
-    case '0613'
-        numChannelUsed_newProjector = [2 5 9 12 15];
-        numChannelUsed_oldProjector = [2 5 9 12 15];
-    case '0714'
-        numChannelUsed_newProjector = [1 3 7 12 15];
-        numChannelUsed_oldProjector = [1 3 7 11 14];
-    case '0718'
-        numChannelUsed_newProjector = [1 3 7 10 15];
-        numChannelUsed_oldProjector = [1 3 7 9 14];
-    case '0719'
-        numChannelUsed_newProjector = [1 3 7 10 15];
-        numChannelUsed_oldProjector = [1 3 7 9 14];
-end
-
-spdsUsed_newProjector = spds_newProjector(:,numChannelUsed_newProjector);
-spdsUsed_oldProjector = spds_oldProjector(:,numChannelUsed_oldProjector);
-
-% Peaks of each spectrums.
-peaksUsed_newProjector = FindPeakSpds(spdsUsed_newProjector,'verbose',false);
-peaksUsed_oldProjector = FindPeakSpds(spdsUsed_oldProjector,'verbose',false);
-
-% Plot it.
-figure;
-figPosition = [0 0 1500 400];
-set(gcf,'position',figPosition);
-sgtitle('Subprimary channels used for measuring chromatic aberration','fontsize',15);
-
-% New projector.
-subplot(1,3,1); hold on;
-plot(wls,spds_newProjector,'k-','linewidth',0.8);
-plot(wls,spdsUsed_newProjector,'-','color',[1 0 0 0.3],'linewidth',4);
-xlabel('Wavelength (nm)','fontsize',15);
-ylabel('Spectral power','fontsize',15);
-xticks([380:80:780]);
-xticklabels([380:80:780]);
-ylim([0 max(max(spds_newProjector))*1.05])
-f = get(gca, 'children');
-legend(f(flip([1 17])),'All channels','Used channels',...
-    'location','northwest','fontsize',13)
-title('SACCSFA','fontsize',15);
-subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_newProjector)),'fontsize',14);
-
-% Old projector.
-subplot(1,3,2); hold on;
-plot(wls,spds_oldProjector,'k-','linewidth',0.8);
-plot(wls,spdsUsed_oldProjector,'-','color',[0 1 0 0.3],'linewidth',4);
-xlabel('Wavelength (nm)','fontsize',15);
-ylabel('Spectral power','fontsize',15);
-xticks([380:80:780]);
-xticklabels([380:80:780]);
-ylim([0 max(max(spds_newProjector))*1.05])
-f = get(gca, 'children');
-legend(f(flip([1 17])),'All channels','Used channels',...
-    'location','northwest','fontsize',13)
-title('Raw (Old Projector)','fontsize',15);
-subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_oldProjector)),'fontsize',14);
-
-% Comparison New vs. Old projector.
-subplot(1,3,3), hold on;
-plot(wls,spdsUsed_newProjector,'-','color',[1 0 0 0.3],'linewidth',4);
-plot(wls,spdsUsed_oldProjector,'-','color',[0 1 0 0.3],'linewidth',4);
-xlabel('Wavelength (nm)','fontsize',15);
-ylabel('Spectral power','fontsize',15);
-xticks([380:80:780]);
-xticklabels([380:80:780]);
-ylim([0 max(max(spds_newProjector))*1.05])
-f = get(gca, 'children');
-legend(flip(f([1 6])),'SACCSFA','Raw (Old Projector)',...
-    'location','northwest','fontsize',13)
-title('SACCSFA vs. Raw','fontsize',15);
-
-% Save the peak wavelengths in string. We will use this for legend in the
-% following plot.
-for pp = 1:length(peaksUsed_newProjector)
-    peakWls{pp} = num2str(peaksUsed_newProjector(pp));
+    % Here we read out both old and new projector calibration files. For new
+    % projector, we read the most recent one. For old projector, we read the
+    % last one measured which is stored in 17th of the calibration file in
+    % SACCPriamry1.
+    idxFileOldProjector = 17;
+    calData_oldProjector = data.cals{idxFileOldProjector};
+    calData_newProjector = data.cals{end};
+    S = calData_newProjector.rawData.S;
+    wls = SToWls(S);
+    spds_newProjector = calData_newProjector.processedData.P_device;
+    spds_oldProjector = calData_oldProjector.processedData.P_device;
+    
+    % Get spds of the channels used.
+    %
+    % We used the same channels for both old and new projector [2 5 9 12 15] on
+    % the date of 0613. We will set these numbers differently so that the
+    % actual peaks are matched each other.
+    switch measureDate
+        case '0613'
+            numChannelUsed_newProjector = [2 5 9 12 15];
+            numChannelUsed_oldProjector = [2 5 9 12 15];
+        case '0714'
+            numChannelUsed_newProjector = [1 3 7 12 15];
+            numChannelUsed_oldProjector = [1 3 7 11 14];
+        case '0718'
+            numChannelUsed_newProjector = [1 3 7 10 15];
+            numChannelUsed_oldProjector = [1 3 7 9 14];
+        case '0719'
+            numChannelUsed_newProjector = [1 3 7 10 15];
+            numChannelUsed_oldProjector = [1 3 7 9 14];
+    end
+    
+    spdsUsed_newProjector = spds_newProjector(:,numChannelUsed_newProjector);
+    spdsUsed_oldProjector = spds_oldProjector(:,numChannelUsed_oldProjector);
+    
+    % Peaks of each spectrums.
+    peaksUsed_newProjector = FindPeakSpds(spdsUsed_newProjector,'verbose',false);
+    peaksUsed_oldProjector = FindPeakSpds(spdsUsed_oldProjector,'verbose',false);
+    
+    % Plot it.
+    figure;
+    figPosition = [0 0 1500 400];
+    set(gcf,'position',figPosition);
+    sgtitle('Subprimary channels used for measuring chromatic aberration','fontsize',15);
+    
+    % New projector.
+    subplot(1,3,1); hold on;
+    plot(wls,spds_newProjector,'k-','linewidth',0.8);
+    plot(wls,spdsUsed_newProjector,'-','color',[1 0 0 0.3],'linewidth',4);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    xticks([380:80:780]);
+    xticklabels([380:80:780]);
+    ylim([0 max(max(spds_newProjector))*1.05])
+    f = get(gca, 'children');
+    legend(f(flip([1 17])),'All channels','Used channels',...
+        'location','northwest','fontsize',13)
+    title('SACCSFA','fontsize',15);
+    subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_newProjector)),'fontsize',14);
+    
+    % Old projector.
+    subplot(1,3,2); hold on;
+    plot(wls,spds_oldProjector,'k-','linewidth',0.8);
+    plot(wls,spdsUsed_oldProjector,'-','color',[0 1 0 0.3],'linewidth',4);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    xticks([380:80:780]);
+    xticklabels([380:80:780]);
+    ylim([0 max(max(spds_newProjector))*1.05])
+    f = get(gca, 'children');
+    legend(f(flip([1 17])),'All channels','Used channels',...
+        'location','northwest','fontsize',13)
+    title('Raw (Old Projector)','fontsize',15);
+    subtitle(sprintf('Peaks = (%s) nm',num2str(peaksUsed_oldProjector)),'fontsize',14);
+    
+    % Comparison New vs. Old projector.
+    subplot(1,3,3), hold on;
+    plot(wls,spdsUsed_newProjector,'-','color',[1 0 0 0.3],'linewidth',4);
+    plot(wls,spdsUsed_oldProjector,'-','color',[0 1 0 0.3],'linewidth',4);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    xticks([380:80:780]);
+    xticklabels([380:80:780]);
+    ylim([0 max(max(spds_newProjector))*1.05])
+    f = get(gca, 'children');
+    legend(flip(f([1 6])),'SACCSFA','Raw (Old Projector)',...
+        'location','northwest','fontsize',13)
+    title('SACCSFA vs. Raw','fontsize',15);
+    
+    % Save the peak wavelengths in string. We will use this for legend in the
+    % following plot.
+    for pp = 1:length(peaksUsed_newProjector)
+        peakWls{pp} = num2str(peaksUsed_newProjector(pp));
+    end
+else
+    peakWls = {'422', '476', '530', '592', '658'};
 end
 
 %% Load all images here.
@@ -150,7 +155,7 @@ for dd = 1:length(projectorSettings)
     nChannels = length(testFileList);
     for cc = 1:nChannels
         channels{cc} = testFileList(cc).name;
-       
+        
         % Extract only numbers. We are going to sort the array in an
         % ascending order.
         numChannelTemp = regexp(channels{cc}, '\d+', 'match');
@@ -163,8 +168,8 @@ for dd = 1:length(projectorSettings)
     channelsSorted = channels(i);
     
     for cc = 1:nChannels
-    channelTemp = channelsSorted{cc};
-    
+        channelTemp = channelsSorted{cc};
+        
         for tt = 1:nSFs
             % Get the file name of the images.
             testFiledirTemp = fullfile(testFiledir,channelTemp);
@@ -246,51 +251,55 @@ end
 %% Plot the contrasts results - Raw.
 %
 % Make a new figure.
-figure; hold on;
-SFs = cell2mat(targetCyclePerDeg);
-xticks(SFs);
-xticklabels(SFs);
-xlabel('Spatial Frequency (cpd)','fontsize',15);
-ylabel('Mean Contrast','fontsize',15);
-title('Raw (Old projector)','fontsize',15)
-ylim([0 1.05]);
-
-% Raw image
-colorLines = {'b','c','g',[0.8 0.6 0],'r'};
-for cc = 1:nChannels
-    numDataType = 1;
-    meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
-    stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-    plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
-    errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
+if ismember('Raw',projectorSettings)
+    figure; hold on;
+    SFs = cell2mat(targetCyclePerDeg);
+    xticks(SFs);
+    xticklabels(SFs);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrast','fontsize',15);
+    title('Raw (Old projector)','fontsize',15)
+    ylim([0 1.05]);
+    
+    % Raw image
+    colorLines = {'b','c','g',[0.8 0.6 0],'r'};
+    for cc = 1:nChannels
+        numDataType = 1;
+        meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
+        stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
+        plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
+        errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
+    end
+    r = get(gca,'Children');
+    set(r([1:2:7]),'LineStyle','none');
+    legend(flip(r([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 end
-r = get(gca,'Children');
-set(r([1:2:7]),'LineStyle','none');
-legend(flip(r([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 
 %% Plot the contrasts results - SACCSFA.
 %
 % Make a new figure.
-figure; hold on;
-SFs = cell2mat(targetCyclePerDeg);
-xticks(SFs);
-xticklabels(SFs);
-xlabel('Spatial Frequency (cpd)','fontsize',15);
-ylabel('Mean Contrast','fontsize',15);
-title('SACCSFA','fontsize',15)
-ylim([0 1.05]);
-
-for cc = 1:nChannels
-    numDataType = 2;
-    meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
-    stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-    plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
-    errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
+if ismember('SACCSFA',projectorSettings)
+    figure; hold on;
+    SFs = cell2mat(targetCyclePerDeg);
+    xticks(SFs);
+    xticklabels(SFs);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrast','fontsize',15);
+    title('SACCSFA','fontsize',15)
+    ylim([0 1.05]);
+    
+    for cc = 1:nChannels
+        numDataType = 2;
+        meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
+        stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
+        plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
+        errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
+    end
+    
+    s = get(gca,'Children');
+    set(s([1:2:7]),'LineStyle','none');
+    legend(flip(s([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 end
-
-s = get(gca,'Children');
-set(s([1:2:7]),'LineStyle','none');
-legend(flip(s([2:2:10])),append(peakWls,' nm'),'location','southwest','fontsize',15);
 
 %% Plot the contrasts comparing within the same channel.
 %
@@ -317,8 +326,12 @@ for cc = 1:nChannels
     ylim([0 1.05]);
     title(append(peakWls(cc),' nm'),'fontsize',15);
     
-    % Legend.
+    % Add legend.
     ss = get(gca,'Children');
-    set(ss([1,3]),'LineStyle','none');
-    legend(flip(ss([2,4])),projectorSettings,'location','southwest','fontsize',15);
+    if length(projectorSettings) == 1
+        set(ss(1),'LineStyle','none');
+    else
+        set(ss([1,3]),'LineStyle','none');
+        legend(flip(ss([2,4])),projectorSettings,'location','southwest','fontsize',15);
+    end
 end
