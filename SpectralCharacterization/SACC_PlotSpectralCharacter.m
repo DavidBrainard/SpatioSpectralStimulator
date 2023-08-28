@@ -48,9 +48,9 @@ f = get(gca,'children');
 f = flip(f);
 for pp = 1:length(f)
     lineColorOptions(pp,:) = f(pp).Color;
-end 
+end
 
-%% Gamma function. 
+%% Gamma function.
 figure; clf; hold on;
 nPrimaries = size(spd_primariesRaw,2);
 for pp = 1:nPrimaries
@@ -66,7 +66,7 @@ ylim([0 1]);
 %
 % Load color matching functions.
 load T_xyzJuddVos
-T_XYZ = T_xyzJuddVos'; 
+T_XYZ = T_xyzJuddVos';
 T_XYZ = SplineCmf(S_xyzJuddVos,T_XYZ',S,2);
 
 % Get xy coordinates.
@@ -86,11 +86,45 @@ figure; clf; hold on;
 plot(xyz_sRGB(1,:),xyz_sRGB(2,:),'b-','linewidth',1.5,'color',[0 0 1 0.3]);
 for pp = 1:nPrimaries
     plot(xyY(1,pp),xyY(2,pp),'ro','markerfacecolor',lineColorOptions(pp,:),'markeredgecolor','k','markersize',8);
-end 
+end
 plot(spectralLocus(1,:),spectralLocus(2,:),'k-');
 xlabel('CIE x','fontsize',15);
 ylabel('CIE y','fontsize',15);
 legend('sRGB','fontsize',15);
 
 %% Spectral shifts.
+%
+% Read out the gamma curve spectra.
+% Array is sorted as channel (16) x gamma input level (10) x number of points (201).
+spd_gammaCurve = data.rawData.gammaCurveMeanMeasurements;
+nGammaInputs = length(data.rawData.gammaInput);
+
+% Plot it.
 figure; clf; hold on;
+figurePosition = [0 0 1000 1000];
+set(gcf, 'position', figurePosition);
+
+% Find peaks of each primary and sort in ascending order.
+peaks_primaries = FindPeakSpds(spd_primariesRaw,'verbose',false);
+[peaks_primaries_sorted i] = sort(peaks_primaries);
+
+% Sort the spectra and line color options as well.
+spd_gammaCurve_sorted = spd_gammaCurve(i,:,:);
+lineColorOptions_sorted = lineColorOptions(i,:);
+
+% Find a max value for setting the y-axis of the following plot.
+max_ylim = max(imresize(spd_gammaCurve,[size(spd_gammaCurve,1),size(spd_gammaCurve,2)*size(spd_gammaCurve,3)]),[],'all');
+
+% Make a loop for the spectra plot.
+for pp = 1:nPrimaries
+    subplot(4,4,pp); hold on;
+    title(sprintf('%d nm',peaks_primaries_sorted(pp)),'fontsize',15);
+    for gg = 1:nGammaInputs
+        spd_temp = squeeze(spd_gammaCurve_sorted(pp,gg,:));
+        plot(wls,spd_temp,'color',lineColorOptions_sorted(pp,:));
+        xlabel('Wavelength (nm)');
+        ylabel('Spectral power');
+        xticks([380:80:780]);
+        ylim([0 max_ylim]);
+    end
+end
