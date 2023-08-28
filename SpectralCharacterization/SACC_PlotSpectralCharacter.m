@@ -27,6 +27,10 @@ wls = SToWls(S);
 spd_primariesRaw = data.processedData.P_device;
 spd_primariesNorm = spd_primariesRaw./max(spd_primariesRaw);
 
+% Find peaks of each primary and sort in ascending order.
+peaks_primaries = FindPeakSpds(spd_primariesRaw,'verbose',false);
+[peaks_primaries_sorted i] = sort(peaks_primaries);
+
 %% Plot it.
 %
 % Primary spectral - Raw.
@@ -53,10 +57,17 @@ end
 %% Gamma function.
 figure; clf; hold on;
 nPrimaries = size(spd_primariesRaw,2);
+gammaInput = data.rawData.gammaInput; 
 for pp = 1:nPrimaries
     lineColorTemp = lineColorOptions(pp,:);
-    plot([0 data.rawData.gammaInput],[0 data.rawData.gammaTable(:,pp)'],'ko-',...
+    gammaTableTemp = data.rawData.gammaTable(:,pp)';
+    
+    % Plot it here.
+    plot([0 gammaInput],[0 gammaTableTemp],'o-',...
         'markerfacecolor',lineColorTemp,'color',lineColorTemp);
+    
+    % Linear fit per each subprimary to get the slope.
+    pFit(:,pp) = polyfit(gammaInput,gammaTableTemp,1); 
 end
 xlabel('Settings input','fontsize',15);
 ylabel('Settings output','fontsize',15);
@@ -83,14 +94,30 @@ xyz_sRGB(:,end+1) = xyz_sRGB(:,1);
 
 % Plot it.
 figure; clf; hold on;
-plot(xyz_sRGB(1,:),xyz_sRGB(2,:),'b-','linewidth',1.5,'color',[0 0 1 0.3]);
+
+% sRGB space.
+plot(xyz_sRGB(1,:),xyz_sRGB(2,:),'-','linewidth',2,'color',[0 0 0 0.3]);
+
+% Connect the points between subprimaries to draw the boundary.
+xyY_sorted = xyY(:,i);
+xyY_sorted(:,end+1) = xyY_sorted(:,1);
+plot(xyY_sorted(1,:),xyY_sorted(2,:),'-','color',[0 0 1 0.3],'linewidth',2);
+
+% Plot the data points.
 for pp = 1:nPrimaries
-    plot(xyY(1,pp),xyY(2,pp),'ro','markerfacecolor',lineColorOptions(pp,:),'markeredgecolor','k','markersize',8);
+    plot(xyY(1,pp),xyY(2,pp),'o','markerfacecolor',lineColorOptions(pp,:),'markeredgecolor','k','markersize',8);
 end
+
+% Calculate the area of sRGB and SACCSFA gamut.
+area_sRGB = polyarea(xyz_sRGB(1,:), xyz_sRGB(2,:));
+area_SACCSFA = polyarea(xyY_sorted(1,:), xyY_sorted(2,:));
+percent_SACCSFA2sRGB = area_SACCSFA/area_sRGB;
+
+% Spectral locus.
 plot(spectralLocus(1,:),spectralLocus(2,:),'k-');
 xlabel('CIE x','fontsize',15);
 ylabel('CIE y','fontsize',15);
-legend('sRGB','fontsize',15);
+legend('sRGB','SACCSFA','fontsize',15);
 
 %% Spectral shifts.
 %
@@ -103,10 +130,6 @@ nGammaInputs = length(data.rawData.gammaInput);
 figure; clf; hold on;
 figurePosition = [0 0 1000 1000];
 set(gcf, 'position', figurePosition);
-
-% Find peaks of each primary and sort in ascending order.
-peaks_primaries = FindPeakSpds(spd_primariesRaw,'verbose',false);
-[peaks_primaries_sorted i] = sort(peaks_primaries);
 
 % Sort the spectra and line color options as well.
 spd_gammaCurve_sorted = spd_gammaCurve(i,:,:);
