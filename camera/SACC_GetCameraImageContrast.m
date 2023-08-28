@@ -15,8 +15,8 @@ clear; close all;
 %
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
-projectorSettings = {'Raw'};
-measureDate = '0815';
+projectorSettings = {'SACCSFA'};
+measureDate = '0719';
 
 %% Plot the spectrum used.
 PLOTSPECTRUM = false;
@@ -250,6 +250,9 @@ end
 
 %% Plot the contrasts results - Raw.
 %
+% Define color of the lines on the plot.
+colorLines = {'b','c','g',[0.8 0.6 0],'r'};
+
 % Make a new figure.
 if ismember('Raw',projectorSettings)
     figure; hold on;
@@ -262,12 +265,11 @@ if ismember('Raw',projectorSettings)
     ylim([0 1.05]);
     
     % Raw image
-    colorLines = {'b','c','g',[0.8 0.6 0],'r'};
     for cc = 1:nChannels
         numDataType = 1;
         meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
         stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-        plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
+        plot(SFs,meanContrastTemp,'o-','color',colorLines{cc},'linewidth',1.5);
         errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
     end
     r = get(gca,'Children');
@@ -289,10 +291,14 @@ if ismember('SACCSFA',projectorSettings)
     ylim([0 1.05]);
     
     for cc = 1:nChannels
-        numDataType = 2;
+        if length(projectorSettings)==1
+            numDataType = 1;
+        else
+            numDataType = 2;
+        end
         meanContrastTemp = cell2mat(squeeze(meanContrasts(numDataType,cc,:)));
         stdErrorContrastTemp = cell2mat(squeeze(stdErrorContrasts(numDataType,cc,:)));
-        plot(SFs,meanContrastTemp,'color',colorLines{cc},'linewidth',1.5);
+        plot(SFs,meanContrastTemp,'o-','color',colorLines{cc},'linewidth',1.5);
         errorbar(SFs,meanContrastTemp,stdErrorContrastTemp,'color',colorLines{cc});
     end
     
