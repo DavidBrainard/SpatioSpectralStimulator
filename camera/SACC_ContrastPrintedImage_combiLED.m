@@ -86,11 +86,12 @@ for cc = 1:nTargetChs
     end
     
     %% Plot the camera images.
-    PLOTIMAGE = false;
+    PLOTIMAGE = true;
     if (PLOTIMAGE)
         figure;
         figurePosition = [0 0 800 800];
         set(gcf,'position',figurePosition);
+        sgtitle(legendHandles{cc});
         
         for dd = 1:nSFs
             subplot(nSFs,1,dd);
@@ -106,6 +107,7 @@ for cc = 1:nTargetChs
         figure;
         figurePosition = [0 0 800 800];
         set(gcf,'position',figurePosition);
+        sgtitle(legendHandles{cc});
         
         % Contrast calculation happens here.
         for dd = 1:nSFs
