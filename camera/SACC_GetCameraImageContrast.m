@@ -340,4 +340,7 @@ for cc = 1:nChannels
         set(ss([1,3]),'LineStyle','none');
         legend(flip(ss([2,4])),projectorSettings,'location','southwest','fontsize',15);
     end
+    
+    % Collect the mean contrasts data in an array.
+    meanContrasts_all(:,cc) = meanContrastTemp;
 end
