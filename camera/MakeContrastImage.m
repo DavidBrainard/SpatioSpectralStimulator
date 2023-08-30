@@ -14,10 +14,12 @@ image = ones(imageHeight, imageWidth);
 
 % Define the number of stripes and total stripe width
 %
-% Set numStrips = 50 (18 cpd) / 34 (12 cpd) / 25 (9 cpd) 17 (6 cpd) / 9 (3
+% Set numStripes = 50 (18 cpd) / 34 (12 cpd) / 25 (9 cpd) 17 (6 cpd) / 9 (3
 % cpd). This is the number when measuring the printed pattern outside the
 % SACCSFA room, on the hallway of 4th floor at Goddard.
-numStripes = 9;
+%
+% Set numStripes = 150 (18 cpd) / 100 (12 cpd) / 75 (9 cpd) / 50 (6 cpd)/ 25 (3 cpd). 
+numStripes = 25;
 totalStripeWidth = imageWidth / numStripes;
 
 %% Generate the alternating black and white stripes
