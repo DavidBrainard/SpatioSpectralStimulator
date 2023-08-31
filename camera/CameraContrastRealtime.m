@@ -1,131 +1,149 @@
-% CameraContrastRealTime
+% CameraContrastRealtime.
 %
-% This is written to place the Lens 1 on the cage rod system for SACC
-% project. What it does is to show the real-time camera view and calculates
-% the contrast of the image. Test image should be vertical stripe image (we
-% used 20 pixels/bar image).
+% This captures the real time camera image and calculate the contrast from
+% the targeted area of the image.
 
 % History:
-%    12/06/21  smo   Started on cleaning.
+%    06/13/23    smo     - Cleaned up from the old script.
+%    08/31/23    smo     - Moved to project repository as Trombone laptop
+%                          is now able to use git.
 
-%% Initialize.
-clear; close all; 
+%% Open camera preview.
+%
+% Initialize.
+clear; close all; clc;
 
-%% Show the real-time camera image.
-% 
-% Load the camera info
+% Load the camera info.
 vid = videoinput('gentl', 1, 'Mono8');
 vidRes = get(vid, 'VideoResolution');
 nBands = get(vid, 'NumberOfBands');
 
 % Set the preferred window size to preview
-windowSize = 0.25; 
-vidResResize = vidRes .* windowSize;
-
-hFig = figure('Units', 'pixels', 'Position', [100 100 vidResResize(1) vidResResize(2)]);
-hAxes = axes('Units', 'pixels', 'Position', [10 10 vidResResize(1) vidResResize(2)]);
+% The screen ratio to original. 0.25 means 25% raw image (type 0 to 1).
+windowsize = 0.25;
+vidRes_resize = vidRes.*windowsize;
+hFig = figure('Units', 'pixels', 'Position', [100 100 vidRes_resize(1) vidRes_resize(2)]);
+hAxes = axes('Units', 'pixels', 'Position', [10 10 vidRes_resize(1) vidRes_resize(2)]);
 hImage = image( zeros(vidRes(2), vidRes(1), nBands) );
 
-% Info about the marker position.
-% markerIndex sets the centered point.
+% Info about the marker position at the center.
 imWidth = vidRes(1);
 imHeight = vidRes(2);
 numBands = vid.NumberOfBands;
-markerIndex = 0.5; 
+markerindex = 0.5;
 
-% Camera preview with the centered point marked
-figure; clf;
-preview(vid, hImage);
+% Show camera preview here.
+preview(vid, hImage)
+hLine = line(hAxes, round([markerindex*imWidth, markerindex*imWidth]),...
+    round([markerindex*imHeight, markerindex*imHeight]),...
+    'Marker','+','MarkerSize',30,'color','r','LineWidth',1,'LineStyle','none');
 
-% Set the marker here.
-hLine = line(hAxes, round([markerIndex*imWidth, markerIndex*imWidth]),round([markerIndex*imHeight, markerIndex*imHeight]),...
-        'Marker','+','MarkerSize',30,'color','r','LineWidth',1,'LineStyle','none');
+% Set the targeted area of the image.
+% a = rect starting x-coordinate, b =rect starting y-coordinate,
+% c = rect width, d = rect height.
+ratioWidth = 0.1;
+ratioHeight = 0.08;
+a = (0.5-ratioWidth/2)*imWidth;
+b = (0.5-ratioHeight/2)*imHeight;
+c = ratioWidth * imWidth;
+d = ratioHeight * imHeight;
 
-% Set the rectangle here.
-fromX = 0.45 * imWidth; 
-fromY = 0.46 * imHeight; 
-rectWidth = 309; 
-rectHeight = 166; 
-rectangle('Position',[fromX,fromY,rectWidth,rectHeight],'Curvature',[0,0],'LineWidth',1,'LineStyle','--','edgecolor','y')
-txtRect = 'Measure area';
-text(0.44*imWidth, 0.4*imHeight, txtRect, 'Color', 'y', 'fontsize', 12);
+% Show the target area in a rectangle.
+rectangle('Position',[a,b,c,d],'Curvature',[0,0],'LineWidth',1,'LineStyle','--','edgecolor','y')
+txtrect = 'Measure area';
+text(0.44*imWidth,0.43*imHeight,txtrect,'Color','y','fontsize',12);
 
-txtCamera = 'Real time Camera Image';
-text(0.36*imWidth, 0.05*imHeight, txtCamera, 'Color', 'w', 'fontsize', 14);
+% Set the title of the image.
+txtcamera = 'Real time Camera Image';
+text(0.36*imWidth,0.05*imHeight,txtcamera,'Color','w','fontsize',14);
 
-% Set the initial value to zero.
-txtContrast = num2str(0);
-txtFFT = num2str(0);
-
-%% Contrast measurement routine.
+%% Measure contrast.
 %
-% It is possible to repeat this part to update the contrast and FFT area
-% calculation results on the camera preview screen.
+% Repeat this part to update the contrast calculation results on the camera
+% preview screen. It is not 100% real-time measurements, but works pretty
+% fast.
 %
-% It is not 100% real-time measurements, but it works pretty fast which
-% will make placing the lens 1 position easier.
+% Clear text on the camera preview. This would make sort of real-time
+% measurement by updating the numbers.
+fig = gcf;
+textObjects = findall(fig,'Type','text');
+delete(textObjects);
 
-% Clear text on the camera preview. It deletes the previous calculation
-% results.
-delete(txtContrast);
-delete(txtFFT);
-
-% Get the current camera image.
+% Save a camera image. We will calculate the contrast from still image.
 start(vid);
 image = getdata(vid);
-imageSize = size(image);
-screenXpixel = imageSize(1);
-screenYpixel = imageSize(2);
+imagesize = size(image);
+pixelHeight = imagesize(1);
+pixelWidth = imagesize(2);
 
-% Clip the part of the screen image to calculate the contrast.
-fromX = 0.46 * screenXpixel;
-fromY = 0.54 * screenXpixel;
-rectWidth = 0.45 * screenYpixel;
-rectHeight = 0.55 * screenYpixel;
-imageCrop = image(fromX:fromY,rectWidth:rectHeight);
-[YpixelCrop XpixelCrop] = size(imageCrop);
+% Save the raw image here for saving it later.
+imageRaw = image(1:pixelHeight,1:pixelWidth);
 
-% We will use the average of the 25% / 50% / 75% positions of the cropped image. 
-imageCrop25 = imageCrop(round(0.25*YpixelCrop),:);
-imageCrop50 = imageCrop(round(0.50*YpixelCrop),:);
-imageCrop75 = imageCrop(round(0.75*YpixelCrop),:);
-imageCropAvg = mean([imageCrop25;imageCrop50;imageCrop75]);
+% Get the targeted area of the image. 
+a = (0.5-ratioHeight/2)*pixelHeight;
+b = (0.5+ratioHeight/2)*pixelHeight;
+c = (0.5-ratioWidth/2)*pixelWidth;
+d = (0.5+ratioWidth/2)*pixelWidth;
+imageCrop = image(a:b,c:d);
+[Ypixel_crop Xpixel_crop] = size(imageCrop);
 
-% Calculate contrast here.
-whiteCropImage = max(imageCropAvg);
-blackCropImage = min(imageCropAvg);
-contrastCropImage = (whiteCropImage-blackCropImage) / (whiteCropImage+blackCropImage);
+% Crop the targeted area in the image.
+imagecrop_25 = imageCrop(round(0.25*Ypixel_crop),:);
+imagecrop_50 = imageCrop(round(0.50*Ypixel_crop),:);
+imagecrop_75 = imageCrop(round(0.75*Ypixel_crop),:);
+imagecrop_avg = mean([imagecrop_25;imagecrop_50;imagecrop_75]);
 
-% Calculate FFT here. This is just additional measure to check the
-% contrast.
-FFT25  = abs(fftshift(fft(imageCrop25)));
-FFT50  = abs(fftshift(fft(imageCrop50)));
-FFT75  = abs(fftshift(fft(imageCrop75)));
-FFTAvg = abs(fftshift(fft(imageCropAvg)));
+% Calculate contrast.
+white = max(imagecrop_avg);
+black = min(imagecrop_avg);
+contrast = (white-black)/(white+black);
+fprintf('Contrast = (%.2f) \n', contrast);
 
-% Normalize.
-FFT25  = FFT25/max(FFT25);
-FFT50  = FFT50/max(FFT50);
-FFT75  = FFT75/max(FFT75);
-FFTAvg = FFTAvg/max(FFTAvg);
+% Show contrast on the camera preview.
+textContrast = append('Contrast:  ',num2str(round(contrast,2)));
+text(1.05*imWidth*markerindex, 1*imHeight*markerindex, textContrast, 'Color','w');
 
-% Set x-axis of the FFT results (frequecy).
-% This part needs to be updated
-Size = length(FFT25);
-spacing = 20;% spacing between data points 
-fsx = abs(1/spacing); % turn into sampling frequency
-fromX = linspace(-Size/2,Size/2,Size); % form scale for conversion based on frequency bins
-conversionx = fsx./Size; % conversion factor for frequency bin units to frequency (unit^-1)
-Psi = fromX.*conversionx; % frequency (unit^-1)
+% Show spatial frequency.
+%
+% Set minimum peak distance here for not having multiple peaks at one peak
+% point. Followings are recommendation over different spatial frequency.
+% 
+% minPeakDistance = 5 (9, 12 ,18 cpd), 17 (6 cpd), 40 (3 cpd).
+minPeakDistance = 40;
 
-sumFFT25  = sum(FFT25);
-sumFFT50  = sum(FFT50);
-sumFFT75  = sum(FFT75);
-sumFFTAvg = sum(FFTAvg);
+% Show the peaks found. Visually check.
+figPeak = figure; findpeaks(double(imagecrop_50),'MinPeakDistance',minPeakDistance)
 
-% Display calculation results on the camera preview.
-txtContrast = append('Contrast: ', num2str(contrastCropImage));
-txtContrast = text(1.3*imWidth*markerIndex, 0.7*imHeight*markerIndex, txtContrast, 'Color', 'w');
+% Calculate the spatial frequency here.
+[~,peakIndex] = findpeaks(double(imagecrop_50),'MinPeakDistance',minPeakDistance);
+numCycles = length(peakIndex);
 
-txtFFT = append('FFT area: ', num2str(sumFFTAvg));
-txtFFT = text(1.3*imWidth*markerIndex, 0.8*imHeight*markerIndex, txtFFT, 'Color', 'w');
+% Get the horizontal size of cropped image in degrees.
+pixelToInchHorizontal = 0.0367;
+pixelToInchVertical = 0.0362;
+physicalDistnaceRefInch = 370;
+cropImageHalfInch = pixelToInchHorizontal * (Xpixel_crop/2);
+sizeDegHorizontal = 2*(rad2deg(atan(cropImageHalfInch/physicalDistnaceRefInch)));
+
+% When the cropped image was 309 x 166 pixels.
+% sizeDegHorizontal = 1.7570;
+
+% Calculate the cpd here.
+cyclesPerDeg = numCycles/sizeDegHorizontal;
+fprintf('Spatial frequency = (%.1f) \n', cyclesPerDeg);
+
+% Add spatial frequency on the camera preview.
+textCyclesPerDeg = append('Spatial frequency:  ',num2str(round(cyclesPerDeg,0)));
+text(1.05*imWidth*markerindex, 1.1*imHeight*markerindex, textCyclesPerDeg,'Color','w');
+
+% Save the image if you want.
+SAVEIMAGE = false;
+if (SAVEIMAGE)
+    cyclesPerDegStr = 'single_';
+    fileNameRawImage = append(cyclesPerDegStr,'raw_');
+    fileNameCropImage = append(cyclesPerDegStr,'crop_');
+    dayTimeStr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
+    imwrite(imageCrop,append(fileNameCropImage,dayTimeStr,'.tiff'));
+    imwrite(imageRaw,append(fileNameRawImage,dayTimeStr,'.tiff'));
+    disp('Image has been saved successfully!');
+end
