@@ -18,43 +18,40 @@ measureDate = '0831';
 %% Plot spectra.
 PLOTSPECTRA = false;
 
-if (strcmp(measureDate,'0829'))
-    testFilename = 'spd_combiLED.mat';
-    spdData = load(fullfile(testFiledir,testFilename));
-    
-    % Extract the spd data and flip left to right, becasue the measurement was
-    % done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
-    spd = spdData.spd;
-    spd = fliplr(spd);
-    S = [380 2 201];
-    wls = SToWls(S);
-    peaks_spd = FindPeakSpds(spd,'verbose',false);
-    
-    % Plot it - Raw.
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast','0829');
+testFilename = 'spd_combiLED.mat';
+spdData = load(fullfile(testFiledir,testFilename));
+
+% Extract the spd data and flip left to right, becasue the measurement was
+% done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
+spd = spdData.spd;
+spd = fliplr(spd);
+S = [380 2 201];
+wls = SToWls(S);
+peaks_spd = FindPeakSpds(spd,'verbose',false);
+for ll = 1:size(spd,2)
+    legendHandles{ll} = append(num2str(peaks_spd(ll)),' nm');
+end
+
+% Plot it - Raw.
+if (PLOTSPECTRA)
     figure; clf;
     plot(wls,spd,'linewidth',1);
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Spectral power','fontsize',15);
     xticks([380:80:780]);
-    for ll = 1:size(spd,2)
-        legendHandles{ll} = append(num2str(peaks_spd(ll)),' nm');
-    end
+    
     legend(legendHandles,'fontsize',15);
     
     % Plot it - Normalized.
-    if (PLOTSPECTRA)
-        figure; clf;
-        plot(wls,spd./max(spd),'linewidth',1);
-        xlabel('Wavelength (nm)','fontsize',15);
-        ylabel('Spectral power','fontsize',15);
-        xticks([380:80:780]);
-        legend(legendHandles,'fontsize',15);
-    end
     
-    % Load SACCSFA MTF results to compare.
-    testFilename = 'MTF_SACCSFA.mat';
-    data_SACCSFA = load(fullfile(testFiledir,testFilename));
-    meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all;
+    figure; clf;
+    plot(wls,spd./max(spd),'linewidth',1);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    xticks([380:80:780]);
+    legend(legendHandles,'fontsize',15);
 end
 
 %% Load all images here.
@@ -92,7 +89,7 @@ for cc = 1:nTargetChs
         figure;
         figurePosition = [0 0 800 800];
         set(gcf,'position',figurePosition);
-        %         sgtitle(legendHandles{cc});
+        sgtitle(legendHandles{cc});
         
         for dd = 1:nSFs
             subplot(nSFs,1,dd);
@@ -108,7 +105,7 @@ for cc = 1:nTargetChs
         figure;
         figurePosition = [0 0 800 800];
         set(gcf,'position',figurePosition);
-        %         sgtitle(legendHandles{cc});
+        sgtitle(legendHandles{cc});
         
         % Contrast calculation happens here.
         for dd = 1:nSFs
@@ -148,50 +145,9 @@ end
 
 %% Plot MTF results on one panel.
 figure; clf; hold on;
-for cc = 1:nTargetChs
-    % Printed pattern.
-    plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
-        '.-','markersize',20);
-end
+plot([1:1:8],meanContrasts_all,'b.-','markersize',20);
+xticks([1:1:8]);
+xticklabels(legendHandles);
 ylim([0 1]);
 xlabel('Spatial Frequency (cpd)','fontsize',15);
 ylabel('Mean Contrasts','fontsize',15);
-xticks(cell2mat(targetCyclePerDeg));
-legend(legendHandles,'location','southwest','fontsize',15);
-
-%% Plot MTF comparing with SACCSFA results.
-if (strcmp(measureDate,'0829'))
-    figure; clf;
-    figureSize = [0 0 1200 500];
-    set(gcf,'position',figureSize);
-    sgtitle('MTF comparison: Combi-LED vs. SACCSFA', 'fontsize', 15);
-    
-    for cc = 1:nTargetChs
-        subplot(2,4,cc); hold on;
-        
-        % Printed pattern.
-        plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
-            'ko-','markeredgecolor','k','markerfacecolor','b','markersize',10);
-        
-        % SACCSFA. Its peak wavelengths were 422, 476, 530, 592, 658 nm.
-        idxChComparison = [2 3 5 6 8];
-        if ismember(cc,idxChComparison)
-            ss = 1;
-            plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,ss),...
-                'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
-            ss = ss + 1;
-            
-            % Add legend.  
-            legend('Combi-LED','SACCSFA','location','southeast','fontsize',15);
-        else
-            % Add legend.
-            legend('Combi-LED','location','southeast','fontsize',15);
-        end
-        
-        ylim([0 1.1]);
-        xlabel('Spatial Frequency (cpd)','fontsize',15);
-        ylabel('Mean Contrasts','fontsize',15);
-        xticks(cell2mat(targetCyclePerDeg));
-        title(sprintf('%d nm', peaks_spd(cc)), 'fontsize', 15);
-    end
-end
