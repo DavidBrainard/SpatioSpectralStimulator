@@ -57,7 +57,7 @@ end
 %% Gamma function.
 figure; clf; hold on;
 nPrimaries = size(spd_primariesRaw,2);
-gammaInput = data.rawData.gammaInput; 
+gammaInput = data.rawData.gammaInput;
 for pp = 1:nPrimaries
     lineColorTemp = lineColorOptions(pp,:);
     gammaTableTemp = data.rawData.gammaTable(:,pp)';
@@ -67,7 +67,7 @@ for pp = 1:nPrimaries
         'markerfacecolor',lineColorTemp,'color',lineColorTemp);
     
     % Linear fit per each subprimary to get the slope.
-    pFit(:,pp) = polyfit(gammaInput,gammaTableTemp,1); 
+    pFit(:,pp) = polyfit(gammaInput,gammaTableTemp,1);
 end
 xlabel('Settings input','fontsize',15);
 ylabel('Settings output','fontsize',15);
@@ -128,8 +128,6 @@ nGammaInputs = length(data.rawData.gammaInput);
 
 % Plot it.
 figure; clf; hold on;
-figurePosition = [0 0 1000 1000];
-set(gcf, 'position', figurePosition);
 
 % Sort the spectra and line color options as well.
 spd_gammaCurve_sorted = spd_gammaCurve(i,:,:);
@@ -140,14 +138,23 @@ max_ylim = max(imresize(spd_gammaCurve,[size(spd_gammaCurve,1),size(spd_gammaCur
 
 % Make a loop for the spectra plot.
 for pp = 1:nPrimaries
-    subplot(4,4,pp); hold on;
-    title(sprintf('%d nm',peaks_primaries_sorted(pp)),'fontsize',15);
     for gg = 1:nGammaInputs
         spd_temp = squeeze(spd_gammaCurve_sorted(pp,gg,:));
-        plot(wls,spd_temp,'color',lineColorOptions_sorted(pp,:));
-        xlabel('Wavelength (nm)');
-        ylabel('Spectral power');
+        spd_temp_max = max(squeeze(spd_gammaCurve_sorted(pp,end,:)));
+        plot(wls,spd_temp./spd_temp_max,'color',lineColorOptions_sorted(pp,:));
+        xlabel('Wavelength (nm)','fontsize',15);
+        ylabel('Spectral power','fontsize',15);
         xticks([380:80:780]);
-        ylim([0 max_ylim]);
+        ylim([0 1]);
     end
 end
+
+% Add legend.
+p = get(gca,'children');
+p_legend = flip(p([1:nGammaInputs:151]));
+
+% Make string struct for legend.
+for ll = 1:length(peaks_primaries_sorted)
+    legendHandles{ll} = append(num2str(peaks_primaries_sorted(ll)),' nm');
+end
+legend(p_legend,legendHandles,'fontsize',15);
