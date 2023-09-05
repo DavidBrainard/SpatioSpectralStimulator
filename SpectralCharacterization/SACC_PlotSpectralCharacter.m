@@ -96,12 +96,12 @@ xyz_sRGB(:,end+1) = xyz_sRGB(:,1);
 figure; clf; hold on;
 
 % sRGB space.
-plot(xyz_sRGB(1,:),xyz_sRGB(2,:),'-','linewidth',2,'color',[0 0 0 0.3]);
+plot(xyz_sRGB(1,:),xyz_sRGB(2,:),'-','linewidth',2,'color',[0 0 1 0.3]);
 
 % Connect the points between subprimaries to draw the boundary.
 xyY_sorted = xyY(:,i);
 xyY_sorted(:,end+1) = xyY_sorted(:,1);
-plot(xyY_sorted(1,:),xyY_sorted(2,:),'-','color',[0 0 1 0.3],'linewidth',2);
+plot(xyY_sorted(1,:),xyY_sorted(2,:),':','color',[0 0 0 1],'linewidth',2);
 
 % Plot the data points.
 for pp = 1:nPrimaries
