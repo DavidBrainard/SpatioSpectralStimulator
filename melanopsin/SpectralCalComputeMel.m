@@ -52,16 +52,16 @@ switch (conditionName)
         % span a triangle around the line specified above. Here we define that
         % triangle by hand.  May need a little fussing for other directions, and
         % might be able to autocompute good choices.
-        targetScreenPrimaryContrastDir(:,1) = [0 0 0  1]'; targetScreenPrimaryContrastDir(:,1) = targetScreenPrimaryContrastDir(:,1)/norm(targetScreenPrimaryContrastDir(:,1));
-        targetScreenPrimaryContrastDir(:,2) = [-0.5 -0.5 1 -1]'; targetScreenPrimaryContrastDir(:,2) = targetScreenPrimaryContrastDir(:,2)/norm(targetScreenPrimaryContrastDir(:,2));
-        targetScreenPrimaryContrastDir(:,3) = [0.5 0.5  -1 -1]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
+        targetScreenPrimaryContrastDir(:,1) = [0 0 0 1]'; targetScreenPrimaryContrastDir(:,1) = targetScreenPrimaryContrastDir(:,1)/norm(targetScreenPrimaryContrastDir(:,1));
+        targetScreenPrimaryContrastDir(:,2) = [-0.5 -0.5   1 -1]'; targetScreenPrimaryContrastDir(:,2) = targetScreenPrimaryContrastDir(:,2)/norm(targetScreenPrimaryContrastDir(:,2));
+        targetScreenPrimaryContrastDir(:,3) = [ 0.5  0.5  -1 -1]'; targetScreenPrimaryContrastDir(:,3) = targetScreenPrimaryContrastDir(:,3)/norm(targetScreenPrimaryContrastDir(:,3));
 
         % Set parameters for getting desired target primaries.
         switch testImageContrast
             case 'normal'
                 targetScreenPrimaryContrast = 0.05;
             case 'high'
-                targetScreenPrimaryContrast = 0.20;
+                targetScreenPrimaryContrast = 0.15;
         end
         targetScreenPrimaryContrasts = ones(1,4) * targetScreenPrimaryContrast;
         targetPrimaryHeadroom = 1.05;
@@ -171,21 +171,11 @@ imageN = 512;
 halfOnChannels = 0.5*ones(nChannels,1);
 halfOnSpd = PrimaryToSpd(channelCalObjs{1},halfOnChannels);
 
-%% Make sure gamma correction behaves well with unquantized conversion.
-%
-% This is just a check, not a computational step we need.
-SetGammaMethod(channelCalObjs{1},0);
-halfOnSettings = PrimaryToSettings(channelCalObjs{1},halfOnChannels);
-halfOnPrimariesChk = SettingsToPrimary(channelCalObjs{1},halfOnSettings);
-if (max(abs(halfOnChannels-halfOnPrimariesChk)) > 1e-8)
-    error('Gamma self-inversion not sufficiently precise');
-end
-
-%% Use quantized conversion from here on.
+%% Use quantized conversion
 %
 % Comment in the line that refits the gamma to see
 % effects of extreme quantization one what follows.
-channelGammaMethod = 2;
+channelGammaMethod = 0;
 SetGammaMethod(channelCalObjs{1},channelGammaMethod);
 SetGammaMethod(channelCalObjs{2},channelGammaMethod);
 SetGammaMethod(channelCalObjs{3},channelGammaMethod);
@@ -218,7 +208,7 @@ switch testImageContrast
     case 'normal'
         targetLambda = 3;     
     case 'high'
-        targetLambda = 0.2;
+        targetLambda = 0;
 end
 
 % Adjust these to keep background in gamut
@@ -230,9 +220,15 @@ screenBackgroundScaleFactor = 0.5;
 % relative to gamut, which is why we can set the target luminance
 % arbitrarily to 1 just above. The scale factor determines where in the
 % approximate channel gamut we aim the background at.
+% for pp = 1:nScreenPrimaries
+%     [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
+%         B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
+% end
+targetBackgroundPrimaryVal = 0.5;
 for pp = 1:nScreenPrimaries
-    [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
-        B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
+    channelBackgroundPrimaries(:,pp) = targetBackgroundPrimaryVal*ones(size(halfOnChannels));
+    channelBackgroundSpd(:,pp) = PrimaryToSpd(channelCalObjs{pp},channelBackgroundPrimaries(:,pp));
+    channelBackgroundXYZ(:,pp) = T_xyz*channelBackgroundSpd(:,pp);
 end
 if (any(channelBackgroundPrimaries < 0) | any(channelBackgroundPrimaries > 1))
     error('Oops - primaries should always be between 0 and 1');
@@ -240,14 +236,13 @@ end
 fprintf('Background primary min: %0.2f, max: %0.2f, mean: %0.2f\n', ...
     min(channelBackgroundPrimaries(:)),max(channelBackgroundPrimaries(:)),mean(channelBackgroundPrimaries(:)));
 
-maxBackgroundPrimary = 0.4;
-backgroundPrimaryFactor = maxBackgroundPrimary/max(channelBackgroundPrimaries(:));
-channelBackgroundPrimaries = backgroundPrimaryFactor*channelBackgroundPrimaries;
-channelBackgroundSpd = backgroundPrimaryFactor*channelBackgroundSpd;
-channelBackgroundXYZ = backgroundPrimaryFactor*channelBackgroundXYZ;
-
-fprintf('Adjusted background primary min: %0.2f, max: %0.2f, mean: %0.2f\n', ...
-    min(channelBackgroundPrimaries(:)),max(channelBackgroundPrimaries(:)),mean(channelBackgroundPrimaries(:)));
+% maxBackgroundPrimary = 0.4;
+% backgroundPrimaryFactor = maxBackgroundPrimary/max(channelBackgroundPrimaries(:));
+% channelBackgroundPrimaries = backgroundPrimaryFactor*channelBackgroundPrimaries;
+% channelBackgroundSpd = backgroundPrimaryFactor*channelBackgroundSpd;
+% channelBackgroundXYZ = backgroundPrimaryFactor*channelBackgroundXYZ;
+% fprintf('Adjusted background primary min: %0.2f, max: %0.2f, mean: %0.2f\n', ...
+%     min(channelBackgroundPrimaries(:)),max(channelBackgroundPrimaries(:)),mean(channelBackgroundPrimaries(:)));
 
 %% Find primaries with desired LMS contrast.
 %
@@ -327,7 +322,7 @@ SetSensorColorSpace(screenCalObj,T_receptors,S);
 % since the real device is quantized.
 %
 % The point cloud method below reduces this problem.
-screenGammaMethod = 2;
+screenGammaMethod = 0;
 SetGammaMethod(screenCalObj,screenGammaMethod);
 
 %% Set up desired background.
@@ -335,6 +330,7 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 % We aim for the background that we said we wanted when we built the screen primaries.
 desiredBgExcitations = screenBackgroundScaleFactor*T_receptors*sum(channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
+%screenBgSettings = [0.4 0.4 0.4]';
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 figure; clf; hold on;
 plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
@@ -345,6 +341,8 @@ xlabel('Desired bg excitations'); ylabel('Obtained bg excitations');
 title('Check that we obtrain desired background excitations');
 fprintf('Screen settings to obtain background: %0.2f, %0.2f, %0.2f\n', ...
     screenBgSettings(1),screenBgSettings(2),screenBgSettings(3));
+
+%% What is the contrast of the primaries with respect to he actual background?
 
 %% Make monochrome Gabor patch in range -1 to 1.
 %
@@ -404,8 +402,43 @@ standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSett
 standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
 standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 
+% Plot of how well standard method does in obtaining desired contratsfigure; clf;
+figure;
+set(gcf,'Position',[100 100 1200 600]);
+subplot(1,4,1);
+plot(desiredContrastGaborCal(1,:),standardPredictedContrastGaborCal(1,:),'r+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired L contrast');
+ylabel('Predicted L contrast');
+title('Standard image method');
+
+subplot(1,4,2);
+plot(desiredContrastGaborCal(2,:),standardPredictedContrastGaborCal(2,:),'g+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired M contrast');
+ylabel('Predicted M contrast');
+title('Standard image method');
+
+subplot(1,4,3);
+plot(desiredContrastGaborCal(3,:),standardPredictedContrastGaborCal(3,:),'b+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired S contrast');
+ylabel('Predicted S contrast');
+title('Standard image method');
+
+subplot(1,4,4);
+plot(desiredContrastGaborCal(4,:),standardPredictedContrastGaborCal(4,:),'c+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired MEL contrast');
+ylabel('Predicted MEL contrast');
+title('Standard image method');
+
 %% Set up point cloud of contrasts for all possible settings
-[~, ptCldSettingsCal, ptCldContrastCal] = SetupContrastPointCloudMapped(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
+[ptCldSettingsCal, ptCldContrastCal] = SetupContrastPointLookup(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
 
 %% Get image from point cloud, in cal format
 uniqueQuantizedSettingsGaborCal = SettingsFromLookup(desiredContrastGaborCal,ptCldContrastCal,ptCldSettingsCal);
@@ -417,16 +450,40 @@ fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettin
 uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
 uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,screenBgExcitations);
 
-% Plot of how well point cloud method does in obtaining desired contrats
-figure; clf;
-for cc = 1:4
-    subplot(1,4,cc);
-    plot(desiredContrastGaborCal(cc,:),uniqueQuantizedContrastGaborCal(cc,:),'r+');
-    axis('square');
-    xlabel('Desired L, M, S, Mel contrast');
-    ylabel('Predicted L, M, S, Mel contrast');
-    title('Quantized unique point cloud image method');
-end
+% Plot of how well point cloud method does in obtaining desired contratsfigure; clf;
+figure;
+set(gcf,'Position',[100 100 1200 600]);
+subplot(1,4,1);
+plot(desiredContrastGaborCal(1,:),uniqueQuantizedContrastGaborCal(1,:),'r+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired L contrast');
+ylabel('Predicted L contrast');
+title('Quantized unique point cloud image method');
+
+subplot(1,4,2);
+plot(desiredContrastGaborCal(2,:),uniqueQuantizedContrastGaborCal(2,:),'g+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired M contrast');
+ylabel('Predicted M contrast');
+title('Quantized unique point cloud image method');
+
+subplot(1,4,3);
+plot(desiredContrastGaborCal(3,:),uniqueQuantizedContrastGaborCal(3,:),'b+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired S contrast');
+ylabel('Predicted S contrast');
+title('Quantized unique point cloud image method');
+
+subplot(1,4,4);
+plot(desiredContrastGaborCal(4,:),uniqueQuantizedContrastGaborCal(4,:),'c+');
+axis('square');
+xlim([-0.15 0.15]); ylim([-0.15 0.15]);
+xlabel('Desired MEL contrast');
+ylabel('Predicted MEL contrast');
+title('Quantized unique point cloud image method');
 
 %% Convert representations we want to take forward to image format
 desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,imageN,imageN);
@@ -510,8 +567,8 @@ desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screen
 % the settings in the columns of ptCldScreenSettingsCheckCall, then
 % compute the cone contrasts with respect to the backgound (0 contrast
 % measurement, first settings), we should approximate the cone contrasts in
-% desiredContrastCheckCal.
-ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,reduceSrchTo3DMatrix*desiredContrastCheckCal,ptCldSettingsCal);
+% desiredContrastCheckCal. 
+ptCldScreenSettingsCheckCal = SettingsFromLookup(desiredContrastCheckCal,ptCldContrastCal,ptCldSettingsCal);
 ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
 ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);

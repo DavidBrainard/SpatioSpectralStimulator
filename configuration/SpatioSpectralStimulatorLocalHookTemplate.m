@@ -30,10 +30,6 @@ projectBaseDir = tbLocateProject(projectName);
 % we could do that.
 sysInfo = GetComputerInfo();
 switch (sysInfo.localHostName)
-    case 'eagleray'
-        % DHB's desktop
-        baseDir = fullfile(filesep,'Volumes','Users1','Dropbox (Aguirre-Brainard Lab)');
-        
     otherwise
         % Some unspecified machine, try user specific customization
         switch(sysInfo.userShortName)
@@ -46,7 +42,15 @@ switch (sysInfo.localHostName)
                 baseDir = fullfile('/home/',sysInfo.userShortName,'Aguirre-Brainard Lab Dropbox',userNameDropbox);
                 
             otherwise
-                baseDir = fullfile('/Users/',sysInfo.userShortName,'Dropbox (Aguirre-Brainard Lab)');
+                if ismac
+                    dbJsonConfigFile = '~/.dropbox/info.json';
+                    fid = fopen(dbJsonConfigFile);
+                    raw = fread(fid,inf);
+                    str = char(raw');
+                    fclose(fid);
+                    val = jsondecode(str);
+                    baseDir = val.business.path;
+                end
         end
 end
 
@@ -70,6 +74,9 @@ setpref(projectName,'CheckDataFolder',fullfile(baseDir,'SACC_materials','JandJPr
 
 % SACC materials.
 setpref(projectName,'SACCMaterials',fullfile(baseDir,'SACC_materials'));
+
+% David's melanopsion work
+setpref(projectName,'SACCMelanopsin',fullfile(baseDir,'SACC_melanopsin'));
 
 %% Set preferences for project output
 %
