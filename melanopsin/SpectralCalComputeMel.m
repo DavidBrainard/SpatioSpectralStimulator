@@ -78,7 +78,7 @@ switch (conditionName)
             case 'normal'
                 spatialGaborTargetContrast = 0.10;
             case 'high'
-                spatialGaborTargetContrast = 0.10;
+                spatialGaborTargetContrast = 0.15;
         end
         plotAxisLimit = 100*spatialGaborTargetContrast;
         
@@ -171,11 +171,11 @@ imageN = 512;
 halfOnChannels = 0.5*ones(nChannels,1);
 halfOnSpd = PrimaryToSpd(channelCalObjs{1},halfOnChannels);
 
-%% Use quantized conversion
+%% Use quantized conversion?
 %
 % Comment in the line that refits the gamma to see
 % effects of extreme quantization one what follows.
-channelGammaMethod = 0;
+channelGammaMethod = 2;
 SetGammaMethod(channelCalObjs{1},channelGammaMethod);
 SetGammaMethod(channelCalObjs{2},channelGammaMethod);
 SetGammaMethod(channelCalObjs{3},channelGammaMethod);
@@ -208,7 +208,7 @@ switch testImageContrast
     case 'normal'
         targetLambda = 3;     
     case 'high'
-        targetLambda = 0;
+        targetLambda = 0.2;
 end
 
 % Adjust these to keep background in gamut
@@ -322,7 +322,7 @@ SetSensorColorSpace(screenCalObj,T_receptors,S);
 % since the real device is quantized.
 %
 % The point cloud method below reduces this problem.
-screenGammaMethod = 0;
+screenGammaMethod = 2;
 SetGammaMethod(screenCalObj,screenGammaMethod);
 
 %% Set up desired background.
@@ -330,7 +330,6 @@ SetGammaMethod(screenCalObj,screenGammaMethod);
 % We aim for the background that we said we wanted when we built the screen primaries.
 desiredBgExcitations = screenBackgroundScaleFactor*T_receptors*sum(channelBackgroundSpd,2);
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
-%screenBgSettings = [0.4 0.4 0.4]';
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 figure; clf; hold on;
 plot(desiredBgExcitations,screenBgExcitations,'ro','MarkerFaceColor','r','MarkerSize',12);
@@ -365,7 +364,7 @@ rawMonochromeUnquantizedContrastGaborCal = ImageToCalFormat(rawMonochromeUnquant
 % This allows us to speed up the image conversion without any meaningful
 % loss of precision. If you don't like it, increase number of quantization
 % bits until you are happy again.
-nQuantizeBits = 10;
+nQuantizeBits = 9;
 nQuantizeLevels = 2^nQuantizeBits;
 rawMonochromeContrastGaborCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastGaborCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 
@@ -407,6 +406,7 @@ figure;
 set(gcf,'Position',[100 100 1200 600]);
 subplot(1,4,1);
 plot(desiredContrastGaborCal(1,:),standardPredictedContrastGaborCal(1,:),'r+');
+fprintf('Standard image max L contrast: %0.3f\n',max(abs(standardPredictedContrastGaborCal(1,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired L contrast');
@@ -415,6 +415,7 @@ title('Standard image method');
 
 subplot(1,4,2);
 plot(desiredContrastGaborCal(2,:),standardPredictedContrastGaborCal(2,:),'g+');
+fprintf('Standard image max M contrast: %0.3f\n',max(abs(standardPredictedContrastGaborCal(2,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired M contrast');
@@ -423,6 +424,7 @@ title('Standard image method');
 
 subplot(1,4,3);
 plot(desiredContrastGaborCal(3,:),standardPredictedContrastGaborCal(3,:),'b+');
+fprintf('Standard image max S contrast: %0.3f\n',max(abs(standardPredictedContrastGaborCal(3,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired S contrast');
@@ -431,16 +433,17 @@ title('Standard image method');
 
 subplot(1,4,4);
 plot(desiredContrastGaborCal(4,:),standardPredictedContrastGaborCal(4,:),'c+');
+fprintf('Standard image max Mel contrast: %0.3f\n',max(abs(standardPredictedContrastGaborCal(4,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired MEL contrast');
 ylabel('Predicted MEL contrast');
 title('Standard image method');
 
-%% Set up point cloud of contrasts for all possible settings
+%% Set up table of contrasts for all possible settings
 [ptCldSettingsCal, ptCldContrastCal] = SetupContrastPointLookup(screenCalObj,screenBgExcitations,'verbose',VERBOSE);
 
-%% Get image from point cloud, in cal format
+%% Get image from table, in cal format
 uniqueQuantizedSettingsGaborCal = SettingsFromLookup(desiredContrastGaborCal,ptCldContrastCal,ptCldSettingsCal);
 
 % Print out min/max of settings
@@ -455,6 +458,7 @@ figure;
 set(gcf,'Position',[100 100 1200 600]);
 subplot(1,4,1);
 plot(desiredContrastGaborCal(1,:),uniqueQuantizedContrastGaborCal(1,:),'r+');
+fprintf('Quantized unique point image max L contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(1,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired L contrast');
@@ -463,6 +467,7 @@ title('Quantized unique point cloud image method');
 
 subplot(1,4,2);
 plot(desiredContrastGaborCal(2,:),uniqueQuantizedContrastGaborCal(2,:),'g+');
+fprintf('Quantized unique point image max M contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(2,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired M contrast');
@@ -471,6 +476,7 @@ title('Quantized unique point cloud image method');
 
 subplot(1,4,3);
 plot(desiredContrastGaborCal(3,:),uniqueQuantizedContrastGaborCal(3,:),'b+');
+fprintf('Quantized unique point image max S contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(3,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired S contrast');
@@ -479,6 +485,7 @@ title('Quantized unique point cloud image method');
 
 subplot(1,4,4);
 plot(desiredContrastGaborCal(4,:),uniqueQuantizedContrastGaborCal(4,:),'c+');
+fprintf('Quantized unique point image max Mel contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(4,:))));
 axis('square');
 xlim([-0.15 0.15]); ylim([-0.15 0.15]);
 xlabel('Desired MEL contrast');
@@ -545,6 +552,9 @@ plot(1:imageN,100*desiredContrastGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
 plot(1:imageN,100*uniqueQuantizedContrastGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
 plot(1:imageN,100*desiredContrastGaborImage(centerN,:,3),'b','LineWidth',0.5);
+
+plot(1:imageN,100*uniqueQuantizedContrastGaborImage(centerN,:,4),'c+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:imageN,100*desiredContrastGaborImage(centerN,:,4),'c','LineWidth',0.5);
 title('Image Slice, Point Cloud Method, LMS Cone Contrast');
 xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
@@ -574,10 +584,13 @@ ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal)
 ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
 ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
 figure; clf; hold on;
-plot(desiredContrastCheckCal(:),ptCldScreenContrastCheckCal(:),'ro','MarkerSize',10,'MarkerFaceColor','r');
+plot(desiredContrastCheckCal(4,:),ptCldScreenContrastCheckCal(4,:),'co','MarkerSize',10,'MarkerFaceColor','c');
+plot(desiredContrastCheckCal(3,:),ptCldScreenContrastCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');
+plot(desiredContrastCheckCal(2,:),ptCldScreenContrastCheckCal(2,:),'go','MarkerSize',10,'MarkerFaceColor','g');
+plot(desiredContrastCheckCal(1,:),ptCldScreenContrastCheckCal(1,:),'ro','MarkerSize',10,'MarkerFaceColor','r');
 xlim([0 plotAxisLimit/100]); ylim([0 plotAxisLimit/100]); axis('square');
 xlabel('Desired'); ylabel('Obtained');
-title('Check of desired versus obtained check contrasts');
+title('Desired versus obtained check contrasts');
 
 % Check that we can recover the settings from the spectral power
 % distributions, etc.  This won't necessarily work perfectly, but should be
