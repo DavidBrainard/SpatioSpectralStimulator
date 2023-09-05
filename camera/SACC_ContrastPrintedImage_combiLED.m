@@ -158,6 +158,13 @@ ylabel('Mean Contrasts','fontsize',15);
 xticks(cell2mat(targetCyclePerDeg));
 legend(legendHandles,'location','southwest','fontsize',15);
 
+% This is one cycle contrast results. We will calculate the compensated
+% contrasts by dividing when plotting the results.
+%
+% These are the contrats when measuring only one cycle (so, half black on
+% the left and the other half as white on the right)
+refContrasts = [0.8838    0.8872    0.8972    0.9154    1.0000    1.0000    0.8995    0.9024];
+
 %% Plot MTF comparing with SACCSFA results.
 figure; clf;
 figureSize = [0 0 1200 500];
@@ -169,7 +176,12 @@ for cc = 1:nTargetChs
     
     % Printed pattern.
     plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
-        'ko-','markeredgecolor','k','markerfacecolor','b','markersize',10);
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+    
+    % Printed pattern - Compensated with a single cycle contrast
+    % measurement.
+    plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc)/refContrasts(cc),...
+        'k^-','markeredgecolor','k','markerfacecolor','b','markersize',10);
     
     % SACCSFA. Its peak wavelengths were 422, 476, 530, 592, 658 nm.
     idxChComparison = [2 3 5 6 8];
@@ -180,10 +192,10 @@ for cc = 1:nTargetChs
         ss = ss + 1;
         
         % Add legend.
-        legend('Combi-LED','SACCSFA','location','southeast','fontsize',15);
+        legend('Combi-LED (raw)','Combi-LED (compensated)','SACCSFA','location','southeast','fontsize',11);
     else
         % Add legend.
-        legend('Combi-LED','location','southeast','fontsize',15);
+        legend('Combi-LED (raw)','Combi-LED (compensated)','location','southeast','fontsize',11);
     end
     
     ylim([0 1.1]);
