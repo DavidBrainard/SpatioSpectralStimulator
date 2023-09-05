@@ -69,6 +69,12 @@ fig = gcf;
 textObjects = findall(fig,'Type','text');
 delete(textObjects);
 
+% Control exposure time. 
+% Default = 10000. Set it higher number for brighter
+% image.
+src = getselectedsource(vid);
+src.ExposureTime = 100000;
+
 % Save a camera image. We will calculate the contrast from still image.
 start(vid);
 image = getdata(vid);
