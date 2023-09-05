@@ -73,7 +73,31 @@ delete(textObjects);
 % Default = 10000. Set it higher number for brighter
 % image.
 src = getselectedsource(vid);
-src.ExposureTime = 100000;
+
+% Set it differently over the channel. This value was found when we turn on
+% a single channel of combi-LED in input setting of 0.5 intensity (0-1).
+% numChannel = 5;
+switch numChannel
+    case 1
+    src.ExposureTime = 27000;
+    case 2
+        src.ExposureTime = 45000;
+        case 3
+        src.ExposureTime = 40000;
+        case 4
+        src.ExposureTime = 58000;
+        case 5
+        src.ExposureTime = 21000;
+        case 6
+        src.ExposureTime = 210000;
+        case 7
+        src.ExposureTime = 47000;
+        case 8
+        src.ExposureTime = 47000;    
+        otherwise
+        % Default = 10000.
+        src.ExposureTime = 10000;     
+end
 
 % Save a camera image. We will calculate the contrast from still image.
 start(vid);
@@ -145,9 +169,11 @@ text(1.05*imWidth*markerindex, 1.1*imHeight*markerindex, textCyclesPerDeg,'Color
 % Save the image if you want.
 SAVEIMAGE = false;
 if (SAVEIMAGE)
-    cyclesPerDegStr = 'single_';
-    fileNameRawImage = append(cyclesPerDegStr,'raw_');
-    fileNameCropImage = append(cyclesPerDegStr,'crop_');
+    testfileDir = 'C:\Users\brainardlab\Desktop\0905';
+    testfileDir = fullfile(testfileDir,append('Ch',num2str(numChannel)));
+    cyclesPerDegStr = 'single_focused_';
+    fileNameRawImage = fullfile(testfileDir,append(cyclesPerDegStr,'raw_'));
+    fileNameCropImage = fullfile(testfileDir,append(cyclesPerDegStr,'crop_'));
     dayTimeStr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
     imwrite(imageCrop,append(fileNameCropImage,dayTimeStr,'.tiff'));
     imwrite(imageRaw,append(fileNameRawImage,dayTimeStr,'.tiff'));
