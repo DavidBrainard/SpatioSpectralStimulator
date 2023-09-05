@@ -14,7 +14,7 @@ clear; close all;
 %% Set variables.
 targetCyclePerDeg = {3,6,9,12,18};
 measureDate = '0905';
-focusedImage = true;
+focusedImage = false;
 
 %% Plot spectra.
 PLOTSPECTRA = false;
@@ -91,7 +91,11 @@ for cc = 1:nTargetChs
                 % Load the regular image measured with fixed focus (infinity).
                 testFilenameTemp = GetMostRecentFileName(testFiledir,...
                     append(num2str(targetCyclePerDeg{dd}),'cpd_crop'));
-            end    
+            end
+        else
+            % Load the regular image measured with fixed focus (infinity).
+            testFilenameTemp = GetMostRecentFileName(testFiledir,...
+                append(num2str(targetCyclePerDeg{dd}),'cpd_crop'));
         end
         
         % We save all images here.
