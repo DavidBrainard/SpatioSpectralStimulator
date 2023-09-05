@@ -13,46 +13,46 @@ clear; close all;
 
 %% Set variables.
 targetCyclePerDeg = {3,6,9,12,18};
-measureDate = '0829';
+measureDate = '0905';
+focusedImage = true;
 
 %% Plot spectra.
 PLOTSPECTRA = false;
+measureDateSPD = '0829';
 
-if (strcmp(measureDate,'0829'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-    testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDate);
-    testFilename = 'spd_combiLED.mat';
-    spdData = load(fullfile(testFiledir,testFilename));
-    
-    % Extract the spd data and flip left to right, becasue the measurement was
-    % done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
-    spd = spdData.spd;
-    spd = fliplr(spd);
-    S = [380 2 201];
-    wls = SToWls(S);
-    peaks_spd = FindPeakSpds(spd,'verbose',false);
-    
-    % Plot it - Raw.
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDateSPD);
+testFilename = 'spd_combiLED.mat';
+spdData = load(fullfile(testFiledir,testFilename));
+
+% Extract the spd data and flip left to right, becasue the measurement was
+% done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
+spd = spdData.spd;
+spd = fliplr(spd);
+S = [380 2 201];
+wls = SToWls(S);
+peaks_spd = FindPeakSpds(spd,'verbose',false);
+
+% Plot it - Raw.
+figure; clf;
+plot(wls,spd,'linewidth',1);
+xlabel('Wavelength (nm)','fontsize',15);
+ylabel('Spectral power','fontsize',15);
+xticks([380:80:780]);
+for ll = 1:size(spd,2)
+    legendHandles{ll} = append(num2str(peaks_spd(ll)),' nm');
+end
+legend(legendHandles,'fontsize',15);
+
+% Plot it - Normalized.
+if (PLOTSPECTRA)
     figure; clf;
-    plot(wls,spd,'linewidth',1);
+    plot(wls,spd./max(spd),'linewidth',1);
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Spectral power','fontsize',15);
     xticks([380:80:780]);
-    for ll = 1:size(spd,2)
-        legendHandles{ll} = append(num2str(peaks_spd(ll)),' nm');
-    end
     legend(legendHandles,'fontsize',15);
-    
-    % Plot it - Normalized.
-    if (PLOTSPECTRA)
-        figure; clf;
-        plot(wls,spd./max(spd),'linewidth',1);
-        xlabel('Wavelength (nm)','fontsize',15);
-        ylabel('Spectral power','fontsize',15);
-        xticks([380:80:780]);
-        legend(legendHandles,'fontsize',15);
-    end
-end 
+end
 
 %% Load SACCSFA MTF results to compare.
 testFilename = 'MTF_SACCSFA.mat';
@@ -78,8 +78,21 @@ for cc = 1:nTargetChs
     nSFs = length(targetCyclePerDeg);
     for dd = 1:nSFs
         % Get the file name of the images.
-        testFilenameTemp = GetMostRecentFileName(testFiledir,...
-            append(num2str(targetCyclePerDeg{dd}),'cpd_crop'));
+        if (focusedImage)
+            % Load focused image if there is any available. If not, this
+            % line will be skipped.
+            try
+                testFilenameTemp = GetMostRecentFileName(testFiledir,...
+                    append(num2str(targetCyclePerDeg{dd}),'cpd_focused_crop'));
+            catch
+                % Alarm message.
+                disp('There is no such file, so regular image will be loaded');
+                
+                % Load the regular image measured with fixed focus (infinity).
+                testFilenameTemp = GetMostRecentFileName(testFiledir,...
+                    append(num2str(targetCyclePerDeg{dd}),'cpd_crop'));
+            end    
+        end
         
         % We save all images here.
         images{dd} = imread(testFilenameTemp);
@@ -147,7 +160,7 @@ end
 
 %% Plot MTF results on one panel.
 figure; clf; hold on;
-for cc = 1:nTargetChs    
+for cc = 1:nTargetChs
     % Printed pattern.
     plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
         '.-','markersize',20);
@@ -163,7 +176,7 @@ legend(legendHandles,'location','southwest','fontsize',15);
 %
 % These are the contrats when measuring only one cycle (so, half black on
 % the left and the other half as white on the right)
-refContrasts = [0.8838    0.8872    0.8972    0.9154    1.0000    1.0000    0.8995    0.9024];
+refContrasts = [ 0.8811    0.8756    0.8938    0.8891    0.8863    0.8870    0.8853    0.8868];
 
 %% Plot MTF comparing with SACCSFA results.
 figure; clf;
