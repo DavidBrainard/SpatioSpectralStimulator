@@ -55,6 +55,8 @@ if (PLOTSPECTRA)
 end
 
 %% Load SACCSFA MTF results to compare.
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDate);
 testFilename = 'MTF_SACCSFA.mat';
 data_SACCSFA = load(fullfile(testFiledir,testFilename));
 meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all;
@@ -152,7 +154,7 @@ for cc = 1:nTargetChs
         SAVETHEPLOT = false;
         if (SAVETHEPLOT)
             testFileFormat = '.tiff';
-            testFilenameTemp = sprintf('%s_%s',projectorSettings{dd},channels{cc});
+            testFilenameTemp = sprintf('%d nm',peaks_spd(cc));
             saveas(gcf,append(testFilenameTemp,testFileFormat));
             disp('Plot has been saved successfully!');
         end
@@ -186,7 +188,8 @@ refContrasts = [ 0.8811    0.8756    0.8938    0.8891    0.8863    0.8870    0.8
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
-sgtitle('MTF comparison: Combi-LED vs. SACCSFA', 'fontsize', 15);
+sgtitle('MTF comparison: Camera vs. SACCSFA', 'fontsize', 15);
+ss = 1;
 
 for cc = 1:nTargetChs
     subplot(2,4,cc); hold on;
@@ -194,25 +197,19 @@ for cc = 1:nTargetChs
     % Printed pattern.
     plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
-    
-    % Printed pattern - Compensated with a single cycle contrast
-    % measurement.
-    plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc)/refContrasts(cc),...
-        'k^-','markeredgecolor','k','markerfacecolor','b','markersize',10);
-    
+
     % SACCSFA. Its peak wavelengths were 422, 476, 530, 592, 658 nm.
     idxChComparison = [2 3 5 6 8];
     if ismember(cc,idxChComparison)
-        ss = 1;
         plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,ss),...
             'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
         ss = ss + 1;
         
         % Add legend.
-        legend('Combi-LED (raw)','Combi-LED (compensated)','SACCSFA','location','southeast','fontsize',11);
+        legend('Camera','SACCSFA','location','southeast','fontsize',11);
     else
         % Add legend.
-        legend('Combi-LED (raw)','Combi-LED (compensated)','location','southeast','fontsize',11);
+        legend('Camera','location','southeast','fontsize',11);
     end
     
     ylim([0 1.1]);

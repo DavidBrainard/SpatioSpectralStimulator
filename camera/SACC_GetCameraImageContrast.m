@@ -253,7 +253,7 @@ if (PLOTSLICEDIMAGE)
             SAVETHEPLOT = false;
             if (SAVETHEPLOT)
                 testFileFormat = '.tiff';
-                testFilename = sprintf('%s_%s',projectorSettings{dd},channels{cc});
+                testFilename = sprintf('%s_%s (nm)',projectorSettings{dd},peakWls{cc});
                 saveas(gcf,append(testFilename,testFileFormat));
                 disp('Plot has been saved successfully!');
             end

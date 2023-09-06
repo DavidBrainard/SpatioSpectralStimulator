@@ -13,7 +13,7 @@ clear; close all;
 
 %% Set variables.
 targetCyclePerDeg = {3};
-measureDate = '0831';
+measureDate = '0905';
 
 %% Plot spectra.
 PLOTSPECTRA = false;
