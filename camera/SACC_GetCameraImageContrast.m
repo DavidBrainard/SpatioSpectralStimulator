@@ -16,7 +16,8 @@ clear; close all;
 % Initial measurements were made on 0613.
 targetCyclePerDeg = {3, 6, 9, 12, 18};
 projectorSettings = {'SACCSFA'};
-measureDate = '0719';
+measureDate = '0906';
+focusedImage = false;
 
 %% Plot the spectrum used.
 PLOTSPECTRUM = false;
@@ -171,9 +172,21 @@ for dd = 1:length(projectorSettings)
         channelTemp = channelsSorted{cc};
         
         for tt = 1:nSFs
-            % Get the file name of the images.
             testFiledirTemp = fullfile(testFiledir,channelTemp);
-            testFilename = GetMostRecentFileName(testFiledirTemp,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
+            % You can load separately focused image if you want.
+            if (focusedImage)
+                try
+                    testFilename = GetMostRecentFileName(testFiledirTemp,append(num2str(targetCyclePerDeg{tt}),'cpd_focused_crop'));
+                catch
+                    % If there is no such file name, just load regualr
+                    % image.
+                    disp('No such file name found. Regular image file will be loaded');
+                    testFilename = GetMostRecentFileName(testFiledirTemp,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
+                end
+            else
+                % Get the file name of the images.
+                testFilename = GetMostRecentFileName(testFiledirTemp,append(num2str(targetCyclePerDeg{tt}),'cpd_crop'));
+            end
             
             % We save all images here. The array looks like {dataType,
             % channel, SF}.
@@ -212,7 +225,7 @@ if (PLOTSLICEDIMAGE)
             set(gcf,'position',figurePosition);
             
             % Add a grand title of the figure.
-            sgtitle(sprintf('%s - %s (%s nm)',projectorSettings{dd},channels{cc},peakWls{cc}),'FontSize',15);
+            sgtitle(sprintf('%s - (%s nm)',projectorSettings{dd},peakWls{cc}),'FontSize',15);
             
             % We will set the min peak distance differently to pick the peaks
             % correct for contrast calculation.
@@ -312,7 +325,7 @@ end
 % Make a new figure.
 figure; hold on;
 SFs = cell2mat(targetCyclePerDeg);
-lineStyles = {'-','--'};
+lineStyles = {'o-','o--'};
 
 for cc = 1:nChannels
     subplot(2,3,cc); hold on;
