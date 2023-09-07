@@ -136,7 +136,7 @@ end
 % This is a standard calibration file for the DLP screen,
 % with the channels set to something.
 colorDirectionParams.screenCalName = 'SACC';
-colorDirectionParams.screenNInputLevels = 512;
+colorDirectionParams.screenNInputLevels = 256;
 
 % These are the calibration files for each of the screen primaries, which
 % then entails measuring the spectra of all the channels for that

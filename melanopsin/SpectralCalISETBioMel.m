@@ -172,6 +172,17 @@ fprintf('Gabor image min/max settings: %0.3f, %0.3f\n',min(uniqueQuantizedSettin
 uniqueQuantizedExcitationsGaborCal = SettingsToSensor(screenCalObj,uniqueQuantizedSettingsGaborCal);
 uniqueQuantizedContrastGaborCal = ExcitationsToContrast(uniqueQuantizedExcitationsGaborCal,backgroundScreenPrimaryObject.screenBgExcitations);
 
+%% Convert representations we want to take forward to image format.
+%
+% Note that we set the settings field to the uniqueQuantized settings,
+% because these are what we want to use.  This differs from what
+% is done in the routine MakeImageSettingsFromPtCld.  I think that
+% routine is in error, but not changing pending response from Semin.
+gaborImageObject.desiredContrastGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{ss,cc},stimulusN,stimulusN);
+gaborImageObject.settingsGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedSettingsGaborCal,stimulusN,stimulusN);
+gaborImageObject.excitationsGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedExcitationsGaborCal,stimulusN,stimulusN);
+gaborImageObject.contrastGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+
 % Plot of how well point cloud method does in obtaining desired contratsfigure; clf;
 if (VERBOSE)
     figure;
@@ -213,27 +224,28 @@ if (VERBOSE)
     title('Quantized unique point cloud image method');
 end
 
-%% Convert representations we want to take forward to image format
-gaborImageObject.desiredContrastGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{ss,cc},stimulusN,stimulusN);
-gaborImageObject.standardPredictedContrastImage{ss,cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc},stimulusN,stimulusN);
-gaborImageObject.standardSettingsGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.standardSettingsGaborCal{ss,cc},stimulusN,stimulusN);
-gaborImageObject.uniqueQuantizedContrastGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
-
 %% Put the image into an ISETBio scene.
 % 
 % As I read the subroutine, it is using the standard rather than lookup
 % table data here. That's fine, but we should stay aware of it.
-ISETBioGaborObject = MakeISETBioSceneFromImage(colorDirectionParams,gaborImageObject,standardGaborCalObject,...
+ISETBioGaborObject = MakeISETBioSceneFromImageMel(colorDirectionParams,gaborImageObject, ...
     ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSE);
 
 % Go back to the RGB image starting with the ISETBio representation.
-fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborObject,standardGaborCalObject,'verbose',VERBOSE);
-t1 = ImageToCalFormat(gaborImageObject.standardSettingsGaborImage{ss,cc});
-t2 = fromISETBioGaborCalObject.settingsFromISETBioGaborCal;
-diff = max(abs(t1(:)-t2(:)));
-if (diff > 1e-8)
-    error('ISETBio scene does not reproduce settings\n');
-end
+%
+% This check commented out because it is written assuming that the ISETBio
+% scene settings were computed using the standard method, and we are using
+% the exhaustive search settings for improved precision.  Leaving it here
+% to note that we could rewrite the check if we wanted to, but it would be
+% slow.
+%
+% fromISETBioGaborCalObject = GetSettingsFromISETBioScene(screenCalObjFromISETBio,ISETBioGaborObject,standardGaborCalObject,'verbose',VERBOSE);
+% t1 = ImageToCalFormat(gaborImageObject.excitationsGaborImage{ss,cc});
+% t2 = fromISETBioGaborCalObject.settingsFromISETBioGaborCal;
+% diff = max(abs(t1(:)-t2(:)));
+% if (diff > 1e-6)
+%     error('ISETBio scene does not reproduce settings\n');
+% end
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = colorDirectionParams.T_xyz * cell2mat(standardGaborCalObject.desiredSpdGaborCal);
@@ -248,7 +260,7 @@ title('SRGB Gabor Image');
 
 %% Show the settings image
 figure; clf;
-imshow(cell2mat(gaborImageObject.standardSettingsGaborImage));
+imshow(cell2mat(gaborImageObject.excitationsGaborImage));
 title('Image of settings');
 
 %% Plot slice through predicted LMS contrast image.
@@ -266,7 +278,7 @@ else
 end
 
 % Point cloud method.
-PlotSliceContrastGaborImage(cell2mat(gaborImageObject.uniqueQuantizedContrastGaborImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
+PlotSliceContrastGaborImage(cell2mat(gaborImageObject.contrastGaborImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
     'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 title('Image Slice, Lookup Table Method, LMS and Mel Cone Contrast');
 
@@ -333,7 +345,7 @@ if (ispref('SpatioSpectralStimulator','SACCMelanopsin'))
     testFilename = fullfile(testFiledir,'testImageDataISETBio');
     save(testFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
         'ISETBioDisplayObject','screenSizeObject','screenCalObjFromISETBio', ...
-        'ISETBioGaborObject','fromISETBioGaborCalObject' ...
-        );
+        'ISETBioGaborObject','fromISETBioGaborCalObject', ...
+        '-v7.3');
+    disp('Data has been saved successfully!');
 end
-disp('Data has been saved successfully!');
