@@ -92,7 +92,8 @@ gaborSdPixels = gaborSdDeg * screenSizeObj.screenPixelsPerDeg;
 rawMonochromeSineImage = MakeSineImage(0,sineFreqCyclesPerImage,stimulusN);
 
 % Make a phase shift on the sine image if you want.
-if (~isempty(options.sineImagePhaseShiftDeg))
+nPhaseShifts = length(options.sineImagePhaseShiftDeg);
+if (~isempty(options.sineImagePhaseShiftDeg) & options.sineImagePhaseShiftDeg ~= 0)
     halfStimulusN = stimulusN/2;
     rawMonochromeSineImageSlice = rawMonochromeSineImage(halfStimulusN,:);
     sineAmplitudes = unique(findpeaks(rawMonochromeSineImageSlice));
@@ -105,12 +106,11 @@ if (~isempty(options.sineImagePhaseShiftDeg))
     oneFrequencyDeg = 360;
     amountShift = round(options.sineImagePhaseShiftDeg/oneFrequencyDeg .* oneFrequencyLocation);
     phaseShiftHorizontal = 2;
-    nPhaseShifts = length(options.sineImagePhaseShiftDeg);
     for ss = 1:nPhaseShifts
         rawMonochromeSineImagePhaseShift{ss} = circshift(rawMonochromeSineImage, amountShift(ss), phaseShiftHorizontal);
     end
 else
-    rawMonochromeSineImagePhaseShift = rawMonochromeSineImage;
+    rawMonochromeSineImagePhaseShift{1} = rawMonochromeSineImage;
 end
 
 % Make Gaussian window and normalize its max to one.
