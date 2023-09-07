@@ -62,10 +62,11 @@ end
 % colorDirectionParams and the calbibration data.
 for pp = 1:nScreenPrimaries
     Scheck(pp,:) = channelCalObjs{pp}.get('S');
+    if (any(colorDirectionParams.S ~= Scheck(pp,:)))
+        error('Mismatch between calibration file S and that specified at top');
+    end
 end
-if (any(colorDirectionParams.S ~= Scheck))
-    error('Mismatch between calibration file S and that specified at top');
-end
+
 
 % Use quantized conversion from here on.
 for cc = 1:3
