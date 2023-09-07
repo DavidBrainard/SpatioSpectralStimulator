@@ -43,6 +43,11 @@ function [ISETBioGaborObject] = MakeISETBioSceneFromImage(colorDirectionParams,g
 %                               function.
 %   05/09/22  smo             - Added an option to make a phase shift on
 %                               sine image.
+%   09/06/23  dhb             - Use T_receptor field to compute responses
+%                               if it exists. Defaults back to T_cones if
+%                               T_receptor field is not there.  This change
+%                               to handle simulations/experiments with
+%                               melanopsin.
 
 %% Set parameters.
 arguments
@@ -92,7 +97,11 @@ for ss = 1:nPhaseShifts
         % per wlband to work with PTB, by multiplying by S(2).
         ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
         [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
-        ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
+        if (isfield(colorDirectionParams,'T_receptors'))
+            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_receptors * ISETBioGaborCal;
+        else
+            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
+        end
         limMin = 0.01; limMax = 0.02;
         
         % Plot it to comapare the cone excitations between before and after passing

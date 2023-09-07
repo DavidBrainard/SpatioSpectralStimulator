@@ -49,7 +49,12 @@ end
 %% Set up desired background.
 %
 % We aim for the background that we said we wanted when we built the screen primaries.
-desiredBgExcitations = options.screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(backgroundChannelObject.channelBackgroundSpd,2);
+if (isfield(colorDirectionParams,'T_receptors'))
+     desiredBgExcitations = options.screenBackgroundScaleFactor * colorDirectionParams.T_receptors * sum(backgroundChannelObject.channelBackgroundSpd,2);
+else
+    desiredBgExcitations = options.screenBackgroundScaleFactor * colorDirectionParams.T_cones * sum(backgroundChannelObject.channelBackgroundSpd,2);
+end
+
 screenBgSettings = SensorToSettings(screenCalObj,desiredBgExcitations);
 screenBgExcitations = SettingsToSensor(screenCalObj,screenBgSettings);
 

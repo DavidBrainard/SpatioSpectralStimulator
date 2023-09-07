@@ -30,9 +30,9 @@ S = [380 2 201];
 %% Set key stimulus parameters
 %
 % Condition Name.
-conditionName = 'MelDirected';
+conditionName = 'MelDirected1';
 switch (conditionName)
-    case 'MelDirected'
+    case 'MelDirected1'
         % Background xy.
         %
         % Specify the chromaticity, but we'll chose the luminance based
@@ -188,12 +188,6 @@ lowProjectWl = 400;
 highProjectWl = 700;
 projectIndices = find(wls > lowProjectWl & wls < highProjectWl);
 
-%% Find background primaries to acheive desired xy at intensity scale of display.
-%
-% Set parameters for getting desired background primaries.
-primaryHeadRoom = 0;
-targetBgXYZ = xyYToXYZ([targetBgxy ; 1]);
-
 % Target lambda determines how heavily the smoothness constraint is weighed
 % in the optimization.  Bigger weighs smoothness more heavily.  This
 % parameter thus trades off contrast accuracy against smoothness.  We used 
@@ -220,10 +214,6 @@ screenBackgroundScaleFactor = 0.5;
 % relative to gamut, which is why we can set the target luminance
 % arbitrarily to 1 just above. The scale factor determines where in the
 % approximate channel gamut we aim the background at.
-% for pp = 1:nScreenPrimaries
-%     [channelBackgroundPrimaries(:,pp),channelBackgroundSpd(:,pp),channelBackgroundXYZ(:,pp)] = FindBgChannelPrimaries(targetBgXYZ,T_xyz,channelCalObjs{pp}, ...
-%         B_natural{pp},projectIndices,primaryHeadRoom,targetLambda,'scaleFactor',0.6,'Scale',true,'Verbose',true);
-% end
 targetBackgroundPrimaryVal = 0.5;
 for pp = 1:nScreenPrimaries
     channelBackgroundPrimaries(:,pp) = targetBackgroundPrimaryVal*ones(size(halfOnChannels));

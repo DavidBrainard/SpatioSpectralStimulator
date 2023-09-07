@@ -60,8 +60,15 @@ plot(1:stimulusN,100 * desiredGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
 plot(1:stimulusN,100 * targetGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
 plot(1:stimulusN,100 * desiredGaborImage(centerN,:,3),'b','LineWidth',0.5);
-xlabel('x position (pixels)')
 ylabel('LMS Cone Contrast (%)');
+
+if (size(targetGaborImage,3) == 4)
+    plot(1:stimulusN,100 * targetGaborImage(centerN,:,4),'c+','MarkerFaceColor','b','MarkerSize',4);
+    plot(1:stimulusN,100 * desiredGaborImage(centerN,:,4),'c','LineWidth',0.5);
+    ylabel('LMS Cone and Mel Contrast (%)');
+end
+
+xlabel('x position (pixels)')
 ylim([-options.plotAxisLimit options.plotAxisLimit]);
 
 end
