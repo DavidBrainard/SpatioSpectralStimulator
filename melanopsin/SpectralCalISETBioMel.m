@@ -260,7 +260,7 @@ title('SRGB Gabor Image');
 
 %% Show the settings image
 figure; clf;
-imshow(cell2mat(gaborImageObject.excitationsGaborImage));
+imshow(gaborImageObject.settingsGaborImage{ss,cc});
 title('Image of settings');
 
 %% Plot slice through predicted LMS contrast image.
