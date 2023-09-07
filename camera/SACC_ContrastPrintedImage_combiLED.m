@@ -182,7 +182,9 @@ legend(legendHandles,'location','southwest','fontsize',15);
 %
 % These are the contrats when measuring only one cycle (so, half black on
 % the left and the other half as white on the right)
-refContrasts = [ 0.8811    0.8756    0.8938    0.8891    0.8863    0.8870    0.8853    0.8868];
+%
+% Measured on 0905.
+refContrasts = [0.8811    0.8756    0.8938    0.8891    0.8863    0.8870    0.8853    0.8868];
 
 %% Plot MTF comparing with SACCSFA results.
 figure; clf;
@@ -195,9 +197,17 @@ for cc = 1:nTargetChs
     subplot(2,4,cc); hold on;
     
     % Printed pattern.
-    plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
+    %
+    % You can plot either raw contrast or normalized contrast.
+    normContrast = true;
+    if (normContrast)
+        meanContrastsTemp = meanContrasts_all(:,cc)/refContrasts(cc);
+    else
+        meanContrastsTemp = meanContrasts_all(:,cc);
+    end
+    plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
-
+    
     % SACCSFA. Its peak wavelengths were 422, 476, 530, 592, 658 nm.
     idxChComparison = [2 3 5 6 8];
     if ismember(cc,idxChComparison)
