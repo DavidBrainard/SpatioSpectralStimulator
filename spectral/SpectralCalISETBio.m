@@ -1,7 +1,7 @@
 % SpectralCalISETBio
 %
 % Description:
-%    Explore spectral fits with swubprimaries, this
+%    Explore spectral fits with subprimaries, this
 %    version using the calibration structures and
 %    ISETBio machinery.
 %
