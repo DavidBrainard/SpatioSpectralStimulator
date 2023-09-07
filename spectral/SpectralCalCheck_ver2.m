@@ -55,7 +55,7 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
 end
 
 %% Open up screen and radiometer.
-if and(MEASURETARGETCONTRAST,MEASUREPRIMARY)
+if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
     initialScreenSettings = [1 1 1]';
     [window,windowRect] = OpenPlainScreen(initialScreenSettings);
     OpenSpectroradiometer;
@@ -164,43 +164,46 @@ SetSensorColorSpace(screenCalObj,T_cones,S);
 % We just measured the primaries.  So, we could recompute the contrast
 % check settings based on these measured primaries, rather than the
 % nominal ones we used in SpectralTestCal.  Here is where that happens
+%
+% Generate some settings values corresponding to known contrasts
+%
+% The reason for this is to measure and check these.  This logic follows
+% how we handled an actual gabor image above. The quantization to
+% nQuantizeLevels isn't strictly needed, but nor is it doing harm.
+% Parameters.
+nQuantizeLevels = theData.nQuantizeLevels;
+
+% Figure out desired background excitations. The actual background
+% won't be what we computed originally, because the primary spectra
+% aren't the same as their nominal values.  Here we recompute what
+% the background will be when we set the screen to the
+% background settings.  That then lets us compute contrast relative
+% to the background we're going to get. We want to do this from the
+% settings, so that the background isn't mucked up by quantization.
+screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCal(:,1)));
+screenBgExcitations = T_cones * screenBgSpd;
+
+if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
+    rawMonochromeUnquantizedContrastCheckCal = theData.rawMonochromeUnquantizedContrastCheckCal;
+else
+    rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
+end
+rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+desiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
+desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
+
+% Choose which method to calculate the settings. This is chosen from the
+% beginning of the script either 'pointcloud' or 'standard'.
 switch CALMETHOD
     % Point cloud method.
     case 'pointcloud'
     % Optional recompute of target settings
         RECOMPUTE = true;
         if (RECOMPUTE)
-            % Parameters.
-            nQuantizeLevels = theData.nQuantizeLevels;
-            
-            % Figure out desired background excitations. The actual background
-            % won't be what we computed originally, because the primary spectra
-            % aren't the same as their nominal values.  Here we recompute what
-            % the background will be when we set the screen to the
-            % background settings.  That then lets us compute contrast relative
-            % to the background we're going to get. We want to do this from the
-            % settings, so that the background isn't mucked up by quantization.
-            screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCal(:,1)));
-            screenBgExcitations = T_cones * screenBgSpd;
-            
             % Set up point cloud for finding best settings
             [contrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
             
-            %% Generate some settings values corresponding to known contrasts
-            %
-            % The reason for this is to measure and check these.  This logic follows
-            % how we handled an actual gabor image above. The quantization to
-            % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
-            if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
-                rawMonochromeUnquantizedContrastCheckCal = theData.rawMonochromeUnquantizedContrastCheckCal;
-            else
-                rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
-            end
-            rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-            desiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
-            desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
-            
-            % For each check calibration find the settings that
+            %% For each check calibration find the settings that
             % come as close as possible to producing the desired excitations.
             %
             % If we measure for a uniform field the spectra corresopnding to each of
@@ -215,6 +218,7 @@ switch CALMETHOD
             ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
             ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
         end
+        
         % Standard method.
     case 'standard'
         % Get primaries using standard calibration code, and desired spd without
@@ -241,7 +245,6 @@ end
 if (MEASURETARGETCONTRAST)
     [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCal,...
         S,window,windowRect,'measurementOption',true,'verbose',verbose);
-    
 end
 
 %% Make plot of measured versus desired spds.
