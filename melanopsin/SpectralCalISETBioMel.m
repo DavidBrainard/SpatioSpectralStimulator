@@ -48,9 +48,9 @@ VERBOSE = true;
 %% Image spatial parameters.
 %
 % Image will be centered in display.
-sineFreqCyclesPerDeg = 1;
-gaborSdDeg = 0.75;
-stimulusSizeDeg = 7;
+sineFreqCyclesPerDeg = 0.25;
+gaborSdDeg = 2;
+stimulusSizeDeg = 4;
 nQuantizeBits = 9;
 nQuantizeLevels = 2^nQuantizeBits;
 
@@ -88,7 +88,7 @@ backgroundScreenPrimaryObject = SetupBackground(colorDirectionParams,screenCalOb
 % quantization of the gabor image.
 [rawMonochromeUnquantizedContrastGaborImage, rawMonochromeUnquantizedContrastGaborCal, rawMonochromeContrastGaborCal, ...
     stimulusN, centerN, stimulusHorizSizeDeg, stimulusHorizSizeMeters] = ...
-    MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,'verbose',VERBOSE,'nQuantizeBits',nQuantizeBits);
+      MakeMonochromeContrastGaborMel(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,'verbose',VERBOSE,'nQuantizeBits',nQuantizeBits);
 
 %% Get cone contrast/excitation gabor image.
 %
@@ -267,17 +267,6 @@ title('Image of settings');
 %
 % Set the plot limit axis.
 plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
-
-% SensorToSettings method.
-PlotSliceContrastGaborImage(cell2mat(gaborImageObject.standardPredictedContrastImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
-    'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
-if (screenGammaMethod == 2)
-    title('Image Slice, SensorToSettings Method, Quantized Gamma, LMS Cone and Mel Contrast');
-else
-    title('Image Slice, SensorToSettings Method, No Quantization, LMS Cone and Mel Contrast');
-end
-
-% Point cloud method.
 PlotSliceContrastGaborImage(cell2mat(gaborImageObject.contrastGaborImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
     'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
 title('Image Slice, Lookup Table Method, LMS and Mel Cone Contrast');
@@ -339,13 +328,10 @@ xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
 %% Save out what we need 
-if (ispref('SpatioSpectralStimulator','SACCMelanopsin'))
-    dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-    testFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
-    testFilename = fullfile(testFiledir,'testImageDataISETBio');
-    save(testFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
-        'ISETBioDisplayObject','screenSizeObject','screenCalObjFromISETBio', ...
-        'ISETBioGaborObject','fromISETBioGaborCalObject', ...
-        '-v7.3');
-    disp('Data has been saved successfully!');
-end
+testFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
+testFilename = fullfile(testFiledir,'testImageDataISETBio');
+save(testFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
+    'ISETBioDisplayObject','screenSizeObject','screenCalObjFromISETBio', ...
+    'ISETBioGaborObject', ...
+    '-v7.3');
+disp('Data has been saved successfully!');
