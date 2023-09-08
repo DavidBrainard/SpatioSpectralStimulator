@@ -26,11 +26,17 @@ clear; close all;
 %
 % Set up color direction parameters by its condition name.
 conditionName = 'LminusMSmooth';
-targetScreenPrimaryContrasts = 0.07;
-spatialGaborTargetContrast = 0.05;
 
+% Set priamry and gabor image contrast settings.
+targetScreenPrimaryContrast = 0.07;
+spatialGaborTargetContrast = 0.07;
+targetLambda = 3;
+
+% Set up color direction here.
 colorDirectionParams = SetupColorDirection(conditionName,...
-    'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast);
+    'targetScreenPrimaryContrasts',targetScreenPrimaryContrast,...
+    'spatialGaborTargetContrast',spatialGaborTargetContrast,...
+    'targetLambda',targetLambda);
 
 % Set to true to get more output.
 VERBOSE = true;
@@ -205,13 +211,24 @@ screenPrimaryPrimaries = screenPrimaryChannelObject.screenPrimaryPrimaries;
 screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
 screenPrimarySpd = screenPrimaryChannelObject.screenPrimarySpd;
 
+% if (ispref('SpatioSpectralStimulator','SACCData'))
+%     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+%     testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s_temp',conditionName));
+%     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
+%         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
+%         'desiredContrastCheckCal', ...
+%         'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
+%         'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
+% end
+% disp('Data has been saved successfully!');
+
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-    testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s_temp',conditionName));
+    testFilename = fullfile(testFiledir,'CheckCalibration','testImageData');
     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
-        'desiredContrastCheckCal', ...
+        'desiredContrastCheckCal','rawMonochromeUnquantizedContrastCheckCal', ...
         'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
-        'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
+        'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast',...
+        'targetScreenPrimaryContrast','targetLambda');
 end
-disp('Data has been saved successfully!');
