@@ -27,8 +27,15 @@ clear; close all;
 %
 % Set up color direction parameters by its condition name.
 conditionName = 'MelDirected1';
-targetScreenPrimaryContrasts = 0.15;
-spatialGaborTargetContrast = 0.15;
+%conditionName = 'IsochromaticControl';
+switch (conditionName)    
+    case 'MelDirected1'
+        targetScreenPrimaryContrasts = 0.15;
+        spatialGaborTargetContrast = 0.15;
+    case 'IsochromaticControl'
+        targetScreenPrimaryContrasts = 0.75;
+        spatialGaborTargetContrast = 0.75;
+end
 
 % Gamma method
 %   0 -> no quantization modeled
@@ -48,11 +55,14 @@ VERBOSE = true;
 %% Image spatial parameters.
 %
 % Image will be centered in display.
-sineFreqCyclesPerDeg = 0.25;
+sineFreqCyclesPerDeg = 5;
 gaborSdDeg = 2;
 stimulusSizeDeg = 4;
 nQuantizeBits = 9;
 nQuantizeLevels = 2^nQuantizeBits;
+
+%% Create output string so we can keep track of what we are doing
+sceneOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg);
 
 %% Use extant machinery to get primaries from spectrum.
 %
@@ -328,9 +338,13 @@ xlabel('Wavelength'); ylabel('Radiance');
 title('Check of consistency between screen primaries and screen primary spds');
 
 %% Save out what we need 
-testFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
-testFilename = fullfile(testFiledir,'testImageDataISETBio');
-save(testFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
+sceneOutputFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
+sceneOutputSubdir = fullfile(sceneOutputFiledir,sceneOutputStr);
+if (~exist(sceneOutputSubdir,'dir'))
+    mkdir(sceneOutputSubdir);
+end
+sceneOutputFilename = fullfile(sceneOutputSubdir,sprintf('sceneOutput_%s',[sceneOutputStr '.mat']));
+save(sceneOutputFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
     'ISETBioDisplayObject','screenSizeObject','screenCalObjFromISETBio', ...
     'ISETBioGaborObject', ...
     '-v7.3');
