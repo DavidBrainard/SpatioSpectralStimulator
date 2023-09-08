@@ -211,17 +211,6 @@ screenPrimaryPrimaries = screenPrimaryChannelObject.screenPrimaryPrimaries;
 screenPrimarySettings = screenPrimaryChannelObject.screenPrimarySettings;
 screenPrimarySpd = screenPrimaryChannelObject.screenPrimarySpd;
 
-% if (ispref('SpatioSpectralStimulator','SACCData'))
-%     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-%     testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageData_%s_temp',conditionName));
-%     save(testFilename,'S','T_cones','screenCalObj','channelCalObjs','screenSettingsImage', ...
-%         'screenPrimaryPrimaries','screenPrimarySettings','screenPrimarySpd',...
-%         'desiredContrastCheckCal', ...
-%         'ptCldScreenSettingsCheckCal','ptCldScreenContrastCheckCal','ptCldScreenSpdCheckCal', ...
-%         'nQuantizeLevels','screenNInputLevels','targetStimulusContrastDir','spatialGaborTargetContrast');
-% end
-% disp('Data has been saved successfully!');
-
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = getpref('SpatioSpectralStimulator','SACCData');
     testFilename = fullfile(testFiledir,'CheckCalibration','testImageData');
