@@ -1,3 +1,21 @@
+%{
+
+clear;
+conditionNameList = {'MelDirected1' 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2 1 2 5 10];
+gaborSdDeg = 1;
+stimulusSizeDeg = 4;
+
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        SpectralCalISETBioMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+            gaborSdDeg,stimulusSizeDeg);
+    end
+end
+
+%}
+
+function SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg,gaborSdDeg,stimulusSizeDeg)
 % SpectralCalISETBioMel
 %
 % Description:
@@ -21,13 +39,11 @@
 %    09/06/23  dhb        Melanopsin version
 
 %% Clear.
-clear; close all;
+close all;
 
 %% Set key stimulus parameters.
 %
 % Set up color direction parameters by its condition name.
-conditionName = 'MelDirected1';
-%conditionName = 'IsochromaticControl';
 switch (conditionName)    
     case 'MelDirected1'
         targetScreenPrimaryContrasts = 0.15;
@@ -54,15 +70,13 @@ VERBOSE = true;
 
 %% Image spatial parameters.
 %
+% Most of these passed in.
 % Image will be centered in display.
-sineFreqCyclesPerDeg = 5;
-gaborSdDeg = 2;
-stimulusSizeDeg = 4;
-nQuantizeBits = 9;
+nQuantizeBits = 11;
 nQuantizeLevels = 2^nQuantizeBits;
 
 %% Create output string so we can keep track of what we are doing
-sceneOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg);
+sceneOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
 
 %% Use extant machinery to get primaries from spectrum.
 %

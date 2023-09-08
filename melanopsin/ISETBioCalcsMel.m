@@ -1,25 +1,5 @@
-% ISETBioCalcsMel
+%{
 
-%% Initialize
-clear; close all;
-
-%% Parameter specifications for scene that determine filename
-conditionName = 'MelDirected1';
-%conditionName = 'IsochromaticControl';
-sineFreqCyclesPerDeg = 0.2;
-gaborSdDeg = 2;
-stimulusSizeDeg = 4;
-sceneInputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg);
-
-% Load the scene data according to parameters above
-sceneInputFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
-sceneInputSubdir = fullfile(sceneInputStr);
-sceneInputFilename = fullfile(sceneInputFiledir,sceneInputSubdir,sprintf('sceneOutput_%s',sceneInputStr));
-theData = load(sceneInputFilename);
-disp('Data loaded');
-
-%% Scale of some individual difference variation
-%
 % Asano et al. give the following population SD's for the individual
 % difference parameters (their Table 5, Step 2 numbers:
 %   Lens    - 18.7%
@@ -31,26 +11,100 @@ disp('Data loaded');
 %   M Shift   - 1.5 nm
 %   S Shift   - 1.3 nm
 
-%% Use ISETPipelineToolbox wrapper as a way to the isetbio computations
-%
-% These parameters define the key properties we are likely to vary%% Mosaic settings that we might vary
-fieldSizeDegs = 5;
-eccXDegs = -10;
-eccYDegs = 0;
+%% Run out a bunch of exzmples
+clear;
+conditionNameList = {'MelDirected1' 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2 1 2 5 10];
+gaborSdDeg = 1;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDegList = [-10 15];
 aoRender = false;
 noLCA = false;
-subjectID = 6;
 ageISETBio = 32;
 dLensISETBio = 0;
 dMacISETBio = 0;
-mosaicOutputStr = sprintf('Ecc_%0.1f_YEcc_%01.f_aoRender_%d_noLCA_%d_FS_%d_SubID_%d_Age_%d',eccXDegs,eccYDegs,aoRender,noLCA,fieldSizeDegs,subjectID,ageISETBio);
 
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        for ee = 1:length(eccXDegsList)
+        ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                gaborSdDeg,stimulusSizeDeg, ...
+                fieldSizeDeg, ...
+                eccXDegList(ee), ...
+                aoRender, noLCA, ...
+                ageISETBio, dLensISETBio, dMacISETBio ...
+            );
+        end
+    end
+end
+%}
+
+%{
+%% Baseline condition test
+clear;
+conditionName = 'MelDirected1';
+sineFreqCyclesPerDeg = 0.2;
+gaborSdDeg = 1;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDeg = -10;
+aoRender = false;
+noLCA = false;
+ageISETBio = 32;
+dLensISETBio = 0;
+dMacISETBio = 0;
+
+ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg, ...
+        gaborSdDeg,stimulusSizeDeg, ...
+        fieldSizeDeg, ...
+        eccXDeg, ...
+        aoRender, noLCA, ...
+        ageISETBio, dLensISETBio, dMacISETBio ...
+    );
+%}
+
+
+function ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg, ...
+            gaborSdDeg,stimulusSizeDeg, ...
+            fieldSizeDeg, ...
+            eccXDeg, ...
+            aoRender,noLCA, ...
+            ageISETBio, dLensISETBio, dMacISETBio ...
+        )
+% ISETBioCalcsMel
+
+%% Initialize
+close all;
+
+%% Parameter specifications for scene that are not passed.
+screenGammaMethod = 2;
+sceneInputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d', ...
+    conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
+
+% Load the scene data according to parameters above
+sceneInputFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
+sceneInputSubdir = fullfile(sceneInputStr);
+sceneInputFilename = fullfile(sceneInputFiledir,sceneInputSubdir,sprintf('sceneOutput_%s',sceneInputStr));
+theData = load(sceneInputFilename);
+disp('Data loaded');
+
+%% Mosaic settings not so likely to vary
+eccYDeg = 0;
+subjectID = 6;
+mosaicOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d', ...
+    conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
+
+%% Use ISETPipelineToolbox wrapper as a way to the isetbio computations
+%
+% These parameters define key addtional properties we are likely to vary
 % Not likely to vary these in the short run, so not coded in output name for now
 randSeed = false;                              % False means, no randomness
 eccVars = false;
 pupilDiamMM = 3;
 defocusDiopters = 0;
-addPoissonNoise = true;
 zernikeDataBase = 'Polans2015';
 
 %% Generate the photopigment, macular pigment density, and lens density to use
@@ -68,18 +122,34 @@ lensTransmittance = 10.^-adjustedLensDensity;
 lensObject = Lens('wave',theData.colorDirectionParams.wls,'unitDensity',-log10(lensTransmittance),'density',1);
 
 %% Macular transmittance for the specified field size
-macTransmittance = MacularTransmittance(theData.colorDirectionParams.wls,'Human','CIE',sqrt(eccXDegs^2 + eccYDegs^2));
+macTransmittance = MacularTransmittance(theData.colorDirectionParams.wls,'Human','CIE',sqrt(eccXDeg^2 + eccYDeg^2));
 unadjustedMacDensity = -log10(macTransmittance);
 adjustedMacDensity = unadjustedMacDensity * (1 + dMacISETBio/100);
 macTransmittance = 10.^-adjustedMacDensity;
 macObject = Macular('wave',theData.colorDirectionParams.wls,'unitDensity',-log10(macTransmittance),'density',1);
+
+%% Define a dummy mosaic that lets us get OS length at the speified eccentricity.
+dummyMosaic = ConeResponseCmosaic(eccXDeg, eccYDeg, ...
+            'fovealDegree', fieldSizeDeg, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
+            'defocusDiopters',defocusDiopters, 'wave', theData.colorDirectionParams.wls, ...
+            'tritanopicRadiusDegs', 0, ...  % Want some S cones and don't care about space in this example
+            'rodIntrusionAdjustedConeAperture', true, ...
+            'eccVaryingConeAperture', false, ...
+            'eccVaryingConeBlur', false, ...
+            'eccVaryingOuterSegmentLength', false, ...
+            'eccVaryingMacularPigmentDensity', false, ...
+            'eccVaryingMacularPigmentDensityDynamic', false, ...
+            'anchorAllEccVaryingParamsToTheirFovealValues', true, ...
+            'subjectID', subjectID, ...
+            'noLCA', noLCA, ...
+            'zernikeDataBase', zernikeDataBase);
 
 %% Photopigment absorptance
 %
 % The individual differences model allows for shifting the absorbance along
 % the wavelength axis. Do that here.
 asanoConeParams = DefaultConeParams('cie_asano');
-asanoConeParams.fieldSizeDegrees = sqrt(eccXDegs^2 + eccYDegs^2);
+asanoConeParams.fieldSizeDegrees = sqrt(eccXDeg^2 + eccYDeg^2);
 asanoConeParams.ageYears = ageISETBio;
 asanoConeParams.pupilDiamMM = pupilDiamMM;
 asanoConeParams.indDiffParams = theData.colorDirectionParams.psiParamsStruct.coneParams.indDiffParams;
@@ -110,6 +180,24 @@ photopigmentObject = cPhotoPigment('wave', theData.colorDirectionParams.wls,...
     'opticalDensity',axialDensity,'absorbance',photopigmentAbsorbance', ...
     'peakEfficiency',cieStaticParams.quantalEfficiency );
 
+% Get the cone fundamentals we think we are using
+T_cones_ISETBio = photopigmentObject.energyFundamentals';
+for cc = 1:3
+    T_cones_ISETBio(cc,:) = T_cones_ISETBio(cc,:) .* lensTransmittance;
+    T_cones_ISETBio(cc,:) = T_cones_ISETBio(cc,:) .* macTransmittance;
+    T_cones_ISETBio(cc,:) = T_cones_ISETBio(cc,:) / max(T_cones_ISETBio(cc,:));
+end
+fundamentalsFig = figure; clf; hold on;
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(1,:),'r','LineWidth',6);
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(2,:),'g','LineWidth',6);
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(3,:),'b','LineWidth',6);
+xlabel('Wavelength (nm)');
+ylabel('Exication Probability');
+figure(fundamentalsFig);
+plot(theData.colorDirectionParams.wls,T_cones_ISETBio(1,:),'k-','LineWidth',3);
+plot(theData.colorDirectionParams.wls,T_cones_ISETBio(2,:),'k-','LineWidth',3);
+plot(theData.colorDirectionParams.wls,T_cones_ISETBio(3,:),'k-','LineWidth',3);
+
 %% Create and setup cone mosaic
 %
 % Use the ISETPipelineToolbox machinery.
@@ -117,8 +205,8 @@ photopigmentObject = cPhotoPigment('wave', theData.colorDirectionParams.wls,...
 %% AO version allows us to get rid of optics in effect
 if (aoRender)
     if (eccVars)
-        theConeMosaic = ConeResponseCmosaic(eccXDegs, eccYDegs, ...
-            'fovealDegree', fieldSizeDegs, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
+        theConeMosaic = ConeResponseCmosaic(eccXDeg, eccYDeg, ...
+            'fovealDegree', fieldSizeDeg, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
             'rodIntrusionAdjustedConeAperture', true, ...
             'defocusDiopters',defocusDiopters, 'wave', theData.colorDirectionParams.wls, ...
             'tritanopicRadiusDegs', 0, ...  % Want some S cones and don't care about space in this example
@@ -128,8 +216,8 @@ if (aoRender)
             'noLCA', noLCA, ...
             'zernikeDataBase', zernikeDataBase);
     else
-        theConeMosaic = ConeResponseCmosaic(eccXDegs, eccYDegs, ...
-            'fovealDegree', fieldSizeDegs, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
+        theConeMosaic = ConeResponseCmosaic(eccXDeg, eccYDeg, ...
+            'fovealDegree', fieldSizeDeg, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
             'defocusDiopters',defocusDiopters, 'wave', theData.colorDirectionParams.wls, ...
             'tritanopicRadiusDegs', 0, ...  % Want some S cones and don't care about space in this example
             'macular', macObject, ...       % custom macular pigment object
@@ -150,8 +238,8 @@ if (aoRender)
 else
     if (eccVars)
         % Build normal optics structure.
-        theConeMosaic = ConeResponseCmosaic(eccXDegs, eccYDegs, ...
-            'fovealDegree', fieldSizeDegs, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
+        theConeMosaic = ConeResponseCmosaic(eccXDeg, eccYDeg, ...
+            'fovealDegree', fieldSizeDeg, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
             'rodIntrusionAdjustedConeAperture', true, ...
             'defocusDiopters',defocusDiopters, 'wave', theData.colorDirectionParams.wls, ...
             'tritanopicRadiusDegs', 0, ...  % Want some S cones and don't care about space in this example
@@ -161,8 +249,8 @@ else
             'noLCA', noLCA, ...
             'zernikeDataBase', zernikeDataBase);
     else
-        theConeMosaic = ConeResponseCmosaic(eccXDegs, eccYDegs, ...
-            'fovealDegree', fieldSizeDegs, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
+        theConeMosaic = ConeResponseCmosaic(eccXDeg, eccYDeg, ...
+            'fovealDegree', fieldSizeDeg, 'pupilSize', pupilDiamMM, 'useRandomSeed', randSeed, ...
             'defocusDiopters',defocusDiopters, 'wave', theData.colorDirectionParams.wls, ...
             'tritanopicRadiusDegs', 0, ...  % Want some S cones and don't care about space in this example
             'macular', macObject, ...       % custom macular pigment object
@@ -184,9 +272,9 @@ end
 ss = 1; cc = 1;
 theConeMosaic.PSF = oiSet(theConeMosaic.PSF,'lens',lensObject);
 theOI = oiCompute(theData.ISETBioGaborObject.ISETBioGaborScene{ss,cc}, theConeMosaic.PSF);
-oiWindow(theOI);
+%oiWindow(theOI);
 
-% %Compute cone responses
+% Compute cone responses
 theConeResponses = theConeMosaic.Mosaic.compute(theOI, 'opticalImagePositionDegs', 'mosaic-centered', ...
     'lowOpticalImageResolutionWarning',true);
 %theConeMosaic.Mosaic.plot('excitations',theConeResponses);
@@ -201,9 +289,9 @@ theConeMosaic.Mosaic.visualize( ...
 % We compute contrast across all cones of each type in the ROI.  Using the
 % circular ROI eliminates edge effects.
 roiCircle = regionOfInterest('shape','ellipse',...
-    'center',[eccXDegs eccYDegs],...
-    'majorAxisDiameter',fieldSizeDegs*0.75,...
-    'minorAxisDiameter',fieldSizeDegs*0.75);
+    'center',[eccXDeg eccYDeg],...
+    'majorAxisDiameter',fieldSizeDeg*0.75,...
+    'minorAxisDiameter',fieldSizeDeg*0.75);
 
 % Visualize the ROI to make sure it is in a sensible place
 theConeMosaic.Mosaic.plot('roi',theConeResponses, 'roi',roiCircle);
