@@ -108,12 +108,19 @@ switch ScreenPatternType
                             barWidthPixel = 12;
                         case 2
                             barWidthPixel = 13;
+                            % Nominal
                         case 3
                             barWidthPixel = 14;
                         case 4
                             barWidthPixel = 16;
                         case 5
                             barWidthPixel = 18;
+                            % 1.66 d (as of 0814).
+                        case 11
+                            barWidthPixel = 21;
+                            % 2.0 d (as of 0814).
+                        case 12 
+                            barWidthPixel = 26;
                         otherwise
                             barWidthPixel = 14;
                     end
