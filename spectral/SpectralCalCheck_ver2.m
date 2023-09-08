@@ -1,6 +1,9 @@
-% SpectralCalCheck
+% SpectralCalCheck_ver2
 %
-% Read in output of SpectralTestCal and make some measurements.
+% Read in output of SpectralCalCompute and make some measurements.
+%
+% This is the second version, and it does do calculation of the settings
+% with two methods, point cloud and standard methods to compare each other.
 %
 
 % History:
@@ -17,25 +20,48 @@
 %% Initialize.
 clear; close all;
 
-%% Set parameters.
-warmupTimeMinutes = 0;
+%% Set measurement and setting calculation options.
 verbose = true;
-MEASURETARGETCONTRAST = false;
-MEASUREPRIMARY = false;
+MEASUREPRIMARY = true;
+MEASURETARGETCONTRAST = true;
+POINTCLOUD = true;
+STANDARD = true;
 
-% Set CALMETHOD either 'standard' or 'pointcloud'.
-CALMETHOD = 'standard';
-
-%% Load output of SpectralCalCompute.
-conditionName = 'LminusMSmooth';
-
-if (ispref('SpatioSpectralStimulator','SACCData'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-    testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
-        'testImageData');
-    theData = load(testFilename);
+%% Load the image data.
+%
+% You can load image either from fresh test image or from the available image
+% from SACCSFA experiment.
+LOADIMAGETYPE = 'experiment';
+switch LOADIMAGETYPE
+    case 'new'
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+            testFilename = GetMostRecentFileName(fullfile(testFiledir,'CheckCalibration'),...
+                'testImageData');
+            theData = load(testFilename);
+        end
+        
+    case 'experiment'
+        % Read out the calibration data.
+        olderDate = 0;
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
+            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
+            theData = load(testFilename);
+        end
+        % Match the data format to run it smoothly.
+        screenCalObj_temp = theData.screenCalObj;
+        theData = theData.theData;
+        theData.screenCalObj = screenCalObj_temp;
+        
+        % Get the date of the experiment.
+        numExtract = regexp(testFilename,'\d+','match');
+        strYear = numExtract{1};
+        strMonth = numExtract{2};
+        strDay = numExtract{3};
+        measureDate = sprintf('_%s-%s-%s',strYear,strMonth,strDay);
 end
-
+testFilename
 %% Set variables here.
 targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;
@@ -54,22 +80,15 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
     targetLambda = theData.targetLambda;
 end
 
-%% Open up screen and radiometer.
+%% Open up projector and spectroradiometer.
 if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
+    % Open the projector.
     initialScreenSettings = [1 1 1]';
     [window,windowRect] = OpenPlainScreen(initialScreenSettings);
+    % Connect to spectroradiometer.
     OpenSpectroradiometer;
-    
-    % Set subprimaries to desired value and wait for them to warm up to
-    % steady state.
+    % Set subprimary settings
     SetChannelSettings(theData.screenPrimarySettings,'nInputLevels',channelNInputLevels);
-    if (verbose)
-        fprintf('Waiting for warmup time of %d minutes ...',warmupTimeMinutes);
-    end
-    pause(60*warmupTimeMinutes);
-    if (verbose)
-        fprintf('done. Measuring.\n');
-    end
 end
 
 %% Measure primaries here. We can load it too if there is a file saved.
@@ -86,11 +105,10 @@ if (MEASUREPRIMARY)
     % Load the measurement results.
 elseif (~MEASUREPRIMARY)
     if (ispref('SpatioSpectralStimulator','SACCData'))
-        olderDatePrimary = 0;
-        
         % Load different file name according to 'normal' set or 'high' test
         % image contrast sets.
-        if (targetScreenPrimaryContrast > 0.7)
+        targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
+        if (targetScreenPrimaryContrast > 0.07)
             primaryContrast = 'high';
         else
             primaryContrast = 'normal';
@@ -98,25 +116,26 @@ elseif (~MEASUREPRIMARY)
         
         switch primaryContrast
             case 'normal'
-                filenamePart = 'targetScreenSpdMeasured';
+                filenamePart = 'targetScreenSpdMeasured_2';
             case 'high'
                 filenamePart = 'targetScreenSpdMeasured_high';
         end
         
-        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
-        primaryFilename = GetMostRecentFileName(fullfile(testFiledir,'TestImages','MeasurementData'),...
-            filenamePart,'olderDate',olderDatePrimary);
+        % Load file.
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages','MeasurementData');
+        %         primaryFilename = GetMostRecentFileName(testFiledir,append(filenamePart,measureDate));
+        primaryFilename = GetMostRecentFileName(testFiledir,append(filenamePart),'olderdate',olderDate);
         load(primaryFilename);
         fprintf('Measurement file found, so skipping primary measurement! \n');
+        primaryFilename
     else
         error('No file to load');
     end
 end
 
 % Make plot comparing what we wanted for primaries versus what we got.
-% What we want is in targetScreenSpd, what we got is in
-% targetScreenSpdMeasured.
-% Plot the spd results.
+% What we want is in 'targetScreenSpd', what we got is in
+% 'targetScreenSpdMeasured'.
 figure; clf;
 for pp = 1:nPrimaries
     subplot(nPrimaries,1,pp); hold on;
@@ -148,7 +167,6 @@ for pp = 1:nPrimaries
 end
 
 %% Set each primary to the settings we loaded in and measure
-
 screenCalObj = theData.screenCalObj;
 theData = rmfield(theData,'screenCalObj');
 
@@ -161,23 +179,25 @@ SetSensorColorSpace(screenCalObj,T_cones,S);
 
 %% Get target settings.
 %
-% We just measured the primaries.  So, we could recompute the contrast
+% This part is the same for both point cloud and standard methods as it is
+% getting 'target' settings.
+%
+% We just measured the primaries. So, we could recompute the contrast
 % check settings based on these measured primaries, rather than the
-% nominal ones we used in SpectralTestCal.  Here is where that happens
+% nominal ones we used in SpectralTestCal. Here is where that happens.
 %
-% Generate some settings values corresponding to known contrasts
+% Generate some settings values corresponding to known contrasts.
 %
-% The reason for this is to measure and check these.  This logic follows
+% The reason for this is to measure and check these. This logic follows
 % how we handled an actual gabor image above. The quantization to
 % nQuantizeLevels isn't strictly needed, but nor is it doing harm.
-% Parameters.
 nQuantizeLevels = theData.nQuantizeLevels;
 
 % Figure out desired background excitations. The actual background
 % won't be what we computed originally, because the primary spectra
-% aren't the same as their nominal values.  Here we recompute what
+% aren't the same as their nominal values. Here we recompute what
 % the background will be when we set the screen to the
-% background settings.  That then lets us compute contrast relative
+% background settings. That then lets us compute contrast relative
 % to the background we're going to get. We want to do this from the
 % settings, so that the background isn't mucked up by quantization.
 screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCal(:,1)));
@@ -188,85 +208,134 @@ if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
 else
     rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
 end
-rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
-desiredContrastCheckCal = theData.spatialGaborTargetContrast*theData.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
-desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
-
-% Choose which method to calculate the settings. This is chosen from the
-% beginning of the script either 'pointcloud' or 'standard'.
-switch CALMETHOD
-    % Point cloud method.
-    case 'pointcloud'
-    % Optional recompute of target settings
-        RECOMPUTE = true;
-        if (RECOMPUTE)
-            % Set up point cloud for finding best settings
-            [contrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
-            
-            %% For each check calibration find the settings that
-            % come as close as possible to producing the desired excitations.
-            %
-            % If we measure for a uniform field the spectra corresopnding to each of
-            % the settings in the columns of ptCldScreenSettingsCheckCall, then
-            % compute the cone contrasts with respect to the backgound (0 contrast
-            % measurement, first settings), we should approximate the cone contrasts in
-            % desiredContrastCheckCal.
-            fprintf('Point cloud exhaustive method, finding settings\n')
-            ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,desiredContrastCheckCal,ptCldSettingsCal);
-            ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
-            ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
-            ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
-            ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
-        end
-        
-        % Standard method.
-    case 'standard'
-        % Get primaries using standard calibration code, and desired spd without
-        % quantizing.
-        standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsCheckCal);
-        desiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
-        
-        % Gamma correct and quantize (if gamma method set to 2 above; with gamma
-        % method set to zero there is no quantization).  Then convert back from
-        % the gamma corrected settings.
-        standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
-        standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
-        standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
-        standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
-    otherwise
+% TEMP
+if ~and(MEASUREPRIMARY,MEASURETARGETCONTRAST)
+    contrastPos = [0:0.05:1];
+    contrastNeg = [0:-0.05:-1];
+    rawMonochromeUnquantizedContrastCheckCal = [contrastPos contrastNeg];
 end
 
-%% Measure contrasts of the settings we computed in SpectralTestCal
+% Calculate the desired cone cone contrasts.
+rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+desiredContrastCheckCal = theData.spatialGaborTargetContrast * theData.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
+desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
+
+%% Here we calculate the settings to achieve the desired contrast.
 %
-% Measure the contrast points.  We've already got the settings so all we
+% 1) Point cloud method.
+if (POINTCLOUD)
+    % Optional recompute of target settings.
+    RECOMPUTE = true;
+    if (RECOMPUTE)
+        % Set up point cloud for finding best settings.
+        [contrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
+        
+        % For each check calibration find the settings that come as close
+        % as possible to producing the desired excitations.
+        %
+        % If we measure for a uniform field the spectra corresopnding to
+        % each of the settings in the columns of
+        % ptCldScreenSettingsCheckCal, then compute the cone contrasts with
+        % respect to the backgound (0 contrast measurement, first
+        % settings), we should approximate the cone contrasts in
+        % 'desiredContrastCheckCal'.
+        fprintf('Point cloud exhaustive method, finding settings\n')
+        ptCldScreenSettingsCheckCal = SettingsFromPointCloud(contrastPtCld,desiredContrastCheckCal,ptCldSettingsCal);
+        ptCldScreenPrimariesCheckCal = SettingsToPrimary(screenCalObj,ptCldScreenSettingsCheckCal);
+        ptCldScreenSpdCheckCal = PrimaryToSpd(screenCalObj,ptCldScreenPrimariesCheckCal);
+        ptCldScreenExcitationsCheckCal = SettingsToSensor(screenCalObj,ptCldScreenSettingsCheckCal);
+        ptCldScreenContrastCheckCal = ExcitationsToContrast(ptCldScreenExcitationsCheckCal,screenBgExcitations);
+    end
+end
+
+% 2) Standard method
+if (STANDARD)
+    % Get primaries using standard calibration code, and desired spd without
+    % quantizing.
+    standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsCheckCal);
+    standardDesiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
+    
+    % Gamma correct and quantize (if gamma method set to 2 above; with gamma
+    % method set to zero there is no quantization).  Then convert back from
+    % the gamma corrected settings.
+    standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
+    standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
+    standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
+    standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
+end
+
+%% Compare the nominal contrasts between standard and point cloud methods.
+figure; hold on;
+
+% Standard method.
+plot(desiredContrastCheckCal(1,:),standardPredictedContrastGaborCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');
+plot(desiredContrastCheckCal(2,:),standardPredictedContrastGaborCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');
+plot(desiredContrastCheckCal(3,:),standardPredictedContrastGaborCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');
+
+% Point cloud.
+if (~RECOMPUTE)
+    ptCldScreenContrastCheckCal = theData.ptCldScreenContrastCheckCal;
+end
+plot(desiredContrastCheckCal(1,:),ptCldScreenContrastCheckCal(1,:),'ro','MarkerSize',19);
+plot(desiredContrastCheckCal(2,:),ptCldScreenContrastCheckCal(2,:),'go','MarkerSize',16);
+plot(desiredContrastCheckCal(3,:),ptCldScreenContrastCheckCal(3,:),'bo','MarkerSize',14);
+
+xlabel('Desired contrast','fontsize',15);
+ylabel('Nominal contrast','fontsize',15);
+axisLim = 0.055;
+xlim([-axisLim axisLim]);
+ylim([-axisLim axisLim]);
+axis('square');
+line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+grid on;
+legend('L-standard','M-stanard','S-standard','L-PT','M-PT','S-PT','location','southeast','fontsize',13);
+title('Nominal contrast: Standard vs. Point cloud methods');
+
+% Another way to see it.
+figure; clf; hold on;
+plot(standardPredictedContrastGaborCal(1,:),ptCldScreenContrastCheckCal(1,:),'ko','MarkerSize',14,'MarkerFaceColor','r');
+plot(standardPredictedContrastGaborCal(2,:),ptCldScreenContrastCheckCal(2,:),'ko','MarkerSize',14,'MarkerFaceColor','g');
+plot(standardPredictedContrastGaborCal(3,:),ptCldScreenContrastCheckCal(3,:),'ko','MarkerSize',14,'MarkerFaceColor','b');
+xlabel('Nominal contrast (Standard)','fontsize',15);
+ylabel('Nominal contrast (Point cloud)','fontsize',15);
+xlim([-axisLim axisLim]);
+ylim([-axisLim axisLim]);
+axis('square');
+line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+legend('L','M','S','location','southeast','fontsize',13);
+grid on;
+title('Direct comparison of nominal contrasts: Standard vs. Point cloud methods');
+
+%% Measure contrasts of the settings we computed in SpectralTestCal.
+%
+% Measure the contrast points. We've already got the settings so all we
 % need to do is loop through and set a uniform field to each of the
-% settings in ptCldScreenSettingsCheckCall and measure the corresponding
+% settings in ptCldScreenSettingsCheckCal and measure the corresponding
 % spd.
 if (MEASURETARGETCONTRAST)
-    [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCal,...
-        S,window,windowRect,'measurementOption',true,'verbose',verbose);
+    % Settings using Point cloud method.
+    if (POINTCLOUD)
+        disp('Measurements wil begin! - (Settings: Point cloud)');
+        [ptCldScreenSpdMeasuredCheckCal, ptCldScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(ptCldScreenSettingsCheckCal,...
+            S,window,windowRect,'measurementOption',true,'verbose',verbose);
+        disp('Measurements finished - (Settings: Point cloud)');
+    end
+    % Settings using the standard method.
+    if (STANDARD)
+        disp('Measurements wil begin! - (Settings: Standard)');
+        [standardScreenSpdMeasuredCheckCal, standardScreenSettingsIntegersCheckCal] = MeasurePlainScreenSettings(standardSettingsGaborCal,...
+            S,window,windowRect,'measurementOption',true,'verbose',verbose);
+        disp('Measurements finished - (Settings: Standard)');
+    end
 end
 
 %% Make plot of measured versus desired spds.
 %
 % The desired spds are in ptCldScreenSpdCheckCal
-%
-% Choose to use either raw or scaled measurement spectra.
-whichToAnalyze = 'raw';
-switch (whichToAnalyze)
-    case 'raw'
-        ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
-    case 'scaled'
-        for tt = 1:nTestPoints
-            % Find scale factor to best bring into alignment with target
-            scaleSpdToTargetFactor(tt) = ptCldScreenSpdMeasuredCheckCal(:,tt)\ptCldScreenSpdCheckCal(:,pp);
-            ptCldSpd(:,tt) = scaleSpdToTargetFactor(tt) * ptCldScreenSpdMeasuredCheckCal(:,tt);
-        end
-    otherwise
-        error('Unknown analyze type specified');
-end
+ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
+standardSpd = standardScreenSpdMeasuredCheckCal;
 
-% Plot it.
+% Plot
 figure; clf;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize];
@@ -274,43 +343,40 @@ set(gcf,'position',figurePosition);
 for tt = 1:nTestPoints
     subplot(round(nTestPoints/2),2,tt); hold on;
     plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
-    plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra
+    plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra - point cloud
+    plot(wls,standardSpd(:,tt),'b--','LineWidth',2); % Measured spectra - standard
     xlabel('Wavelength (nm)')
     ylabel('Spectral power distribution')
-    legend('Target','Measured')
-    title(sprintf('Test %d %s',tt,whichToAnalyze),'fontsize',16)
+    legend('Target','Measured(PT)','Measured(ST)')
+    title(sprintf('Test %d',tt),'fontsize',16)
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
+% 1) Point cloud
 % We use the fact that the background settings are in the first column.
-%
-% 'thePointClousdSpd' will be either raw or scaled spectra based on the
-% above 'whichToAnalyze' option.
 ptCldExcitationsMeasured = T_cones * ptCldSpd;
 ptCldBgExcitationsMeasured = ptCldExcitationsMeasured(:,1);
 ptCldScreenContrastMeasuredCheckCal = ExcitationToContrast(ptCldExcitationsMeasured,ptCldBgExcitationsMeasured);
 
 % Add the nominal contrasts to be compared in the following graph. These
 % should be all lined up on the 45-degree line in the following graph.
-addNominalContrast = true;
-if (addNominalContrast)
-    ptCldExcitationsNominal = T_cones * ptCldScreenSpdCheckCal;
-    ptCldBgExcitationsNominal = ptCldExcitationsNominal(:,1);
-    ptCldContrastNominal = ExcitationToContrast(ptCldExcitationsNominal,ptCldBgExcitationsNominal);
-else
-end
+ptCldExcitationsNominal = T_cones * ptCldScreenSpdCheckCal;
+ptCldBgExcitationsNominal = ptCldExcitationsNominal(:,1);
+ptCldContrastNominal = ExcitationToContrast(ptCldExcitationsNominal,ptCldBgExcitationsNominal);
 
 % Plot measured versus desired contrasts
 figure; hold on;
+% Measured contrast.
 plot(desiredContrastCheckCal(1,:),ptCldScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
 plot(desiredContrastCheckCal(2,:),ptCldScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
 plot(desiredContrastCheckCal(3,:),ptCldScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
-if (addNominalContrast)
-    plot(desiredContrastCheckCal(1,:),ptCldContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
-    plot(desiredContrastCheckCal(2,:),ptCldContrastNominal(2,:),'go','MarkerSize',16);   % M - target
-    plot(desiredContrastCheckCal(3,:),ptCldContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
-end
+
+% Nominal contrast.
+plot(desiredContrastCheckCal(1,:),ptCldContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+plot(desiredContrastCheckCal(2,:),ptCldContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+plot(desiredContrastCheckCal(3,:),ptCldContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+
 xlabel('Desired contrast');
 ylabel('Measured contrast');
 axisLim = 0.05;
@@ -319,16 +385,48 @@ ylim([-axisLim axisLim]);
 axis('square');
 line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
 grid on;
-if (addNominalContrast)
-    legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
-else
-    legend('L-measured','M-measured','S-measured','location','southeast');
-end
-title(sprintf('Desired vs. Measured LMS Contrast, %s',whichToAnalyze));
+legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
+title(sprintf('Desired vs. Measured LMS Contrast, %s','Point cloud'));
+
+
+% 2) Standard method
+% We use the fact that the background settings are in the first column.
+standardExcitationsMeasured = T_cones * standardSpd;
+standardBgExcitationsMeasured = standardExcitationsMeasured(:,1);
+standardScreenContrastMeasuredCheckCal = ExcitationToContrast(standardExcitationsMeasured,standardBgExcitationsMeasured);
+
+% Add the nominal contrasts to be compared in the following graph. These
+% should be all lined up on the 45-degree line in the following graph.
+standardExcitationsNominal = T_cones * standardDesiredSpdGaborCal;
+standardBgExcitationsNominal = standardExcitationsNominal(:,1);
+standardContrastNominal = ExcitationToContrast(standardExcitationsNominal,standardBgExcitationsNominal);
+
+% Plot measured versus desired contrasts
+figure; hold on;
+% Measured contrast.
+plot(desiredContrastCheckCal(1,:),standardScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+plot(desiredContrastCheckCal(2,:),standardScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+plot(desiredContrastCheckCal(3,:),standardScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+
+% Nominal contrast.
+plot(desiredContrastCheckCal(1,:),standardContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+plot(desiredContrastCheckCal(2,:),standardContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+plot(desiredContrastCheckCal(3,:),standardContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+
+xlabel('Desired contrast');
+ylabel('Measured contrast');
+axisLim = 0.05;
+xlim([-axisLim axisLim]);
+ylim([-axisLim axisLim]);
+axis('square');
+line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+grid on;
+legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
+title(sprintf('Desired vs. Measured LMS Contrast, %s','Standard method'));
 
 %% Close screen and save out the measurement data.
 if (MEASURETARGETCONTRAST)
-    % Close
+    % Close.
     CloseScreen;
     CloseSpectroradiometer;
     
@@ -337,25 +435,27 @@ if (MEASURETARGETCONTRAST)
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
-        testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_%s',dayTimestr));
+        testFilename = fullfile(testFiledir,'CheckCalibration',sprintf('testImageDataCheck_postExp_%s',dayTimestr));
         save(testFilename,'theData','targetScreenSpd','targetScreenSpdMeasured','screenCalObj', ...
             'screenBgSpd','screenBgExcitations','desiredContrastCheckCal','desiredExcitationsCheckCal', ...
             'ptCldScreenSettingsCheckCal','ptCldScreenPrimariesCheckCal','ptCldScreenSpdCheckCal','ptCldScreenExcitationsCheckCal','ptCldScreenContrastCheckCal', ...
             'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
-            'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal','primaryFilename','targetScreenPrimaryContrast',...
-            'targetLambda','spatialGaborTargetContrast');
+            'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal',...
+            'primaryFilename','targetScreenPrimaryContrast','targetLambda','spatialGaborTargetContrast',...
+            'standardScreenSpdMeasuredCheckCal','standardScreenContrastMeasuredCheckCal','standardDesiredSpdGaborCal');
     end
     disp('Data has been saved successfully!');
 end
 
 %% This part is from SpectralCalAnalyze.
 %
-% Plot measured versus desired contrasts.
+% Set figure size and position.
 contrastFig = figure; hold on;
 figureSize = 1000;
 figurePosition = [1200 300 figureSize figureSize/3];
 set(gcf,'position',figurePosition);
 
+% Plot measured versus desired contrasts.
 axisLim = 0.10;
 theColors = ['r' 'g' 'b'];
 for pp = 1:nPrimaries
@@ -377,12 +477,9 @@ end
 
 % Save the plot if you want.
 SAVETHEPLOT = false;
-
 if (SAVETHEPLOT)
     if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
         testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
-        
-        % Save the plot.
         [filedir filename ext] = fileparts(testFilename);
         testFilename = fullfile(testFiledir,filename);
         testFileFormat = '.tiff';
