@@ -31,7 +31,7 @@ STANDARD = true;
 %
 % You can load image either from fresh test image or from the available image
 % from SACCSFA experiment.
-LOADIMAGETYPE = 'experiment';
+LOADIMAGETYPE = 'new';
 switch LOADIMAGETYPE
     case 'new'
         if (ispref('SpatioSpectralStimulator','SACCData'))
@@ -101,6 +101,7 @@ if (MEASUREPRIMARY)
             S,window,windowRect,'measurementOption',true,'verbose',verbose);
         clear theScreenOnePrimarySettings;
     end
+    primaryFilename = 'none';
     
     % Load the measurement results.
 elseif (~MEASUREPRIMARY)
@@ -442,12 +443,15 @@ if (MEASURETARGETCONTRAST)
             'ptCldScreenSettingsIntegersCheckCal','ptCldScreenSpdMeasuredCheckCal','ptCldScreenContrastMeasuredCheckCal', ...
             'ptCldExcitationsNominal','ptCldBgExcitationsNominal','ptCldContrastNominal',...
             'primaryFilename','targetScreenPrimaryContrast','targetLambda','spatialGaborTargetContrast',...
-            'standardScreenSpdMeasuredCheckCal','standardScreenContrastMeasuredCheckCal','standardDesiredSpdGaborCal');
+            'standardScreenSpdMeasuredCheckCal','standardScreenContrastMeasuredCheckCal','standardDesiredSpdGaborCal','standardContrastNominal',...
+            'standardDesiredSpdGaborCal','standardExcitationsMeasured');
     end
     disp('Data has been saved successfully!');
 end
 
 %% This part is from SpectralCalAnalyze.
+%
+% 1) Point cloud
 %
 % Set figure size and position.
 contrastFig = figure; hold on;
@@ -458,6 +462,7 @@ set(gcf,'position',figurePosition);
 % Plot measured versus desired contrasts.
 axisLim = 0.10;
 theColors = ['r' 'g' 'b'];
+sgtitle('Point cloud method');
 for pp = 1:nPrimaries
     subplot(1,nPrimaries,pp); hold on;
     plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
@@ -475,15 +480,31 @@ for pp = 1:nPrimaries
     title(sprintf('Cone class %d',pp));
 end
 
-% Save the plot if you want.
-SAVETHEPLOT = false;
-if (SAVETHEPLOT)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CheckCalibration');
-        [filedir filename ext] = fileparts(testFilename);
-        testFilename = fullfile(testFiledir,filename);
-        testFileFormat = '.tiff';
-        saveas(gcf,append(testFilename,testFileFormat));
-        fprintf('\t Plot has been saved successfully! \n');
-    end
+% 2) Standard method
+%
+% Set figure size and position.
+contrastFig = figure; hold on;
+figureSize = 1000;
+figurePosition = [1200 300 figureSize figureSize/3];
+set(gcf,'position',figurePosition);
+
+% Plot measured versus desired contrasts.
+axisLim = 0.10;
+theColors = ['r' 'g' 'b'];
+sgtitle('Standard method');
+for pp = 1:nPrimaries
+    subplot(1,nPrimaries,pp); hold on;
+    plot(desiredContrastCheckCal(pp,:),standardScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+    plot(desiredContrastCheckCal(pp,:),standardContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
+    plot(desiredContrastCheckCal(pp,1),standardScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+    plot(desiredContrastCheckCal(pp,1),standardContrastNominal(pp,1), 'ko','MarkerSize',18);
+    
+    plot([-1 1],[-1 1],'k');
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    xlabel('Desired contrast');
+    ylabel('Measured contrast');
+    legend({'Measured','Nominal'},'location','southeast');
+    title(sprintf('Cone class %d',pp));
 end
