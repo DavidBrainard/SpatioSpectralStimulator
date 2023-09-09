@@ -52,18 +52,18 @@ centerN = stimulusN * 0.5;
 
 % Plot it.
 figure; clf; hold on
-plot(1:stimulusN,100 * targetGaborImage(centerN,:,1),'r+','MarkerFaceColor','r','MarkerSize',4);
+plot(1:stimulusN,100 * targetGaborImage(centerN,:,1),'ro','MarkerFaceColor','r','MarkerSize',2);
 plot(1:stimulusN,100 * desiredGaborImage(centerN,:,1),'r','LineWidth',0.5);
 
-plot(1:stimulusN,100 * targetGaborImage(centerN,:,2),'g+','MarkerFaceColor','g','MarkerSize',4);
+plot(1:stimulusN,100 * targetGaborImage(centerN,:,2),'go','MarkerFaceColor','g','MarkerSize',2);
 plot(1:stimulusN,100 * desiredGaborImage(centerN,:,2),'g','LineWidth',0.5);
 
-plot(1:stimulusN,100 * targetGaborImage(centerN,:,3),'b+','MarkerFaceColor','b','MarkerSize',4);
+plot(1:stimulusN,100 * targetGaborImage(centerN,:,3),'bo','MarkerFaceColor','b','MarkerSize',2);
 plot(1:stimulusN,100 * desiredGaborImage(centerN,:,3),'b','LineWidth',0.5);
 ylabel('LMS Cone Contrast (%)');
 
 if (size(targetGaborImage,3) == 4)
-    plot(1:stimulusN,100 * targetGaborImage(centerN,:,4),'c+','MarkerFaceColor','b','MarkerSize',4);
+    plot(1:stimulusN,100 * targetGaborImage(centerN,:,4),'co','MarkerFaceColor','b','MarkerSize',2);
     plot(1:stimulusN,100 * desiredGaborImage(centerN,:,4),'c','LineWidth',0.5);
     ylabel('LMS Cone and Mel Contrast (%)');
 end
