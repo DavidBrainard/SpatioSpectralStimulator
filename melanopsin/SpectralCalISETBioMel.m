@@ -1,21 +1,36 @@
 %{
 
+%% Run a full set of examples
 clear;
 conditionNameList = {'MelDirected1' 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2 1 2 5 10];
-gaborSdDeg = 1;
+gaborSdDeg = 100;
 stimulusSizeDeg = 4;
 
 for cc = 1:length(conditionNameList)
     for ss = 1:length(sineFreqCyclesPerDegList)
-        SpectralCalISETBioMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+        lmsmelContrastNominal(:,ss,cc) = SpectralCalISETBioMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
             gaborSdDeg,stimulusSizeDeg);
     end
 end
 
 %}
 
-function SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg,gaborSdDeg,stimulusSizeDeg)
+%{
+
+%% Baseline example
+clear;
+conditionName = 'MelDirected1';
+sineFreqCyclesPerDeg = 2;
+gaborSdDeg = 100;
+stimulusSizeDeg = 4;
+
+lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg, ...
+    gaborSdDeg,stimulusSizeDeg);
+   
+%}
+
+function lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg,gaborSdDeg,stimulusSizeDeg)
 % SpectralCalISETBioMel
 %
 % Description:
@@ -47,7 +62,7 @@ close all;
 switch (conditionName)    
     case 'MelDirected1'
         targetScreenPrimaryContrasts = 0.15;
-        spatialGaborTargetContrast = 0.15;
+        spatialGaborTargetContrast = 0.20;
     case 'IsochromaticControl'
         targetScreenPrimaryContrasts = 0.75;
         spatialGaborTargetContrast = 0.75;
@@ -68,15 +83,24 @@ VERBOSE = true;
 %% Do all calibration loading.
 [screenCalObj,channelCalObjs] = LoadAndSetExperimentCalFiles(colorDirectionParams,'screenGammaMethod',screenGammaMethod,'verbose',VERBOSE);
 
-%% Image spatial parameters.
+%% Calculation quantization.  
 %
-% Most of these passed in.
-% Image will be centered in display.
+% This is a calculation quantization, not a model of display
+% quantization.  Making it smaller sppeds thigns up, but reduces
+% accuracy of computed image.
+%
+% You can drop to 9 without much change and speed things up.
 nQuantizeBits = 11;
 nQuantizeLevels = 2^nQuantizeBits;
 
-%% Create output string so we can keep track of what we are doing
+%% Output names and places
+projectFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
 sceneOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
+outputDir = fullfile(projectFiledir,sceneOutputStr);
+if (~exist(outputDir,'dir'))
+    mkdir(outputDir);
+end
+sceneOutputFilename = fullfile(outputDir,'sceneOutput.mat');
 
 %% Use extant machinery to get primaries from spectrum.
 %
@@ -144,43 +168,49 @@ standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc} = ExcitationsToC
 
 % Plot of how well standard method does in obtaining desired contrast
 if (VERBOSE)
-    figure;
-    set(gcf,'Position',[100 100 1200 600]);
+    standardContrastScatterFig = figure;
+    set(gcf,'Position',[100 100 1500 600]);
     subplot(1,4,1);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(1,:),standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(1,:),'r+');
     fprintf('Standard image max L contrast: %0.3f\n',max(abs(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(1,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired L contrast');
-    ylabel('Predicted L contrast');
-    title('Standard image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired L contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted L contrast','FontName','Helvetica','FontSize',18);
+    title('Standard image method','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,2);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(2,:),standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(2,:),'g+');
     fprintf('Standard image max M contrast: %0.3f\n',max(abs(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(2,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired M contrast');
-    ylabel('Predicted M contrast');
-    title('Standard image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired M contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted M contrast','FontName','Helvetica','FontSize',18);
+    title('Standard image method','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,3);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(3,:),standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(3,:),'b+');
     fprintf('Standard image max S contrast: %0.3f\n',max(abs(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(3,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired S contrast');
-    ylabel('Predicted S contrast');
-    title('Standard image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired S contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted S contrast','FontName','Helvetica','FontSize',18);
+    title('Standard image method','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,4);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(4,:),standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(4,:),'c+');
     fprintf('Standard image max Mel contrast: %0.3f\n',max(abs(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc}(4,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired MEL contrast');
-    ylabel('Predicted MEL contrast');
-    title('Standard image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired MEL contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted MEL contrast','FontName','Helvetica','FontSize',18);
+    title('Standard image method','FontName','Helvetica','FontSize',18);
+
+    saveas(standardContrastScatterFig,fullfile(outputDir,'standardContrastScatterFig.tiff'),'tiff');
 end
 
 %% Set up table of contrasts for all possible settings
@@ -206,46 +236,57 @@ gaborImageObject.desiredContrastGaborImage{ss,cc} = CalFormatToImage(standardGab
 gaborImageObject.settingsGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedSettingsGaborCal,stimulusN,stimulusN);
 gaborImageObject.excitationsGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedExcitationsGaborCal,stimulusN,stimulusN);
 gaborImageObject.contrastGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+lContrastNominal = max(abs(uniqueQuantizedContrastGaborCal(1,:)));
+mContrastNominal = max(abs(uniqueQuantizedContrastGaborCal(2,:)));
+sContrastNominal = max(abs(uniqueQuantizedContrastGaborCal(3,:)));
+melContrastNominal = max(abs(uniqueQuantizedContrastGaborCal(4,:)));
+fprintf('Quantized unique point image max L contrast: %0.3f\n',lContrastNominal );
+fprintf('Quantized unique point image max M contrast: %0.3f\n',mContrastNominal);
+fprintf('Quantized unique point image max S contrast: %0.3f\n',sContrastNominal);
+fprintf('Quantized unique point image max Mel contrast: %0.3f\n',melContrastNominal);
+lmsmelContrastNominal = [lContrastNominal ; mContrastNominal ; sContrastNominal; melContrastNominal];
 
 % Plot of how well point cloud method does in obtaining desired contratsfigure; clf;
 if (VERBOSE)
-    figure;
-    set(gcf,'Position',[100 100 1200 600]);
+    pointCloutContrastScatterFig = figure;
+    set(gcf,'Position',[100 100 1500 600]);
     subplot(1,4,1);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(1,:),uniqueQuantizedContrastGaborCal(1,:),'r+');
-    fprintf('Quantized unique point image max L contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(1,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired L contrast');
-    ylabel('Predicted L contrast');
-    title('Quantized unique point cloud image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired L contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted L contrast','FontName','Helvetica','FontSize',18);
+    title('Nominal vs Desired','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,2);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(2,:),uniqueQuantizedContrastGaborCal(2,:),'g+');
-    fprintf('Quantized unique point image max M contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(2,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired M contrast');
-    ylabel('Predicted M contrast');
-    title('Quantized unique point cloud image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired M contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted M contrast','FontName','Helvetica','FontSize',18);
+    title('Nominal vs Desired','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,3);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(3,:),uniqueQuantizedContrastGaborCal(3,:),'b+');
-    fprintf('Quantized unique point image max S contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(3,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired S contrast');
-    ylabel('Predicted S contrast');
-    title('Quantized unique point cloud image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired S contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted S contrast','FontName','Helvetica','FontSize',18);
+    title('Nominal vs Desired','FontName','Helvetica','FontSize',18);
 
     subplot(1,4,4);
+    set(gca,'FontName','Helvetiaca','FontSize',16);
     plot(standardGaborCalObject.desiredContrastGaborCal{ss,cc}(4,:),uniqueQuantizedContrastGaborCal(4,:),'c+');
-    fprintf('Quantized unique point image max Mel contrast: %0.3f\n',max(abs(uniqueQuantizedContrastGaborCal(4,:))));
     axis('square');
-    xlim([-0.15 0.15]); ylim([-0.15 0.15]);
-    xlabel('Desired MEL contrast');
-    ylabel('Predicted MEL contrast');
-    title('Quantized unique point cloud image method');
+    xlim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]); ylim([-1.2*spatialGaborTargetContrast 1.2*spatialGaborTargetContrast]);
+    xlabel('Desired MEL contrast','FontName','Helvetica','FontSize',18);
+    ylabel('Predicted MEL contrast','FontName','Helvetica','FontSize',18);
+    title('Nominal vs Desired','FontName','Helvetica','FontSize',18);
+
+    saveas(pointCloutContrastScatterFig,fullfile(outputDir,'lookupContrastScatterFig.tiff'),'tiff');
 end
 
 %% Put the image into an ISETBio scene.
@@ -253,7 +294,7 @@ end
 % As I read the subroutine, it is using the standard rather than lookup
 % table data here. That's fine, but we should stay aware of it.
 ISETBioGaborObject = MakeISETBioSceneFromImageMel(colorDirectionParams,gaborImageObject, ...
-    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',VERBOSE);
+    ISETBioDisplayObject,stimulusHorizSizeMeters,stimulusHorizSizeDeg,'verbose',false);
 
 % Go back to the RGB image starting with the ISETBio representation.
 %
@@ -272,7 +313,7 @@ ISETBioGaborObject = MakeISETBioSceneFromImageMel(colorDirectionParams,gaborImag
 % end
 
 %% SRGB image via XYZ, scaled to display
-predictedXYZCal = colorDirectionParams.T_xyz * cell2mat(standardGaborCalObject.desiredSpdGaborCal);
+predictedXYZCal = colorDirectionParams.T_xyz * ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc};
 SRGBPrimaryCal = XYZToSRGBPrimary(predictedXYZCal);
 scaleFactor = max(SRGBPrimaryCal(:));
 SRGBCal = SRGBGammaCorrect(SRGBPrimaryCal/(2*scaleFactor),0);
@@ -281,25 +322,74 @@ SRGBImage = uint8(CalFormatToImage(SRGBCal,stimulusN,stimulusN));
 % Show the SRGB image
 figure; imshow(SRGBImage);
 title('SRGB Gabor Image');
+imwrite(SRGBImage,fullfile(outputDir,'sRGBImage.tiff'),'tiff');
+
+%% L plane image as grayscale sRGB
+predictedLPlaneCal = colorDirectionParams.T_receptors(1,:) * ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc};
+predictedLPlaneSRGBPlaneCal = [predictedLPlaneCal ; predictedLPlaneCal ; predictedLPlaneCal];
+SRGBLPlanePrimaryCal = predictedLPlaneSRGBPlaneCal;
+scaleFactor = mean(predictedLPlaneSRGBPlaneCal(:));
+SRGBLPlaneCal = SRGBGammaCorrect(SRGBLPlanePrimaryCal/(2*scaleFactor),0);
+SRGBLPlaneImage = uint8(CalFormatToImage(SRGBLPlaneCal,stimulusN,stimulusN));
+figure; imshow(SRGBLPlaneImage);
+title('SRGB L Plane Gabor Image');
+imwrite(SRGBLPlaneImage,fullfile(outputDir,'sRGBLPlaneImage.tiff'),'tiff');
+
+%% M plane image as grayscale sRGB
+predictedMPlaneCal = colorDirectionParams.T_receptors(2,:) * ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc};
+predictedMPlaneSRGBPlaneCal = [predictedMPlaneCal ; predictedMPlaneCal ; predictedMPlaneCal];
+SRGBMPlanePrimaryCal = predictedMPlaneSRGBPlaneCal;
+scaleFactor = mean(predictedMPlaneSRGBPlaneCal(:));
+SRGBMPlaneCal = SRGBGammaCorrect(SRGBMPlanePrimaryCal/(2*scaleFactor),0);
+SRGBMPlaneImage = uint8(CalFormatToImage(SRGBMPlaneCal,stimulusN,stimulusN));
+figure; imshow(SRGBMPlaneImage);
+title('SRGB M Plane Gabor Image');
+imwrite(SRGBMPlaneImage,fullfile(outputDir,'sRGBMPlaneImage.tiff'),'tiff');
+
+%% S plane image as grayscale sRGB
+predictedSPlaneCal = colorDirectionParams.T_receptors(3,:) * ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc};
+predictedSPlaneSRGBPlaneCal = [predictedSPlaneCal ; predictedSPlaneCal ; predictedSPlaneCal];
+SRGBSPlanePrimaryCal = predictedSPlaneSRGBPlaneCal;
+scaleFactor = mean(predictedSPlaneSRGBPlaneCal(:));
+SRGBSPlaneCal = SRGBGammaCorrect(SRGBSPlanePrimaryCal/(2*scaleFactor),0);
+SRGBSPlaneImage = uint8(CalFormatToImage(SRGBSPlaneCal,stimulusN,stimulusN));
+figure; imshow(SRGBSPlaneImage);
+title('SRGB S Plane Gabor Image');
+imwrite(SRGBSPlaneImage,fullfile(outputDir,'sRGBSPlaneImage.tiff'),'tiff');
+
+%% Mel plane image as grayscale sRGB
+predictedMelPlaneCal = colorDirectionParams.T_receptors(4,:) * ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc};
+predictedMelPlaneSRGBPlaneCal = [predictedMelPlaneCal ; predictedMelPlaneCal ; predictedMelPlaneCal];
+SRGBMelPlanePrimaryCal = predictedMelPlaneSRGBPlaneCal;
+scaleFactor = mean(predictedMelPlaneSRGBPlaneCal(:));
+SRGBMelPlaneCal = SRGBGammaCorrect(SRGBMelPlanePrimaryCal/(2*scaleFactor),0);
+SRGBMelPlaneImage = uint8(CalFormatToImage(SRGBMelPlaneCal,stimulusN,stimulusN));
+figure; imshow(SRGBMelPlaneImage);
+title('SRGB Mel Plane Gabor Image');
+imwrite(SRGBMelPlaneImage,fullfile(outputDir,'sRGBMelPlaneImage.tiff'),'tiff');
 
 %% Show the settings image
 figure; clf;
 imshow(gaborImageObject.settingsGaborImage{ss,cc});
 title('Image of settings');
+imwrite(gaborImageObject.settingsGaborImage{ss,cc},fullfile(outputDir,'settingsImage.tiff'),'tiff');
 
 %% Plot slice through predicted LMS contrast image.
 %
 % Set the plot limit axis.
-plotAxisLimit = 100 * colorDirectionParams.spatialGaborTargetContrast;
-PlotSliceContrastGaborImage(cell2mat(gaborImageObject.contrastGaborImage), cell2mat(gaborImageObject.desiredContrastGaborImage),...
+plotAxisLimit = 1.2*100 * colorDirectionParams.spatialGaborTargetContrast;
+PlotSliceContrastGaborImage(gaborImageObject.contrastGaborImage{ss,cc}, gaborImageObject.desiredContrastGaborImage{ss,cc},...
     'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
-title('Image Slice, Lookup Table Method, LMS and Mel Cone Contrast');
+set(gca,'FontName','Helvetiaca','FontSize',16);
+title('LMS and Mel Contrast','FontName','Helvetiaca','FontSize',18);
+saveas(gcf,fullfile(outputDir,'LMSMelGaborSlice.tiff'),'tiff');
+% tempCal = ImageToCalFormat(gaborImageObject.contrastGaborImage{ss,cc});
+% max(tempCal,[],2)
 
 %% Generate some settings values corresponding to known contrasts
 %
 % The reason for this is to measure and check these.  This logic follows
-% how we handled an actual gabor image above. We don't actually need to
-% quantize to 14 bits here on the contrast, but nor does it hurt.
+% how we handled an actual gabor image above.
 rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal+1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
 desiredContrastCheckCal = colorDirectionParams.spatialGaborTargetContrast*colorDirectionParams.targetStimulusContrastDir*rawMonochromeContrastCheckCal;
@@ -346,19 +436,17 @@ for pp = 1:length(channelCalObjs)
     screenPrimarySpdCheck(:,pp) = PrimaryToSpd(channelCalObjs{pp},SettingsToPrimary(channelCalObjs{pp}, screenPrimaryChannelObject.screenPrimarySettings(:,pp)));
 end
 figure; clf; hold on
+set(gca,'FontName','Helvetiaca','FontSize',16);
 plot(colorDirectionParams.wls, screenPrimarySpdCheck,'k','LineWidth',4);
-plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd,'r','LineWidth',2);
-xlabel('Wavelength'); ylabel('Radiance');
-title('Check of consistency between screen primaries and screen primary spds');
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,1),'r','LineWidth',2);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,2),'g','LineWidth',2);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,3),'b','LineWidth',2);
+xlabel('Wavelength','FontName','Helvetiaca','FontSize',18); ylabel('Radiance','FontName','Helvetiaca','FontSize',18);
+title('Primary spds','FontName','Helvetiaca','FontSize',20);
+saveas(gcf,fullfile(outputDir,'primarySpds.tiff'),'tiff');
 
 %% Save out what we need 
-sceneOutputFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
-sceneOutputSubdir = fullfile(sceneOutputFiledir,sceneOutputStr);
-if (~exist(sceneOutputSubdir,'dir'))
-    mkdir(sceneOutputSubdir);
-end
-sceneOutputFilename = fullfile(sceneOutputSubdir,sprintf('sceneOutput_%s',[sceneOutputStr '.mat']));
-save(sceneOutputFilename,'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
+save(sceneOutputFilename,'lmsmelContrastNominal', 'colorDirectionParams','screenPrimaryChannelObject','backgroundChannelObject','backgroundScreenPrimaryObject', ...
     'ISETBioDisplayObject','screenSizeObject','screenCalObjFromISETBio', ...
     'ISETBioGaborObject', ...
     '-v7.3');

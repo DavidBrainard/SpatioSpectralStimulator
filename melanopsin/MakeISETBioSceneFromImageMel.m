@@ -94,12 +94,12 @@ for ss = 1:nPhaseShifts
         %
         % ISETBio energy comes back as power per nm, we need to convert to power
         % per wlband to work with PTB, by multiplying by S(2).
-        ISETBioGaborImage = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
-        [ISETBioGaborCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImage);
+        ISETBioGaborImageSpd = sceneGet(ISETBioGaborScene,'energy') * colorDirectionParams.S(2);
+        [ISETBioGaborImageSpdCal,ISETBioM,ISETBioN] = ImageToCalFormat(ISETBioGaborImageSpd);
         if (isfield(colorDirectionParams,'T_receptors'))
-            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_receptors * ISETBioGaborCal;
+            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_receptors * ISETBioGaborImageSpdCal;
         else
-            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborCal;
+            ISETBioPredictedExcitationsGaborCal = colorDirectionParams.T_cones * ISETBioGaborImageSpdCal;
         end
         limMin = 0.01; limMax = 0.02;
         
@@ -111,9 +111,9 @@ for ss = 1:nPhaseShifts
         
         % Save the results in a struct.
         ISETBioGaborObject.ISETBioGaborScene{ss,cc} = ISETBioGaborScene;
-        ISETBioGaborObject.ISETBioGaborImage{ss,cc} = ISETBioGaborImage;
+        ISETBioGaborObject.ISETBioGaborImage{ss,cc} = ISETBioGaborImageSpd;
         ISETBioGaborObject.ISETBioPredictedExcitationsGaborCal{ss,cc} = ISETBioPredictedExcitationsGaborCal;
-        ISETBioGaborObject.ISETBioGaborCal{ss,cc} = ISETBioGaborCal;
+        ISETBioGaborObject.ISETBioGaborImageSpdCal{ss,cc} = ISETBioGaborImageSpdCal;
         
         % Print out if everything goes well.
         if (options.verbose)
