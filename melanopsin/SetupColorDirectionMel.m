@@ -43,12 +43,13 @@ arguments
     options.spatialGaborTargetContrast (1,1) = 0.15
     options.targetScreenPrimaryContrasts (1,1) = 0.15
     options.targetLambda (1,1) = 0.2
+    options.fieldSizeDegs = 10;
 end
 
 %% Set some initial parameters on the struct here.
 %
 % Some parameters which might become key/value pairs.
-colorDirectionParams.fieldSizeDegrees = 10;
+colorDirectionParams.fieldSizeDeg = options.fieldSizeDeg;
 
 % Set condition name.
 colorDirectionParams.conditionName = conditionName;
@@ -199,10 +200,10 @@ colorDirectionParams.channelNInputLevels = 253;
 %
 % Cone fundamentals and XYZ CMFs.
 colorDirectionParams.psiParamsStruct.coneParams = DefaultConeParams('cie_asano');
-colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDegrees = colorDirectionParams.fieldSizeDegrees;
+colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDeg = colorDirectionParams.fieldSizeDeg;
 colorDirectionParams.T_cones = ComputeObserverFundamentals(colorDirectionParams.psiParamsStruct.coneParams,colorDirectionParams.S);
 colorDirectionParams.T_mel = GetHumanPhotoreceptorSS(colorDirectionParams.S, {'Melanopsin'}, ...
-    colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDegrees, colorDirectionParams.psiParamsStruct.coneParams.ageYears, ...
+    colorDirectionParams.psiParamsStruct.coneParams.fieldSizeDeg, colorDirectionParams.psiParamsStruct.coneParams.ageYears, ...
     colorDirectionParams.psiParamsStruct.coneParams.pupilDiamMM);
 colorDirectionParams.T_receptors = [colorDirectionParams.T_cones ; colorDirectionParams.T_mel];
 

@@ -1,4 +1,4 @@
-%{
+
 
 % Asano et al. give the following population SD's for the individual
 % difference parameters (their Table 5, Step 2 numbers:
@@ -11,20 +11,21 @@
 %   M Shift   - 1.5 nm
 %   S Shift   - 1.3 nm
 
-%% Run out a bunch of examples
+%% Run out sf example
+%{
 clear;
-conditionNameList = {'MelDirected1' 'IsochromaticControl'};
+conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2 1 2 5 10];
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
 
 fieldSizeDeg = 5;
-eccXDegList = [0 -5 -10 -15 -20];
+eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
 aoRender = false;
 noLCA = false;
-ageISETBioList = [20 32 60];
-dLensISETBioList = [-18.7 0 18.7];
-dMacISETBioList = [-36.5 0 36.5];
+ageISETBioList = 32; %[20 32 60];
+dLensISETBioList = 0; %[-18.7 0 18.7];
+dMacISETBioList = 0; %[-36.5 0 36.5];
 
 for cc = 1:length(conditionNameList)
     for ss = 1:length(sineFreqCyclesPerDegList)
@@ -46,11 +47,183 @@ for cc = 1:length(conditionNameList)
     end
 end
 
+% Plot of results
+lmsContrastBySf = squeeze(lmsConeContrast(:,:,1:end,:,:,:,:));
+figure; clf; hold on;
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'r','LineWidth',2);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'g','LineWidth',2);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'b','LineWidth',2);
+set(gca,'FontName','Helvetica','FontSize',18);
+xlabel('Spatial Frequency (c/deg)','FontName','Helvetica','FontSize',20);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
+legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
+ylim([0 10]);
+
 %}
 
+
+%% Run out MP variation example
 %{
+clear;
+conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2];
+gaborSdDeg = 100;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
+aoRender = false;
+noLCA = false;
+ageISETBioList = 32; %[20 32 60];
+dLensISETBioList = 0; %[-18.7 0 18.7];
+dMacISETBioList = [1.5*-36.5 -36.5 -36.5/2 0 36.5/2 36.5 1.5*36.5];
+
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        for ee = 1:length(eccXDegList)
+            for aa = 1:length(ageISETBioList)
+                for ll = 1:length(dLensISETBioList)
+                    for mm = 1:length(dMacISETBioList)
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                                gaborSdDeg,stimulusSizeDeg, ...
+                                fieldSizeDeg, ...
+                                eccXDegList(ee), ...
+                                aoRender, noLCA, ...
+                                ageISETBioList(aa), dLensISETBioList(ll), dMacISETBioList(mm) ...
+                            );
+                    end
+                end
+            end
+        end
+    end
+end
+
+% Plot of results
+lmsContrastByDMac = squeeze(lmsConeContrast(:,:,:,:,:,:,1:end));
+figure; clf; hold on;
+plot(dMacISETBioList,100*lmsContrastByDMac(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(dMacISETBioList,100*lmsContrastByDMac(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
+plot(dMacISETBioList,100*lmsContrastByDMac(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
+plot(dMacISETBioList,100*lmsContrastByDMac(1,:),'r','LineWidth',2);
+plot(dMacISETBioList,100*lmsContrastByDMac(2,:),'g','LineWidth',2);
+plot(dMacISETBioList,100*lmsContrastByDMac(3,:),'b','LineWidth',2);
+set(gca,'FontName','Helvetica','FontSize',18);
+xlabel('Macular Pigment Density Adj (Percent)','FontName','Helvetica','FontSize',20);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
+legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
+ylim([0 10]);
+
+%}
+
+%% Run out lens variation example
+%{
+clear;
+conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2];
+gaborSdDeg = 100;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
+aoRender = false;
+noLCA = false;
+ageISETBioList = 32; %[20 32 60];
+dLensISETBioList = [1.5*-18.7 -18.7 -18.7/2 0 18.7/2 18.7 1.5*18.7];
+dMacISETBioList = 0;
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        for ee = 1:length(eccXDegList)
+            for aa = 1:length(ageISETBioList)
+                for ll = 1:length(dLensISETBioList)
+                    for mm = 1:length(dMacISETBioList)
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                                gaborSdDeg,stimulusSizeDeg, ...
+                                fieldSizeDeg, ...
+                                eccXDegList(ee), ...
+                                aoRender, noLCA, ...
+                                ageISETBioList(aa), dLensISETBioList(ll), dMacISETBioList(mm) ...
+                            );
+                    end
+                end
+            end
+        end
+    end
+end
+
+% Plot of resultsDLens
+lmsContrastBydLensI = squeeze(lmsConeContrast(:,:,:,:,:,1:end,:));
+figure; clf; hold on;
+plot(dLensISETBioList,100*lmsContrastBydLensI(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(dLensISETBioList,100*lmsContrastBydLensI(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
+plot(dLensISETBioList,100*lmsContrastBydLensI(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
+plot(dLensISETBioList,100*lmsContrastBydLensI(1,:),'r','LineWidth',2);
+plot(dLensISETBioList,100*lmsContrastBydLensI(2,:),'g','LineWidth',2);
+plot(dLensISETBioList,100*lmsContrastBydLensI(3,:),'b','LineWidth',2);
+set(gca,'FontName','Helvetica','FontSize',18);
+xlabel('Lens Pigment Density Adj (Percent)','FontName','Helvetica','FontSize',20);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
+legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
+ylim([0 10]);
+
+%}
+
+%% Run out eccentricity example
+%{
+clear;
+conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2];
+gaborSdDeg = 100;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDegList = [0 -2.5 -5 -10 -15 -20];
+aoRender = false;
+noLCA = false;
+ageISETBioList = 32; %[20 32 60];
+dLensISETBioList = 0; %[1.5*-18.7 -18.7 -18.7/2 0 18.7/2 18.7 1.5*18.7];
+dMacISETBioList = 0;
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        for ee = 1:length(eccXDegList)
+            for aa = 1:length(ageISETBioList)
+                for ll = 1:length(dLensISETBioList)
+                    for mm = 1:length(dMacISETBioList)
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                                gaborSdDeg,stimulusSizeDeg, ...
+                                fieldSizeDeg, ...
+                                eccXDegList(ee), ...
+                                aoRender, noLCA, ...
+                                ageISETBioList(aa), dLensISETBioList(ll), dMacISETBioList(mm) ...
+                            );
+                    end
+                end
+            end
+        end
+    end
+end
+
+% Plot of results
+lmsContrastByEccX = squeeze(lmsConeContrast(:,:,1:end,:,:,:,:));
+figure; clf; hold on;
+plot(abs(eccXDegList),100*lmsContrastByEccX(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(abs(eccXDegList),100*lmsContrastByEccX(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
+plot(abs(eccXDegList),100*lmsContrastByEccX(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
+plot(abs(eccXDegList),100*lmsContrastByEccX(1,:),'r','LineWidth',2);
+plot(abs(eccXDegList),100*lmsContrastByEccX(2,:),'g','LineWidth',2);
+plot(abs(eccXDegList),100*lmsContrastByEccX(3,:),'b','LineWidth',2);
+set(gca,'FontName','Helvetica','FontSize',18);
+xlabel('Eccentricity (deg)','FontName','Helvetica','FontSize',20);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
+legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
+ylim([0 10]);
+
+%}
 
 %% Baseline condition test
+%{
 clear;
 conditionName = 'MelDirected1';
 sineFreqCyclesPerDeg = 0.2;
@@ -61,9 +234,9 @@ fieldSizeDeg = 5;
 eccXDeg = -5;
 aoRender = false;
 noLCA = false;
-ageISETBio = 60;
-dLensISETBio = -5;
-dMacISETBio = 30;
+ageISETBio = 32;
+dLensISETBio = 0;
+dMacISETBio = 0;
 
 [lmsConeContrast] = ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg, ...
         gaborSdDeg,stimulusSizeDeg, ...
@@ -86,6 +259,12 @@ function [lmsConeContrast] = ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg,
 
 %% Initialize
 close all;
+
+%% Boring
+legendFontSize = 12;
+labelFontSize = 18;
+titleFontSize = 20;
+axisFontSize = 16;
 
 %% Parameter specifications for scene that are not passed.
 screenGammaMethod = 2;
@@ -148,8 +327,8 @@ for aa = 1:length(plotAges)
 end
 figure; clf; hold on
 plot(plotAges,plotLensDensity,'b','LineWidth',6);
-xlabel('Age (years)','FontName','Helvetica','FontSize',18);
-ylabel('Lens Peak Density','FontName','Helvetica','FontSize',18);
+xlabel('Age (years)','FontName','Helvetica','FontSize',labelFontSize);
+ylabel('Lens Peak Density','FontName','Helvetica','FontSize',labelFontSize);
 ylim([0 6]);
 saveas(gcf,fullfile(outputDir,'lensDensityWithAge.tiff'),'tiff');
 
@@ -160,6 +339,15 @@ adjustedMacDensity = unadjustedMacDensity * (1 + dMacISETBio/100);
 macTransmittance = 10.^-adjustedMacDensity;
 macObject = Macular('wave',theData.colorDirectionParams.wls,'unitDensity',-log10(macTransmittance),'density',1);
 
+% Nominal macular tranmittance for explanatory plot
+macTransmittanceNominal = MacularTransmittance(theData.colorDirectionParams.wls,'Human','CIE',2*eccDeg);
+macTranFig = figure; clf; hold on;
+plot(theData.colorDirectionParams.wls,macTransmittanceNominal,'b','LineWidth',6);
+xlabel('Wavelength (nm)','FontName','Helvetica','FontSize',labelFontSize);
+ylabel('Macular Pigment Transmittance','FontName','Helvetica','FontSize',labelFontSize);
+ylim([0 1]);
+saveas(gcf,fullfile(outputDir,'macTransmittance.tiff'),'tiff');
+
 % Plot of macular pigment density versus eccentricity
 plotEccs = linspace(0,25,100);
 for ee = 1:length(plotEccs)
@@ -169,8 +357,8 @@ for ee = 1:length(plotEccs)
 end
 figure; clf; hold on
 plot(plotEccs,plotMacDensity,'b','LineWidth',6);
-xlabel('Eccentricity (degs)','FontName','Helvetica','FontSize',18);
-ylabel('Macular Pigment Peak Density','FontName','Helvetica','FontSize',18);
+xlabel('Eccentricity (degs)','FontName','Helvetica','FontSize',labelFontSize);
+ylabel('Macular Pigment Peak Density','FontName','Helvetica','FontSize',labelFontSize);
 ylim([0 max(plotMacDensity(:))]);
 saveas(gcf,fullfile(outputDir,'macDensityWithEccentricty.tiff'),'tiff');
 
@@ -237,6 +425,16 @@ figure(fundamentalsFig);
 plot(theData.colorDirectionParams.wls,T_cones_ISETBio(1,:),'k-','LineWidth',3);
 plot(theData.colorDirectionParams.wls,T_cones_ISETBio(2,:),'k-','LineWidth',3);
 plot(theData.colorDirectionParams.wls,T_cones_ISETBio(3,:),'k-','LineWidth',3);
+
+fundamentalsWithMelBaselineFig = figure; clf; hold on;
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(1,:),'r','LineWidth',6);
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(2,:),'g','LineWidth',6);
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_cones(3,:),'b','LineWidth',6);
+plot(theData.colorDirectionParams.wls,theData.colorDirectionParams.T_receptors(4,:),'c','LineWidth',6);
+legend({'L', 'M', 'S', 'Mel'},'FontName','Helvetica','FontSize',12);
+xlabel('Wavelength (nm)','FontName','Helvetica','FontSize',labelFontSize);
+ylabel('Exication Probability','FontName','Helvetica','FontSize',labelFontSize);
+saveas(fundamentalsWithMelBaselineFig ,fullfile(outputDir,'fundamentalsWithMelBaselineFig.tiff'),'tiff');
 
 %% Create and setup cone mosaic
 %
@@ -341,11 +539,26 @@ mosaicActivationFigStruct = theConeMosaic.Mosaic.visualize( ...
 title('Activation Map');
 saveas(mosaicActivationFigStruct.figureHandle,fullfile(outputDir,'activationMap.tiff'),'tiff');
 
+%% Compute a contrast responses array
+theConeContrasts = zeros(size(theConeResponses));
+lConeResponses = squeeze(theConeResponses(1,1,theConeMosaic.Mosaic.lConeIndices));
+meanLConeResponse = mean(lConeResponses(:));
+theConeContrasts(1,1,theConeMosaic.Mosaic.lConeIndices) = ...
+    (theConeResponses(1,1,theConeMosaic.Mosaic.lConeIndices) - meanLConeResponse)/meanLConeResponse;
+mConeResponses = squeeze(theConeResponses(1,1,theConeMosaic.Mosaic.mConeIndices));
+meanMConeResponse = mean(mConeResponses(:));
+theConeContrasts(1,1,theConeMosaic.Mosaic.mConeIndices) = ...
+    (theConeResponses(1,1,theConeMosaic.Mosaic.mConeIndices) - meanMConeResponse)/meanMConeResponse;
+sConeResponses = squeeze(theConeResponses(1,1,theConeMosaic.Mosaic.sConeIndices));
+meanSConeResponse = mean(sConeResponses(:));
+theConeContrasts(1,1,theConeMosaic.Mosaic.sConeIndices) = ...
+    (theConeResponses(1,1,theConeMosaic.Mosaic.sConeIndices) - meanSConeResponse)/meanSConeResponse;
+
 % Visualize a cut
 horizontalSliceYcoordDegs = 0;
 horizontalSliceThicknessDegs = 0.08;
 coneTypesToVisualize = [cMosaic.LCONE_ID cMosaic.MCONE_ID cMosaic.SCONE_ID];
-maxResponse = 5000; max(theConeResponses(:));
+maxResponse = 1.2*max(theConeResponses(:));
 % visualizedResponseScalingDegs = 0.5;
 % hFig = theConeMosaic.Mosaic.visualizeHorizontalConeActivationProfiles(...
 %     theConeResponses, coneTypesToVisualize, ...
@@ -359,7 +572,26 @@ mosaicSliceFig = theConeMosaic.Mosaic.visualizeHorizontalConeActivationProfiles(
     'figureHandle', [], ...
     'axesHandle', [], ...
     'fontSize', 20);
+set(gca,'FontName','Helvetica','FontSize',34);
+xlabel('Position (degs)','FontName','Helvetica','FontSize',36);
+ylabel('Excitation Rate','FontName','Helvetica','FontSize',36);
+xlim([eccXDeg-fieldSizeDeg*0.75/2 eccXDeg+fieldSizeDeg*0.75/2]);
 saveas(mosaicSliceFig,fullfile(outputDir,'mosaicSliceFig.tiff'),'tiff');
+
+mosaicContrastSliceFig = theConeMosaic.Mosaic.visualizeHorizontalConeActivationProfiles(...
+    100*theConeContrasts, coneTypesToVisualize, ...
+    horizontalSliceYcoordDegs, horizontalSliceThicknessDegs, ...
+    100,  ...
+    'onTopOfConeMosaicActivation', false, ...
+    'figureHandle', [], ...
+    'axesHandle', [], ...
+    'fontSize', 20);
+set(gca,'FontName','Helvetica','FontSize',34)
+xlabel('Position (degs)','FontName','Helvetica','FontSize',36);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',36);
+xlim([eccXDeg-fieldSizeDeg*0.7/2 eccXDeg+fieldSizeDeg*0.7/2]);
+ylim([-10 10]);
+saveas(mosaicContrastSliceFig,fullfile(outputDir,'mosaicContrastSliceFig.tiff'),'tiff');
 
 %% Choose a circular ROI that captures most of the field and compute contrast
 %
@@ -367,8 +599,8 @@ saveas(mosaicSliceFig,fullfile(outputDir,'mosaicSliceFig.tiff'),'tiff');
 % circular ROI eliminates edge effects.
 roiCircle = regionOfInterest('shape','ellipse',...
     'center',[eccXDeg eccYDeg],...
-    'majorAxisDiameter',fieldSizeDeg*0.75,...
-    'minorAxisDiameter',fieldSizeDeg*0.75);
+    'majorAxisDiameter',fieldSizeDeg*0.7,...
+    'minorAxisDiameter',fieldSizeDeg*0.7);
 
 % Visualize the ROI to make sure it is in a sensible place
 theConeMosaic.Mosaic.plot('roi',theConeResponses, 'roi',roiCircle);

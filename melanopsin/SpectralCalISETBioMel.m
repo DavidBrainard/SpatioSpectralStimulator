@@ -2,7 +2,7 @@
 
 %% Run a full set of examples
 clear;
-conditionNameList = {'MelDirected1' 'IsochromaticControl'};
+conditionNameList = {'MelDirected1'}; % 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2 1 2 5 10];
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
@@ -74,8 +74,10 @@ end
 screenGammaMethod = 2;
 
 % Call routine to get basic parameters structure set up.
+coneFieldSizeDeg = 10;  % Eccentricity times 2
 colorDirectionParams = SetupColorDirectionMel(conditionName,...
-    'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast);
+    'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast, ...
+    'fieldSizeDegs', coneFieldSizeDeg);
 
 % Set to true to get more output.
 VERBOSE = true;
@@ -374,17 +376,34 @@ imshow(gaborImageObject.settingsGaborImage{ss,cc});
 title('Image of settings');
 imwrite(gaborImageObject.settingsGaborImage{ss,cc},fullfile(outputDir,'settingsImage.tiff'),'tiff');
 
-%% Plot slice through predicted LMS contrast image.
+%% Plot slice through predicted LMS and Mel contrast image.
 %
 % Set the plot limit axis.
+stimulusN = size(gaborImageObject.contrastGaborImage{ss,cc},1);
+stimulusDegs = (stimulusSizeDeg/2)*((1:stimulusN)-stimulusN/2)/(stimulusN/2);
 plotAxisLimit = 1.2*100 * colorDirectionParams.spatialGaborTargetContrast;
-PlotSliceContrastGaborImage(gaborImageObject.contrastGaborImage{ss,cc}, gaborImageObject.desiredContrastGaborImage{ss,cc},...
-    'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE);
+PlotSliceContrastGaborImage(gaborImageObject.contrastGaborImage{ss,cc}, gaborImageObject.contrastGaborImage{ss,cc}, ...
+    'plotAxisLimit', plotAxisLimit, 'verbose', VERBOSE, 'xAxisValues', stimulusDegs, 'lineWidth',2,'markerSize',0);
 set(gca,'FontName','Helvetiaca','FontSize',16);
-title('LMS and Mel Contrast','FontName','Helvetiaca','FontSize',18);
+%title('LMS and Mel Contrast','FontName','Helvetiaca','FontSize',14);
+legend({sprintf('L: %0.1f%%',100*lContrastNominal), sprintf('M: %0.1f%%',100*mContrastNominal), ...
+    sprintf('S: %0.1f%%',100*sContrastNominal), sprintf('Mel: %0.1f%%',100*melContrastNominal)},'FontName','Helvetiaca','FontSize',12,'Location','SouthEast');
+xlabel('Relative Position (deg)','FontName','Helvetiaca','FontSize',18);
+ylabel('Nominal Contrast','FontName','Helvetiaca','FontSize',18);
 saveas(gcf,fullfile(outputDir,'LMSMelGaborSlice.tiff'),'tiff');
 % tempCal = ImageToCalFormat(gaborImageObject.contrastGaborImage{ss,cc});
 % max(tempCal,[],2)
+
+%% Plot the settings
+plotAxisLimit = 255;
+PlotSliceContrastGaborImage(gaborImageObject.settingsGaborImage{ss,cc}, gaborImageObject.settingsGaborImage{ss,cc}, ...
+    'plotAxisLimit', plotAxisLimit, 'plotAxisPos', true, 'verbose', VERBOSE, 'xAxisValues', stimulusDegs, 'lineWidth',2,'markerSize',0);
+set(gca,'FontName','Helvetiaca','FontSize',16);
+%title('Primary Settings','FontName','Helvetiaca','FontSize',14);
+legend({'Primary 1', 'Primary 2', 'Primary 3'},'FontName','Helvetiaca','FontSize',12,'Location','NorthEast');
+xlabel('Relative Position (deg)','FontName','Helvetiaca','FontSize',18);
+ylabel('Primary Settings','FontName','Helvetiaca','FontSize',18);
+saveas(gcf,fullfile(outputDir,'PrimarySettingsGaborSlice.tiff'),'tiff');
 
 %% Generate some settings values corresponding to known contrasts
 %
@@ -437,12 +456,14 @@ for pp = 1:length(channelCalObjs)
 end
 figure; clf; hold on
 set(gca,'FontName','Helvetiaca','FontSize',16);
-plot(colorDirectionParams.wls, screenPrimarySpdCheck,'k','LineWidth',4);
-plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,1),'r','LineWidth',2);
-plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,2),'g','LineWidth',2);
-plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,3),'b','LineWidth',2);
-xlabel('Wavelength','FontName','Helvetiaca','FontSize',18); ylabel('Radiance','FontName','Helvetiaca','FontSize',18);
-title('Primary spds','FontName','Helvetiaca','FontSize',20);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,1),'r','LineWidth',4);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,2),'g','LineWidth',4);
+plot(colorDirectionParams.wls, screenPrimaryChannelObject.screenPrimarySpd(:,3),'b','LineWidth',4);
+plot(colorDirectionParams.wls, screenPrimarySpdCheck,'k','LineWidth',2);
+xlabel('Wavelength','FontName','Helvetiaca','FontSize',18);
+ylabel('Radiance','FontName','Helvetiaca','FontSize',18);
+%title('Primary spds','FontName','Helvetiaca','FontSize',20);
+legend({'Primary 1', 'Primary 2', 'Primary 3'},'FontName','Helvetiaca','FontSize',12,'Location','NorthWest');
 saveas(gcf,fullfile(outputDir,'primarySpds.tiff'),'tiff');
 
 %% Save out what we need 
