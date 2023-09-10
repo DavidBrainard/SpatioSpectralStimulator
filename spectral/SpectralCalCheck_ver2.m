@@ -22,8 +22,8 @@ clear; close all;
 
 %% Set measurement and setting calculation options.
 verbose = true;
-MEASUREPRIMARY = true;
-MEASURETARGETCONTRAST = true;
+MEASUREPRIMARY = false;
+MEASURETARGETCONTRAST = false;
 POINTCLOUD = true;
 STANDARD = true;
 
@@ -31,7 +31,7 @@ STANDARD = true;
 %
 % You can load image either from fresh test image or from the available image
 % from SACCSFA experiment.
-LOADIMAGETYPE = 'new';
+LOADIMAGETYPE = 'experiment';
 switch LOADIMAGETYPE
     case 'new'
         if (ispref('SpatioSpectralStimulator','SACCData'))
@@ -46,7 +46,7 @@ switch LOADIMAGETYPE
         olderDate = 0;
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
-            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
+            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate+1);
             theData = load(testFilename);
         end
         % Match the data format to run it smoothly.
@@ -61,7 +61,7 @@ switch LOADIMAGETYPE
         strDay = numExtract{3};
         measureDate = sprintf('_%s-%s-%s',strYear,strMonth,strDay);
 end
-testFilename
+
 %% Set variables here.
 targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;
@@ -105,32 +105,38 @@ if (MEASUREPRIMARY)
     
     % Load the measurement results.
 elseif (~MEASUREPRIMARY)
-    if (ispref('SpatioSpectralStimulator','SACCData'))
-        % Load different file name according to 'normal' set or 'high' test
-        % image contrast sets.
-        targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
-        if (targetScreenPrimaryContrast > 0.07)
-            primaryContrast = 'high';
-        else
-            primaryContrast = 'normal';
-        end
-        
-        switch primaryContrast
-            case 'normal'
-                filenamePart = 'targetScreenSpdMeasured_2';
-            case 'high'
-                filenamePart = 'targetScreenSpdMeasured_high';
-        end
-        
-        % Load file.
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages','MeasurementData');
-        %         primaryFilename = GetMostRecentFileName(testFiledir,append(filenamePart,measureDate));
-        primaryFilename = GetMostRecentFileName(testFiledir,append(filenamePart),'olderdate',olderDate);
-        load(primaryFilename);
-        fprintf('Measurement file found, so skipping primary measurement! \n');
-        primaryFilename
+    % If we load the data from the experiment, we already saved the
+    % measured primary in the file, so we skip the part loading the
+    % measured primary file.
+    if strcmp(LOADIMAGETYPE,'experiment')
+        targetScreenSpdMeasured = theData.screenCalObj.cal.P_device;
     else
-        error('No file to load');
+        % Otherwise, load the measured primary file.
+        if (ispref('SpatioSpectralStimulator','SACCData'))
+            % Load different file name according to 'normal' set or 'high' test
+            % image contrast sets.
+            targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
+            if (targetScreenPrimaryContrast > 0.07)
+                primaryContrast = 'high';
+            else
+                primaryContrast = 'normal';
+            end
+            
+            switch primaryContrast
+                case 'normal'
+                    filenamePart = 'targetScreenSpdMeasured_2';
+                case 'high'
+                    filenamePart = 'targetScreenSpdMeasured_high';
+            end
+            
+            % Load file.
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages','MeasurementData');
+            primaryFilename = GetMostRecentFileName(testFiledir,append(filenamePart),'olderdate',olderDate);
+            load(primaryFilename);
+            fprintf('Measurement file found, so skipping primary measurement! \n');
+        else
+            error('No file to load');
+        end
     end
 end
 
@@ -209,10 +215,11 @@ if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
 else
     rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
 end
-% TEMP
+
+% We set more contrasts to test if we skip the measurements.
 if ~and(MEASUREPRIMARY,MEASURETARGETCONTRAST)
-    contrastPos = [0:0.05:1];
-    contrastNeg = [0:-0.05:-1];
+    contrastPos = [0:0.04:1];
+    contrastNeg = [0:-0.04:-1];
     rawMonochromeUnquantizedContrastCheckCal = [contrastPos contrastNeg];
 end
 
@@ -266,46 +273,56 @@ if (STANDARD)
 end
 
 %% Compare the nominal contrasts between standard and point cloud methods.
-figure; hold on;
-
-% Standard method.
-plot(desiredContrastCheckCal(1,:),standardPredictedContrastGaborCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');
-plot(desiredContrastCheckCal(2,:),standardPredictedContrastGaborCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');
-plot(desiredContrastCheckCal(3,:),standardPredictedContrastGaborCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');
-
-% Point cloud.
+%
+% Get Point cloud settings unless it is re-computed.
 if (~RECOMPUTE)
     ptCldScreenContrastCheckCal = theData.ptCldScreenContrastCheckCal;
 end
-plot(desiredContrastCheckCal(1,:),ptCldScreenContrastCheckCal(1,:),'ro','MarkerSize',19);
-plot(desiredContrastCheckCal(2,:),ptCldScreenContrastCheckCal(2,:),'go','MarkerSize',16);
-plot(desiredContrastCheckCal(3,:),ptCldScreenContrastCheckCal(3,:),'bo','MarkerSize',14);
 
-xlabel('Desired contrast','fontsize',15);
-ylabel('Nominal contrast','fontsize',15);
-axisLim = 0.055;
-xlim([-axisLim axisLim]);
-ylim([-axisLim axisLim]);
-axis('square');
-line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
-grid on;
-legend('L-standard','M-stanard','S-standard','L-PT','M-PT','S-PT','location','southeast','fontsize',13);
-title('Nominal contrast: Standard vs. Point cloud methods');
+% Plot it here.
+figure; hold on;
+figurePosition = [0 0 1500 500];
+set(gcf,'position',figurePosition);
+sgtitle('Nominal contrast: Standard vs. Point cloud methods');
+titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+markerColorHandles = {'r','g','b'};
+for pp = 1:nPrimaries
+    subplot(1,3,pp); hold on;
+    
+    % Standard method.
+    plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    % PointCloud method
+    plot(desiredContrastCheckCal(pp,1:end-4),ptCldScreenContrastCheckCal(pp,1:end-4),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    
+    title(titleHandles{pp},'fontsize',15);
+    xlabel('Desired contrast','fontsize',15);
+    ylabel('Nominal contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+    grid on;
+    legend('Standard','PointCloud','location','southeast','fontsize',13);
+end
 
 % Another way to see it.
-figure; clf; hold on;
-plot(standardPredictedContrastGaborCal(1,:),ptCldScreenContrastCheckCal(1,:),'ko','MarkerSize',14,'MarkerFaceColor','r');
-plot(standardPredictedContrastGaborCal(2,:),ptCldScreenContrastCheckCal(2,:),'ko','MarkerSize',14,'MarkerFaceColor','g');
-plot(standardPredictedContrastGaborCal(3,:),ptCldScreenContrastCheckCal(3,:),'ko','MarkerSize',14,'MarkerFaceColor','b');
-xlabel('Nominal contrast (Standard)','fontsize',15);
-ylabel('Nominal contrast (Point cloud)','fontsize',15);
-xlim([-axisLim axisLim]);
-ylim([-axisLim axisLim]);
-axis('square');
-line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
-legend('L','M','S','location','southeast','fontsize',13);
-grid on;
-title('Direct comparison of nominal contrasts: Standard vs. Point cloud methods');
+figure; clf;
+set(gcf,'position',figurePosition);
+sgtitle('Direct comparison of nominal contrasts: Standard vs. Point cloud methods');
+for pp = 1:nPrimaries
+    subplot(1,3,pp); hold on;
+    plot(standardPredictedContrastGaborCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    title(titleHandles{pp},'fontsize',15);
+    xlabel('Nominal contrast (Standard)','fontsize',15);
+    ylabel('Nominal contrast (PointCloud)','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+    grid on;
+end
 
 %% Measure contrasts of the settings we computed in SpectralTestCal.
 %
@@ -333,97 +350,98 @@ end
 %% Make plot of measured versus desired spds.
 %
 % The desired spds are in ptCldScreenSpdCheckCal
-ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
-standardSpd = standardScreenSpdMeasuredCheckCal;
-
-% Plot
-figure; clf;
-figureSize = 1000;
-figurePosition = [1200 300 figureSize figureSize];
-set(gcf,'position',figurePosition);
-for tt = 1:nTestPoints
-    subplot(round(nTestPoints/2),2,tt); hold on;
-    plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
-    plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra - point cloud
-    plot(wls,standardSpd(:,tt),'b--','LineWidth',2); % Measured spectra - standard
-    xlabel('Wavelength (nm)')
-    ylabel('Spectral power distribution')
-    legend('Target','Measured(PT)','Measured(ST)')
-    title(sprintf('Test %d',tt),'fontsize',16)
+if (MEASURETARGETCONTRAST)
+    ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
+    standardSpd = standardScreenSpdMeasuredCheckCal;
+    
+    % Plot it.
+    figure; clf;
+    figureSize = 1000;
+    figurePosition = [1200 300 figureSize figureSize];
+    set(gcf,'position',figurePosition);
+    for tt = 1:nTestPoints
+        subplot(round(nTestPoints/2),2,tt); hold on;
+        plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
+        plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra - point cloud
+        plot(wls,standardSpd(:,tt),'b--','LineWidth',2); % Measured spectra - standard
+        xlabel('Wavelength (nm)')
+        ylabel('Spectral power distribution')
+        legend('Target','Measured(PT)','Measured(ST)')
+        title(sprintf('Test %d',tt),'fontsize',16)
+    end
 end
 
 %% Compute cone contrasts for each spectrum relative to the background
 %
-% 1) Point cloud
-% We use the fact that the background settings are in the first column.
-ptCldExcitationsMeasured = T_cones * ptCldSpd;
-ptCldBgExcitationsMeasured = ptCldExcitationsMeasured(:,1);
-ptCldScreenContrastMeasuredCheckCal = ExcitationToContrast(ptCldExcitationsMeasured,ptCldBgExcitationsMeasured);
-
-% Add the nominal contrasts to be compared in the following graph. These
-% should be all lined up on the 45-degree line in the following graph.
-ptCldExcitationsNominal = T_cones * ptCldScreenSpdCheckCal;
-ptCldBgExcitationsNominal = ptCldExcitationsNominal(:,1);
-ptCldContrastNominal = ExcitationToContrast(ptCldExcitationsNominal,ptCldBgExcitationsNominal);
-
-% Plot measured versus desired contrasts
-figure; hold on;
-% Measured contrast.
-plot(desiredContrastCheckCal(1,:),ptCldScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(desiredContrastCheckCal(2,:),ptCldScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(desiredContrastCheckCal(3,:),ptCldScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
-
-% Nominal contrast.
-plot(desiredContrastCheckCal(1,:),ptCldContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
-plot(desiredContrastCheckCal(2,:),ptCldContrastNominal(2,:),'go','MarkerSize',16);   % M - target
-plot(desiredContrastCheckCal(3,:),ptCldContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
-
-xlabel('Desired contrast');
-ylabel('Measured contrast');
-axisLim = 0.05;
-xlim([-axisLim axisLim]);
-ylim([-axisLim axisLim]);
-axis('square');
-line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
-grid on;
-legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
-title(sprintf('Desired vs. Measured LMS Contrast, %s','Point cloud'));
-
-
-% 2) Standard method
-% We use the fact that the background settings are in the first column.
-standardExcitationsMeasured = T_cones * standardSpd;
-standardBgExcitationsMeasured = standardExcitationsMeasured(:,1);
-standardScreenContrastMeasuredCheckCal = ExcitationToContrast(standardExcitationsMeasured,standardBgExcitationsMeasured);
-
-% Add the nominal contrasts to be compared in the following graph. These
-% should be all lined up on the 45-degree line in the following graph.
-standardExcitationsNominal = T_cones * standardDesiredSpdGaborCal;
-standardBgExcitationsNominal = standardExcitationsNominal(:,1);
-standardContrastNominal = ExcitationToContrast(standardExcitationsNominal,standardBgExcitationsNominal);
-
-% Plot measured versus desired contrasts
-figure; hold on;
-% Measured contrast.
-plot(desiredContrastCheckCal(1,:),standardScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
-plot(desiredContrastCheckCal(2,:),standardScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
-plot(desiredContrastCheckCal(3,:),standardScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
-
-% Nominal contrast.
-plot(desiredContrastCheckCal(1,:),standardContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
-plot(desiredContrastCheckCal(2,:),standardContrastNominal(2,:),'go','MarkerSize',16);   % M - target
-plot(desiredContrastCheckCal(3,:),standardContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
-
-xlabel('Desired contrast');
-ylabel('Measured contrast');
-axisLim = 0.05;
-xlim([-axisLim axisLim]);
-ylim([-axisLim axisLim]);
-axis('square');
-line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
-grid on;
-legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast');
-title(sprintf('Desired vs. Measured LMS Contrast, %s','Standard method'));
+if (MEASURETARGETCONTRAST)
+    % 1) Point cloud
+    % We use the fact that the background settings are in the first column.
+    ptCldExcitationsMeasured = T_cones * ptCldSpd;
+    ptCldBgExcitationsMeasured = ptCldExcitationsMeasured(:,1);
+    ptCldScreenContrastMeasuredCheckCal = ExcitationToContrast(ptCldExcitationsMeasured,ptCldBgExcitationsMeasured);
+    
+    % Add the nominal contrasts to be compared in the following graph. These
+    % should be all lined up on the 45-degree line in the following graph.
+    ptCldExcitationsNominal = T_cones * ptCldScreenSpdCheckCal;
+    ptCldBgExcitationsNominal = ptCldExcitationsNominal(:,1);
+    ptCldContrastNominal = ExcitationToContrast(ptCldExcitationsNominal,ptCldBgExcitationsNominal);
+    
+    % Plot measured versus desired contrasts
+    figure; hold on;
+    % Measured contrast.
+    plot(desiredContrastCheckCal(1,:),ptCldScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+    plot(desiredContrastCheckCal(2,:),ptCldScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+    plot(desiredContrastCheckCal(3,:),ptCldScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+    
+    % Nominal contrast.
+    plot(desiredContrastCheckCal(1,:),ptCldContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+    plot(desiredContrastCheckCal(2,:),ptCldContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+    plot(desiredContrastCheckCal(3,:),ptCldContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+    
+    xlabel('Desired contrast','fontsize',15);
+    ylabel('Measured contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+    grid on;
+    legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast','fontsize',12);
+    title(sprintf('Desired vs. Measured LMS Contrast, %s','Point cloud'));
+    
+    
+    % 2) Standard method
+    % We use the fact that the background settings are in the first column.
+    standardExcitationsMeasured = T_cones * standardSpd;
+    standardBgExcitationsMeasured = standardExcitationsMeasured(:,1);
+    standardScreenContrastMeasuredCheckCal = ExcitationToContrast(standardExcitationsMeasured,standardBgExcitationsMeasured);
+    
+    % Add the nominal contrasts to be compared in the following graph.
+    standardContrastNominal = standardPredictedContrastGaborCal;
+    
+    % Plot measured versus desired contrasts
+    figure; hold on;
+    % Measured contrast.
+    plot(desiredContrastCheckCal(1,:),standardScreenContrastMeasuredCheckCal(1,:),'ro','MarkerSize',14,'MarkerFaceColor','r');   % L - measured
+    plot(desiredContrastCheckCal(2,:),standardScreenContrastMeasuredCheckCal(2,:),'go','MarkerSize',12,'MarkerFaceColor','g');   % M - measured
+    plot(desiredContrastCheckCal(3,:),standardScreenContrastMeasuredCheckCal(3,:),'bo','MarkerSize',10,'MarkerFaceColor','b');   % S - measured
+    
+    % Nominal contrast.
+    plot(desiredContrastCheckCal(1,:),standardContrastNominal(1,:),'ro','MarkerSize',19);   % L - target
+    plot(desiredContrastCheckCal(2,:),standardContrastNominal(2,:),'go','MarkerSize',16);   % M - target
+    plot(desiredContrastCheckCal(3,:),standardContrastNominal(3,:),'bo','MarkerSize',14);   % S - target
+    
+    xlabel('Desired contrast','fontsize',15);
+    ylabel('Measured contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+    grid on;
+    legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast','fontsize',12);
+    title(sprintf('Desired vs. Measured LMS Contrast, %s','Standard method'));
+end
 
 %% Close screen and save out the measurement data.
 if (MEASURETARGETCONTRAST)
@@ -451,60 +469,64 @@ end
 
 %% This part is from SpectralCalAnalyze.
 %
-% 1) Point cloud
-%
-% Set figure size and position.
-contrastFig = figure; hold on;
-figureSize = 1000;
-figurePosition = [1200 300 figureSize figureSize/3];
-set(gcf,'position',figurePosition);
-
-% Plot measured versus desired contrasts.
-axisLim = 0.10;
-theColors = ['r' 'g' 'b'];
-sgtitle('Point cloud method');
-for pp = 1:nPrimaries
-    subplot(1,nPrimaries,pp); hold on;
-    plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(desiredContrastCheckCal(pp,:),ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
-    plot(desiredContrastCheckCal(pp,1),ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(desiredContrastCheckCal(pp,1),ptCldContrastNominal(pp,1), 'ko','MarkerSize',18);
+if (MEASURETARGETCONTRAST)
+    % 1) Point cloud
+    %
+    % Set figure size and position.
+    contrastFig = figure; hold on;
+    figureSize = 1000;
+    figurePosition = [1200 300 figureSize figureSize/3];
+    set(gcf,'position',figurePosition);
     
-    plot([-1 1],[-1 1],'k');
-    xlim([-axisLim axisLim]);
-    ylim([-axisLim axisLim]);
-    axis('square');
-    xlabel('Desired contrast');
-    ylabel('Measured contrast');
-    legend({'Measured','Nominal'},'location','southeast');
-    title(sprintf('Cone class %d',pp));
-end
-
-% 2) Standard method
-%
-% Set figure size and position.
-contrastFig = figure; hold on;
-figureSize = 1000;
-figurePosition = [1200 300 figureSize figureSize/3];
-set(gcf,'position',figurePosition);
-
-% Plot measured versus desired contrasts.
-axisLim = 0.10;
-theColors = ['r' 'g' 'b'];
-sgtitle('Standard method');
-for pp = 1:nPrimaries
-    subplot(1,nPrimaries,pp); hold on;
-    plot(desiredContrastCheckCal(pp,:),standardScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
-    plot(desiredContrastCheckCal(pp,:),standardContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',18);
-    plot(desiredContrastCheckCal(pp,1),standardScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
-    plot(desiredContrastCheckCal(pp,1),standardContrastNominal(pp,1), 'ko','MarkerSize',18);
+    % Plot measured versus desired contrasts.
+    axisLim = 0.10;
+    theColors = ['r' 'g' 'b'];
+    sgtitle('Point cloud method');
+    for pp = 1:nPrimaries
+        subplot(1,nPrimaries,pp); hold on;
+        plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+        plot(desiredContrastCheckCal(pp,:),ptCldContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',17);
+        plot(desiredContrastCheckCal(pp,1),ptCldScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+        plot(desiredContrastCheckCal(pp,1),ptCldContrastNominal(pp,1), 'ko','MarkerSize',17);
+        
+        plot([-1 1],[-1 1],'k');
+        xlim([-axisLim axisLim]);
+        ylim([-axisLim axisLim]);
+        axis('square');
+        xlabel('Desired contrast','fontsize',15);
+        ylabel('Measured contrast','fontsize',15);
+        legend({'Measured','Nominal'},'location','southeast');
+        title(sprintf('Cone class %d',pp),'fontsize',15);
+        grid on;
+    end
     
-    plot([-1 1],[-1 1],'k');
-    xlim([-axisLim axisLim]);
-    ylim([-axisLim axisLim]);
-    axis('square');
-    xlabel('Desired contrast');
-    ylabel('Measured contrast');
-    legend({'Measured','Nominal'},'location','southeast');
-    title(sprintf('Cone class %d',pp));
+    % 2) Standard method
+    %
+    % Set figure size and position.
+    contrastFig = figure; hold on;
+    figureSize = 1000;
+    figurePosition = [1200 300 figureSize figureSize/3];
+    set(gcf,'position',figurePosition);
+    
+    % Plot measured versus desired contrasts.
+    axisLim = 0.10;
+    theColors = ['r' 'g' 'b'];
+    sgtitle('Standard method');
+    for pp = 1:nPrimaries
+        subplot(1,nPrimaries,pp); hold on;
+        plot(desiredContrastCheckCal(pp,:),standardScreenContrastMeasuredCheckCal(pp,:),[theColors(pp) 'o'],'MarkerSize',14,'MarkerFaceColor',theColors(pp));
+        plot(desiredContrastCheckCal(pp,:),standardContrastNominal(pp,:), [theColors(pp) 'o'],'MarkerSize',17);
+        plot(desiredContrastCheckCal(pp,1),standardScreenContrastMeasuredCheckCal(pp,1),'ko','MarkerSize',14,'MarkerFaceColor','k');
+        plot(desiredContrastCheckCal(pp,1),standardContrastNominal(pp,1), 'ko','MarkerSize',17);
+        
+        plot([-1 1],[-1 1],'k');
+        xlim([-axisLim axisLim]);
+        ylim([-axisLim axisLim]);
+        axis('square');
+        xlabel('Desired contrast','fontsize',15);
+        ylabel('Measured contrast','fontsize',15);
+        legend({'Measured','Nominal'},'location','southeast');
+        title(sprintf('Cone class %d',pp),'fontsize',15);
+        grid on;
+    end
 end
