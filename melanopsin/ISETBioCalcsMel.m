@@ -468,6 +468,9 @@ if (VERIFY_ISETBIO_FUNDAMENTALS)
     plot(theData.colorDirectionParams.wls,T_energyFundamentalsIFromCMosaic(2,:),'y:','LineWidth',3);
     plot(theData.colorDirectionParams.wls,T_energyFundamentalsIFromCMosaic(3,:),'y:','LineWidth',3);
 end
+figure(fundamentalsFig);
+legend({sprintf('%0.1f%%',100*lConeContrast),sprintf('%0.1f%%',100*mConeContrast),sprintf('%0.1f%%',100*sConeContrast)}, ...
+    'FontName','Helvetica','FontSize',12);
 saveas(fundamentalsFig,fullfile(outputDir,'fundamentalsFig.tiff'),'tiff');
 
 %% Save out what we need 
