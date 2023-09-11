@@ -218,8 +218,8 @@ end
 
 % We set more contrasts to test if we skip the measurements.
 if ~and(MEASUREPRIMARY,MEASURETARGETCONTRAST)
-    contrastPos = [0:0.04:1];
-    contrastNeg = [0:-0.04:-1];
+    contrastPos = [0:0.01:1];
+    contrastNeg = [0:-0.01:-1];
     rawMonochromeUnquantizedContrastCheckCal = [contrastPos contrastNeg];
 end
 
@@ -286,13 +286,30 @@ set(gcf,'position',figurePosition);
 sgtitle('Nominal contrast: Standard vs. Point cloud methods');
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
+
+% testIndex = 183 for normal image set when we set the interval of 0.01.
+% The highest cone cone trast [L M S] = [-0.0427 0.0369 -0.0028] -> image
+% contrast = 0.0565.
+% testIndex = 101 for normal image set. The other side of good. [0.0493
+% -0.0496 -0.0003] -> 0.0699
+%
+% textIndex = 185 for high image set.
+% The highest cone cone trast [L M S] = [-0.0579 0.0590 -0.0003] -> image
+% contrast = 0.0827
+% testIndex = 101 for high image set. The other side of good. [0.0694
+% -0.0717 -0.0012] -> 0.0998
+testIndex = 101;
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
     
     % Standard method.
     plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    
     % PointCloud method
-    plot(desiredContrastCheckCal(pp,1:end-4),ptCldScreenContrastCheckCal(pp,1:end-4),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    
+    % Test - Standard method.
+    plot(desiredContrastCheckCal(pp,1:testIndex),standardPredictedContrastGaborCal(pp,1:testIndex),'o','MarkerSize',14,'MarkerFaceColor','c'); 
     
     title(titleHandles{pp},'fontsize',15);
     xlabel('Desired contrast','fontsize',15);

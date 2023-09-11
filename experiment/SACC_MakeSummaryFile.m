@@ -10,6 +10,7 @@
 % History:
 %    03/10/23   smo    Started on it.
 %    04/24/23   smo    Now making CS and AUD files separately.
+%    09/11/23   smo    Added sanity check for AUC file.
 
 %% Initialize.
 clear; close all;
@@ -69,6 +70,108 @@ nRows = size(tableAUC,1);
 tableAUC{:,'No'} = linspace(1,nRows,nRows)';
 
 disp('AUC data has been merged successfully!');
+
+%% Sanity check for the CSF fitting data.
+%
+% As we found out that we used the test images using the Standard method,
+% here we want to check if the CSF data was fitted within the 'good'
+% contrast range of the test images.
+%
+% These cone contrasts are the marginal contrasts that can generate the
+% desired contrast. If a test image contrast had a higher contrast than
+% this, its contrast would be not perfectly modulated as desired. 
+%
+% These values were found using the validation code SpectralCalCheck_ver2.m.
+coneContrastNormal = [-0.0427 0.0369 -0.0028];
+coneContrastHigh = [-0.0579 0.0590 -0.0003];
+
+imageContrastNormal = sqrt(sum(coneContrastNormal.^2));
+imageContrastHigh = sqrt(sum(coneContrastHigh.^2));
+
+logSensitivitySanityNormal = log10(1/imageContrastNormal);
+logSensitivitySanityHigh = log10(1/imageContrastHigh);
+
+% Read out the test image profile to figure out which test image set was
+% used for 18 cpd per each subject.
+testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+testFilename = GetMostRecentFileName(testFiledir,'TestImageProfile.xlsx');
+imageData = readtable(testFilename);
+
+% Find the subjects who used the high test image set in the experiment.
+testImageMaxContrastHighImageSet = 0.1;
+numSubjectsWithHighImageSet = imageData.Subject(find(imageData.TestImageContrastMax == testImageMaxContrastHighImageSet));
+
+% Get the subject info.
+subjectOptions = unique(tableAUC.Subject);
+nSubjects = length(subjectOptions);
+nSessions = size(tableAUC,1);
+
+% Make a loop to check the sanity per each subject.
+for ss = 1:nSessions
+    % Get the current number of the subject.
+    numSubjectTemp = table2array(tableAUC(ss,'Subject'));
+    % Set the criteria differetly if high image set was used.
+    if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
+        % High image.
+        logSensitivitySanity = logSensitivitySanityHigh;
+    else
+        % Normal image.
+        logSensitivitySanity = logSensitivitySanityNormal;
+    end
+    
+    % Check if any sensitivity point on CSF is outside of the sanity range.
+    tableVarNames = {'LogSensitivity_3cpd','LogSensitivity_6cpd','LogSensitivity_9cpd','LogSensitivity_12cpd','LogSensitivity_18cpd'};
+    tableLogSensitivityTemp = tableAUC(ss,tableVarNames);
+    if any(table2array(tableLogSensitivityTemp) < logSensitivitySanity)
+        idxSessionBad(ss,1) = 1;
+    else
+        idxSessionBad(ss,1) = 0;
+    end
+end
+
+% Add a new column to the table saving the findings.
+tableAUC = addvars(tableAUC,idxSessionBad,'NewVariableNames','IdxSessionBad');
+
+%% Visualize the results what we found from the above.
+figure; clf; hold on;
+spatialFrequencyOptions = [3 6 9 12 18];
+logSpatialFrequencyOptions = log10(spatialFrequencyOptions);
+spatialFrequencyOptionsStr = {'3' '6' '9' '12' '18'};
+
+% Plot the sanity reference.
+plot(log10([1 100]), [logSensitivitySanityNormal logSensitivitySanityNormal],':','linewidth',4,'color',[0 1 0 0.3]);
+plot(log10([1 100]), [logSensitivitySanityHigh logSensitivitySanityHigh],':','linewidth',4,'color',[1 0 0 0.3]);
+
+for ss = 1:nSessions
+    % We will use different line color for Normal image and High image set.
+    numSubjectTemp = table2array(tableAUC(ss,'Subject'));
+    if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
+        lineColor = 'r';
+    else
+        lineColor = 'g';
+    end
+    
+    % Get CSF curve values.
+    tableVarNames = {'LogSensitivity_3cpd','LogSensitivity_6cpd','LogSensitivity_9cpd','LogSensitivity_12cpd','LogSensitivity_18cpd'};
+    logSensitivityTemp = table2array(tableAUC(ss,tableVarNames));
+    
+    % Plot it.
+    plot(logSpatialFrequencyOptions,logSensitivityTemp,'o-','color',lineColor);
+end
+
+% Set axis and stuffs.
+% This is the same format as our analysis.
+xlabel('Spatial Frequency (cpd)','fontsize',15);
+ylabel('Log Contrast Sensitivity','fontsize',15);
+xticks(logSpatialFrequencyOptions);
+xticklabels(spatialFrequencyOptionsStr);
+xlim([min(log10(spatialFrequencyOptions)) max(log10(spatialFrequencyOptions))]);
+ylim(log10([1 600]));
+yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
+yticks(yaxisRange);
+ytickformat('%.2f');
+title(sprintf('CSF curve (N=%d)',nSessions), 'fontsize',15);
+legend('Ref-Normal','Ref-High','test','test1','location','southeast','fontsize',15);
 
 %% Save out the result.
 %
