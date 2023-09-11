@@ -602,6 +602,7 @@ desiredContrastGaborImage = CalFormatToImage(desiredContrastGaborCal,imageN,imag
 standardPredictedContrastImage = CalFormatToImage(standardPredictedContrastGaborCal,imageN,imageN);
 standardSettingsGaborImage = CalFormatToImage(standardSettingsGaborCal,imageN,imageN);
 uniqueQuantizedContrastGaborImage = CalFormatToImage(uniqueQuantizedContrastGaborCal,imageN,imageN);
+uniqueQunatizedSettingsGaborImage = CalFormatToImage(uniqueQuantizedSettingsGaborCal,imageN,imageN);
 
 %% SRGB image via XYZ, scaled to display
 predictedXYZCal = T_xyz*desiredSpdGaborCal;
@@ -616,8 +617,13 @@ title('SRGB Gabor Image');
 
 %% Show the settings image
 figure; clf;
+subplot(1,2,1);
 imshow(standardSettingsGaborImage);
-title('Image of settings');
+title('Standard method');
+
+subplot(1,2,2);
+imshow(uniqueQunatizedSettingsGaborImage);
+title('Point cloud method');
 
 %% Plot slice through predicted LMS contrast image.
 %
