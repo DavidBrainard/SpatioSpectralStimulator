@@ -93,6 +93,7 @@ for ss = 1:nPhaseShifts
         % Convert representations we want to take forward to image format. Also, save the results in a structure.
         if(~options.lightVer)
             gaborImageObject.uniqueQuantizedContrastGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedContrastGaborCal,stimulusN,stimulusN);
+            gaborImageObject.uniqueQuantizedSettingsGaborImage{ss,cc} = CalFormatToImage(uniqueQuantizedSettingsGaborCal,stimulusN,stimulusN);
             gaborImageObject.desiredContrastGaborImage{ss,cc} = CalFormatToImage(standardGaborCalObject.desiredContrastGaborCal{ss,cc},stimulusN,stimulusN);
             gaborImageObject.standardPredictedContrastImage{ss,cc} = CalFormatToImage(standardGaborCalObject.standardPredictedContrastGaborCal{ss,cc},stimulusN,stimulusN);
         end
