@@ -117,10 +117,20 @@ SRGBImage = uint8(CalFormatToImage(SRGBCal,stimulusN,stimulusN));
 figure; imshow(SRGBImage);
 title('SRGB Gabor Image');
 
-%% Show the settings image
+%% Show the settings image.
 figure; clf;
+figurePosition = [0 0 1000 500];
+set(gcf,'position',figurePosition);
+
+% Standard method.
+subplot(1,2,1);
 imshow(cell2mat(gaborImageObject.standardSettingsGaborImage));
-title('Image of settings');
+title('Standard method');
+
+% Point cloud method.
+subplot(1,2,2);
+imshow(cell2mat(gaborImageObject.uniqueQuantizedSettingsGaborImage));
+title('Point cloud method');
 
 %% Plot slice through predicted LMS contrast image.
 %
