@@ -287,7 +287,7 @@ ylim(log10([1 600]));
 yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
 yticks(yaxisRange);
 ytickformat('%.2f');
-title(sprintf('CSF data points (N=%d)',nSessions), 'fontsize',15);
+title(sprintf('Max test image contrast (N=%d)',nSessions), 'fontsize',15);
 f = flip(get(gca,'children'));
 legend(f([1 2 3 100]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
 
