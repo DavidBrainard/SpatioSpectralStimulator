@@ -113,16 +113,17 @@ for ss = 1:nSessions
     % Set the criteria differetly if high image set was used.
     if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
         % High image.
-        logSensitivitySanity = logSensitivitySanityHigh;
+        logSensitivitySanity18cpd = logSensitivitySanityHigh;
     else
         % Normal image.
-        logSensitivitySanity = logSensitivitySanityNormal;
+        logSensitivitySanity18cpd = logSensitivitySanityNormal;
     end
     
     % Check if any sensitivity point on CSF is outside of the sanity range.
     tableVarNames = {'LogSensitivity_3cpd','LogSensitivity_6cpd','LogSensitivity_9cpd','LogSensitivity_12cpd','LogSensitivity_18cpd'};
-    tableLogSensitivityTemp = tableAUC(ss,tableVarNames);
-    if any(table2array(tableLogSensitivityTemp) < logSensitivitySanity)
+    tableLogSensitivityTemp = table2array(tableAUC(ss,tableVarNames));
+    if or(any(tableLogSensitivityTemp(1:4) < logSensitivitySanityNormal),...
+            any(tableLogSensitivityTemp(end) < logSensitivitySanity18cpd))
         idxSessionBad(ss,1) = 1;
     else
         idxSessionBad(ss,1) = 0;
@@ -143,20 +144,33 @@ plot(log10([1 100]), [logSensitivitySanityNormal logSensitivitySanityNormal],':'
 plot(log10([1 100]), [logSensitivitySanityHigh logSensitivitySanityHigh],':','linewidth',4,'color',[1 0 0 0.3]);
 
 for ss = 1:nSessions
-    % We will use different line color for Normal image and High image set.
+    % We will use different marker color for Normal image and High image set.
+    
+    % Update subject name.
     numSubjectTemp = table2array(tableAUC(ss,'Subject'));
+    
+    % Set marker color differently over test image set.
+    markerColorNormal = 'g';
+    markerColorHigh = 'r';
     if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
-        lineColor = 'r';
+        markerColor = markerColorHigh;
     else
-        lineColor = 'g';
+        markerColor = markerColorNormal;
     end
     
     % Get CSF curve values.
     tableVarNames = {'LogSensitivity_3cpd','LogSensitivity_6cpd','LogSensitivity_9cpd','LogSensitivity_12cpd','LogSensitivity_18cpd'};
     logSensitivityTemp = table2array(tableAUC(ss,tableVarNames));
     
-    % Plot it.
-    plot(logSpatialFrequencyOptions,logSensitivityTemp,'o-','color',lineColor);
+    % Plot it - 3, 6, 9, 12 cpd. 
+    % We only used a normal image set for this spatial frequencies, so it
+    % will be all same colors.
+    plot(logSpatialFrequencyOptions(1:4),logSensitivityTemp(1:4),'ko','markerfacecolor',markerColorNormal);
+    
+    % Plot it - 18 cpd.
+    % For 18 cpd, we will plot it in different colors per different image
+    % set we used (normal / high).
+    plot(logSpatialFrequencyOptions(end),logSensitivityTemp(end),'ko','markerfacecolor',markerColor);
 end
 
 % Set axis and stuffs.
@@ -170,8 +184,9 @@ ylim(log10([1 600]));
 yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
 yticks(yaxisRange);
 ytickformat('%.2f');
-title(sprintf('CSF curve (N=%d)',nSessions), 'fontsize',15);
-legend('Ref-Normal','Ref-High','test','test1','location','southeast','fontsize',15);
+title(sprintf('CSF data points (N=%d)',nSessions), 'fontsize',15);
+f = flip(get(gca,'children'));
+legend(f([1 2 3 100]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
 
 %% Save out the result.
 %
