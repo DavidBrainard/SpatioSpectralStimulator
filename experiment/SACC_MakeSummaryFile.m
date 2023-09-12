@@ -91,22 +91,32 @@ imageContrastHigh = sqrt(sum(coneContrastHigh.^2));
 logSensitivitySanityNormal = log10(1/imageContrastNormal);
 logSensitivitySanityHigh = log10(1/imageContrastHigh);
 
+% Get the subject info.
+subjectOptions = unique(tableAUC.Subject);
+nSubjects = length(subjectOptions);
+
 % Read out the test image profile to figure out which test image set was
 % used for 18 cpd per each subject.
 testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
 testFilename = GetMostRecentFileName(testFiledir,'TestImageProfile.xlsx');
 imageData = readtable(testFilename);
 
+% We will delete the data in the imageData who didn't complete the study.
+% The subject options who finished is available in 'subjectOptions'.
+subjectToDelete = setdiff(imageData.Subject,subjectOptions);
+rowToDelete = strcmp(imageData.Subject,subjectToDelete);
+imageData(rowToDelete,:) = [];
+
+% Sort the table in the ascending order of spatial frequency.
+imageData = sortrows(imageData,'SpatialFrequency','ascend');
+imageData = sortrows(imageData,'Subject','ascend');
+
 % Find the subjects who used the high test image set in the experiment.
 testImageMaxContrastHighImageSet = 0.1;
 numSubjectsWithHighImageSet = imageData.Subject(find(imageData.TestImageContrastMax == testImageMaxContrastHighImageSet));
 
-% Get the subject info.
-subjectOptions = unique(tableAUC.Subject);
-nSubjects = length(subjectOptions);
-nSessions = size(tableAUC,1);
-
 % Make a loop to check the sanity per each subject.
+nSessions = size(tableAUC,1);
 for ss = 1:nSessions
     % Get the current number of the subject.
     numSubjectTemp = table2array(tableAUC(ss,'Subject'));
@@ -124,14 +134,47 @@ for ss = 1:nSessions
     tableLogSensitivityTemp = table2array(tableAUC(ss,tableVarNames));
     if or(any(tableLogSensitivityTemp(1:4) < logSensitivitySanityNormal),...
             any(tableLogSensitivityTemp(end) < logSensitivitySanity18cpd))
-        idxSessionBad(ss,1) = 1;
+        idxSessionBad_CSF(ss,1) = 1;
     else
-        idxSessionBad(ss,1) = 0;
+        idxSessionBad_CSF(ss,1) = 0;
     end
 end
 
 % Add a new column to the table saving the findings.
-tableAUC = addvars(tableAUC,idxSessionBad,'NewVariableNames','IdxSessionBad');
+tableAUC = addvars(tableAUC,idxSessionBad_CSF,'NewVariableNames','IdxSessionBad_CSF');
+
+% Get the subjects info of bad sessions.
+subjectSessionBad_CSF = unique(tableAUC.Subject(find(tableAUC.IdxSessionBad==1)));
+
+%% Here we check if any test image was out of the sanity contrast we calculated above.
+nSessions = size(imageData,1);
+for ss = 1:nSessionss
+    % Get the current number of the subject.
+    numSubjectTemp = table2array(imageData(ss,'Subject'));
+    % Set the criteria differetly if high image set was used.
+    if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
+        % High image.
+        logSensitivitySanity = logSensitivitySanityHigh;
+    else
+        % Normal image.
+        logSensitivitySanity = logSensitivitySanityNormal;
+    end
+    
+    % Check if any test image was outside of the sanity range.
+    testImageContrastMaxTemp = table2array(imageData(ss,'TestContrasts_8'));
+    logSensitiivtyMaxTemp = log10(1/testImageContrastMaxTemp);
+    if  (logSensitiivtyMaxTemp < logSensitivitySanity)
+        idxSessionBad_maxTestContrast(ss,1) = 1;
+    else
+        idxSessionBad_maxTestContrast(ss,1) = 0;
+    end
+end
+
+% Add the finding to the table.
+imageData = addvars(imageData,idxSessionBad_maxTestContrast,'NewVariableNames','IdxSessionBad');
+
+% Get the subjects info of bad sessions.
+subjectSessionBad_maxTestContrast = unique(imageData.Subject(find(imageData.IdxSessionBad==1)));
 
 %% Visualize the results what we found from the above.
 figure; clf; hold on;
@@ -172,6 +215,66 @@ for ss = 1:nSessions
     % set we used (normal / high).
     plot(logSpatialFrequencyOptions(end),logSensitivityTemp(end),'ko','markerfacecolor',markerColor);
 end
+
+% Set axis and stuffs.
+% This is the same format as our analysis.
+xlabel('Spatial Frequency (cpd)','fontsize',15);
+ylabel('Log Contrast Sensitivity','fontsize',15);
+xticks(logSpatialFrequencyOptions);
+xticklabels(spatialFrequencyOptionsStr);
+xlim([min(log10(spatialFrequencyOptions)) max(log10(spatialFrequencyOptions))]);
+ylim(log10([1 600]));
+yaxisRange = log10([10, 100, 200, 300, 400, 500, 600]);
+yticks(yaxisRange);
+ytickformat('%.2f');
+title(sprintf('CSF data points (N=%d)',nSessions), 'fontsize',15);
+f = flip(get(gca,'children'));
+legend(f([1 2 3 100]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
+
+%% We will plot another figure in the same format as above, but now with the
+% highest contrast image presented in the experiment. 
+figure; clf; hold on;
+
+% 3, 6, 9, and 12 cpd (All normal image set).
+maxTestContrastsNormal_3cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 3));
+maxTestContrastsNormal_6cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 6));
+maxTestContrastsNormal_9cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 9));
+maxTestContrastsNormal_12cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 12));
+
+% 18 cpd. We separate the arrays between normal and high image set.
+idxMaxTestContrasts_18cpd = find(imageData.SpatialFrequency == 18);
+maxTestContrasts_18cpd = imageData(idxMaxTestContrasts_18cpd,{'TestImageContrastMax','TestContrasts_8'});
+maxTestContrastOptions_18cpd = unique(maxTestContrasts_18cpd.TestImageContrastMax);
+
+maxTestContrastNormal = min(maxTestContrastOptions_18cpd);
+maxTestContrastHigh = max(maxTestContrastOptions_18cpd);
+
+maxTestContrastsNormal_18cpd = maxTestContrasts_18cpd.TestContrasts_8(maxTestContrasts_18cpd.TestImageContrastMax == maxTestContrastNormal);
+maxTestContrastsHigh_18cpd = maxTestContrasts_18cpd.TestContrasts_8(maxTestContrasts_18cpd.TestImageContrastMax == maxTestContrastHigh);
+
+% Convert to log sensitivity.
+logSensitivityMaxTestContrastsNormal_3cpd = log10(1./maxTestContrastsNormal_3cpd);
+logSensitivityMaxTestContrastsNormal_6cpd = log10(1./maxTestContrastsNormal_6cpd);
+logSensitivityMaxTestContrastsNormal_9cpd = log10(1./maxTestContrastsNormal_9cpd);
+logSensitivityMaxTestContrastsNormal_12cpd = log10(1./maxTestContrastsNormal_12cpd);
+logSensitivityMaxTestContrastsNormal_18cpd = log10(1./maxTestContrastsNormal_18cpd);
+logSensitivityMaxTestContrastsHigh_18cpd = log10(1./maxTestContrastsHigh_18cpd);
+
+% Plot the sanity reference.
+plot(log10([1 100]), [logSensitivitySanityNormal logSensitivitySanityNormal],':','linewidth',4,'color',[0 1 0 0.3]);
+plot(log10([1 100]), [logSensitivitySanityHigh logSensitivitySanityHigh],':','linewidth',4,'color',[1 0 0 0.3]);
+
+% Plot the sensitivity of the maximum test image contrast.
+%
+% Normal image.
+plot(logSpatialFrequencyOptions(1),logSensitivityMaxTestContrastsNormal_3cpd,'ko','markerfacecolor',markerColorNormal);
+plot(logSpatialFrequencyOptions(2),logSensitivityMaxTestContrastsNormal_6cpd,'ko','markerfacecolor',markerColorNormal);
+plot(logSpatialFrequencyOptions(3),logSensitivityMaxTestContrastsNormal_9cpd,'ko','markerfacecolor',markerColorNormal);
+plot(logSpatialFrequencyOptions(4),logSensitivityMaxTestContrastsNormal_12cpd,'ko','markerfacecolor',markerColorNormal);
+plot(logSpatialFrequencyOptions(5),logSensitivityMaxTestContrastsNormal_18cpd,'ko','markerfacecolor',markerColorNormal);
+
+% High image.
+plot(logSpatialFrequencyOptions(5),logSensitivityMaxTestContrastsHigh_18cpd,'ko','markerfacecolor',markerColorHigh);
 
 % Set axis and stuffs.
 % This is the same format as our analysis.
