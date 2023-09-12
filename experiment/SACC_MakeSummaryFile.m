@@ -144,11 +144,11 @@ end
 tableAUC = addvars(tableAUC,idxSessionBad_CSF,'NewVariableNames','IdxSessionBad_CSF');
 
 % Get the subjects info of bad sessions.
-subjectSessionBad_CSF = unique(tableAUC.Subject(find(tableAUC.IdxSessionBad==1)));
+subjectSessionBad_CSF = unique(tableAUC.Subject(find(tableAUC.IdxSessionBad_CSF==1)));
 
 %% Here we check if any test image was out of the sanity contrast we calculated above.
 nSessions = size(imageData,1);
-for ss = 1:nSessionss
+for ss = 1:nSessions
     % Get the current number of the subject.
     numSubjectTemp = table2array(imageData(ss,'Subject'));
     % Set the criteria differetly if high image set was used.
