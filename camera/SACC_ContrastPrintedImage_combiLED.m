@@ -171,6 +171,11 @@ for cc = 1:nTargetChs
     plot(cell2mat(targetCyclePerDeg),meanContrasts_all(:,cc),...
         '.-','markersize',20);
 end
+
+% Get marker color info so that we can use the same one for the same
+% channel.
+f = flip(get(gca,'children'));
+
 ylim([0 1]);
 xlabel('Spatial Frequency (cpd)','fontsize',15);
 ylabel('Mean Contrasts','fontsize',15);
@@ -193,18 +198,19 @@ set(gcf,'position',figureSize);
 sgtitle('MTF comparison: Camera vs. SACCSFA', 'fontsize', 15);
 ss = 1;
 
+% Normalize the contrast by dividing the single cycle contrast.
+meanContrastsNorm_all = meanContrasts_all./refContrasts;
+
+% Set the contrast within the range.
+maxContrast = 1;
+meanContrastsNorm_all(find(meanContrastsNorm_all > maxContrast)) = 1;
+
+% Make a loop to plot the results of each channel.
 for cc = 1:nTargetChs
     subplot(2,4,cc); hold on;
     
     % Printed pattern.
-    %
-    % You can plot either raw contrast or normalized contrast.
-    normContrast = true;
-    if (normContrast)
-        meanContrastsTemp = meanContrasts_all(:,cc)/refContrasts(cc);
-    else
-        meanContrastsTemp = meanContrasts_all(:,cc);
-    end
+    meanContrastsTemp = meanContrastsNorm_all(:,cc);
     plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
@@ -228,3 +234,27 @@ for cc = 1:nTargetChs
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd(cc)), 'fontsize', 15);
 end
+
+%% Calculate the ratio of contrast roll-off for the SACCSFA system.
+meanContrastsNorm_all_compare = meanContrastsNorm_all(:,idxChComparison);
+contrastRollOffRatio_SACCSFA = (meanContrastsNorm_all_compare - meanContrasts_SACCSFA)./meanContrastsNorm_all_compare;
+
+% Set the min roll-off ratio as 0.
+minRollOffRatio = 0;
+contrastRollOffRatio_SACCSFA(find(contrastRollOffRatio_SACCSFA < minRollOffRatio)) = minRollOffRatio;
+
+% Calculate the ratio in percent.
+contrastRollOffRatio_SACCSFA = 100.*contrastRollOffRatio_SACCSFA;
+
+% Plot it. 
+figure; clf; hold on;
+for cc = 1:length(idxChComparison)
+    plot(cell2mat(targetCyclePerDeg),contrastRollOffRatio_SACCSFA(:,cc),'.-','color',f(idxChComparison(cc)).Color,...
+        'markerfacecolor',f(idxChComparison(cc)).Color,'markersize',20);
+end
+ylim([0 max(contrastRollOffRatio_SACCSFA,[],'all')*1.1]);
+xlabel('Spatial Frequency (cpd)','fontsize',15);
+ylabel('Ratio Contrast Roll-off (%)','fontsize',15);
+xticks(cell2mat(targetCyclePerDeg));
+legend(legendHandles(idxChComparison),'location','northwest','fontsize',15);
+title('Contrast roll-off (%) in the SACCSFA system','fontsize',15);
