@@ -1,5 +1,43 @@
+%% ISETBioCalcsMel.m
+%
+% Use ISETBio to compute cone splatter given an ISETBio scene
+% that describes the image.
+%
+% The scene is most naturally set up using SpectralCalISETBioMel.
+% That script stores the scene and other information in a .mat
+% file following a naming convention it sets up based on the
+% parameters, and this routine finds the file using the same
+% naming convention.
+%
+% There are examples in the header comments below that set this
+% script loose over various parameters, given that the scenes
+% have been set up.  These illustrate how to explore individual
+% variation, field location, and effects of LCA as a function
+% of spatial frequency.
 
+%% TODO
+%
+% Consider turning off the off axis attenuation. Shouldn't
+% affect contrast much, and complicates correction. 
+%
+% Compute with noLCA to check that contrasts are sf independent
+% in that case.  DONE.
+%
+% Provide method to deconvolve an image by the polychromatic CSF.
+% Veryify that this removes effects of CA on splatter.
+%
+% Save and allow reuse of OI for de-convolving, so we can ask
+% what happens if we correct for one SF and then apply at 
+% others.
+%
+% Understand how well we can approximate a decovolved image
+% with the primaries that produced the raw image.
+%
+% Look at effects of individual variation in LCA, and possibly
+% TCA on all this.
 
+% Asano parameter ranges.
+%
 % Asano et al. give the following population SD's for the individual
 % difference parameters (their Table 5, Step 2 numbers:
 %   Lens    - 18.7%
@@ -10,61 +48,15 @@
 %   L Shift   - 2 nm
 %   M Shift   - 1.5 nm
 %   S Shift   - 1.3 nm
+% Knowing these can be useful in choosing individual difference
+% parameter ranges to explore.
 
 %% Run out sf example
 %{
-clear;
-conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
-sineFreqCyclesPerDegList = [0.2 1 2 5 10];
-gaborSdDeg = 100;
-stimulusSizeDeg = 4;
-
-fieldSizeDeg = 5;
-eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
-aoRender = false;
-noLCA = false;
-ageISETBioList = 32; %[20 32 60];
-dLensISETBioList = 0; %[-18.7 0 18.7];
-dMacISETBioList = 0; %[-36.5 0 36.5];
-
-for cc = 1:length(conditionNameList)
-    for ss = 1:length(sineFreqCyclesPerDegList)
-        for ee = 1:length(eccXDegList)
-            for aa = 1:length(ageISETBioList)
-                for ll = 1:length(dLensISETBioList)
-                    for mm = 1:length(dMacISETBioList)
-                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
-                                gaborSdDeg,stimulusSizeDeg, ...
-                                fieldSizeDeg, ...
-                                eccXDegList(ee), ...
-                                aoRender, noLCA, ...
-                                ageISETBioList(aa), dLensISETBioList(ll), dMacISETBioList(mm) ...
-                            );
-                    end
-                end
-            end
-        end
-    end
-end
-
-% Plot of results
-lmsContrastBySf = squeeze(lmsConeContrast(:,:,1:end,:,:,:,:));
-figure; clf; hold on;
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'r','LineWidth',2);
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'g','LineWidth',2);
-plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'b','LineWidth',2);
-set(gca,'FontName','Helvetica','FontSize',18);
-xlabel('Spatial Frequency (c/deg)','FontName','Helvetica','FontSize',20);
-ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
-legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
-ylim([0 10]);
+ion
 
 %}
-
-
+ l
 %% Run out MP variation example
 %{
 clear;
@@ -72,6 +64,7 @@ conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2];
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
+stimConeEccDeg = 25;
 
 fieldSizeDeg = 5;
 eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
@@ -87,7 +80,7 @@ for cc = 1:length(conditionNameList)
             for aa = 1:length(ageISETBioList)
                 for ll = 1:length(dLensISETBioList)
                     for mm = 1:length(dMacISETBioList)
-                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},stimConeEccDeg,sineFreqCyclesPerDegList(ss), ...
                                 gaborSdDeg,stimulusSizeDeg, ...
                                 fieldSizeDeg, ...
                                 eccXDegList(ee), ...
@@ -125,6 +118,7 @@ conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2];
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
+stimConeEccDeg = 25;
 
 fieldSizeDeg = 5;
 eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
@@ -139,7 +133,7 @@ for cc = 1:length(conditionNameList)
             for aa = 1:length(ageISETBioList)
                 for ll = 1:length(dLensISETBioList)
                     for mm = 1:length(dMacISETBioList)
-                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},stimConeEccDeg,sineFreqCyclesPerDegList(ss), ...
                                 gaborSdDeg,stimulusSizeDeg, ...
                                 fieldSizeDeg, ...
                                 eccXDegList(ee), ...
@@ -153,7 +147,7 @@ for cc = 1:length(conditionNameList)
     end
 end
 
-% Plot of resultsDLens
+% Plot of results
 lmsContrastBydLensI = squeeze(lmsConeContrast(:,:,:,:,:,1:end,:));
 figure; clf; hold on;
 plot(dLensISETBioList,100*lmsContrastBydLensI(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
@@ -177,6 +171,7 @@ conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2];
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
+stimConeEccDeg = 20;
 
 fieldSizeDeg = 5;
 eccXDegList = [0 -2.5 -5 -10 -15 -20];
@@ -191,7 +186,7 @@ for cc = 1:length(conditionNameList)
             for aa = 1:length(ageISETBioList)
                 for ll = 1:length(dLensISETBioList)
                     for mm = 1:length(dMacISETBioList)
-                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},stimConeEccDeg,sineFreqCyclesPerDegList(ss), ...
                                 gaborSdDeg,stimulusSizeDeg, ...
                                 fieldSizeDeg, ...
                                 eccXDegList(ee), ...
@@ -229,6 +224,7 @@ conditionName = 'MelDirected1';
 sineFreqCyclesPerDeg = 0.2;
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
+stimConeEccDeg = 25;
 
 fieldSizeDeg = 5;
 eccXDeg = -5;
@@ -238,7 +234,7 @@ ageISETBio = 32;
 dLensISETBio = 0;
 dMacISETBio = 0;
 
-[lmsConeContrast] = ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg, ...
+[lmsConeContrast] = ISETBioCalcsMel(conditionName,stimConeEccDeg,sineFreqCyclesPerDeg, ...
         gaborSdDeg,stimulusSizeDeg, ...
         fieldSizeDeg, ...
         eccXDeg, ...
@@ -249,7 +245,7 @@ dMacISETBio = 0;
 %}
 
 % ISETBioCalcsMel
-function [lmsConeContrast] = ISETBioCalcsMel(conditionName,sineFreqCyclesPerDeg, ...
+function [lmsConeContrast] = ISETBioCalcsMel(conditionName,stimConeEccDeg,sineFreqCyclesPerDeg, ...
             gaborSdDeg,stimulusSizeDeg, ...
             fieldSizeDeg, ...
             eccXDeg, ...
@@ -268,8 +264,8 @@ axisFontSize = 16;
 
 %% Parameter specifications for scene that are not passed.
 screenGammaMethod = 2;
-sceneInputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d', ...
-    conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
+sceneInputStr = sprintf('%s_StimConeEcc_%0.1f_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d', ...
+    conditionName,stimConeEccDeg,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
 
 % Load the scene data according to parameters above
 projectFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
@@ -281,8 +277,8 @@ disp('Data loaded');
 %% Mosaic settings not so likely to vary
 eccYDeg = 0;
 subjectID = 6;
-mosaicOutputStr = sprintf('%s_EccX_%0.1f_EccY_%0.1f_FieldSize_%0.1f_AO_%d_NoLCA_%d_Age_%d_macAdj_%0.1f_lensAdj_%0.1f', ...
-    conditionName,eccXDeg,eccYDeg,fieldSizeDeg,aoRender,noLCA,ageISETBio,dMacISETBio,dLensISETBio);
+mosaicOutputStr = sprintf('%s_StimConeEcc_%0.1f_EccX_%0.1f_EccY_%0.1f_FieldSize_%0.1f_AO_%d_NoLCA_%d_Age_%d_macAdj_%0.1f_lensAdj_%0.1f', ...
+    conditionName,stimConeEccDeg,eccXDeg,eccYDeg,fieldSizeDeg,aoRender,noLCA,ageISETBio,dMacISETBio,dLensISETBio);
 
 %% Use ISETPipelineToolbox wrapper as a way to the isetbio computations
 %

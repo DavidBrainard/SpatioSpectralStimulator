@@ -1,36 +1,48 @@
+%% SpectralCalISETBioMel.m
+%
+% Sets up modulations in interesting color
+% direction and creates Gabor images in these
+% modulation directions.
+%
+% Scenesa are stored using a naming convention
+% set up by this routine.
+
+
+%% Run a full set of scenes
 %{
 
-%% Run a full set of examples
 clear;
 conditionNameList = {'MelDirected1'}; % 'IsochromaticControl'};
 sineFreqCyclesPerDegList = [0.2 1 2 5 10];
 gaborSdDeg = 100;
+stimConeEccDeg = 5;
 stimulusSizeDeg = 4;
 
 for cc = 1:length(conditionNameList)
     for ss = 1:length(sineFreqCyclesPerDegList)
-        lmsmelContrastNominal(:,ss,cc) = SpectralCalISETBioMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+        lmsmelContrastNominal(:,ss,cc) = SpectralCalISETBioMel(conditionNameList{cc},stimConeEccDeg,sineFreqCyclesPerDegList(ss), ...
             gaborSdDeg,stimulusSizeDeg);
     end
 end
 
 %}
 
-%{
 
 %% Baseline example
+%{
 clear;
 conditionName = 'MelDirected1';
-sineFreqCyclesPerDeg = 2;
+sineFreqCyclesPerDeg = 0.2;
 gaborSdDeg = 100;
+stimConeEccDeg = 5;
 stimulusSizeDeg = 4;
 
-lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg, ...
+lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,stimConeEccDeg,sineFreqCyclesPerDeg, ...
     gaborSdDeg,stimulusSizeDeg);
    
 %}
 
-function lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,sineFreqCyclesPerDeg,gaborSdDeg,stimulusSizeDeg)
+function lmsmelContrastNominal = SpectralCalISETBioMel(conditionName,stimConeEccDeg,sineFreqCyclesPerDeg,gaborSdDeg,stimulusSizeDeg)
 % SpectralCalISETBioMel
 %
 % Description:
@@ -74,10 +86,13 @@ end
 screenGammaMethod = 2;
 
 % Call routine to get basic parameters structure set up.
-coneFieldSizeDeg = 10;  % Eccentricity times 2
+coneFieldSizeDeg = 2*stimConeEccDeg;  % Eccentricity times 2
 colorDirectionParams = SetupColorDirectionMel(conditionName,...
     'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast, ...
-    'fieldSizeDegs', coneFieldSizeDeg);
+    'fieldSizeDeg', coneFieldSizeDeg);
+colorDirectionParams10 = SetupColorDirectionMel(conditionName,...
+    'targetScreenPrimaryContrasts',targetScreenPrimaryContrasts,'spatialGaborTargetContrast',spatialGaborTargetContrast, ...
+    'fieldSizeDeg', 10);
 
 % Set to true to get more output.
 VERBOSE = true;
@@ -97,7 +112,7 @@ nQuantizeLevels = 2^nQuantizeBits;
 
 %% Output names and places
 projectFiledir = getpref('SpatioSpectralStimulator','SACCMelanopsin');
-sceneOutputStr = sprintf('%s_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d',conditionName,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
+sceneOutputStr = sprintf('%s_StimConeEcc_%0.1f_Size_%0.1f_Sf_%0.1f_Sd_%0.1f_GammaMethod_%d',conditionName,stimConeEccDeg,stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenGammaMethod);
 outputDir = fullfile(projectFiledir,sceneOutputStr);
 if (~exist(outputDir,'dir'))
     mkdir(outputDir);
@@ -436,6 +451,26 @@ xlim([0 plotAxisLimit/100]); ylim([0 plotAxisLimit/100]); axis('square');
 xlabel('Desired'); ylabel('Obtained');
 title('Desired versus obtained check contrasts');
 title('Check of desired versus obtained check contrasts');
+
+% Plot of modulations
+index0 = find(rawMonochromeUnquantizedContrastCheckCal == 0);
+index1 = find(rawMonochromeUnquantizedContrastCheckCal == 1);
+index2 = find(rawMonochromeUnquantizedContrastCheckCal == -1);
+spd0 = ptCldScreenSpdCheckCal(:,index0);
+spd1 = ptCldScreenSpdCheckCal(:,index1);
+spd2 = ptCldScreenSpdCheckCal(:,index2);
+modulationFig = figure; clf; hold on;
+set(gca,'FontName','Helvetiaca','FontSize',16);
+plot(colorDirectionParams.wls, spd0,'-','LineWidth',4,'Color',[0.5 0.5 0.5]);
+plot(colorDirectionParams.wls, spd1,'-','LineWidth',4,'Color',[1 0 0]);
+plot(colorDirectionParams.wls, spd2,'-','LineWidth',4,'Color',[0 0 0]);
+xlabel('Wavelength','FontName','Helvetiaca','FontSize',18);
+ylabel('Radiance','FontName','Helvetiaca','FontSize',18);
+%title('Primary spds','FontName','Helvetiaca','FontSize',20);
+legend({'Background', 'Mel Increase', 'Mel Decrease'},'FontName','Helvetiaca','FontSize',12,'Location','NorthWest');
+xlim([380 720]);
+saveas(gcf,fullfile(outputDir,'modulationSpds.tiff'),'tiff');
+
 
 % Check that we can recover the settings from the spectral power
 % distributions, etc.  This won't necessarily work perfectly, but should be
