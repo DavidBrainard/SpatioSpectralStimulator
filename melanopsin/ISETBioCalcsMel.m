@@ -53,10 +53,57 @@
 
 %% Run out sf example
 %{
-ion
+clear;
+conditionNameList = {'MelDirected1'}; % {'MelDirected1', 'IsochromaticControl'};
+sineFreqCyclesPerDegList = [0.2 1 2 5 10];
+gaborSdDeg = 100;
+stimulusSizeDeg = 4;
+
+fieldSizeDeg = 5;
+eccXDegList = -5; %eccXDegList = [0 -5 -10 -15 -20];
+aoRender = false;
+noLCA = false;
+ageISETBioList = 32; %[20 32 60];
+dLensISETBioList = 0; %[-18.7 0 18.7];
+dMacISETBioList = 0; %[-36.5 0 36.5];
+
+for cc = 1:length(conditionNameList)
+    for ss = 1:length(sineFreqCyclesPerDegList)
+        for ee = 1:length(eccXDegList)
+            for aa = 1:length(ageISETBioList)
+                for ll = 1:length(dLensISETBioList)
+                    for mm = 1:length(dMacISETBioList)
+                        lmsConeContrast(:,cc,ss,ee,aa,ll,mm) = ISETBioCalcsMel(conditionNameList{cc},sineFreqCyclesPerDegList(ss), ...
+                                gaborSdDeg,stimulusSizeDeg, ...
+                                fieldSizeDeg, ...
+                                eccXDegList(ee), ...
+                                aoRender, noLCA, ...
+                                ageISETBioList(aa), dLensISETBioList(ll), dMacISETBioList(mm) ...
+                            );
+                    end
+                end
+            end
+        end
+    end
+end
+
+% Plot of results
+lmsContrastBySf = squeeze(lmsConeContrast(:,:,1:end,:,:,:,:));
+figure; clf; hold on;
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'ro','MarkerFaceColor','r','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'go','MarkerFaceColor','g','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'bo','MarkerFaceColor','b','MarkerSize',12);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(1,:),'r','LineWidth',2);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(2,:),'g','LineWidth',2);
+plot(sineFreqCyclesPerDegList,100*lmsContrastBySf(3,:),'b','LineWidth',2);
+set(gca,'FontName','Helvetica','FontSize',18);
+xlabel('Spatial Frequency (c/deg)','FontName','Helvetica','FontSize',20);
+ylabel('Contrast (percent)','FontName','Helvetica','FontSize',20);
+legend({'L cones','M cones','S cones'},'FontName','Helvetica','FontSize',14,'Location','NorthWest');
+ylim([0 10]);
 
 %}
- l
+
 %% Run out MP variation example
 %{
 clear;
@@ -221,10 +268,10 @@ ylim([0 10]);
 %{
 clear;
 conditionName = 'MelDirected1';
-sineFreqCyclesPerDeg = 0.2;
+sineFreqCyclesPerDeg = 5;
 gaborSdDeg = 100;
 stimulusSizeDeg = 4;
-stimConeEccDeg = 25;
+stimConeEccDeg = 5;
 
 fieldSizeDeg = 5;
 eccXDeg = -5;
@@ -515,6 +562,21 @@ saveas(psfFig,fullfile(outputDir,'psfFigure.tiff'),'tiff');
 
 uData = oiPlot(theOI, 'irradiance image with grid', [], 40);
 saveas(gcf,fullfile(outputDir,'oiIrradiance.tiff'),'tiff');
+
+%theOptics = oiGet(theOI,'optics');
+theOTF = oiCalculateOTF(theOI,theData.colorDirectionParams.wls,'mm');
+
+DECONVOLVE = false;
+if (DECONVOLVE)
+    temp = oiGet(theOI,'photons');
+    theOI1 = oiCorrectForOTF(theOI,theOTF);
+    temp1 = oiGet(theOI1,'photons');
+    max(abs(temp(:)-temp1(:))./temp(:))
+    uData = oiPlot(theOI1, 'irradiance image with grid', [], 40);
+    title('deconv irradiance image');
+    saveas(gcf,fullfile(outputDir,'oiDeconvIrradiance.tiff'),'tiff');
+    theOI = theOI1;
+end
 
 %% Compute cone responses
 theConeResponses = theConeMosaic.Mosaic.compute(theOI, 'opticalImagePositionDegs', 'mosaic-centered', ...
