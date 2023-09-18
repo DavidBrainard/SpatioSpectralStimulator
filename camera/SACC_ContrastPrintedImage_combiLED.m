@@ -206,7 +206,8 @@ maxContrast = 1;
 meanContrastsNorm_all(find(meanContrastsNorm_all > maxContrast)) = 1;
 
 % Set the index for searching for the channel to compare MTF with the SACCSFA. 
-% Its peak wavelengths were 422, 476, 530, 592, 658 nm at .
+% The peak wavelengths of the SACCSFA were 422, 476, 530, 592, 658 nm at .
+peaks_spd_SACCSFA = [422 476 530 592 658];
 idxChComparison = [2 3 5 6 8];
 nChComparison = length(idxChComparison);
 
@@ -238,7 +239,34 @@ for cc = 1:nChComparison
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd(targetChTemp)), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+end
+
+%% Plot the MTF of SACCSFA under assumption using a perfect camera.
+%
+% Here we divide the MTF by camera MTF.
+meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
+
+% Set the contrast within the range.
+maxContrast = 1;
+meanContrastsSACCSFAPerfect(find(meanContrastsSACCSFAPerfect > maxContrast)) = 1;
+
+% Make a new figure.
+figure; clf;
+set(gcf,'position',figureSize);
+
+% Make a loop to plot the results of each channel.
+for cc = 1:length(meanContrastsSACCSFAPerfect)
+    subplot(2,3,cc); hold on;
+    meanContrastsTemp = meanContrastsSACCSFAPerfect(:,cc);
+    plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
+        'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
+    ylim([0 1.1]);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrasts','fontsize',15);
+    xticks(cell2mat(targetCyclePerDeg));
+    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+    legend('SACCSFA','location','southeast','fontsize',11);
 end
 
 %% Calculate the ratio of contrast roll-off for the SACCSFA system.
