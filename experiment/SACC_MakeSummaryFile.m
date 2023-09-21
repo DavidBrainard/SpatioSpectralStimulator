@@ -289,7 +289,10 @@ yticks(yaxisRange);
 ytickformat('%.2f');
 title(sprintf('Max test image contrast (N=%d)',nSessions), 'fontsize',15);
 f = flip(get(gca,'children'));
-legend(f([1 2 3 100]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
+legend(f([1 2 3 end]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
+
+% Get the number of points outside the sanity range.
+
 
 %% Save out the result.
 %

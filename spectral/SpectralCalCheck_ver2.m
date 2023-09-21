@@ -308,9 +308,6 @@ for pp = 1:nPrimaries
     % PointCloud method
     plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
     
-    % Test - Standard method.
-    plot(desiredContrastCheckCal(pp,1:testIndex),standardPredictedContrastGaborCal(pp,1:testIndex),'o','MarkerSize',14,'MarkerFaceColor','c'); 
-    
     title(titleHandles{pp},'fontsize',15);
     xlabel('Desired contrast','fontsize',15);
     ylabel('Nominal contrast','fontsize',15);
