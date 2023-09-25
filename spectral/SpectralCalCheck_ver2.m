@@ -87,12 +87,11 @@ end
 targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;
 wls = SToWls(S);
-nPrimaries = 3;
+nPrimaries = size(theData.screenPrimarySpd,2);
 nChannels = theData.channelCalObjs{1}.get('nDevices');
 channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
-logicalToPhysical = [0:15];
-nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
+nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 
 if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','targetLambda'})
     spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
@@ -101,6 +100,8 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
 end
 
 %% Open up projector and spectroradiometer.
+% 
+% This happens only either when measuring primaries or test contrasts.
 if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
     % Open the projector.
     initialScreenSettings = [1 1 1]';
@@ -163,10 +164,11 @@ elseif (~MEASUREPRIMARY)
 end
 
 %% Compare what we wanted for primaries versus what we got.
+%
 % What we want is in 'targetScreenSpd', what we got is in
 % 'targetScreenSpdMeasured'.
 %
-% This part will be run when we measure primary.
+% This part will be run only when we measure primary.
 if (MEASUREPRIMARY)
     figure; clf;
     for pp = 1:nPrimaries
