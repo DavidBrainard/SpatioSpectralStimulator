@@ -84,6 +84,9 @@ switch LOADIMAGETYPE
 end
 
 %% Set variables here.
+%
+% All variables we need are stored in the image data we just loaded in
+% 'theData'. Extract some for convenience.
 targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;
 wls = SToWls(S);
@@ -91,7 +94,6 @@ nPrimaries = size(theData.screenPrimarySpd,2);
 nChannels = theData.channelCalObjs{1}.get('nDevices');
 channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
 T_cones = theData.T_cones;
-nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 
 if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','targetLambda'})
     spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
@@ -299,18 +301,20 @@ if (STANDARD)
     standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsCheckCal);
     standardDesiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
     
-    % Gamma correct and quantize (if gamma method set to 2 above; with gamma
-    % method set to zero there is no quantization).  Then convert back from
-    % the gamma corrected settings.
+    % Gamma correct and quantize. Then convert back from the gamma
+    % corrected settings.
     standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
     standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
     standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
     standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 end
 
-%% Compare the nominal contrasts between standard and point cloud methods.
+%% Compare the nominal contrasts to compate Standard method to PointCloud.
 %
-% Get Point cloud settings unless it is re-computed.
+% Get Point cloud settings when it is not recomputed. As we increased the
+% number of test contrasts when we compare the nominal contrasts, so
+% RECOMPUTE should be set as 'true' when we are testing more than 15
+% contrats, which were used in validation for SACCSFA experiment.
 if (~RECOMPUTE)
     ptCldScreenContrastCheckCal = theData.ptCldScreenContrastCheckCal;
 end
@@ -323,6 +327,7 @@ sgtitle('Nominal contrast: Standard vs. Point cloud methods');
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
 
+% Make a loop for plotting each cone case.
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
     
@@ -362,6 +367,8 @@ end
 figure; clf;
 set(gcf,'position',figurePosition);
 sgtitle('Direct comparison of nominal contrasts: Standard vs. Point cloud methods');
+
+% Here we make a loop again for each cone case.
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
     plot(standardPredictedContrastGaborCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
@@ -420,6 +427,8 @@ if (MEASURETARGETCONTRAST)
     figureSize = 1000;
     figurePosition = [1200 300 figureSize figureSize];
     set(gcf,'position',figurePosition);
+    
+    nTestPoints = size(rawMonochromeUnquantizedContrastCheckCal,2);
     for tt = 1:nTestPoints
         subplot(round(nTestPoints/2),2,tt); hold on;
         % Target spectra.
