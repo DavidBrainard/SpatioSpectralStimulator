@@ -17,6 +17,8 @@
 %    09/07/2023  smo      Added an option to use standard method (sensor to
 %                         primary).
 %    09/25/2023  smo      Cleaned up and commented better.
+%    09/26/2023  smo      Added a plot to compare cone contrast vs. image
+%                         contrast.
 
 %% Initialize.
 clear; close all;
@@ -60,7 +62,7 @@ switch LOADIMAGETYPE
             theData = load(testFilename);
         end
         
-    % Load the SACCSFA validation image data.
+        % Load the SACCSFA validation image data.
     case 'experiment'
         % Set which file to load.
         %
@@ -77,7 +79,7 @@ switch LOADIMAGETYPE
             theData = load(testFilename);
         end
         
-        % Match the data format to run it smoothly. 
+        % Match the data format to run it smoothly.
         screenCalObj_temp = theData.screenCalObj;
         theData = theData.theData;
         theData.screenCalObj = screenCalObj_temp;
@@ -102,7 +104,7 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
 end
 
 %% Open up projector and spectroradiometer.
-% 
+%
 % This happens only either when measuring primaries or test contrasts.
 if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
     % Open the projector.
@@ -262,6 +264,7 @@ end
 
 % Calculate the desired cone cone contrasts.
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+desiredImageContrastCheckCal = theData.spatialGaborTargetContrast * rawMonochromeContrastCheckCal;
 desiredContrastCheckCal = theData.spatialGaborTargetContrast * theData.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
 desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
 
@@ -319,34 +322,59 @@ if (~RECOMPUTE)
     ptCldScreenContrastCheckCal = theData.ptCldScreenContrastCheckCal;
 end
 
-% Plot 1) Desired vs. Nominal contrasts.
+%% Plot 1) Desired vs. Nominal contrasts.
 figure; hold on;
-figurePosition = [0 0 1500 500];
+figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
 sgtitle('Nominal contrast: Standard vs. Point cloud methods');
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
 
-% Make a loop for plotting each cone case.
-for pp = 1:nPrimaries
-    subplot(1,3,pp); hold on;
+% Make a loop for plotting each cone case. We decided to plot the results
+% separately over the calculation methods, Standard and PointCloud. Making
+% a loop in this way is not the most elaborate, so we may want to update
+% this part later on.
+nPlots = nPrimaries*2;
+for pp = 1:nPlots
+    subplot(2,3,pp); hold on;
     
-    % Standard method.
-    plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    % Save the calculation type per each order.
+    if ismember(pp,[1 2 3])
+        calculationMethod = 'Standard';
+    elseif ismember (pp, [4 5 6])
+        calculationMethod = 'PointCloud';
+    end
     
-    % PointCloud method
-    plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
-    
+    % We will plot Standard and PointCloud methods separately.
+    switch calculationMethod
+        case 'Standard'
+            % Standard method.
+            plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        case 'PointCloud'
+            % Update the order to match the array size. Again, this is not
+            % elaborate which will be updated later on.
+            pp = pp - nPrimaries;
+            % PointCloud method
+            plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    end
     title(titleHandles{pp},'fontsize',15);
-    xlabel('Desired contrast','fontsize',15);
-    ylabel('Nominal contrast','fontsize',15);
+    xlabel('Desired cone contrast','fontsize',15);
+    ylabel('Nominal cone contrast','fontsize',15);
     axisLim = 0.10;
     xlim([-axisLim axisLim]);
     ylim([-axisLim axisLim]);
     axis('square');
     line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
     grid on;
-    legend('Standard','PointCloud','location','southeast','fontsize',13);
+    
+    % Add legend.
+    switch calculationMethod
+        case 'Standard'
+            legend('Standard','location','southeast','fontsize',13);
+        case 'PointCloud'
+            legend('PointCloud','location','southeast','fontsize',13);
+        otherwise
+    end
 end
 
 % From the above figure, we visually searched that the number of index
@@ -362,7 +390,62 @@ end
 % where its cone contrast was [L M S] = [0.0694 -0.0717 -0.0012], its test
 % image contrast is 0.0998.
 
-% Plot 2) Direct comparison of nominal contrasts between Standard vs.
+%% Plot 2) Nominal cone contrast over desired test image contrast.
+% After the meeting (Semin and David) on 09/26/23, we added this part.
+figure; hold on;
+figurePosition = [0 0 1300 700];
+set(gcf,'position',figurePosition);
+sgtitle('Desired image contrast vs. Nominal contrast');
+titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+markerColorHandles = {'r','g','b'};
+
+% Again, not fancy loop. Same graph as the above, but different way to look
+% at it with updated x-axis as the desired image contrast.
+nPlots = nPrimaries*2;
+for pp = 1:nPlots
+    subplot(2,3,pp); hold on;
+    
+    % Save the calculation type per each order.
+    if ismember(pp,[1 2 3])
+        calculationMethod = 'Standard';
+    elseif ismember (pp, [4 5 6])
+        calculationMethod = 'PointCloud';
+    end
+    
+    % We will plot Standard and PointCloud methods separately.
+    if pp <= nPrimaries
+        % Standard method.
+        plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    else
+        % Update the order to match the array size. Again, this is not
+        % elaborate which will be updated later on.
+        pp = pp - nPrimaries;
+        
+        % PointCloud method
+        plot(desiredImageContrastCheckCal,ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    end
+    title(titleHandles{pp},'fontsize',15);
+    xlabel('Desired image contrast','fontsize',15);
+    ylabel('Nominal cone contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    grid on;
+    
+    % Add legend.
+    switch calculationMethod
+        case 'Standard'
+            legend('Nominal (Standard)','Desired (Standard)', 'location','southeast','fontsize',11);
+        case 'PointCloud'
+            legend('Nominal (PointCloud)','Desired (PointCloud)','location','southeast','fontsize',11);
+        otherwise
+    end
+end
+
+%% Plot 3) Direct comparison of nominal contrasts between Standard vs.
 % PointCloud.
 figure; clf;
 set(gcf,'position',figurePosition);
@@ -482,7 +565,6 @@ if (MEASURETARGETCONTRAST)
     grid on;
     legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast','fontsize',12);
     title(sprintf('Desired vs. Measured LMS Contrast, %s','Point cloud'));
-    
     
     % 2) Standard method
     % We use the fact that the background settings are in the first column.
@@ -607,5 +689,64 @@ if (MEASURETARGETCONTRAST)
         legend({'Measured','Nominal'},'location','southeast');
         title(sprintf('Cone class %d',pp),'fontsize',15);
         grid on;
+    end
+    
+    %% After the meeting (David and Semin, 09/26/23), we added one more plot
+    % comparing the desired image contrast vs. cone contrasts.
+    if ~exist('desiredImageContrastCheckCal')
+        desiredImageContrastCheckCal = theData.spatialGaborTargetContrast * rawMonochromeContrastCheckCal;
+    end
+    
+    figure; hold on;
+    figurePosition = [0 0 1300 700];
+    set(gcf,'position',figurePosition);
+    sgtitle('Desired image contrast vs. Nominal contrast');
+    titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+    markerColorHandles = {'r','g','b'};
+    
+    % Again, not fancy loop. Same graph as the above, but different way to look
+    % at it with updated x-axis as the desired image contrast.
+    nPlots = nPrimaries*2;
+    for pp = 1:nPlots
+        subplot(2,3,pp); hold on;
+        
+        % Save the calculation type per each order.
+        if ismember(pp,[1 2 3])
+            calculationMethod = 'Standard';
+        elseif ismember (pp, [4 5 6])
+            calculationMethod = 'PointCloud';
+        end
+        
+        % We will plot Standard and PointCloud methods separately.
+        if pp <= nPrimaries
+            % Standard method.
+            plot(desiredImageContrastCheckCal,standardScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+        else
+            % Update the order to match the array size. Again, this is not
+            % elaborate which will be updated later on.
+            pp = pp - nPrimaries;
+            
+            % PointCloud method
+            plot(desiredImageContrastCheckCal,ptCldScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+        end
+        title(titleHandles{pp},'fontsize',15);
+        xlabel('Desired image contrast','fontsize',15);
+        ylabel('Nominal cone contrast','fontsize',15);
+        axisLim = 0.10;
+        xlim([-axisLim axisLim]);
+        ylim([-axisLim axisLim]);
+        axis('square');
+        grid on;
+        
+        % Add legend.
+        switch calculationMethod
+            case 'Standard'
+                legend('Measured (Standard)','Nominal (Standard)', 'location','southeast','fontsize',11);
+            case 'PointCloud'
+                legend('Measured (PointCloud)','Nominal (PointCloud)','location','southeast','fontsize',11);
+            otherwise
+        end
     end
 end
