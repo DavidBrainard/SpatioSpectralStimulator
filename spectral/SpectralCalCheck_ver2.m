@@ -733,7 +733,7 @@ if (MEASURETARGETCONTRAST)
         end
         title(titleHandles{pp},'fontsize',15);
         xlabel('Desired image contrast','fontsize',15);
-        ylabel('Nominal cone contrast','fontsize',15);
+        ylabel('Cone contrast','fontsize',15);
         axisLim = 0.10;
         xlim([-axisLim axisLim]);
         ylim([-axisLim axisLim]);
