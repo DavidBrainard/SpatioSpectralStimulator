@@ -71,7 +71,7 @@ tableAUC{:,'No'} = linspace(1,nRows,nRows)';
 
 disp('AUC data has been merged successfully!');
 
-%% Sanity check for the CSF fitting data.
+%% Sanity check for the CSF data.
 %
 % As we found out that we used the test images using the Standard method,
 % here we want to check if the CSF data was fitted within the 'good'
@@ -79,9 +79,12 @@ disp('AUC data has been merged successfully!');
 %
 % These cone contrasts are the marginal contrasts that can generate the
 % desired contrast. If a test image contrast had a higher contrast than
-% this, its contrast would be not perfectly modulated as desired. 
+% this, its contrast would be not perfectly modulated as desired.
 %
-% These values were found using the validation code SpectralCalCheck_ver2.m.
+% These values were found using the validation code
+% SpectralCalCheck_ver2.m. This routine searches the affected sessions
+% based on these information - coneContrastNormal and coneContrastHigh - so
+% we can update these as we want.
 coneContrastNormal = [-0.0427 0.0369 -0.0028];
 coneContrastHigh = [-0.0579 0.0590 -0.0003];
 
@@ -99,21 +102,21 @@ nSubjects = length(subjectOptions);
 % used for 18 cpd per each subject.
 testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
 testFilename = GetMostRecentFileName(testFiledir,'TestImageProfile.xlsx');
-imageData = readtable(testFilename);
+tableImage = readtable(testFilename);
 
 % We will delete the data in the imageData who didn't complete the study.
 % The subject options who finished is available in 'subjectOptions'.
-subjectToDelete = setdiff(imageData.Subject,subjectOptions);
-rowToDelete = strcmp(imageData.Subject,subjectToDelete);
-imageData(rowToDelete,:) = [];
+subjectToDelete = setdiff(tableImage.Subject,subjectOptions);
+rowToDelete = strcmp(tableImage.Subject,subjectToDelete);
+tableImage(rowToDelete,:) = [];
 
 % Sort the table in the ascending order of spatial frequency.
-imageData = sortrows(imageData,'SpatialFrequency','ascend');
-imageData = sortrows(imageData,'Subject','ascend');
+tableImage = sortrows(tableImage,'SpatialFrequency','ascend');
+tableImage = sortrows(tableImage,'Subject','ascend');
 
 % Find the subjects who used the high test image set in the experiment.
 testImageMaxContrastHighImageSet = 0.1;
-numSubjectsWithHighImageSet = imageData.Subject(find(imageData.TestImageContrastMax == testImageMaxContrastHighImageSet));
+numSubjectsWithHighImageSet = tableImage.Subject(find(tableImage.TestImageContrastMax == testImageMaxContrastHighImageSet));
 
 % Make a loop to check the sanity per each subject.
 nSessions = size(tableAUC,1);
@@ -141,27 +144,29 @@ for ss = 1:nSessions
 end
 
 % Add a new column to the table saving the findings.
-tableAUC = addvars(tableAUC,idxSessionBad_CSF,'NewVariableNames','IdxSessionBad_CSF');
+tableAUC = addvars(tableAUC,idxSessionBad_CSF,'NewVariableNames','IdxSessionBad');
 
-% Get the subjects info of bad sessions.
-subjectSessionBad_CSF = unique(tableAUC.Subject(find(tableAUC.IdxSessionBad_CSF==1)));
-
-%% Here we check if any test image was out of the sanity contrast we calculated above.
-nSessions = size(imageData,1);
+%% Sanity check for the maximum test image contrast used in the experiment. 
+nSessions = size(tableImage,1);
 for ss = 1:nSessions
     % Get the current number of the subject.
-    numSubjectTemp = table2array(imageData(ss,'Subject'));
-    % Set the criteria differetly if high image set was used.
-    if ismember(numSubjectTemp,numSubjectsWithHighImageSet)
-        % High image.
+    numSubjectTemp = table2array(tableImage(ss,'Subject'));
+    spatialFrequencyTemp = table2array(tableImage(ss,'SpatialFrequency'));
+    testTargetImageContrastMaxTemp = table2array(tableImage(ss,'TestImageContrastMax'));
+    
+    % Set the criteria differetly for 18 cpd session with high image set.
+    if and(spatialFrequencyTemp == 18, testTargetImageContrastMaxTemp == testImageMaxContrastHighImageSet)
+        % High image for 18 cpd.
         logSensitivitySanity = logSensitivitySanityHigh;
     else
-        % Normal image.
+        % Normal image for the other sessions.
         logSensitivitySanity = logSensitivitySanityNormal;
     end
     
-    % Check if any test image was outside of the sanity range.
-    testImageContrastMaxTemp = table2array(imageData(ss,'TestContrasts_8'));
+    % Check if the maximum test contrast that used in the experiment was
+    % outside of the sanity range. The max contrast value is in
+    % 'TestContrasts_8' of the image table.
+    testImageContrastMaxTemp = table2array(tableImage(ss,'TestContrasts_8'));
     logSensitiivtyMaxTemp = log10(1/testImageContrastMaxTemp);
     if  (logSensitiivtyMaxTemp < logSensitivitySanity)
         idxSessionBad_maxTestContrast(ss,1) = 1;
@@ -171,10 +176,10 @@ for ss = 1:nSessions
 end
 
 % Add the finding to the table.
-imageData = addvars(imageData,idxSessionBad_maxTestContrast,'NewVariableNames','IdxSessionBad');
+tableImage = addvars(tableImage,idxSessionBad_maxTestContrast,'NewVariableNames','IdxSessionBad');
 
 % Get the subjects info of bad sessions.
-subjectSessionBad_maxTestContrast = unique(imageData.Subject(find(imageData.IdxSessionBad==1)));
+subjectSessionBad_maxTestContrast = unique(tableImage.Subject(find(tableImage.IdxSessionBad==1)));
 
 %% Visualize the results what we found from the above.
 figure; clf; hold on;
@@ -205,7 +210,7 @@ for ss = 1:nSessions
     tableVarNames = {'LogSensitivity_3cpd','LogSensitivity_6cpd','LogSensitivity_9cpd','LogSensitivity_12cpd','LogSensitivity_18cpd'};
     logSensitivityTemp = table2array(tableAUC(ss,tableVarNames));
     
-    % Plot it - 3, 6, 9, 12 cpd. 
+    % Plot it - 3, 6, 9, 12 cpd.
     % We only used a normal image set for this spatial frequencies, so it
     % will be all same colors.
     plot(logSpatialFrequencyOptions(1:4),logSensitivityTemp(1:4),'ko','markerfacecolor',markerColorNormal);
@@ -232,18 +237,18 @@ f = flip(get(gca,'children'));
 legend(f([1 2 3 100]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
 
 %% We will plot another figure in the same format as above, but now with the
-% highest contrast image presented in the experiment. 
+% highest contrast image presented in the experiment.
 figure; clf; hold on;
 
 % 3, 6, 9, and 12 cpd (All normal image set).
-maxTestContrastsNormal_3cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 3));
-maxTestContrastsNormal_6cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 6));
-maxTestContrastsNormal_9cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 9));
-maxTestContrastsNormal_12cpd = imageData.TestContrasts_8(find(imageData.SpatialFrequency == 12));
+maxTestContrastsNormal_3cpd = tableImage.TestContrasts_8(find(tableImage.SpatialFrequency == 3));
+maxTestContrastsNormal_6cpd = tableImage.TestContrasts_8(find(tableImage.SpatialFrequency == 6));
+maxTestContrastsNormal_9cpd = tableImage.TestContrasts_8(find(tableImage.SpatialFrequency == 9));
+maxTestContrastsNormal_12cpd = tableImage.TestContrasts_8(find(tableImage.SpatialFrequency == 12));
 
 % 18 cpd. We separate the arrays between normal and high image set.
-idxMaxTestContrasts_18cpd = find(imageData.SpatialFrequency == 18);
-maxTestContrasts_18cpd = imageData(idxMaxTestContrasts_18cpd,{'TestImageContrastMax','TestContrasts_8'});
+idxMaxTestContrasts_18cpd = find(tableImage.SpatialFrequency == 18);
+maxTestContrasts_18cpd = tableImage(idxMaxTestContrasts_18cpd,{'TestImageContrastMax','TestContrasts_8'});
 maxTestContrastOptions_18cpd = unique(maxTestContrasts_18cpd.TestImageContrastMax);
 
 maxTestContrastNormal = min(maxTestContrastOptions_18cpd);
@@ -291,21 +296,46 @@ title(sprintf('Max test image contrast (N=%d)',nSessions), 'fontsize',15);
 f = flip(get(gca,'children'));
 legend(f([1 2 3 end]), 'Ref-Normal','Ref-High','CSF (Normal)', 'CSF (High)','location','southeast','fontsize',15);
 
-% Get the number of points outside the sanity range.
+% Print out the info that is outside the sanity range.
+%
+% CSF.
+tableAUC_Bad = tableAUC(find(tableAUC.IdxSessionBad ==1),{'Subject','Filter','LogSensitivity_12cpd','LogSensitivity_18cpd'});
 
+% Find which spatial frequency session was affected.
+for ff = 1:size(tableAUC_Bad,1)
+    % Checking 12 cpd.
+    if (tableAUC_Bad.LogSensitivity_12cpd(ff) < logSensitivitySanityNormal)
+        whichSF_tableAUC_Bad(ff,1) = 12;
+        % If not 12 cpd, it will be 18 cpd, so set it as 18 cpd.
+    else 
+        whichSF_tableAUC_Bad(ff,1) = 18;
+    end
+end
+
+% Will add one more column to the table.
+tableAUC_Bad = addvars(tableAUC_Bad,whichSF_tableAUC_Bad,'NewVariableNames','Spatial Frequency (Bad)');
+
+% Max image contrast.
+tableImage_Bad = tableImage(find(tableImage.IdxSessionBad == 1),{'Subject','SpatialFrequency','TestContrasts_8'});
+tableImage_Bad = sortrows(tableImage_Bad,'TestContrasts_8');
+tableImage_Bad = sortrows(tableImage_Bad,'SpatialFrequency');
 
 %% Save out the result.
 %
 % We will create two separate excel files, one contaning the CS results and
 % the other containing the AUC results.
-range = 'B2';
-testFilenameCS = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_CS.xlsx');
-testFilenameAUC = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_AUC.xlsx');
+SAVETHERESULTS = false;
 
-% Make CS summary file.
-writetable(tableCS, testFilenameCS,'Range',range);
-disp('Summary file has been saved successfully! - (CS)');
-
-% Make AUC summary file.
-writetable(tableAUC,testFilenameAUC,'Range',range);
-disp('Summary file has been saved successfully! - (AUC)');
+if (SAVETHERESULTS)
+    range = 'B2';
+    testFilenameCS = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_CS.xlsx');
+    testFilenameAUC = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_AUC.xlsx');
+    
+    % Make CS summary file.
+    writetable(tableCS, testFilenameCS,'Range',range);
+    disp('Summary file has been saved successfully! - (CS)');
+    
+    % Make AUC summary file.
+    writetable(tableAUC,testFilenameAUC,'Range',range);
+    disp('Summary file has been saved successfully! - (AUC)');
+end
