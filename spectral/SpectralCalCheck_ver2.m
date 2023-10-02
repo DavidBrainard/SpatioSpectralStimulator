@@ -426,10 +426,10 @@ for pp = 1:nPlots
         % test contrats.
         TESTONEPOINT = true;
         if(TESTONEPOINT)
+            index = 185;
+            plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'MarkerFaceColor','c');
             % We will only print once by setting 'pp' to 1.
             if pp == 1
-                index = 185;
-                plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'MarkerFaceColor','c');
                 fprintf('Good maximum image contrast = (%.4f) / Log sensitivity = (%.4f) \n',desiredImageContrastCheckCal(index), log10(1/desiredImageContrastCheckCal(index)));
             end
         end
