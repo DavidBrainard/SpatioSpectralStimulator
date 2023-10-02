@@ -418,19 +418,32 @@ for pp = 1:nPlots
         plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
         plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
         
-        % Testing one point. Change the index from 1 to 202 (number of
-        % nominal contrasts to test) so that you can visually check from
-        % when the contrast reproduction goes not great.
+        % Search for a marginal contrast making a good image. Set the
+        % index from 1 to 202 (number of nominal contrasts to test) so that
+        % you can visually check from when the contrast reproduction goes
+        % bad.
         %
-        % For now, we set the cone contrast as the same index within the
+        % For now, we set the cone contrasts within the same index of the
         % test contrats.
+        %
+        % We will mark the cut-off contrast points as a line and a point on
+        % the figure.
         TESTONEPOINT = true;
         if(TESTONEPOINT)
-            index = 185;
-            plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'MarkerFaceColor','c');
+            % We found index = 183 for Normal image set, and index = 185
+            % for high image set.
+            index = 183;
+            % Contrast cut-off point.
+            plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
+            % Contrast cut-off line.
+            plot(ones(1,2)*desiredImageContrastCheckCal(index),[-0.1 0.1],'color',[1 1 0 0.7],'linewidth',5);
+            
+            % Calculate the marginal contrast from the nominal contrasts to
+            % print out.
+            marginalContrast = sqrt(sum(standardPredictedContrastGaborCal(:,index).^2));
             % We will only print once by setting 'pp' to 1.
             if pp == 1
-                fprintf('Good maximum image contrast = (%.4f) / Log sensitivity = (%.4f) \n',desiredImageContrastCheckCal(index), log10(1/desiredImageContrastCheckCal(index)));
+                fprintf('Good maximum image contrast = (%.4f / %.4f) / Log sensitivity = (%.4f) \n',marginalContrast, abs(desiredImageContrastCheckCal(index)), log10(1/marginalContrast));
             end
         end
     else
@@ -454,7 +467,11 @@ for pp = 1:nPlots
     % Add legend.
     switch calculationMethod
         case 'Standard'
-            legend('Nominal (Standard)','Desired (Standard)', 'location','southeast','fontsize',11);
+            if TESTONEPOINT
+                legend('Nominal (Standard)','Desired (Standard)','Cut-off point','location','southeast','fontsize',11);
+            else
+                legend('Nominal (Standard)','Desired (Standard)', 'location','southeast','fontsize',11);
+            end
         case 'PointCloud'
             legend('Nominal (PointCloud)','Desired (PointCloud)','location','southeast','fontsize',11);
         otherwise
