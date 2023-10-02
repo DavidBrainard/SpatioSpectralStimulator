@@ -417,6 +417,19 @@ for pp = 1:nPlots
         % Standard method.
         plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
         plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+        
+        % Testing one point. Change the index from 1 to 202 (number of
+        % nominal contrasts to test) so that you can visually check from
+        % when the contrast reproduction goes not great.
+        %
+        % For now, we set the cone contrast as the same index within the
+        % test contrats.
+        TESTONEPOINT = true;
+        if(TESTONEPOINT)
+            index = 185;
+            plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'MarkerFaceColor','c');
+            fprintf('Good maximum image contrast = (%.4f) / Log sensitivity = (%.4f) \n',desiredImageContrastCheckCal(index), log10(1/desiredImageContrastCheckCal(index)));
+        end
     else
         % Update the order to match the array size. Again, this is not
         % elaborate which will be updated later on.
