@@ -78,6 +78,9 @@ setpref(projectName,'SACCMaterials',fullfile(baseDir,'SACC_materials'));
 % David's melanopsion work
 setpref(projectName,'SACCMelanopsin',fullfile(baseDir,'SACC_melanopsin'));
 
+% New experiment analysis data dir (as of 10/03/23).
+setpref(projectName,'SACCAnalysisRefit',fullfile(baseDir,'SACC_analysis_refit'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.
