@@ -447,5 +447,7 @@ if (options.verbose)
     end
     
     drawnow;
-    
+else
+    % Print out the legendHandles empty when the 'verbose' is set to false.
+    legendHandles = [];
 end
