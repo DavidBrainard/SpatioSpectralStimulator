@@ -754,7 +754,19 @@ if (MEASURETARGETCONTRAST)
         if pp <= nPrimaries
             % Standard method.
             plot(desiredImageContrastCheckCal,standardScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
-            plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            
+            % Here we sort the desired contrast (x-axis) in an acsending
+            % order so that we can make the line plot correct.
+            [desiredImageContrastCheckCalSorted I] = sort(desiredImageContrastCheckCal);
+            standardPredictedContrastGaborCalSorted = standardPredictedContrastGaborCal(:,I);
+            
+            % Set line color.
+            lineColorHandle = zeros(1,3);
+            lineColorHandle(pp) = 1;
+            lineColorAlpha = 0.2;
+            lineColorHandle(end+1) = lineColorAlpha;
+            plot(desiredImageContrastCheckCalSorted,standardPredictedContrastGaborCalSorted(pp,:),'-','color',lineColorHandle,'linewidth',6);
         else
             % Update the order to match the array size. Again, this is not
             % elaborate which will be updated later on.
@@ -762,7 +774,18 @@ if (MEASURETARGETCONTRAST)
             
             % PointCloud method
             plot(desiredImageContrastCheckCal,ptCldScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
-            plot(desiredImageContrastCheckCal,ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            
+            % Plot the nominal calculation results at a line.
+            [desiredImageContrastCheckCalSorted I] = sort(desiredImageContrastCheckCal);
+            ptCldScreenContrastCheckCalSorted = ptCldScreenContrastCheckCal(:,I);
+            
+             % Set line color.
+            lineColorHandle = zeros(1,3);
+            lineColorHandle(pp) = 1;
+            lineColorAlpha = 0.2;
+            lineColorHandle(end+1) = lineColorAlpha;
+            plot(desiredImageContrastCheckCalSorted,ptCldScreenContrastCheckCalSorted(pp,:),'-','color',lineColorHandle,'linewidth',6);
         end
         title(titleHandles{pp},'fontsize',15);
         xlabel('Desired image contrast','fontsize',15);
@@ -776,9 +799,9 @@ if (MEASURETARGETCONTRAST)
         % Add legend.
         switch calculationMethod
             case 'Standard'
-                legend('Measured (Standard)','Nominal (Standard)', 'location','southeast','fontsize',11);
+                legend('Measured (Standard)','Desired (Standard)','Nominal (Standard)', 'location','southeast','fontsize',11);
             case 'PointCloud'
-                legend('Measured (PointCloud)','Nominal (PointCloud)','location','southeast','fontsize',11);
+                legend('Measured (PointCloud)','Desired (PointCloud)','Nominal (PointCloud)', 'location','southeast','fontsize',11);
             otherwise
         end
     end
