@@ -1033,8 +1033,10 @@ if (FITALLATONCE)
         sheet = 1;
         range = 'B2';
         writetable(tableImageProfile,testFilename,'Sheet',sheet,'Range',range);
+    
+        % Print out the status.
+        fprintf('\t Test image profile has been successfully recorded! \n');
     end
-    fprintf('\t Test image profile has been successfully recorded! \n');
 end
 
 %% Run this part only when fitting all at once.
