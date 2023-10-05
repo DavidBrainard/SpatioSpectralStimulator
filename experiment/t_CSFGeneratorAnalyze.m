@@ -521,9 +521,15 @@ for ss = 1:nSubjects
                     h_badContrast = plot(log10(examinedContrastsLinear(idxBadContrasts)),dataOut.pCorrect(idxBadContrasts),'o',...
                         'markeredgecolor','k','markerfacecolor','k','markersize',12);
                     
+                    % We will add the raw PF fitting results to the
+                    % re-fitted plot so that we can compare two easily. The
+                    % marker size would be a little smaller so that we can
+                    % see when two are overlapped.
+                    h_rawPFThresh = plot(log10(thresholdFittedRaw(ss,dd,ff)), thresholdCriterion,'o','markeredgecolor','k','markerfacecolor','r','markersize',8);
+                    
                     % Update the legend handles as we added the black dots
                     % for marking the bad contrasts.
-                    legendHandles(end+1) = h_badContrast;
+                    legendHandles = [legendHandles h_badContrast h_rawPFThresh];
                     
                     %                     % Plot the PF re-fitting results (yellow line).
                     %                     %
@@ -600,8 +606,8 @@ for ss = 1:nSubjects
             % Add legend to the re-fitted PF results.
             if (FITPFONLYGOODTESTCONTRASTS)
                 if (BOOTSTRAP_RAWFITS)
-                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt',...
-                        'Data excluded for Refit',...
+                    legend(legendHandles, 'Data','PF-Fit (Refit)','PF-Threshold (Refit)','BS-Threshold','BS-ConfInt',...
+                        'Data excluded for Refit','PF-Threshold (Raw)',...
                         'FontSize', 12, 'location', 'southwest');
                 end
             else
@@ -613,10 +619,6 @@ for ss = 1:nSubjects
             
             % Set the range for the x-axis.
             xlim([-3.3 -1]);
-            
-            
-            
-            
             
             % Force draw
             drawnow;
