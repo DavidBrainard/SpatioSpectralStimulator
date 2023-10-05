@@ -403,6 +403,18 @@ for ss = 1:nSubjects
                     
                     % If not, just skip the fitting to save some time.
                     if ~any(examinedContrastsLinear > marginalContrastLinear)
+                        % Get the date of experiment. Since we will skip
+                        % the following iteration, but we still want to
+                        % save the file name correct with the proper date
+                        % of experiment.
+                        testFileNameContrast = theData.describe.testFileNameContrast;
+                        numExtract = regexp(testFileNameContrast,'\d+','match');
+                        yearStr = numExtract{3};
+                        monthStr = numExtract{4};
+                        dayStr = numExtract{5};
+                        dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+                        
+                        % Skip the following iterations.
                         continue;
                     end
                     
