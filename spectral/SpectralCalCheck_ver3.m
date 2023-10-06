@@ -19,9 +19,16 @@
 %% Initialize.
 clear; close all;
 
-%% Read in the image settings.
+%% Read in the image settings used in the experiment.
+%
+% Set which data to load. Set this to 0 would load the most recent data,
+% and higher number will load the older date of the data.
 olderDate = 5;
+
+% Set the image type to load either 'normal' or 'high',
 imageType = 'normal';
+
+% Load the test image data here.
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
     switch imageType
@@ -34,13 +41,14 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
 end
 
 % Get the date of the experiment. We will match this with the validation
+% data.
 numExtract = regexp(testFilename,'\d+','match');
 yearStr = numExtract{2};
 monthStr = numExtract{3};
 dayStr = numExtract{4};
-dateStrImage = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+dateStrExp = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
 
-% Get the highest test image.
+% Load the highest test image to test.
 testImage = imageData.sceneParamsStruct.predefinedRGBImages{end};
 
 % Display the image if you want.
@@ -56,19 +64,14 @@ imageTestSettingsCal = ImageToCalFormat(testImage);
 % Get the image background settings.
 imageBgSettings = imageTestSettingsCal(:,1);
 
-%% Load the calibration (validation) data.
-%
-% Set which data to load. Set 'olderDate' to 0 will load the most recent
-% data.
-olderDate = 0;
-
-% Load the image file.
+%% Load the image validation data.
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
     
-    % We make a loop here to load the file that matches the above image
-    % settings. The validation file has the same date as the image was
-    % made.
+    % We make a loop here to find the file that matches the date of the
+    % experiment. The date of the experiment is in 'dateStrExp' and we will
+    % match it with the date of validation which is in 'dateStrVal'.
+    olderDate = 0;
     while 1
         % Get test file name.
         testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
@@ -81,7 +84,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
         dateStrVal = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
         
         % Check if two dates match, if it does, stop the loop.
-        if strcmp(dateStrImage,dateStrVal)
+        if strcmp(dateStrExp,dateStrVal)
             disp('Image file and validation file dates matched! Validation data will be loaded');
             break;
         else
@@ -93,6 +96,8 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
     % Load the file.
     theValData = load(testFilename);
 end
+
+% Read out the struct for convenience.
 theData = theValData.theData;
 
 %% Set variables here.
@@ -120,7 +125,7 @@ targetLambda = theData.targetLambda;
 % Control the messages and plots.
 verbose = true;
 
-%% Calculate the actual contrasts presented in the test image.
+%% Calculate the contrasts of the test image presented in the experiment.
 %
 % Get cone excitations of the backgrond settings for calculation of the
 % contrasts.
@@ -140,10 +145,10 @@ imageTestContrastsCal = ExcitationsToContrast(imageTestExcitations,imageBgExcita
 % We use the same sub-functions here that were used to make the test images
 % in the experiment.
 %
-% Get screen size object.
+% Get screen size object. Same as the test image.
 [~,screenSizeObject,~] = SetupISETBioDisplayObject(imageData.colorDirectionParams,screenCalObj,'verbose',false);
 
-% Make monochrome gabor image.
+% Make monochrome gabor image. Also, same as the test image.
 stimulusSizeDeg = imageData.spatialTemporalParams.stimulusSizeDeg;
 gaborSdDeg = imageData.spatialTemporalParams.gaborSdDeg;
 sineFreqCyclesPerDeg = imageData.spatialTemporalParams.sineFreqCyclesPerDeg;
@@ -162,16 +167,30 @@ if (SHOWMONOGABORIMAGE)
     title('Monochrome gabor image');
 end
 
-% Calculate the desired contrast for all pixels.
+% Calculate the desired contrast for all pixels using the monochrome gabor
+% image we made from the above. We muliply the target contrast and target
+% stimulus contrast direction (L-M) to the monochrome gabor image.
 desiredContrastGaborCal = imageData.colorDirectionParams.spatialGaborTargetContrast * imageData.colorDirectionParams.targetStimulusContrastDir * cell2mat(rawMonochromeContrastGaborCal);
-desiredImageContrastGaborCal = sqrt(sum(desiredContrastGaborCal.^2));
 
-%% Compare Desired vs. Actual cone contrasts.
+% Calculate the image contrast.
+for cc = 1:size(desiredContrastGaborCal,2)
+    desiredImageContrastGaborCalTemp = sqrt(sum(desiredContrastGaborCal(:,cc).^2));
+    if desiredContrastGaborCal(1,cc) > desiredContrastGaborCal(2,cc)
+        % L-M
+        desiredImageContrastGaborCal(cc) = desiredImageContrastGaborCalTemp;
+    else
+        % -(L-M)
+        desiredImageContrastGaborCal(cc) = -desiredImageContrastGaborCalTemp;
+    end
+end
+
+%% Plot the results: Comparison of cone contrast.
 figure; hold on;
 figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
+sgtitle('Desired cone contrasts vs. Actual cone contrasts in the image');
 
 % Make a loop for plotting each cone case.
 for pp = 1:nPrimaries
@@ -188,6 +207,39 @@ for pp = 1:nPrimaries
     ylim([-axisLim axisLim]);
     axis('square');
     line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
+    grid on;
+    legend('Test Image','Desired','location','southeast','fontsize',13);
+end
+
+%% Plot the results: Cone contrast vs. Image contrast.
+figure; hold on;
+figurePosition = [0 0 1300 700];
+set(gcf,'position',figurePosition);
+titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+markerColorHandles = {'r','g','b'};
+sgtitle('Desired image contrast vs. Actual cone contrasts in the image');
+
+% Sort the image contrast in an ascending order.
+[desiredImageContrastGaborCalSorted I] = sort(desiredImageContrastGaborCal,'ascend');
+
+% Sort the cone contrasts in the same order as well.
+imageTestContrastsCalSorted = imageTestContrastsCal(:,I);
+desiredContrastGaborCalSorted = desiredContrastGaborCal(:,I);
+
+% Make a loop for plotting each cone case.
+for pp = 1:nPrimaries
+    subplot(1,3,pp); hold on;
+    
+    % We will plot Standard and PointCloud methods separately.
+    plot(desiredImageContrastGaborCalSorted,imageTestContrastsCalSorted(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    plot(desiredImageContrastGaborCalSorted,desiredContrastGaborCalSorted(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    title(titleHandles{pp},'fontsize',15);
+    xlabel('Desired image contrast','fontsize',15);
+    ylabel('Nominal cone contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
     grid on;
     legend('Test Image','Desired','location','southeast','fontsize',13);
 end
