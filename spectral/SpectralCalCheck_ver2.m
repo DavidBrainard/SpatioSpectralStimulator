@@ -75,7 +75,7 @@ switch LOADIMAGETYPE
         % Load the image file.
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
-            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate+1);
+            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
             theData = load(testFilename);
         end
         
