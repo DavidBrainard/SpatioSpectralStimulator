@@ -19,58 +19,68 @@
 %% Initialize.
 clear; close all;
 
-%% Read in the image settings used in the experiment.
+%% Read in the image settings that used in the experiment.
 %
-% Set which data to load. Set this to 0 would load the most recent data,
-% and higher number will load the older date of the data.
-olderDate = 5;
-
 % Set the image type to load either 'normal' or 'high',
 imageType = 'normal';
 
 % Load the test image data here.
+olderDate = 5;
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
+    % We set the test file name differently over the image type either
+    % normla or high.
     switch imageType
         case 'normal'
             testFilename = GetMostRecentFileName(testFiledir,'RunExpData_18_cpd_','olderDate',olderDate);
         case 'high'
             testFilename = GetMostRecentFileName(testFiledir,'RunExpData_high_18_cpd_','olderDate',olderDate);
     end
+    % Load the image date here.
     imageData = load(testFilename);
 end
 
 % Get the date of the experiment. We will match this with the validation
-% data.
+% data which will be loaded in the next step.
 numExtract = regexp(testFilename,'\d+','match');
 yearStr = numExtract{2};
 monthStr = numExtract{3};
 dayStr = numExtract{4};
 dateStrExp = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
 
-% Load the highest test image to test.
+% Load the highest test image to test. Test images are saved in an
+% ascending order of the contrast, so we will load the last image in the
+% array.
 testImage = imageData.sceneParamsStruct.predefinedRGBImages{end};
 
 % Display the image if you want.
-SHOWTESTIMAGE = true;
+SHOWTESTIMAGE = false;
 if (SHOWTESTIMAGE)
     figure; imshow(testImage);
     title('Following image is going to be tested');
 end
 
-% Convert the test image to cal format for calculation.
+% Convert the test image settings to cal format for calculation.
 imageTestSettingsCal = ImageToCalFormat(testImage);
+nTestSettings = size(imageTestSettingsCal,2);
 
-% Get the image background settings.
+% Get the image background settings. Here we simply take the very first
+% pixel of it which should be the background.
 imageBgSettings = imageTestSettingsCal(:,1);
 
 %% Load the image validation data.
+%
+% Here we load the validation data which contains the measured primaries
+% info so that we can calculate the predicted contrasts of the settings.
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
     
     % We make a loop here to find the file that matches the date of the
     % experiment. The date of the experiment is in 'dateStrExp' and we will
     % match it with the date of validation which is in 'dateStrVal'.
+    %
+    % Fix 'olderDate' to 0 here so that it can search from the most recent
+    % data.
     olderDate = 0;
     while 1
         % Get test file name.
@@ -83,47 +93,29 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
         dayStr = numExtract{3};
         dateStrVal = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
         
-        % Check if two dates match, if it does, stop the loop.
+        % Check if two dates match, if it does, stop the loop and load the
+        % file.
         if strcmp(dateStrExp,dateStrVal)
-            disp('Image file and validation file dates matched! Validation data will be loaded');
+            fprintf('Target file date: (%s) / Found file date: (%s). Date matched! Data will be loaded. \n',dateStrExp,dateStrVal);
             break;
         else
-            disp('Image and Validation file date not matched, we will search it again...');
+            fprintf('Target file date: (%s) / Found file date: (%s). We will search again... \n',dateStrExp,dateStrVal);
             olderDate = olderDate+1;
         end
     end
     
-    % Load the file.
+    % Load the file here.
     theValData = load(testFilename);
 end
 
-% Read out the struct for convenience.
-theData = theValData.theData;
-
-%% Set variables here.
+% All variables we need are stored in the validation data that we just
+% loaded in 'theValData'. Extract some variables for convenience.
 %
-% All variables we need are stored in the validation data we just loaded in
-% 'theValData'. Extract some variables for convenience.
-%
-% Load the measured primaries. In the validation data, 'theValData', we
-% saved the screenCalObj by substituting its primaries with measured
-% primaries, so we will load it from there.
+% Note that 'screenCalObj' is storing the measured primaries in the struct
+% 'P_device' as we saved out in that way.
 screenCalObj = theValData.screenCalObj;
-targetScreenSpdMeasured = screenCalObj.get('P_device');
-
-% Some more variables.
-S = theData.S;
-wls = SToWls(S);
+theData = theValData.theData;
 nPrimaries = size(theData.screenPrimarySpd,2);
-nChannels = theData.channelCalObjs{1}.get('nDevices');
-channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
-T_cones = theData.T_cones;
-spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
-targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
-targetLambda = theData.targetLambda;
-
-% Control the messages and plots.
-verbose = true;
 
 %% Calculate the contrasts of the test image presented in the experiment.
 %
@@ -172,7 +164,8 @@ end
 % stimulus contrast direction (L-M) to the monochrome gabor image.
 desiredContrastGaborCal = imageData.colorDirectionParams.spatialGaborTargetContrast * imageData.colorDirectionParams.targetStimulusContrastDir * cell2mat(rawMonochromeContrastGaborCal);
 
-% Calculate the image contrast.
+% Calculate the image contrast. We will set the L-M contrast as positive
+% sign and -(L-M) as negative.
 for cc = 1:size(desiredContrastGaborCal,2)
     desiredImageContrastGaborCalTemp = sqrt(sum(desiredContrastGaborCal(:,cc).^2));
     if desiredContrastGaborCal(1,cc) > desiredContrastGaborCal(2,cc)
@@ -190,7 +183,7 @@ figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
-sgtitle('Desired cone contrasts vs. Actual cone contrasts in the image');
+sgtitle(sprintf('Desired cone contrasts vs. Predicted cone contrasts in the image (N=%d)',nTestSettings));
 
 % Make a loop for plotting each cone case.
 for pp = 1:nPrimaries
@@ -201,7 +194,7 @@ for pp = 1:nPrimaries
     plot(desiredContrastGaborCal(pp,:),desiredContrastGaborCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
     title(titleHandles{pp},'fontsize',15);
     xlabel('Desired cone contrast','fontsize',15);
-    ylabel('Nominal cone contrast','fontsize',15);
+    ylabel('Predicted cone contrast','fontsize',15);
     axisLim = 0.10;
     xlim([-axisLim axisLim]);
     ylim([-axisLim axisLim]);
@@ -217,7 +210,7 @@ figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
-sgtitle('Desired image contrast vs. Actual cone contrasts in the image');
+sgtitle(sprintf('Desired image contrast vs. Actual cone contrasts in the image (N=%d)',nTestSettings));
 
 % Sort the image contrast in an ascending order.
 [desiredImageContrastGaborCalSorted I] = sort(desiredImageContrastGaborCal,'ascend');
@@ -233,9 +226,32 @@ for pp = 1:nPrimaries
     % We will plot Standard and PointCloud methods separately.
     plot(desiredImageContrastGaborCalSorted,imageTestContrastsCalSorted(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
     plot(desiredImageContrastGaborCalSorted,desiredContrastGaborCalSorted(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    
+    % Mark the cut-off contrast point if you want.
+    TESTONEPOINT = true;
+    if(TESTONEPOINT)
+        % Set the index within the test contrast array to plot.
+        %
+        % For 12 cpd, index = 290. For 18 cpd, index = 2090 for normal
+        % image, and index = 2200 for high image.
+        index = 2090;
+        % Contrast cut-off point.
+        plot(desiredImageContrastGaborCalSorted(index),imageTestContrastsCalSorted(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
+        % Contrast cut-off line.
+        plot(ones(1,2)*desiredImageContrastGaborCalSorted(index),[-0.1 0.1],'color',[1 1 0 0.7],'linewidth',5);
+        
+        % Calculate the marginal contrast from the nominal contrasts to
+        % print out.
+        marginalContrast = sqrt(sum(imageTestContrastsCalSorted(:,index).^2));
+        % We will only print once by setting 'pp' to 1.
+        if pp == 1
+            fprintf('Good maximum image contrast = (%.4f / %.4f) / Log sensitivity = (%.4f) \n',marginalContrast, abs(desiredImageContrastGaborCalSorted(index)), log10(1/marginalContrast));
+        end
+    end
+    
     title(titleHandles{pp},'fontsize',15);
     xlabel('Desired image contrast','fontsize',15);
-    ylabel('Nominal cone contrast','fontsize',15);
+    ylabel('Predicted cone contrast','fontsize',15);
     axisLim = 0.10;
     xlim([-axisLim axisLim]);
     ylim([-axisLim axisLim]);
