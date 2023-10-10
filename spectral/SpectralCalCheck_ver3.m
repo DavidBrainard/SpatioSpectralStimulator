@@ -24,7 +24,7 @@ clear; close all;
 %% Read in the image settings that used in the experiment.
 %
 % Set the image type to load either 'normal' or 'high',
-imageType = 'high';
+imageType = 'normal';
 imageSpatialFrequency = 18;
 
 % Load the test image data here.
@@ -32,7 +32,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
     % We set the test file name differently over the image type either
     % 'normal' or 'high'.
-    olderDate = 3;
+    olderDate = 0;
     switch imageType
         case 'normal'
             testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpData_%d_cpd_',imageSpatialFrequency),'olderDate',olderDate);
@@ -99,11 +99,20 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
         % Check if two dates match, if it does, stop the loop and load the
         % file.
         if strcmp(dateStrExp,dateStrVal)
+            % If we test 'normal' image set, we load the data second to the
+            % most recent one. This is because, when we used the 'high'
+            % image set, there will be two different validation data with
+            % the same date, we always did the validation of 'normal' image
+            % set first. Not the most elaborate way, but we do it in this
+            % way for now.
+            if strcmp(imageType,'normal')
+                testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate+1);
+            end
             fprintf('Target file date: (%s) / Found file date: (%s). Date matched! Data will be loaded. \n',dateStrExp,dateStrVal);
             break;
         else
             % Disable the comment for now. We can re-able it if we want.
-%             fprintf('Target file date: (%s) / Found file date: (%s). We will search again... \n',dateStrExp,dateStrVal);
+            %             fprintf('Target file date: (%s) / Found file date: (%s). We will search again... \n',dateStrExp,dateStrVal);
             olderDate = olderDate+1;
         end
     end
@@ -251,7 +260,7 @@ for pp = 1:nPrimaries
         %
         % For 12 cpd, index = 290.
         switch imageType
-            case 'normal'     
+            case 'normal'
                 index = 1850;
             case 'high'
                 index = 1800;
