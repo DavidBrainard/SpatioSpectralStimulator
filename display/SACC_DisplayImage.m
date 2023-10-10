@@ -17,7 +17,14 @@ imageType = 'normal';
 % high image, it will be fixed to 18 cpd.
 if strcmp(imageType,'normal')
     % Choose SF to display here.
-    spatialFrequency = 18;
+    spatialFrequencyOptions = [3 6 9 12 18];
+    while 1
+        spatialFrequency = input('Which spatial frequency to display? [3, 6, 9, 12, 18] ');
+        if ismember(spatialFrequency, spatialFrequencyOptions)
+            break
+        end
+        disp('Choose one of the above spatial frequencies!');
+    end
 else
     spatialFrequency = 18;
 end
@@ -40,6 +47,32 @@ end
 % ascending order of the contrast, so we will load the last image in the
 % array.
 testImage = imageData.sceneParamsStruct.predefinedRGBImages{end};
+
+% Rotate the image if you want. Here we can rotate the image if you want.
+% For SACC experiment, we did use 45-deg rotated image either up left or up
+% right.
+ROTATEIMAGE = true;
+if (ROTATEIMAGE)
+    % Get some info on background settings.
+    settingsBG = squeeze(testImage(1,1,:));
+    settingsBlk = 0;
+    
+    % Set the rotation direction here either to left or right. 
+    imgRotatationDir = 'left'; 
+    switch imgRotatationDir
+        case 'left'
+            imgRotationDeg = 45;
+        case 'right'
+            imgRotationDeg = -45;
+    end
+    
+    % Image rotation happens here.
+    testImage = imrotate(testImage,imgRotationDeg,'crop');
+    nPrimaries = size(testImage,3);
+    for pp = 1:nPrimaries
+        testImage(:,:,pp) = changem(testImage(:,:,pp), settingsBG(pp), settingsBlk);
+    end
+end
 
 % Load the primary channel settings we used in the experiment.
 channelSettings = imageData.experimentParams.screenPrimarySettings;
