@@ -263,8 +263,9 @@ for pp = 1:nPrimaries
             case 'normal'
                 index = 1850;
             case 'high'
-                index = 1800;
+                index = 1500;
         end
+        
         % Contrast cut-off point.
         plot(desiredImageContrastGaborCalSorted(index),imageTestContrastsCalSorted(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
         % Contrast cut-off line.
@@ -282,9 +283,9 @@ for pp = 1:nPrimaries
     % Add the marginal contrasts found from the earlier testing.
     switch imageType
         case 'normal'
-            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',13,'markerfacecolor','k','markeredgecolor','k');
+            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',10,'markerfacecolor','k','markeredgecolor','k');
         case 'high'
-            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',13,'markerfacecolor','k','markeredgecolor','k');
+            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',10,'markerfacecolor','k','markeredgecolor','k');
     end
     
     title(titleHandles{pp},'fontsize',15);
