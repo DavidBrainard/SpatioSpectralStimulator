@@ -224,6 +224,18 @@ sgtitle(sprintf('Desired image contrast vs. Actual cone contrasts in the image (
 imageTestContrastsCalSorted = imageTestContrastsCal(:,I);
 desiredContrastGaborCalSorted = desiredContrastGaborCal(:,I);
 
+% Marginal contrast found from the validation of the nominal contrasts.
+% This was found from the routine SpectralCalCheck_ver2.
+%
+% Normal image set. Put negative sign to the image contrast, because we set
+% (L-M) as a positive sign and -(L-M) as a negative sign.
+coneContrastNormal = [-0.0427 0.0369 -0.0028];
+imageContrastNormal = -sqrt(sum(coneContrastNormal.^2));
+
+% High image set.
+coneContrastHigh = [-0.0579 0.0590 -0.0003];
+imageContrastHigh = -sqrt(sum(coneContrastHigh.^2));
+
 % Make a loop for plotting each cone case.
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
@@ -237,9 +249,13 @@ for pp = 1:nPrimaries
     if(TESTONEPOINT)
         % Set the index within the test contrast array to plot.
         %
-        % For 12 cpd, index = 290. For 18 cpd, index = 2090 for normal
-        % image, and index = 2200 for high image.
-        index = 2090;
+        % For 12 cpd, index = 290.
+        switch imageType
+            case 'normal'     
+                index = 1850;
+            case 'high'
+                index = 1800;
+        end
         % Contrast cut-off point.
         plot(desiredImageContrastGaborCalSorted(index),imageTestContrastsCalSorted(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
         % Contrast cut-off line.
@@ -252,6 +268,14 @@ for pp = 1:nPrimaries
         if pp == 1
             fprintf('Good maximum image contrast = (%.4f / %.4f) / Log sensitivity = (%.4f) \n',marginalContrast, abs(desiredImageContrastGaborCalSorted(index)), log10(1/marginalContrast));
         end
+    end
+    
+    % Add the marginal contrasts found from the earlier testing.
+    switch imageType
+        case 'normal'
+            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',13,'markerfacecolor','k','markeredgecolor','k');
+        case 'high'
+            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',13,'markerfacecolor','k','markeredgecolor','k');
     end
     
     title(titleHandles{pp},'fontsize',15);
