@@ -9,7 +9,18 @@
 close all; clear;
 
 %% Load the image data.
+%
+% Choose the image type either 'normal' or 'high'.
 imageType = 'normal';
+
+% Select spatial frequency to display if we display 'normal' image. For
+% high image, it will be fixed to 18 cpd.
+if strcmp(imageType,'normal')
+    % Choose SF to display here.
+    spatialFrequency = 18;
+else
+    spatialFrequency = 18;
+end
 olderDate = 5;
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
@@ -17,7 +28,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
     % normla or high.
     switch imageType
         case 'normal'
-            testFilename = GetMostRecentFileName(testFiledir,'RunExpData_18_cpd_','olderDate',olderDate);
+            testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpData_%d_cpd_',spatialFrequency),'olderDate',olderDate);
         case 'high'
             testFilename = GetMostRecentFileName(testFiledir,'RunExpData_high_18_cpd_','olderDate',olderDate);
     end
@@ -43,8 +54,12 @@ initialScreenSetting = [0 0 0]';
 SetChannelSettings(channelSettings);
 
 %% Make PTB image texture.
+%
+% We will use the same function that we used in the experiment to display
+% the image.
 [imageTexture imageWindowRect rng] = MakeImageTexture(testImage, window, windowRect, ...
     'addNoiseToImage', true, 'verbose', false);
 
 %% Flip the PTB texture to display the image on the projector.
 FlipImageTexture(imageTexture, window, imageWindowRect,'verbose',false);
+fprintf('Image is now displaying... Current image = (%d cpd) \n',spatialFrequency);
