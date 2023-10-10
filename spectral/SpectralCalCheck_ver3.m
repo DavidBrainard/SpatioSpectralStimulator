@@ -1,14 +1,16 @@
 % SpectralCalCheck_ver3.
 %
-% Read in the image settings that used in the experiment for the SACC
-% proejct, and check if the image was generated fine.
+% This routine reads in the image settings that used in the experiment for
+% the SACC proejct, and compare its predicted contrasts with the desired
+% contrasts per each pixel of the image.
 %
-% This is the third version of if, and it does do calculation of the
-% settings using Standard method which was actually used in the experiment.
+% This is the third version of the validation program, and it does do
+% calculation of the settings using the Standard method which was actually
+% used in the experiment.
 %
 % The biggest difference from the previous versions is that this version
 % uses the settings from the images that were actually presented in the
-% experiment, rather than setting contrast levels to test.
+% experiment, rather than using the contrast levels to test.
 %
 % See also:
 %    SpectralCalCheck, SpectralCalCheck_ver2
@@ -23,16 +25,17 @@ clear; close all;
 %
 % Set the image type to load either 'normal' or 'high',
 imageType = 'normal';
+imageSpatialFrequency = 18;
 
 % Load the test image data here.
-olderDate = 5;
 if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
     % We set the test file name differently over the image type either
-    % normla or high.
+    % 'normal' or 'high'.
+    olderDate = 5;
     switch imageType
         case 'normal'
-            testFilename = GetMostRecentFileName(testFiledir,'RunExpData_18_cpd_','olderDate',olderDate);
+            testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpData_%d_cpd_',imageSpatialFrequency),'olderDate',olderDate);
         case 'high'
             testFilename = GetMostRecentFileName(testFiledir,'RunExpData_high_18_cpd_','olderDate',olderDate);
     end
@@ -48,7 +51,7 @@ monthStr = numExtract{3};
 dayStr = numExtract{4};
 dateStrExp = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
 
-% Load the highest test image to test. Test images are saved in an
+% Load the highest contrast image to test. Test images are saved in an
 % ascending order of the contrast, so we will load the last image in the
 % array.
 testImage = imageData.sceneParamsStruct.predefinedRGBImages{end};
@@ -114,22 +117,21 @@ end
 % Note that 'screenCalObj' is storing the measured primaries in the struct
 % 'P_device' as we saved out in that way.
 screenCalObj = theValData.screenCalObj;
-theData = theValData.theData;
-nPrimaries = size(theData.screenPrimarySpd,2);
+nPrimaries = size(theValData.targetScreenSpdMeasured,2);
 
-%% Calculate the contrasts of the test image presented in the experiment.
+%% Calculate the predicted contrasts of the test image presented in the experiment.
 %
-% Get cone excitations of the backgrond settings for calculation of the
-% contrasts.
+% Calculate the cone excitations of the backgrond settings for calculation
+% of the contrasts.
 imageBgPrimaries = SettingsToPrimary(screenCalObj,imageBgSettings);
 imageBgExcitations = PrimaryToSensor(screenCalObj,imageBgPrimaries);
 
-% Get contrasts of the test settings.
+% Get contrasts of the test settings per each pixel.
 imageTestPrimaries = SettingsToPrimary(screenCalObj,imageTestSettingsCal);
 imageTestExcitations = PrimaryToSensor(screenCalObj,imageTestPrimaries);
 imageTestContrastsCal = ExcitationsToContrast(imageTestExcitations,imageBgExcitations);
 
-%% Calculate the desired contrasts of the test image.
+%% Calculate the desired contrasts of the test image per each pixel.
 %
 % Here, we will calculate the desired contrast of each pixel on the test
 % image so that we can compare it with the actual contrast pixel by pixel.
@@ -140,14 +142,16 @@ imageTestContrastsCal = ExcitationsToContrast(imageTestExcitations,imageBgExcita
 % Get screen size object. Same as the test image.
 [~,screenSizeObject,~] = SetupISETBioDisplayObject(imageData.colorDirectionParams,screenCalObj,'verbose',false);
 
-% Make monochrome gabor image. Also, same as the test image.
+% Read out some variables from the image data to make monochrome gabor. We
+% will read out from the image data.
 stimulusSizeDeg = imageData.spatialTemporalParams.stimulusSizeDeg;
 gaborSdDeg = imageData.spatialTemporalParams.gaborSdDeg;
 sineFreqCyclesPerDeg = imageData.spatialTemporalParams.sineFreqCyclesPerDeg;
 sineImagePhaseShiftDeg = imageData.spatialTemporalParams.sineImagePhaseShiftDeg;
-nQuantizeBits = 14;
 
-[rawMonochromeUnquantizedContrastGaborImage, ~, rawMonochromeContrastGaborCal,~,~,~,~] = ...
+% Make monochrome gabor image here.
+nQuantizeBits = 14;
+[MonochromeGaborImage, ~, rawMonochromeContrastGaborCal,~,~,~,~] = ...
     MakeMonochromeContrastGabor(stimulusSizeDeg,sineFreqCyclesPerDeg,gaborSdDeg,screenSizeObject,...
     'sineImagePhaseShiftDeg',sineImagePhaseShiftDeg,'verbose',false,'nQuantizeBits',nQuantizeBits);
 
@@ -155,7 +159,7 @@ nQuantizeBits = 14;
 SHOWMONOGABORIMAGE = false;
 if (SHOWMONOGABORIMAGE)
     figure;
-    imshow(rawMonochromeUnquantizedContrastGaborImage{1});
+    imshow(MonochromeGaborImage{1});
     title('Monochrome gabor image');
 end
 
@@ -164,8 +168,8 @@ end
 % stimulus contrast direction (L-M) to the monochrome gabor image.
 desiredContrastGaborCal = imageData.colorDirectionParams.spatialGaborTargetContrast * imageData.colorDirectionParams.targetStimulusContrastDir * cell2mat(rawMonochromeContrastGaborCal);
 
-% Calculate the image contrast. We will set the L-M contrast as positive
-% sign and -(L-M) as negative.
+% Calculate the image contrast. We will set the L-M contrast as a positive
+% sign and -(L-M) as a negative sign.
 for cc = 1:size(desiredContrastGaborCal,2)
     desiredImageContrastGaborCalTemp = sqrt(sum(desiredContrastGaborCal(:,cc).^2));
     if desiredContrastGaborCal(1,cc) > desiredContrastGaborCal(2,cc)
@@ -177,7 +181,7 @@ for cc = 1:size(desiredContrastGaborCal,2)
     end
 end
 
-%% Plot the results: Comparison of cone contrast.
+%% Plot the results: Predicted cone contrast vs. Desired cone contrast.
 figure; hold on;
 figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
@@ -204,7 +208,7 @@ for pp = 1:nPrimaries
     legend('Test Image','Desired','location','southeast','fontsize',13);
 end
 
-%% Plot the results: Cone contrast vs. Image contrast.
+%% Plot the results: Predicted cone contrast vs. Desired image contrast.
 figure; hold on;
 figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
