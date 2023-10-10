@@ -281,12 +281,69 @@ for pp = 1:nPrimaries
     end
     
     % Add the marginal contrasts found from the earlier testing.
+    markerFaceColor = [1 0.5 0.3];
     switch imageType
         case 'normal'
-            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',10,'markerfacecolor','k','markeredgecolor','k');
+            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
         case 'high'
-            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',10,'markerfacecolor','k','markeredgecolor','k');
+            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
     end
+    
+    % Here we added another criteria to check the bad points when we apply
+    % the criteria when using the PointCloud method. That is, we try to
+    % allow the amount of imperfection of PointCloud method to the Standard
+    % method.
+    %
+    % These values are from the comparison between the predicted cone
+    % contrast vs. desired image contast from the routine,
+    % SpectralCalCheck_ver2.
+    %
+    % The 'x0' is the maximum test contrast where the biggest mismatch
+    % between the desired and predicted contrasts happens, the amount of
+    % deviation from the desired contrasts are in dL, dM, and dS for L, M,
+    % and S cones, respectivley.
+    switch imageType
+        case 'normal'
+            x0 = 0.07;
+            dL = 0.0095;
+            dM = 0.0104;
+            dS = 0.0004;
+            
+        case 'high'
+            x0 = 0.1;
+            dL = 0.0105;
+            dM = 0.0133;
+            dS = 0.0010;
+    end
+    
+    % Make it as a linear function.
+    pL = polyfit([-x0 x0], [-dL dL], 1);
+    pM = polyfit([-x0 x0], [-dM dM], 1);
+    pS = polyfit([-x0 x0], [-dS dS], 1);
+    
+    % Calculate the marginal error per contrast.
+    errorFitOptions = {pL,pM,pS};
+    errorPerContrastSorted_1 = polyval(errorFitOptions{pp},desiredImageContrastGaborCalSorted);
+    errorPerContrastSorted_2 = polyval(-errorFitOptions{pp},desiredImageContrastGaborCalSorted);
+    
+    marginalErrorPerContrast_1 = desiredContrastGaborCalSorted(pp,:) + errorPerContrastSorted_1;
+    marginalErrorPerContrast_2 = desiredContrastGaborCalSorted(pp,:) + errorPerContrastSorted_2;
+    
+    % Plot it.
+    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_1, ...
+        ':','color','k','linewidth',3);
+    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_2, ...
+        ':','color','k','linewidth',3);
+    
+    
+    % Also, mark the data points that are outside the PC cut-off range with
+    % different color.
+    errorImageTestContrastCalSorted = abs(imageTestContrastsCalSorted(pp,:) - desiredContrastGaborCalSorted(pp,:));
+    marginalErrorPerContrast = abs(desiredContrastGaborCalSorted(pp,:) - errorPerContrastSorted_1);
+    idxBad = find(errorImageTestContrastCalSorted > marginalErrorPerContrast);
+    
+    % Plot it.
+    plot(desiredImageContrastGaborCalSorted(idxBad), imageTestContrastsCalSorted(pp,idxBad),'o','markerfacecolor','k','markeredgecolor','k','markersize',8);
     
     title(titleHandles{pp},'fontsize',15);
     xlabel('Desired image contrast','fontsize',15);
@@ -296,5 +353,9 @@ for pp = 1:nPrimaries
     ylim([-axisLim axisLim]);
     axis('square');
     grid on;
-    legend('Test Image','Desired','location','southeast','fontsize',13);
+    if pp == 2
+    legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','location','northeast','fontsize',13);
+    else
+        legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','location','southeast','fontsize',13);
+    end
 end
