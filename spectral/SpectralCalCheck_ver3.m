@@ -24,7 +24,7 @@ clear; close all;
 %% Read in the image settings that used in the experiment.
 %
 % Set the image type to load either 'normal' or 'high',
-imageType = 'normal';
+imageType = 'high';
 imageSpatialFrequency = 18;
 
 % Load the test image data here.
@@ -32,7 +32,7 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'TestImages');
     % We set the test file name differently over the image type either
     % 'normal' or 'high'.
-    olderDate = 5;
+    olderDate = 3;
     switch imageType
         case 'normal'
             testFilename = GetMostRecentFileName(testFiledir,sprintf('RunExpData_%d_cpd_',imageSpatialFrequency),'olderDate',olderDate);
@@ -102,7 +102,8 @@ if (ispref('SpatioSpectralStimulator','SACCData'))
             fprintf('Target file date: (%s) / Found file date: (%s). Date matched! Data will be loaded. \n',dateStrExp,dateStrVal);
             break;
         else
-            fprintf('Target file date: (%s) / Found file date: (%s). We will search again... \n',dateStrExp,dateStrVal);
+            % Disable the comment for now. We can re-able it if we want.
+%             fprintf('Target file date: (%s) / Found file date: (%s). We will search again... \n',dateStrExp,dateStrVal);
             olderDate = olderDate+1;
         end
     end
