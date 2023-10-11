@@ -245,6 +245,16 @@ imageContrastNormal = -sqrt(sum(coneContrastNormal.^2));
 coneContrastHigh = [-0.0579 0.0590 -0.0003];
 imageContrastHigh = -sqrt(sum(coneContrastHigh.^2));
 
+% Set it by image type.
+switch imageType
+    case 'normal'
+        cutOffContrastPre = coneContrastNormal;
+        cutOffImageContrastPre = imageContrastNormal;
+    case 'high'
+        cutOffContrastPre = coneContrastHigh;
+        cutOffImageContrastPre = imageContrastHigh;
+end
+
 % Make a loop for plotting each cone case.
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
@@ -273,7 +283,8 @@ for pp = 1:nPrimaries
         
         % Calculate the marginal contrast from the nominal contrasts to
         % print out.
-        marginalContrast = sqrt(sum(imageTestContrastsCalSorted(:,index).^2));
+        cutOffContrast = imageTestContrastsCalSorted(:,index);
+        marginalContrast = sqrt(sum(cutOffContrast.^2));
         % We will only print once by setting 'pp' to 1.
         if pp == 1
             fprintf('Good maximum image contrast = (%.4f / %.4f) / Log sensitivity = (%.4f) \n',marginalContrast, abs(desiredImageContrastGaborCalSorted(index)), log10(1/marginalContrast));
@@ -282,13 +293,8 @@ for pp = 1:nPrimaries
     
     % Add the marginal contrasts found from the earlier testing.
     markerFaceColor = [1 0.5 0.3];
-    switch imageType
-        case 'normal'
-            plot(imageContrastNormal,coneContrastNormal(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
-        case 'high'
-            plot(imageContrastHigh,coneContrastHigh(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
-    end
-    
+    plot(cutOffImageContrastPre,cutOffContrastPre(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
+        
     % Here we added another criteria to check the bad points when we apply
     % the criteria when using the PointCloud method. That is, we try to
     % allow the amount of imperfection of PointCloud method to the Standard
@@ -322,30 +328,45 @@ for pp = 1:nPrimaries
     pS = polyfit([-x0 x0], [-dS dS], 1);
     
     % Calculate the marginal error per contrast.
-    errorFitOptions = {pL,pM,pS};
-    errorPerContrastSorted_1 = polyval(errorFitOptions{pp},desiredImageContrastGaborCalSorted);
-    errorPerContrastSorted_2 = polyval(-errorFitOptions{pp},desiredImageContrastGaborCalSorted);
+    dLMSFitOptions = {pL,pM,pS};
+    dLMSPerContrastSorted_1 = polyval(dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
+    dLMSPerContrastSorted_2 = polyval(-dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
     
-    marginalErrorPerContrast_1 = desiredContrastGaborCalSorted(pp,:) + errorPerContrastSorted_1;
-    marginalErrorPerContrast_2 = desiredContrastGaborCalSorted(pp,:) + errorPerContrastSorted_2;
+    marginalErrorPerContrast_1 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_1;
+    marginalErrorPerContrast_2 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_2;
+    
+    marginalContrastAll = [marginalErrorPerContrast_1; marginalErrorPerContrast_2];
+    marginalContrastAll_min = min(marginalContrastAll);
+    marginalContrastAll_max = max(marginalContrastAll);
     
     % Plot it.
-    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_1, ...
-        ':','color','k','linewidth',3);
-    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_2, ...
-        ':','color','k','linewidth',3);
-    
+    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_1,':','color','k','linewidth',3);
+    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_2,':','color','k','linewidth',3);
     
     % Also, mark the data points that are outside the PC cut-off range with
     % different color.
-    errorImageTestContrastCalSorted = abs(imageTestContrastsCalSorted(pp,:) - desiredContrastGaborCalSorted(pp,:));
-    marginalErrorPerContrast = abs(desiredContrastGaborCalSorted(pp,:) - errorPerContrastSorted_1);
-    idxBad = find(errorImageTestContrastCalSorted > marginalErrorPerContrast);
+    idxPointCloudCutOffContrastTemp = find(or(imageTestContrastsCalSorted(pp,:) > marginalContrastAll_max,...
+        imageTestContrastsCalSorted(pp,:) < marginalContrastAll_min));
+    pointCloudCutOffContrastsTemp = desiredContrastGaborCalSorted(pp,idxPointCloudCutOffContrastTemp);
+    pointCloudGoodContrastsTemp = setdiff(desiredContrastGaborCalSorted(pp,:),pointCloudCutOffContrastsTemp);
     
-    % Plot it.
-    plot(desiredImageContrastGaborCalSorted(idxBad), imageTestContrastsCalSorted(pp,idxBad),'o','markerfacecolor','k','markeredgecolor','k','markersize',8);
+    if pp == 1
+        pointCloudCutOffContrast(pp) = min(pointCloudGoodContrastsTemp);
+    elseif pp == 2
+        pointCloudCutOffContrast(pp) = max(pointCloudGoodContrastsTemp);
+    else
+        pointCloudCutOffContrast(pp) = 0;
+    end
+    
+    % Plot it. We will not plot it for S-cone case.
+    if ~(pp == 3)
+        plot(desiredImageContrastGaborCalSorted(idxPointCloudCutOffContrastTemp), imageTestContrastsCalSorted(pp,idxPointCloudCutOffContrastTemp),...
+            'o','markerfacecolor','k','markeredgecolor','k','markersize',5);
+    end
     
     title(titleHandles{pp},'fontsize',15);
+    subtitle(sprintf('Cut-off contrast = (%.4f) \n Cut-off (pre) contrast = (%.4f) \n Cut-off (PC) contrast = (%.4f)',...
+        cutOffContrast(pp), cutOffContrastPre(pp),pointCloudCutOffContrast(pp)));
     xlabel('Desired image contrast','fontsize',15);
     ylabel('Predicted cone contrast','fontsize',15);
     axisLim = 0.10;
@@ -354,8 +375,8 @@ for pp = 1:nPrimaries
     axis('square');
     grid on;
     if pp == 2
-    legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','location','northeast','fontsize',13);
+    legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','northeast','fontsize',13);
     else
-        legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','location','southeast','fontsize',13);
+        legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','southeast','fontsize',13);
     end
 end
