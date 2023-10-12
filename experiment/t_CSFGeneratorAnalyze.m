@@ -45,6 +45,8 @@
 %                             contrast range.
 %    10/04/23  smo          - Modified the figure format when we run
 %                             bootstrapping with the bad contrasts omitted.
+%    10/12/23  smo          - Updated it to fit PF with bad points omitted.
+%                             All the formats are the same as the original.
 
 %% Start over.
 clear; close all;
@@ -110,7 +112,7 @@ slopeRangeLogUnits = 0.2;
 
 % Bootstrap info.
 BOOTSTRAP_RAWFITS = true;
-nBootstraps = 100;
+nBootstraps = 5;
 bootConfInterval = 0.8;
 BOOTSTRAP_SLOPELIMIT = false;
 
@@ -153,7 +155,7 @@ if (FITALLATONCE)
 else
     % Load single subject to fit one by one.
     subjectNameOptions = {'002'};
-    spatialFrequencyOptions = {'12'};
+    spatialFrequencyOptions = {'3'};
 end
 
 %% Show the progress of the experiment.
@@ -275,13 +277,7 @@ for ss = 1:nSubjects
     
     % Set the size of the subplot. Each figure will contain all filters
     % data, so there will be a total of five subplots in one figure.
-    %
-    % If we re-fit PF, we will use the different format of the figure.
-    if FITPFONLYGOODTESTCONTRASTS
-        sizeSubplot = [2 5];
-    else
-        sizeSubplot = [2 3];
-    end
+    sizeSubplot = [2 3];
     
     % Sessions (aka spatial frequency)
     for dd = 1:nSineFreqCyclesPerDeg
@@ -297,7 +293,7 @@ for ss = 1:nSubjects
         
         % Figures for the psychometric function plots
         rawFig = figure; clf;
-        set(gcf,'position',[0,0,2200,800])
+        set(gcf,'position',[0,0,1920,1080])
         psychoFig = figure; clf;
         set(gcf,'position',[0,0,1920,1080]);
         
@@ -341,7 +337,7 @@ for ss = 1:nSubjects
             end
             contrastRangePerSubject(dd,:,ss) = 10.^theContrastData.estDomainValidation;
             
-            % Quest estimator.  Need this here to get data out
+            % Quest estimator. Need this here to get data out.
             [threshold, para, dataOut] = theData.estimator.thresholdMLE(...
                 'thresholdCriterion', thresholdCriterion, 'returnData', true);
             
@@ -351,10 +347,10 @@ for ss = 1:nSubjects
             
             % Here we will plot the PF fitting graph.
             %
-            % Set marker size here. We will use this number to plot the results to
-            % have different marker size according to the number of trials. Here
-            % we used the same method to decide the size of each marker as
-            % 'thresholdMLE' does.
+            % Set marker size here. We will use this number to plot the
+            % results to have different marker size according to the number
+            % of trials. Here we used the same method to decide the size of
+            % each marker as 'thresholdMLE' does.
             stimVal = unique(stimVec);
             pCorrect = zeros(1,length(stimVal));
             for idx = 1:length(stimVal)
@@ -387,10 +383,8 @@ for ss = 1:nSubjects
                     'questPara', [],'addLegend',false, ...
                     'beta',slopeValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
             else
-                % PF fitting with bootstrapping. It takes a while.
-                %
-                % We will skip this part if there is no need to re-fit
-                % the results to save some time to run.
+                % PF fitting with bootstrapping. It takes a while. We will
+                % exclude the bad points before PF fitting if there are any.
                 if (FITPFONLYGOODTESTCONTRASTS)
                     % Check if the session contains bad contrasts.
                     if max(examinedContrastsLinear) == 0.1
@@ -401,33 +395,48 @@ for ss = 1:nSubjects
                         marginalContrastLinear = marginalContrastLinearNormal;
                     end
                     
-                    % If not, just skip the fitting to save some time.
-                    if ~any(examinedContrastsLinear > marginalContrastLinear)
-                        % Get the date of experiment. Since we will skip
-                        % the following iteration, but we still want to
-                        % save the file name correct with the proper date
-                        % of experiment.
-                        testFileNameContrast = theData.describe.testFileNameContrast;
-                        numExtract = regexp(testFileNameContrast,'\d+','match');
-                        yearStr = numExtract{3};
-                        monthStr = numExtract{4};
-                        dayStr = numExtract{5};
-                        dateStr = sprintf('%s_%s_%s',yearStr,monthStr,dayStr);
+                    % If any test contrast was out of the marginal contrast
+                    % range, we will refit by excluding the contrast beyond
+                    % the good range.
+                    if any(examinedContrastsLinear > marginalContrastLinear)
+                        % Set the contrast range to refit. Mostly we would
+                        % exclude one or two from the highest.
+                        idxGoodContrasts = find(examinedContrastsLinear<marginalContrastLinear);
+                        [examinedContrastsLinearBad idxBadContrasts] = setdiff(examinedContrastsLinear,examinedContrastsLinear(idxGoodContrasts));
                         
-                        % Skip the following iterations.
-                        continue;
+                        % Get the bad contrast and its pCorrect to plot it later.
+                        examinedContrastsLinearBad = examinedContrastsLinear(idxBadContrasts);
+                        pCorrectBad = dataOut.pCorrect(idxBadContrasts);
+                        
+                        % Update the fitting points with bad points omitted.
+                        examinedContrastsLinear = examinedContrastsLinear(idxGoodContrasts);
+                        dataOut.pCorrect = dataOut.pCorrect(idxGoodContrasts);
+                        pointSize = pointSize(idxGoodContrasts);
+                        
+                        % Plot the excluded contrasts in the figure.
+                        h_badContrast = plot(log10(examinedContrastsLinearBad),pCorrectBad,'o',...
+                            'markeredgecolor','k','markerfacecolor','k','markersize',12);
                     end
-                    
-                    % If yes, run it.
-                    [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff),thresholdFittedBootRaw(ss,dd,ff,:),...
-                        medianThresholdBootRaw(ss,dd,ff),lowThresholdBootRaw(ss,dd,ff),highThresholdBootRaw(ss,dd,ff), ...
-                        slopeFittedRaw(ss,dd,ff),medianSlopeBootRaw(ss,dd,ff),lowSlopeBootRaw(ss,dd,ff),highSlopeBootRaw(ss,dd,ff), ...
-                        thresholdFittedBootCross1Raw(ss,dd,ff,:),thresholdFittedBootCross2Raw(ss,dd,ff,:), ...
-                        legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
-                        'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
-                        'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
-                        'questPara', [],'addLegend',false, ...
-                        'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
+                end
+                
+                % Run the PF fitting with Bootstrapping here.
+                [paramsFittedRaw(:,ff),thresholdFittedRaw(ss,dd,ff),thresholdFittedBootRaw(ss,dd,ff,:),...
+                    medianThresholdBootRaw(ss,dd,ff),lowThresholdBootRaw(ss,dd,ff),highThresholdBootRaw(ss,dd,ff), ...
+                    slopeFittedRaw(ss,dd,ff),medianSlopeBootRaw(ss,dd,ff),lowSlopeBootRaw(ss,dd,ff),highSlopeBootRaw(ss,dd,ff), ...
+                    thresholdFittedBootCross1Raw(ss,dd,ff,:),thresholdFittedBootCross2Raw(ss,dd,ff,:), ...
+                    legendHandles] = FitPFToData(examinedContrastsLinear, dataOut.pCorrect, ...
+                    'PF', PF, 'nTrials', nTrials, 'verbose', VERBOSE,'paramsFree', paramsFree, ...
+                    'newFigureWindow', false, 'pointSize', pointSize, 'axisLog', axisLog,...
+                    'questPara', [],'addLegend',false, ...
+                    'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
+            end
+            
+            
+            % Update the legend handles as we added the black dots
+            % for marking the bad contrasts.
+            if (FITPFONLYGOODTESTCONTRASTS)
+                if exist('h_badContrast')
+                    legendHandles = [legendHandles h_badContrast];
                 end
             end
             
@@ -456,134 +465,18 @@ for ss = 1:nSubjects
                     legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', 'Quest-fit', ...
                         'FontSize', 12, 'location', 'southwest');
                 else
-                    legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
-                        'FontSize', 12, 'location', 'southwest');
-                end
-            else
-                % When skipping bootstrapping.
-                legend(legendHandles, 'Data','PF-Fit','PF-Threshold', ...
-                    'FontSize', 12, 'location', 'southwest');
-            end
-            
-            % Set the range for the x-axis.
-            xlim([-3.3 -1]);
-            
-            %% Here we re-fit PF without the bad contrast points. This
-            % part only happens if there is a bad contrast point
-            % presented during the experiment. If not, this part will
-            % be skipped.
-            if (FITPFONLYGOODTESTCONTRASTS)
-                % Decide which image was used in the session. We set
-                % the marginal good contrast differently over the image
-                % type used either Normal or High.
-                if max(examinedContrastsLinear) == 0.1
-                    imageType = 'high';
-                    marginalContrastLinear = marginalContrastLinearHigh;
-                else
-                    imageType = 'normal';
-                    marginalContrastLinear = marginalContrastLinearNormal;
+                    if and(FITPFONLYGOODTESTCONTRASTS, exist('h_badContrast'))
+                        legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt','Data (excluded)', ...
+                            'FontSize', 12, 'location', 'southwest');
+                    else
+                        legend(legendHandles, 'Data','PF-Fit','PF-Threshold','BS-Threshold','BS-ConfInt', ...
+                            'FontSize', 12, 'location', 'southwest');
+                    end
                 end
                 
-                % If any test contrast was out of the marginal contrast
-                % range, we will refit by excluding the contrast beyond
-                % the good range.
-                if any(examinedContrastsLinear > marginalContrastLinear)
-                    % Set the contrast range to refit. Mostly we would
-                    % exclude one or two from the highest.
-                    idxGoodContrasts = find(examinedContrastsLinear<marginalContrastLinear);
-                    [examinedContrastsLinearBad idxBadContrasts] = setdiff(examinedContrastsLinear,examinedContrastsLinear(idxGoodContrasts));
-                    
-                    % Re-fitting happens here. We only set the contrast
-                    % range (examinedContrastsLinearRefit) differently
-                    % only with good contrasts and will skip the
-                    % plotting.
-                    %
-                    % Match the size of array of point size for plotting.
-                    pointSizeRefit = pointSize(idxGoodContrasts);
-                    
-                    % We will add this re-fitted graph right below the
-                    % original result.
-                    figure(rawFig);
-                    subplot(sizeSubplot(1),sizeSubplot(2),ff+sizeSubplot(2)); hold on;
-                    
-                    if (~BOOTSTRAP_RAWFITS)
-                        % No bootstrapping.
-                        [paramsFittedRawRefit(:,ff),thresholdFittedRawRefit(ss,dd,ff), ...
-                            ~,~,~,~, ...
-                            ~,~,~,~,~,~, ...
-                            legendHandles] = FitPFToData(examinedContrastsLinear(idxGoodContrasts), dataOut.pCorrect(idxGoodContrasts), ...
-                            'PF', PF, 'nTrials', nTrials, 'verbose', false,'paramsFree', paramsFree, ...
-                            'newFigureWindow', false, 'pointSize', pointSizeRefit, 'axisLog', axisLog,...
-                            'questPara', [],'addLegend',false, ...
-                            'beta',slopeValList,'nBootstraps',0,'bootConfInterval',bootConfInterval);
-                    else
-                        % Bootstrapping.
-                        [paramsFittedRawRefit(:,ff),thresholdFittedRawRefit(ss,dd,ff),~, ...
-                            medianThresholdBootRawRefit(ss,dd,ff),lowThresholdBootRawRefit(ss,dd,ff),highThresholdBootRawRefit(ss,dd,ff), ...
-                            ~,~,~,~,~,~,...
-                            legendHandles] = FitPFToData(examinedContrastsLinear(idxGoodContrasts), dataOut.pCorrect(idxGoodContrasts), ...
-                            'PF', PF, 'nTrials', nTrials, 'verbose', true,'paramsFree', paramsFree, ...
-                            'newFigureWindow', false, 'pointSize', pointSizeRefit, 'axisLog', axisLog,...
-                            'questPara', [],'addLegend',false, ...
-                            'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
-                    end
-                    
-                    % Plot it to the above raw PF fitting figure.
-                    % Excluded contrasts (black circle).
-                    h_badContrast = plot(log10(examinedContrastsLinear(idxBadContrasts)),dataOut.pCorrect(idxBadContrasts),'o',...
-                        'markeredgecolor','k','markerfacecolor','k','markersize',12);
-                    
-                    % We will add the raw PF fitting results to the
-                    % re-fitted plot so that we can compare two easily. The
-                    % marker size would be a little smaller so that we can
-                    % see when two are overlapped.
-                    h_rawPFThresh = plot(log10(thresholdFittedRaw(ss,dd,ff)), thresholdCriterion,'o','markeredgecolor','k','markerfacecolor','r','markersize',8);
-                    
-                    % Update the legend handles as we added the black dots
-                    % for marking the bad contrasts.
-                    legendHandles = [legendHandles h_badContrast h_rawPFThresh];
-                    
-                    % Update the title of each figure to see how
-                    % different between two thresholds either with and
-                    % without bad contrast points.
-                    %
-                    % Also, we will check if the refitted threshold is
-                    % within the good contrast range. We will mark this
-                    % in the title of the plot.
-                    if (thresholdFittedRawRefit(ss,dd,ff) < marginalContrastLinear)
-                        checkThresholdEstimateRefit = 'good';
-                    else
-                        checkThresholdEstimateRefit = 'bad';
-                    end
-                    
-                    % Add a title here.
-                    title({sprintf('Threshold = %.4f',thresholdFittedRaw(ss,dd,ff)),...
-                        sprintf('Threshold (Refit) = %.4f',thresholdFittedRawRefit(ss,dd,ff)),...
-                        sprintf('Check Threshold estimate (Refit) = %s', checkThresholdEstimateRefit)});
-                    
-                    % Print out the status update.
-                    disp('PF was successfuly re-fitted excluding the bad contrasts!');
-                end
-            end
-            
-            % Add SF and filter info per each PF fitting result.
-            subtitle(sprintf('Raw Fit %d cpd / Filter = %s',sineFreqCyclesPerDegTemp,whichFilter),'fontsize', 12);
-            
-            % Indicate available and used contrasts
-            plot(testContrastsLog,0,'ko','markersize',7);
-            plot(theContrastData.estDomainValidation,0,'ko','markersize',7,'markerfacecolor','k');
-            
-            % Add legend to the re-fitted PF results.
-            if (FITPFONLYGOODTESTCONTRASTS)
-                if (BOOTSTRAP_RAWFITS)
-                    legend(legendHandles, 'Data','PF-Fit (Refit)','PF-Threshold (Refit)','BS-Threshold','BS-ConfInt',...
-                        'Data excluded for Refit','PF-Threshold (Raw)',...
-                        'FontSize', 12, 'location', 'southwest');
-                end
             else
                 % When skipping bootstrapping.
                 legend(legendHandles, 'Data','PF-Fit','PF-Threshold',...
-                    'Data excluded for Refit','PF-Refit','PF-Threshold(Refit)',...
                     'FontSize', 12, 'location', 'southwest');
             end
             
@@ -595,6 +488,7 @@ for ss = 1:nSubjects
             
             % Clear the pointsize for next plot.
             clear pointSize;
+            clear h_badContrast;
             
             % Get the date of experiment.
             testFileNameContrast = theData.describe.testFileNameContrast;
@@ -611,7 +505,7 @@ for ss = 1:nSubjects
             dateBigList{ss,dd,ff} = dateStr;
         end
         
-        % Finish up and save the raw fit plot
+        % Finish up and save6 the raw fit plot
         testFileNameImagesRefine = strrep(theData.describe.testFileNameImages,'-','/');
         testFileNameImagesRefine = strrep(testFileNameImagesRefine,'_','/');
         
@@ -620,18 +514,10 @@ for ss = 1:nSubjects
         
         main = axes('Position', [0, 0, 1, 1], 'Visible', 'off');
         
-        % We put the subject and test image info in the figure. If we
-        % re-fit the PF without bad contrasts, put the info smaller to save
-        % some space in the figure.
-        if (FITPFONLYGOODTESTCONTRASTS)
-            text(0.77,0.05,sprintf('* Subject %s',subjectName),'fontsize',12,'Parent',main);
-            text(0.77,0.035,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',12,'Parent',main);
-            text(0.77,0.02,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',12,'Parent',main);
-        else
-            text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
-            text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
-            text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
-        end
+        % We put the subject and test image info in the figure.
+        text(0.7,0.4,sprintf('* Subject %s',subjectName),'fontsize',15,'Parent',main);
+        text(0.7,0.35,sprintf('* Image file used: %s',testFileNameImagesRefine),'fontsize',15,'Parent',main);
+        text(0.7,0.3,sprintf('* Contrast range used (MOA): %s',testFileNameContrastRefine),'fontsize',15,'Parent',main);
         
         % Save the plot here if you want.
         if (SAVETHEPLOT)
@@ -1062,7 +948,11 @@ for ss = 1:nSubjects
         % having data for all spatial frequencies.
         if (nSineFreqCyclesPerDeg == maxNSpatialFrequencies)
             if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                if (FITPFONLYGOODTESTCONTRASTS)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),subjectName,'CSF');
+                else
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                end
                 testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
             end
             
@@ -1113,7 +1003,11 @@ end
 if (FITALLATONCE)
     if (RECORDTESTIMAGEPROFILE)
         if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            if (FITPFONLYGOODTESTCONTRASTS)
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'));
+            else
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            end
             testFilename = fullfile(testFiledir,'TestImageProfile.xlsx');
         end
         tableImageProfile = table(Date,Subject,SpatialFrequency,PrimaryContrast,TestImageContrastMax,...

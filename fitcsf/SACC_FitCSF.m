@@ -34,6 +34,8 @@
 %                        filter/subject combination.
 %    04/17/23   smo    - Fitting has been updated to be done in log CS and
 %                        linear SF space.
+%    10/12/23   smo    - Added an option to save the figure in the
+%                        different directory if we omit the bad contrasts.
 
 %% Initialize.
 clear; close all;
@@ -57,6 +59,10 @@ figurePositionCross = [200+figureSize 300 figureSize figureSize];
 % Fitting options.
 BootstrapAUC = false;
 BootstrapCSF = true;
+
+% Set this true if we fitted the PF without the bad points (as of
+% 10/12/23).
+FITPFONLYGOODTESTCONTRASTS = true;
 
 % Set the sensitivity range to pick for bootstrapped values.
 minThresholdContrastBoot = 0.0003;
@@ -90,16 +96,16 @@ RECORDTEXTSUMMARYPERSUB = true;
 lockRand = true;
 
 %% Load and read out the data.
-if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-    testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
-    theData = load(testFilename);
-    
-    % Close the plots if any pops up.
-    close all;
+if (FITPFONLYGOODTESTCONTRASTS)
+    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
 else
-    error('Cannot find the data file!');
+    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
 end
+testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
+theData = load(testFilename);
+
+% Close the plots if any pops up.
+close all;
 
 % Subject info.
 subjectNameOptions = theData.subjectNameOptions;
@@ -809,14 +815,17 @@ for ss = 1:nSubjects
             
             %% Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                if (FITPFONLYGOODTESTCONTRASTS)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),...
+                        subjectName,'CSF');
+                else
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
-                    testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat));
-                    disp('CSF plot has been saved successfully!');
                 end
+                testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                testFileFormat = '.tiff';
+                saveas(dataFig, append(testFilename,testFileFormat));
+                disp('CSF plot has been saved successfully!');
             end
             
             %% Record the data. We will make a text summary file.
@@ -847,10 +856,12 @@ for ss = 1:nSubjects
         %% Save out the text summary file per each subject.
         if (RECORDTEXTSUMMARYPERSUB)
             if (~pickSubjectAndFilter)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                if (FITPFONLYGOODTESTCONTRASTS)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),subjectName,'CSF');
+                else
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-                    testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
                 end
+                testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
                 
                 % Sort each data in a single column.
                 nAUCPerSub = 5;
@@ -926,14 +937,17 @@ for ss = 1:nSubjects
             
             % Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+                if (FITPFONLYGOODTESTCONTRASTS)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),...
+                        subjectName,'CSF');
+                else
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
-                    testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat));
-                    disp('CSF plot has been saved successfully!');
                 end
+                testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                testFileFormat = '.tiff';
+                saveas(dataFig, append(testFilename,testFileFormat));
+                disp('CSF plot has been saved successfully!');
             end
             
             % Key stroke to draw next plot.
