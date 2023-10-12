@@ -370,25 +370,14 @@ if (options.verbose)
     % fit for SACC project, but as we re-fit the PF without bad contrast
     % points, so we want to plot it in different color. We may delete this
     % part later on.
-    numStimLevelsDefault = 8;
-    if (length(stimLevels) == numStimLevelsDefault)
-        PFLineColor = 'r';
-    else
-        PFLineColor = 'y';
-    end
+    %
+    % Now it always draw in red color (as of 10/12/23).
+    PFLineColor = 'r';
     h_pffit = plot(fineStimLevelsPlot,smoothPsychometric,PFLineColor,'LineWidth',3);
     
     % Mark the threshold point (red point or yellow).
     if(options.axisLog)
-        
-        % Likewise, we set the threshold point differently according to the
-        % number of points to fit.
-        if (length(stimLevels) == numStimLevelsDefault)
-            threshMarkerFaceColor = 'r';
-        else
-            threshMarkerFaceColor = 'y';
-        end
-        
+        threshMarkerFaceColor = 'r';
         h_thresh = plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor',threshMarkerFaceColor,'MarkerSize',12);
         
         % Mark the median bootstrapped threshold point (green point) and
