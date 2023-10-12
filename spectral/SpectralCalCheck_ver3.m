@@ -370,8 +370,8 @@ for pp = 1:nPrimaries
     
     % Some formatting for the figure.
     title(titleHandles{pp},'fontsize',15);
-    subtitle(sprintf('Cut-off contrast = (%.4f) \n Cut-off (pre) contrast = (%.4f) \n Cut-off (PC) contrast = (%.4f)',...
-        cutOffContrast(pp), cutOffContrastPre(pp),pointCloudCutOffContrast(pp)));
+%     subtitle(sprintf('Cut-off contrast = (%.4f) \n Cut-off (pre) contrast = (%.4f) \n Cut-off (PC) contrast = (%.4f)',...
+%         cutOffContrast(pp), cutOffContrastPre(pp),pointCloudCutOffContrast(pp)));
     xlabel('Desired image contrast','fontsize',15);
     ylabel('Predicted cone contrast','fontsize',15);
     axisLim = 0.10;
