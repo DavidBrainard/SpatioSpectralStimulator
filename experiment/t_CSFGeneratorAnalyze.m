@@ -53,21 +53,21 @@ clear; close all;
 VERBOSE = true;
 FITALLATONCE = true;
 SAVETHEPLOT = true;
-RECORDTESTIMAGEPROFILE = false;
-RECORDTEXTSUMMARYPERSUB = false;
+RECORDTESTIMAGEPROFILE = true;
+RECORDTEXTSUMMARYPERSUB = true;
 
 % Added a fitting option to exclude the test contrasts that are beyond the
 % good contrast range to reproduce. (as of 10/03/23).
-%
+FITPFONLYGOODTESTCONTRASTS = true;
+
 % We also set the marginal contrast here (highest contrast that makes a
 % good test image), so that we can re-fit the PF without the contrast
 % points beyond this criteria.
-FITPFONLYGOODTESTCONTRASTS = true;
 marginalContrastLinearNormal = 0.0565;
 marginalContrastLinearHigh = 0.0827;
 
 % Plotting and saving options.
-PLOTCSFCURVE = false;
+PLOTCSFCURVE = true;
 SAVECSFCURVE = true;
 
 % We can lock the randomization when we do bootstrapping so that we can get
@@ -542,48 +542,6 @@ for ss = 1:nSubjects
                     % Update the legend handles as we added the black dots
                     % for marking the bad contrasts.
                     legendHandles = [legendHandles h_badContrast h_rawPFThresh];
-                    
-                    %                     % Plot the PF re-fitting results (yellow line).
-                    %                     %
-                    %                     % Make a fine interval of the test contrast range for a
-                    %                     % plot. This happens inside the function, FitPFToData,
-                    %                     % but as we want to overlap the results in a plot, so
-                    %                     % here we do this.
-                    %                     nFineStimLevels = 1000;
-                    %                     fineStimLevels = linspace(0, max(examinedContrastsLinear), nFineStimLevels);
-                    %
-                    %                     % Make a smooth plot of it.
-                    %                     PF_refit = @PAL_Weibull;
-                    %                     smoothPsychometric = PF_refit(paramsFittedRawRefit(:,ff), fineStimLevels);
-                    %
-                    %                     % Plot it. Threshold point (yellow circle) and PF re-fitting
-                    %                     % results (yellow line).
-                    %                     %
-                    %                     % We will make it transparent line if we skip the
-                    %                     % bootstrapping, otherwise it is non-transparent.
-                    %                     if (~BOOTSTRAP_RAWFITS)
-                    %                         plot(log10(fineStimLevels),smoothPsychometric,'-','color',[1 1 0 0.8],'LineWidth',6);
-                    %                     else
-                    %                         plot(log10(fineStimLevels),smoothPsychometric,'-','color',[1 1 0],'LineWidth',6);
-                    %                     end
-                    %                     plot(log10(thresholdFittedRawRefit(ss,dd,ff)),thresholdCriterion,'ko','MarkerFaceColor','y','MarkerSize',12);
-                    
-                    % Plot bootstrapping results if you did. Again, this is
-                    % done inside the function, FitPFToData, but as we want
-                    % to add this to the raw PF fitting plot, so here we do
-                    % this.
-                    if (BOOTSTRAP_RAWFITS)
-                        %                         % Median bootstapped threshold in blue circle and
-                        %                         % its confidence interval (80%) in blue line.
-                        %                         h_bsthreshRefit = errorbarX(log10(medianThresholdBootRawRefit(ss,dd,ff)),thresholdCriterion+0.01,...
-                        %                             log10(medianThresholdBootRawRefit(ss,dd,ff))-log10(lowThresholdBootRawRefit(ss,dd,ff)),log10(highThresholdBootRawRefit(ss,dd,ff))-log10(medianThresholdBootRawRefit(ss,dd,ff)),'bo');
-                        %                         % Marker point.
-                        %                         set(h_bsthreshRefit,'MarkerSize',9); set(h_bsthreshRefit,'MarkerFaceColor',[0.2 0.2 1]); set(h_bsthreshRefit,'MarkerEdgeColor','k');
-                        %                         % Set line style.
-                        %                         set(h_bsthreshRefit(2),'LineWidth',0.5); set(h_bsthreshRefit(1),'LineWidth',3); set(h_bsthreshRefit(1),'color',[0.2 0.2 1]); set(h_bsthreshRefit(1),'LineStyle','-');
-                    else
-                        disp('Bootstrapping has been skipped');
-                    end
                     
                     % Update the title of each figure to see how
                     % different between two thresholds either with and
