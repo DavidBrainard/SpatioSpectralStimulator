@@ -112,7 +112,7 @@ slopeRangeLogUnits = 0.2;
 
 % Bootstrap info.
 BOOTSTRAP_RAWFITS = true;
-nBootstraps = 5;
+nBootstraps = 100;
 bootConfInterval = 0.8;
 BOOTSTRAP_SLOPELIMIT = false;
 
