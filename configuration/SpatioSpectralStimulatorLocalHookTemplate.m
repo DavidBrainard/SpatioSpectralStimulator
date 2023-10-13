@@ -81,6 +81,9 @@ setpref(projectName,'SACCMelanopsin',fullfile(baseDir,'SACC_melanopsin'));
 % New experiment analysis data dir (as of 10/03/23).
 setpref(projectName,'SACCAnalysisRefit',fullfile(baseDir,'SACC_analysis_refit'));
 
+% We will save the final results in this directory (as of 10/13/23).
+setpref(projectName,'SACCAnalysisFinal',fullfile(baseDir,'SACC_analysis_final'));
+
 %% Set preferences for project output
 %
 % This will need to be locally configured.
