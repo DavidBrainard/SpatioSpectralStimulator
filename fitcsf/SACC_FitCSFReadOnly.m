@@ -30,11 +30,16 @@ figurePosition = [200 300 figureSize figureSize];
 % bad points (as of 10/12/23).
 FITPFONLYGOODTESTCONTRASTS = true;
 
-%% Check the subjects with all data.
+% Set directory differently to save.
 if (FITPFONLYGOODTESTCONTRASTS)
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
+    whichPref = 'SACCAnalysisFinal';
 else
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+    whichPref = 'SACCAnalysis';
+end
+
+%% Check the subjects with all data.
+if ispref('SpatioSpectralStimulator',whichPref)
+    testFiledir = getpref('SpatioSpectralStimulator',whichPref);
 end
 testFileList = dir(testFiledir);
 
@@ -52,12 +57,9 @@ for ss = 1:length(subjectNameOptions)
     whichSub = subjectNameOptions{ss};
     
     % Set the directory of the figures saved per each subject.
-    if (FITPFONLYGOODTESTCONTRASTS)
-        testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
-    else
-        testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+    if ispref('SpatioSpectralStimulator',whichPref)
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
     end
-    testFiledir = fullfile(testFiledir,whichSub,'CSF');
     targetFilename = append(sprintf('CSF_%s',whichSub));
     fileList = dir(append(fullfile(testFiledir,targetFilename),'*'));
     
@@ -109,12 +111,9 @@ for ss = 1:nSubjects
     end
     
     % Get file location.
-    if (FITPFONLYGOODTESTCONTRASTS)
-        testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
-    else
-        testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+    if ispref('SpatioSpectralStimulator',whichPref)
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
     end
-    testFiledir = fullfile(testFiledir,whichSub,'CSF');
     
     % Make a figure window.
     figure;
@@ -153,14 +152,10 @@ for ss = 1:nSubjects
     
     % Save the results.
     if (SaveFigure)
-        if (FITPFONLYGOODTESTCONTRASTS)
-            testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
-        else
-            testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+        if ispref('SpatioSpectralStimulator',whichPref)
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
         end
-        testFiledir = fullfile(testFiledir,whichSub,'CSF');
-        testFilename = fullfile(testFiledir,...
-            sprintf('CSF_%s_AllFiltersSmooth.%s',whichSub,imgFormat));
+        testFilename = fullfile(testFiledir,sprintf('CSF_%s_AllFiltersSmooth.%s',whichSub,imgFormat));
         saveas(gcf, testFilename);
         fprintf('\t CSF plot has been successfully saved! \n');
     end

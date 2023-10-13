@@ -47,6 +47,9 @@
 %                             bootstrapping with the bad contrasts omitted.
 %    10/12/23  smo          - Updated it to fit PF with bad points omitted.
 %                             All the formats are the same as the original.
+%    10/13/23  smo          - Elaborated to save the results in different
+%                             directory not to overwrite the original
+%                             results.
 
 %% Start over.
 clear; close all;
@@ -61,6 +64,16 @@ RECORDTEXTSUMMARYPERSUB = true;
 % Added a fitting option to exclude the test contrasts that are beyond the
 % good contrast range to reproduce. (as of 10/03/23).
 FITPFONLYGOODTESTCONTRASTS = true;
+
+% Set the directory to save the results differently so that we don't
+% overlap the data. Original results are saved in the directory
+% 'SACCAnalysis', and we are saving the updated results with bad points
+% omitted in 'SACCAnalysisFinal'.
+if (FITPFONLYGOODTESTCONTRASTS)
+    whichPref = 'SACCAnalysisFinal';
+else
+    whichPref = 'SACCAnalysis';
+end
 
 % We also set the marginal contrast here (highest contrast that makes a
 % good test image), so that we can re-fit the PF without the contrast
@@ -160,7 +173,7 @@ end
 
 %% Show the progress of the experiment.
 if (FITALLATONCE)
-    SHOWPROGRESS = true;
+    SHOWPROGRESS = false;
     if (SHOWPROGRESS)
         figure; clf;
         
@@ -208,10 +221,10 @@ if (FITALLATONCE)
         end
         
         % Save the progress plot.
-        SAVEPROGRESSPLOT = true;
+        SAVEPROGRESSPLOT = false;
         if (SAVEPROGRESSPLOT)
-            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
+            if (ispref('SpatioSpectralStimulator',whichPref))
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
                 testFilename = fullfile(testFiledir,'Experiment_Progress');
                 testFileFormat = '.tiff';
                 saveas(gcf,append(testFilename,testFileFormat));
@@ -521,20 +534,14 @@ for ss = 1:nSubjects
         
         % Save the plot here if you want.
         if (SAVETHEPLOT)
-            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
+            if ispref('SpatioSpectralStimulator',whichPref)
                 
                 % We will save the plot in different directory when we
                 % re-fit PF only with good test contrasts (as of 10/03/23).
                 %
                 % When we fit with all raw data.
-                if ~FITPFONLYGOODTESTCONTRASTS
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-                    % When we re-fit with contrasts within a good range.
-                elseif FITPFONLYGOODTESTCONTRASTS
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),...
-                        subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
-                end
                 
                 % Make folder with subject name if it does not exist.
                 if ~exist(testFiledir, 'dir')
@@ -737,8 +744,8 @@ for ss = 1:nSubjects
             
             % Save the plot here if you want.
             if (SAVETHEPLOT)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
                     
                     % Make folder with subject name if it does not exist.
@@ -922,8 +929,8 @@ for ss = 1:nSubjects
             
             % Save the plot if you want.
             if (SAVECSFCURVE)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,'CSF');
                     
                     % Make folder with subject name if it does not exist.
@@ -947,12 +954,8 @@ for ss = 1:nSubjects
         % We only run this part for the subjects who completed study, so
         % having data for all spatial frequencies.
         if (nSineFreqCyclesPerDeg == maxNSpatialFrequencies)
-            if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                if (FITPFONLYGOODTESTCONTRASTS)
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),subjectName,'CSF');
-                else
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-                end
+            if ispref('SpatioSpectralStimulator',whichPref)
+                testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),subjectName,'CSF');
                 testFilename = fullfile(testFiledir,sprintf('CS_Summary_%s.xlsx',subjectName));
             end
             
@@ -1002,12 +1005,8 @@ end
 %% Record test image info to excel file.
 if (FITALLATONCE)
     if (RECORDTESTIMAGEPROFILE)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            if (FITPFONLYGOODTESTCONTRASTS)
-                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'));
-            else
-                testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-            end
+        if ispref('SpatioSpectralStimulator',whichPref)
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
             testFilename = fullfile(testFiledir,'TestImageProfile.xlsx');
         end
         tableImageProfile = table(Date,Subject,SpatialFrequency,PrimaryContrast,TestImageContrastMax,...

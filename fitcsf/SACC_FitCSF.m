@@ -64,6 +64,13 @@ BootstrapCSF = true;
 % 10/12/23).
 FITPFONLYGOODTESTCONTRASTS = true;
 
+% Set directory differently to save.
+if (FITPFONLYGOODTESTCONTRASTS)
+    whichPref = 'SACCAnalysisFinal';
+else
+    whichPref = 'SACCAnalysis';
+end
+
 % Set the sensitivity range to pick for bootstrapped values.
 minThresholdContrastBoot = 0.0003;
 maxThresholdContrastBoot = 0.1;
@@ -96,10 +103,8 @@ RECORDTEXTSUMMARYPERSUB = true;
 lockRand = true;
 
 %% Load and read out the data.
-if (FITPFONLYGOODTESTCONTRASTS)
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysisRefit');
-else
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
+if ispref('SpatioSpectralStimulator',whichPref)
+    testFiledir = getpref('SpatioSpectralStimulator',whichPref);
 end
 testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
 theData = load(testFilename);
@@ -815,11 +820,8 @@ for ss = 1:nSubjects
             
             %% Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (FITPFONLYGOODTESTCONTRASTS)
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),...
-                        subjectName,'CSF');
-                else
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,'CSF');
                 end
                 testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
@@ -856,10 +858,8 @@ for ss = 1:nSubjects
         %% Save out the text summary file per each subject.
         if (RECORDTEXTSUMMARYPERSUB)
             if (~pickSubjectAndFilter)
-                if (FITPFONLYGOODTESTCONTRASTS)
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),subjectName,'CSF');
-                else
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),subjectName,'CSF');
                 end
                 testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
                 
@@ -937,12 +937,8 @@ for ss = 1:nSubjects
             
             % Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (FITPFONLYGOODTESTCONTRASTS)
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),...
-                        subjectName,'CSF');
-                else
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
-                        subjectName,'CSF');
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),subjectName,'CSF');
                 end
                 testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
                 testFileFormat = '.tiff';
