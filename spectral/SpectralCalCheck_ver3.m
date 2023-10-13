@@ -26,7 +26,7 @@ clear; close all;
 %% Read in the image settings that used in the experiment.
 %
 % Set the image type to load either 'normal' or 'high',
-imageType = 'normal';
+imageType = 'high';
 imageSpatialFrequency = 18;
 
 % Load the test image data here.
@@ -259,8 +259,8 @@ for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
     
     % Here we plot the main comparison results.
-    plot(desiredImageContrastGaborCalSorted,imageTestContrastsCalSorted(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
-    plot(desiredImageContrastGaborCalSorted,desiredContrastGaborCalSorted(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    p_predicted = plot(desiredImageContrastGaborCalSorted,imageTestContrastsCalSorted(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    p_desired = plot(desiredImageContrastGaborCalSorted,desiredContrastGaborCalSorted(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
     
     % Mark the cut-off contrast point if you want. We visaully found it.
     TESTONEPOINT = true;
@@ -273,8 +273,8 @@ for pp = 1:nPrimaries
         end
         
         % Plot the contrast cut-off point and line.
-        plot(desiredImageContrastGaborCalSorted(index),imageTestContrastsCalSorted(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
-        plot(ones(1,2)*desiredImageContrastGaborCalSorted(index),[-0.1 0.1],'color',[1 1 0 0.7],'linewidth',5);
+        p_cutoffPoint = plot(desiredImageContrastGaborCalSorted(index),imageTestContrastsCalSorted(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
+        p_cutoffLine = plot(ones(1,2)*desiredImageContrastGaborCalSorted(index),[-0.1 0.1],'color',[1 1 0 0.7],'linewidth',5);
         
         % Print out the marginal contrast found from the above.
         cutOffContrast = imageTestContrastsCalSorted(:,index);
@@ -285,10 +285,44 @@ for pp = 1:nPrimaries
         end
     end
     
+    % Plot the bad points omitted and the highest good contrast here.
+    %
+    % Set marginal test contrasts.
+    marginalContrastLinearNormal = 0.0565;
+    marginalContrastLinearHigh = 0.0827;
+    
+    % Set the marginal test contrast differently over image type.
+    switch imageType
+        case 'normal'
+            marginalContrast = marginalContrastLinearNormal;
+        case 'high'
+            marginalContrast = marginalContrastLinearHigh;
+    end
+    
+   % Read out the test contrasts and sort out bad contrasts. 
+    testContrasts = imageData.sceneParamsStruct.predefinedContrasts;
+    badContrasts = testContrasts(testContrasts > marginalContrast);
+    maxGoodContrast = max(setdiff(testContrasts,badContrasts));
+    
+    % Put negative sign to the contrasts to match the direction (L-M).
+    badContrasts = -badContrasts;
+    maxGoodContrast = -maxGoodContrast;
+    
+    % Plot it.
+    for bb = 1:length(badContrasts)
+        p_badContrasts = plot(badContrasts(bb).*ones(1,2), [-0.1 0.1], 'k:','linewidth',2);
+    end
+    
+    % Plot the maxium good contrast.
+    p_maxGoodContrast = plot(maxGoodContrast.*ones(1,2),[-0.1 0.1],'--','color',markerColorHandles{pp},'linewidth',2);
+    
     % Plot the marginal contrasts found from the earlier testing, which was
     % found from the routine SpectralCalCheck_ver2.
-    markerFaceColor = [1 0.5 0.3];
-    plot(cutOffImageContrastPre,cutOffContrastPre(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
+    CutOffNominal = false;
+    if (CutOffNominal)
+        markerFaceColor = [1 0.5 0.3];
+        plot(cutOffImageContrastPre,cutOffContrastPre(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
+    end
     
     % Here we will add another criteria to check the bad points when we
     % apply the criteria when using the PointCloud method. That is, this
@@ -303,75 +337,76 @@ for pp = 1:nPrimaries
     % between the desired and predicted contrasts. The amount of deviation
     % from the contrast is stroed in dL, dM, dS for L, M, S cones,
     % respectivley.
-    switch imageType
-        case 'normal'
-            x0 = 0.07;
-            dL = 0.0095;
-            dM = 0.0104;
-            dS = 0.0004;
-            
-        case 'high'
-            x0 = 0.1;
-            dL = 0.0105;
-            dM = 0.0133;
-            dS = 0.0010;
-    end
-    
-    % Make it as a linear function per each cone type. The shape of the
-    % function would look like a cone which is wide at the test contrast at
-    % either lowest or highest, and it will get narrower and merge at the
-    % zero contrast.
-    pL = polyfit([-x0 x0], [-dL dL], 1);
-    pM = polyfit([-x0 x0], [-dM dM], 1);
-    pS = polyfit([-x0 x0], [-dS dS], 1);
-    
-    % Calculate the dLMS per each contrast.
-    dLMSFitOptions = {pL,pM,pS};
-    dLMSPerContrastSorted_1 = polyval(dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
-    dLMSPerContrastSorted_2 = polyval(-dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
-    
-    % Calculate the marginal contrast adding up dLMS.
-    marginalErrorPerContrast_1 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_1;
-    marginalErrorPerContrast_2 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_2;
-    
-    % We put these together and set the range as min and max of the
-    % marginal contrasts to sort out the bad contrasts. Maybe there is a
-    % better way to do this, but for now, we keep it in this way.
-    marginalContrastAll = [marginalErrorPerContrast_1; marginalErrorPerContrast_2];
-    marginalContrastAll_min = min(marginalContrastAll);
-    marginalContrastAll_max = max(marginalContrastAll);
-    
-    % Plot the cut-off line to the above figure.
-    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_1,':','color','k','linewidth',3);
-    plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_2,':','color','k','linewidth',3);
-    
-    % Search the contrasts that are outside the cut-off range.
-    idxPointCloudCutOffContrastTemp = find(or(imageTestContrastsCalSorted(pp,:) > marginalContrastAll_max,...
-        imageTestContrastsCalSorted(pp,:) < marginalContrastAll_min));
-    pointCloudCutOffContrastsTemp = desiredContrastGaborCalSorted(pp,idxPointCloudCutOffContrastTemp);
-    pointCloudGoodContrastsTemp = setdiff(desiredContrastGaborCalSorted(pp,:),pointCloudCutOffContrastsTemp);
-    
-    % Here we have only good contrasts within the cut-off range. We will
-    % print out the marginal good contrast per each cone type.
-    if pp == 1
-        pointCloudCutOffContrast(pp) = min(pointCloudGoodContrastsTemp);
-    elseif pp == 2
-        pointCloudCutOffContrast(pp) = max(pointCloudGoodContrastsTemp);
-    else
-        pointCloudCutOffContrast(pp) = 0;
-    end
-    
-    % Mark the data points that are outside the above range. We will not
-    % plot it for the S-cone.
-    if ~(pp == 3)
-        plot(desiredImageContrastGaborCalSorted(idxPointCloudCutOffContrastTemp), imageTestContrastsCalSorted(pp,idxPointCloudCutOffContrastTemp),...
-            'o','markerfacecolor','k','markeredgecolor','k','markersize',5);
+    CutOffPointCloud = false;
+    if (CutOffPointCloud)
+        switch imageType
+            case 'normal'
+                x0 = 0.07;
+                dL = 0.0095;
+                dM = 0.0104;
+                dS = 0.0004;
+                
+            case 'high'
+                x0 = 0.1;
+                dL = 0.0105;
+                dM = 0.0133;
+                dS = 0.0010;
+        end
+        
+        % Make it as a linear function per each cone type. The shape of the
+        % function would look like a cone which is wide at the test contrast at
+        % either lowest or highest, and it will get narrower and merge at the
+        % zero contrast.
+        pL = polyfit([-x0 x0], [-dL dL], 1);
+        pM = polyfit([-x0 x0], [-dM dM], 1);
+        pS = polyfit([-x0 x0], [-dS dS], 1);
+        
+        % Calculate the dLMS per each contrast.
+        dLMSFitOptions = {pL,pM,pS};
+        dLMSPerContrastSorted_1 = polyval(dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
+        dLMSPerContrastSorted_2 = polyval(-dLMSFitOptions{pp},desiredImageContrastGaborCalSorted);
+        
+        % Calculate the marginal contrast adding up dLMS.
+        marginalErrorPerContrast_1 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_1;
+        marginalErrorPerContrast_2 = desiredContrastGaborCalSorted(pp,:) + dLMSPerContrastSorted_2;
+        
+        % We put these together and set the range as min and max of the
+        % marginal contrasts to sort out the bad contrasts. Maybe there is a
+        % better way to do this, but for now, we keep it in this way.
+        marginalContrastAll = [marginalErrorPerContrast_1; marginalErrorPerContrast_2];
+        marginalContrastAll_min = min(marginalContrastAll);
+        marginalContrastAll_max = max(marginalContrastAll);
+        
+        % Plot the cut-off line to the above figure.
+        plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_1,':','color','k','linewidth',3);
+        plot(desiredImageContrastGaborCalSorted, marginalErrorPerContrast_2,':','color','k','linewidth',3);
+        
+        % Search the contrasts that are outside the cut-off range.
+        idxPointCloudCutOffContrastTemp = find(or(imageTestContrastsCalSorted(pp,:) > marginalContrastAll_max,...
+            imageTestContrastsCalSorted(pp,:) < marginalContrastAll_min));
+        pointCloudCutOffContrastsTemp = desiredContrastGaborCalSorted(pp,idxPointCloudCutOffContrastTemp);
+        pointCloudGoodContrastsTemp = setdiff(desiredContrastGaborCalSorted(pp,:),pointCloudCutOffContrastsTemp);
+        
+        % Here we have only good contrasts within the cut-off range. We will
+        % print out the marginal good contrast per each cone type.
+        if pp == 1
+            pointCloudCutOffContrast(pp) = min(pointCloudGoodContrastsTemp);
+        elseif pp == 2
+            pointCloudCutOffContrast(pp) = max(pointCloudGoodContrastsTemp);
+        else
+            pointCloudCutOffContrast(pp) = 0;
+        end
+        
+        % Mark the data points that are outside the above range. We will not
+        % plot it for the S-cone.
+        if ~(pp == 3)
+            plot(desiredImageContrastGaborCalSorted(idxPointCloudCutOffContrastTemp), imageTestContrastsCalSorted(pp,idxPointCloudCutOffContrastTemp),...
+                'o','markerfacecolor','k','markeredgecolor','k','markersize',5);
+        end
     end
     
     % Some formatting for the figure.
     title(titleHandles{pp},'fontsize',15);
-%     subtitle(sprintf('Cut-off contrast = (%.4f) \n Cut-off (pre) contrast = (%.4f) \n Cut-off (PC) contrast = (%.4f)',...
-%         cutOffContrast(pp), cutOffContrastPre(pp),pointCloudCutOffContrast(pp)));
     xlabel('Desired image contrast','fontsize',15);
     ylabel('Predicted cone contrast','fontsize',15);
     axisLim = 0.10;
@@ -379,9 +414,13 @@ for pp = 1:nPrimaries
     ylim([-axisLim axisLim]);
     axis('square');
     grid on;
+    
+    % Add legend here. We will put the legend at the different location for
+    % M-cone graph not to block the results. The contents are the same.
+    legendHandles = [p_predicted p_desired p_cutoffPoint p_badContrasts p_maxGoodContrast];
     if pp == 2
-        legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','northeast','fontsize',13);
+        legend(legendHandles,'Predicted','Desired','Cut-off','Bad contrasts','Max good contrast','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','northeast','fontsize',13);
     else
-        legend('Test Image','Desired','Cut-off','','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','southeast','fontsize',13);
+        legend(legendHandles,'Predicted','Desired','Cut-off','Bad contrasts','Max good contrast','Cut-off (pre)','PC Cut-off','','PC Cut-out','location','southeast','fontsize',13);
     end
 end
