@@ -26,7 +26,7 @@ clear; close all;
 %% Read in the image settings that used in the experiment.
 %
 % Set the image type to load either 'normal' or 'high',
-imageType = 'high';
+imageType = 'normal';
 imageSpatialFrequency = 18;
 
 % Load the test image data here.
@@ -308,13 +308,25 @@ for pp = 1:nPrimaries
     badContrasts = -badContrasts;
     maxGoodContrast = -maxGoodContrast;
     
-    % Plot it.
+    % Plot the contrasts outside the criteria as a line and a point on the
+    % predicted contrast line.
     for bb = 1:length(badContrasts)
+        % plot the line.
         p_badContrasts = plot(badContrasts(bb).*ones(1,2), [-0.1 0.1], 'k:','linewidth',2);
+        % Plot the point.
+        absContrastDiff = abs(desiredImageContrastGaborCalSorted - badContrasts(bb));
+        idxBadContrast = max(find(absContrastDiff == min(absContrastDiff)));
+        plot(badContrasts(bb),imageTestContrastsCalSorted(pp,idxBadContrast),'o','markerfacecolor','k','markersize',14);
     end
     
-    % Plot the maxium good contrast.
+    % Plot the maximum good contrast in a line.
     p_maxGoodContrast = plot(maxGoodContrast.*ones(1,2),[-0.1 0.1],'--','color',markerColorHandles{pp},'linewidth',2);
+    
+    % Plot the maximum good contrast in a point.
+    absContrastDiff = abs(desiredImageContrastGaborCalSorted - maxGoodContrast);
+    idxGoodContrast = max(find(absContrastDiff == min(absContrastDiff)));
+    plot(maxGoodContrast, imageTestContrastsCalSorted(pp,idxGoodContrast),...
+        'o','markeredgecolor','k','markerfacecolor',markerColorHandles{pp},'markersize',14);
     
     % Plot the marginal contrasts found from the earlier testing, which was
     % found from the routine SpectralCalCheck_ver2.
