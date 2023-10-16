@@ -263,8 +263,8 @@ for pp = 1:nPrimaries
     p_desired = plot(desiredImageContrastGaborCalSorted,desiredContrastGaborCalSorted(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
     
     % Mark the cut-off contrast point if you want. We visaully found it.
-    TESTONEPOINT = true;
-    if(TESTONEPOINT)
+    MARKCUTOFFCONTRAST = true;
+    if(MARKCUTOFFCONTRAST)
         switch imageType
             case 'normal'
                 index = 1850;
@@ -285,26 +285,19 @@ for pp = 1:nPrimaries
         end
     end
     
-    % Plot the bad points omitted and the highest good contrast here.
+    % We will plot the bad points omitted and the highest good contrast
+    % from here.
     %
-    % Set marginal test contrasts.
-    marginalContrastLinearNormal = 0.0565;
-    marginalContrastLinearHigh = 0.0827;
-    
-    % Set the marginal test contrast differently over image type.
-    switch imageType
-        case 'normal'
-            marginalContrast = marginalContrastLinearNormal;
-        case 'high'
-            marginalContrast = marginalContrastLinearHigh;
-    end
-    
-   % Read out the test contrasts and sort out bad contrasts. 
+    % Read out the test contrasts and sort out bad contrasts.
     testContrasts = imageData.sceneParamsStruct.predefinedContrasts;
+    
+    % Here we get the marginal contrast in absolute value, because the test
+    % contrasts are all positive. We will match the sign correct later on.
+    marginalContrast = abs(desiredImageContrastGaborCalSorted(index));
     badContrasts = testContrasts(testContrasts > marginalContrast);
     maxGoodContrast = max(setdiff(testContrasts,badContrasts));
     
-    % Put negative sign to the contrasts to match the direction (L-M).
+    % Put a negative sign to the contrasts to match the direction (L-M).
     badContrasts = -badContrasts;
     maxGoodContrast = -maxGoodContrast;
     
@@ -313,9 +306,10 @@ for pp = 1:nPrimaries
     for bb = 1:length(badContrasts)
         % plot the line.
         p_badContrasts = plot(badContrasts(bb).*ones(1,2), [-0.1 0.1], 'k:','linewidth',2);
+        
         % Plot the point.
-        absContrastDiff = abs(desiredImageContrastGaborCalSorted - badContrasts(bb));
-        idxBadContrast = max(find(absContrastDiff == min(absContrastDiff)));
+        absBadContrastDiff = abs(desiredImageContrastGaborCalSorted - badContrasts(bb));
+        idxBadContrast = max(find(absBadContrastDiff == min(absBadContrastDiff)));
         plot(badContrasts(bb),imageTestContrastsCalSorted(pp,idxBadContrast),'o','markerfacecolor','k','markersize',14);
     end
     
@@ -323,15 +317,15 @@ for pp = 1:nPrimaries
     p_maxGoodContrast = plot(maxGoodContrast.*ones(1,2),[-0.1 0.1],'--','color',markerColorHandles{pp},'linewidth',2);
     
     % Plot the maximum good contrast in a point.
-    absContrastDiff = abs(desiredImageContrastGaborCalSorted - maxGoodContrast);
-    idxGoodContrast = max(find(absContrastDiff == min(absContrastDiff)));
+    absGoodContrastDiff = abs(desiredImageContrastGaborCalSorted - maxGoodContrast);
+    idxGoodContrast = max(find(absGoodContrastDiff == min(absGoodContrastDiff)));
     plot(maxGoodContrast, imageTestContrastsCalSorted(pp,idxGoodContrast),...
         'o','markeredgecolor','k','markerfacecolor',markerColorHandles{pp},'markersize',14);
     
     % Plot the marginal contrasts found from the earlier testing, which was
     % found from the routine SpectralCalCheck_ver2.
-    CutOffNominal = false;
-    if (CutOffNominal)
+    MARKCUTOFFNOMINAL = false;
+    if (MARKCUTOFFNOMINAL)
         markerFaceColor = [1 0.5 0.3];
         plot(cutOffImageContrastPre,cutOffContrastPre(pp),'o','markersize',10,'markerfacecolor',markerFaceColor,'markeredgecolor','k');
     end
@@ -349,8 +343,8 @@ for pp = 1:nPrimaries
     % between the desired and predicted contrasts. The amount of deviation
     % from the contrast is stroed in dL, dM, dS for L, M, S cones,
     % respectivley.
-    CutOffPointCloud = false;
-    if (CutOffPointCloud)
+    MARKCUTOFFPOINTCLOUD = false;
+    if (MARKCUTOFFPOINTCLOUD)
         switch imageType
             case 'normal'
                 x0 = 0.07;
