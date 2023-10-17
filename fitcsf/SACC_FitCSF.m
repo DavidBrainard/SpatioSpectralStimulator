@@ -53,18 +53,14 @@ figureSize = 800;
 figurePositionData = [200 300 figureSize figureSize-200];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
-% Temp option for Semin's laptop.
-% figurePositionData = [0 0 1000 1000];
-
 % Fitting options.
-BootstrapAUC = false;
 BootstrapCSF = true;
 
-% Set this true if we fitted the PF without the bad points (as of
+% Set this to true if we fitted the PF without the bad points (as of
 % 10/12/23).
 FITPFONLYGOODTESTCONTRASTS = true;
 
-% Set directory differently to save.
+% Set directory to differently.
 if (FITPFONLYGOODTESTCONTRASTS)
     whichPref = 'SACCAnalysisFinal';
 else
@@ -572,11 +568,19 @@ for ss = 1:nSubjects
                 end
             end
             
-            %% Bootstrapping AUC.
+            %% Bootstrapping AUC (NOT RUNNUNG THIS PART).
             %
-            % Here we will repeat the part above that find an optimal
-            % smoothing parameter and calculate AUC.
+            % This part is basically the same as the above (bootstrapping
+            % CCSF and calculate AUC of each), but doing it by grid-search,
+            % not using fmincon. This is an old way to run bootstrapping
+            % before we started using fmincon. We keep the format here, but
+            % we will not run this part for our final analysis (as of
+            % 10/17/23).
             %
+            % Thus, we will keep 'BootstrapAUC' to false so that it won't
+            % run in this routine.
+            BootstrapAUC = false;
+            
             % Set the number of bootrapping the AUC.
             nBootAUC = 20;
             if (BootstrapAUC)

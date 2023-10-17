@@ -16,7 +16,7 @@
 clear; close all;
 
 %% Set variables.
-SaveFigure = false;
+SaveFigure = true;
 PlotAllSubjects = true;
 WaitForKeyPress = true;
 
