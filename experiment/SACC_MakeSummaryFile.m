@@ -31,7 +31,7 @@ else
 end
 
 % Decide if you want to save out the table made from this routine.
-SAVETHERESULTS = false;
+SAVETHERESULTS = true;
 
 %% Get available subjects.
 if ispref('SpatioSpectralStimulator',whichPref)

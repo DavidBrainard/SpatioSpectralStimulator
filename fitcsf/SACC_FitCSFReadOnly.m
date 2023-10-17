@@ -18,7 +18,7 @@ clear; close all;
 %% Set variables.
 SaveFigure = true;
 PlotAllSubjects = true;
-WaitForKeyPress = true;
+WaitForKeyPress = false;
 
 fittingMode = 'crossValBootAcrossFmincon';
 filterOptions = {'A', 'B', 'C', 'D', 'E'};
