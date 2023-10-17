@@ -1029,15 +1029,8 @@ end
 if (FITALLATONCE)
     % Save out full run info. We will use this file to fit CCSF and
     % calculate AUC.
-    %
-    % We will save it in different directory if we ran re-fitting PF with
-    % only good test contrasts (as of 10/03/23).
-    if (FITPFONLYGOODTESTCONTRASTS)
-        save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysisRefit'),'CSFAnalysisOutput'));
-    else
-        save(fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),'CSFAnalysisOutput'));
-    end
-    
+    save(fullfile(getpref('SpatioSpectralStimulator',whichPref),'CSFAnalysisOutput'));
+
     % We used to make CS summary file here, but now we are making it per
     % each subject and merge in one file, so this part will not be running
     % unless we re-activate the slope restriction for PF fitting (as of
