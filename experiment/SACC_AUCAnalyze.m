@@ -12,8 +12,6 @@
 %% Initialize.
 clear; close all;
 
-
-
 %% Save the plots if you want.
 SAVEPLOTS = false;
 imgFileFormat = '.tiff';
@@ -77,11 +75,6 @@ end
 
 % Mean log sensitivity per each filter.
 meanLogSensitivity = mean(logSensitivity);
-% for ss = 1:nSFs
-%     logSensitivityAllFiltersTemp = squeeze(logSensitivity(:,ss,:));
-%     logSensitivityAllFiltersTemp = reshape(logSensitivityAllFiltersTemp, [size(logSensitivityAllFiltersTemp,1)*size(logSensitivityAllFiltersTemp,2) 1]);
-%     stdErrorAllFiltersAndSubjects(ss) = std(logSensitivityAllFiltersTemp)/sqrt(length(logSensitivityAllFiltersTemp));
-% end
 
 %% Get subject gender info, MPOD, Iso-luminance results.
 %
