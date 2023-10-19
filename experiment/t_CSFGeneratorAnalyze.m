@@ -400,7 +400,9 @@ for ss = 1:nSubjects
                 % exclude the bad points before PF fitting if there are any.
                 if (FITPFONLYGOODTESTCONTRASTS)
                     % Check if the session contains bad contrasts.
-                    if max(examinedContrastsLinear) == 0.1
+                    maxContrastExperiment = max(theContrastData.preExpDataStruct.rawData.testContrast);
+                    maxContrastHighImageSet = 0.1;
+                    if (maxContrastExperiment == maxContrastHighImageSet)
                         imageType = 'high';
                         marginalContrastLinear = marginalContrastLinearHigh;
                     else
