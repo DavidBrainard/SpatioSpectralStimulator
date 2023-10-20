@@ -13,7 +13,7 @@
 clear; close all;
 
 %% Save the plots if you want.
-SAVEPLOTS = false;
+SAVEPLOTS = true;
 imgFileFormat = '.tiff';
 
 %% Read the AUC summary table.
