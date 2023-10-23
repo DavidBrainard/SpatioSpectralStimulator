@@ -237,10 +237,10 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
         % Set the criteria differetly for 18 cpd session with high image set.
         if and(spatialFrequencyTemp == 18, testTargetImageContrastMaxTemp == maxContrastHighImageSet)
             % High image for 18 cpd.
-            margianlLogSensitivity = marginalLogSensitivityHigh;
+            margialLogSensitivity = marginalLogSensitivityHigh;
         else
             % Normal image for the other sessions.
-            margianlLogSensitivity = marginalLogSensitivityNormal;
+            margialLogSensitivity = marginalLogSensitivityNormal;
         end
         
         % Check if the maximum test contrast that used in the experiment was
@@ -248,7 +248,7 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
         % 'TestContrasts_8' of the image table.
         testImageContrastMaxTemp = table2array(t_Image(ss,'TestContrasts_8'));
         logSensitiivtyMaxTemp = log10(1/testImageContrastMaxTemp);
-        if  (logSensitiivtyMaxTemp < margianlLogSensitivity)
+        if  (logSensitiivtyMaxTemp < margialLogSensitivity)
             idxSessionBad_maxTestContrast(ss,1) = 1;
         else
             idxSessionBad_maxTestContrast(ss,1) = 0;
