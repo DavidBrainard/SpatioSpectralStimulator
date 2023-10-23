@@ -137,14 +137,14 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
     % SpectralCalCheck_ver2.m. This routine searches the affected sessions
     % based on these information - coneContrastNormal and coneContrastHigh - so
     % we can update these as we want.
-    coneContrastNormal = [-0.0427 0.0369 -0.0028];
-    coneContrastHigh = [-0.0579 0.0590 -0.0003];
+    marginalConeContrastNormal = [-0.0427 0.0369 -0.0028];
+    marginalConeContrastHigh = [-0.0579 0.0590 -0.0003];
     
-    imageContrastNormal = sqrt(sum(coneContrastNormal.^2));
-    imageContrastHigh = sqrt(sum(coneContrastHigh.^2));
+    marginalImageContrastNormal = sqrt(sum(marginalConeContrastNormal.^2));
+    marginalImageContrastHigh = sqrt(sum(marginalConeContrastHigh.^2));
     
-    marginalLogSensitivityNormal = log10(1/imageContrastNormal);
-    marginalLogSensitivityHigh = log10(1/imageContrastHigh);
+    marginalLogSensitivityNormal = log10(1/marginalImageContrastNormal);
+    marginalLogSensitivityHigh = log10(1/marginalImageContrastHigh);
     
     % Get the subject info.
     subjectOptions = unique(t_AUC.Subject);
