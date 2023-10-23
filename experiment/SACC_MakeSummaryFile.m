@@ -135,8 +135,8 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
     %
     % These values were found using the validation code
     % SpectralCalCheck_ver2.m. This routine searches the affected sessions
-    % based on these information - coneContrastNormal and coneContrastHigh - so
-    % we can update these as we want.
+    % based on these information - 'marginalConeContrastNormal' and
+    % 'marginalConeContrastHigh' - so we can update these as we want.
     marginalConeContrastNormal = [-0.0427 0.0369 -0.0028];
     marginalConeContrastHigh = [-0.0579 0.0590 -0.0003];
     
