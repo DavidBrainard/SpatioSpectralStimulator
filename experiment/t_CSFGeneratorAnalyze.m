@@ -402,6 +402,9 @@ for ss = 1:nSubjects
                     % Check if the session contains bad contrasts.
                     maxContrastExperiment = max(theContrastData.preExpDataStruct.rawData.testContrast);
                     maxContrastHighImageSet = 0.1;
+                    
+                    % Set the marginal contrast according to image type
+                    % used in the experiment.
                     if (maxContrastExperiment == maxContrastHighImageSet)
                         imageType = 'high';
                         marginalContrastLinear = marginalContrastLinearHigh;
@@ -411,8 +414,7 @@ for ss = 1:nSubjects
                     end
                     
                     % If any test contrast was out of the marginal contrast
-                    % range, we will refit by excluding the contrast beyond
-                    % the good range.
+                    % range, we exclude it before fitting PF.
                     if any(examinedContrastsLinear > marginalContrastLinear)
                         % Set the contrast range to refit. Mostly we would
                         % exclude one or two from the highest.
@@ -420,7 +422,6 @@ for ss = 1:nSubjects
                         [examinedContrastsLinearBad idxBadContrasts] = setdiff(examinedContrastsLinear,examinedContrastsLinear(idxGoodContrasts));
                         
                         % Get the bad contrast and its pCorrect to plot it later.
-                        examinedContrastsLinearBad = examinedContrastsLinear(idxBadContrasts);
                         pCorrectBad = dataOut.pCorrect(idxBadContrasts);
                         
                         % Update the fitting points with bad points omitted.
