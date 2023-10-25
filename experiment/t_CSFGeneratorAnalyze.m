@@ -50,6 +50,8 @@
 %    10/13/23  smo          - Elaborated to save the results in different
 %                             directory not to overwrite the original
 %                             results.
+%    10/25/23  smo          - Print out some more details about the session
+%                             for sanity check.
 
 %% Start over.
 clear; close all;
@@ -125,7 +127,7 @@ slopeRangeLogUnits = 0.2;
 
 % Bootstrap info.
 BOOTSTRAP_RAWFITS = true;
-nBootstraps = 100;
+nBootstraps = 5;
 bootConfInterval = 0.8;
 BOOTSTRAP_SLOPELIMIT = false;
 
@@ -273,6 +275,15 @@ spatialFrequencyBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 filterBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 dateBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
 
+% We added some more big lists of what we ran for sanity check (as of
+% 10/25/23).
+maxContrastMOABigList = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+highestContrastExperimentBigList = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+secondHighContrastExperimentBigList = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+numBadContrastsBigList = NaN*ones(nSubjects,maxNSpatialFrequencies,nFilters);
+imageTypeBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
+isSessionContrastGoodBigList = cell(nSubjects,maxNSpatialFrequencies,nFilters);
+
 for ss = 1:nSubjects
     % Set target subject.
     subjectName = subjectNameOptions{ss};
@@ -399,13 +410,19 @@ for ss = 1:nSubjects
                 % PF fitting with bootstrapping. It takes a while. We will
                 % exclude the bad points before PF fitting if there are any.
                 if (FITPFONLYGOODTESTCONTRASTS)
-                    % Check if the session contains bad contrasts.
-                    maxContrastExperiment = max(theContrastData.preExpDataStruct.rawData.testContrast);
+                    % Save out highest and second highest contrasts here.
+                    % We will print out these two when we make summary
+                    % file.
+                    [highestContrastExperiment idxHighestContrastExperiment] = max(examinedContrastsLinear);
+                    secondHighestContrastExperiment = examinedContrastsLinear(idxHighestContrastExperiment-1);
+                    
+                    % Check if the session contains bad contrasts. 
+                    maxContrastMOA = max(theContrastData.preExpDataStruct.rawData.testContrast);
                     maxContrastHighImageSet = 0.1;
                     
                     % Set the marginal contrast according to image type
                     % used in the experiment.
-                    if (maxContrastExperiment == maxContrastHighImageSet)
+                    if (maxContrastMOA == maxContrastHighImageSet)
                         imageType = 'high';
                         marginalContrastLinear = marginalContrastLinearHigh;
                     else
@@ -415,7 +432,14 @@ for ss = 1:nSubjects
                     
                     % If any test contrast was out of the marginal contrast
                     % range, we exclude it before fitting PF.
+                    %
+                    % Here we check if the session was good in terms of
+                    % contrast range.
                     if any(examinedContrastsLinear > marginalContrastLinear)
+                        % Save the string as this session includes at least
+                        % one bad contrast.
+                        isSessionContrastGood = 'bad';
+                        
                         % Set the contrast range to refit. Mostly we would
                         % exclude one or two from the highest.
                         idxGoodContrasts = find(examinedContrastsLinear<marginalContrastLinear);
@@ -432,7 +456,25 @@ for ss = 1:nSubjects
                         % Plot the excluded contrasts in the figure.
                         h_badContrast = plot(log10(examinedContrastsLinearBad),pCorrectBad,'o',...
                             'markeredgecolor','k','markerfacecolor','k','markersize',12);
+                        
+                        % Get the number of bad contrasts to print later
+                        % on. We will print this number out in the summary
+                        % excel file.
+                        numBadContrasts = length(examinedContrastsLinearBad);
+                    else
+                        % If not applicable, the session was good, so print
+                        % out the session was good.
+                        isSessionContrastGood = 'good';
+                        numBadContrasts = 0;
                     end
+                    
+                    % We will print out these info for sanity check.
+                    maxContrastMOABigList(ss,dd,ff) = maxContrastMOA;
+                    highestContrastExperimentBigList(ss,dd,ff) = highestContrastExperiment;
+                    secondHighContrastExperimentBigList(ss,dd,ff) = secondHighestContrastExperiment;
+                    numBadContrastsBigList(ss,dd,ff) = numBadContrasts;
+                    imageTypeBigList{ss,dd,ff} = imageType;
+                    isSessionContrastGoodBigList{ss,dd,ff} = isSessionContrastGood;
                 end
                 
                 % Run the PF fitting with Bootstrapping here.
@@ -446,7 +488,6 @@ for ss = 1:nSubjects
                     'questPara', [],'addLegend',false, ...
                     'beta',slopeValList,'nBootstraps',nBootstraps,'bootConfInterval',bootConfInterval);
             end
-            
             
             % Update the legend handles as we added the black dots
             % for marking the bad contrasts.
@@ -544,7 +585,7 @@ for ss = 1:nSubjects
                 %
                 % When we fit with all raw data.
                 testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
-                        subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
+                    subjectName,append(num2str(sineFreqCyclesPerDegTemp),'_cpd'));
                 
                 % Make folder with subject name if it does not exist.
                 if ~exist(testFiledir, 'dir')
@@ -981,15 +1022,29 @@ for ss = 1:nSubjects
             
             Date_CSSummary = reshape(squeeze(dateBigList(ss,:,:)),nCSPerSub,1);
             
+            % Save out some more variables for sanity check (as of
+            % 10/25/23). This has been added before sending the final data
+            % to J and J.
+            if (FITPFONLYGOODTESTCONTRASTS)
+                MaxContrastMOA_CSSummary = reshape(squeeze(maxContrastMOABigList(ss,:,:)),nCSPerSub,1);
+                ImageType_CSSummary = reshape(squeeze(imageTypeBigList(ss,:,:)),nCSPerSub,1);
+                IsSessionContrastGood_CSSummary = reshape(squeeze(isSessionContrastGoodBigList(ss,:,:)),nCSPerSub,1);
+                HighestContrastExperiment_CSSummary = reshape(squeeze(highestContrastExperimentBigList(ss,:,:)),nCSPerSub,1);
+                SecondHighContrastExperiment_CSSummary = reshape(squeeze(secondHighContrastExperimentBigList(ss,:,:)),nCSPerSub,1);
+                NumBadContrasts_CSSummary = reshape(squeeze(numBadContrastsBigList(ss,:,:)),nCSPerSub,1);
+            end
+            
             % Make a table.
             tableCSSummary = table(NumCount_CSSummary, Subject_CSSummary,Filter_CSSummary, SpatialFrequency_CSSummary, Date_CSSummary,...
                 ThresholdPF_CSSummary, MedianThresholdBoot_CSSummary, BootCILow_CSSummary, BootCIHigh_CSSummary,...
-                LogSensitivityPF_CSSummary,LogSensitivityMedianBoot_CSSummary,LogSensitivitiyBootCILow_CSSummary,LogSensitivitiyBootCIHigh_CSSummary);
+                LogSensitivityPF_CSSummary,LogSensitivityMedianBoot_CSSummary,LogSensitivitiyBootCILow_CSSummary,LogSensitivitiyBootCIHigh_CSSummary,...
+                MaxContrastMOA_CSSummary,ImageType_CSSummary,IsSessionContrastGood_CSSummary,NumBadContrasts_CSSummary,HighestContrastExperiment_CSSummary,SecondHighContrastExperiment_CSSummary);
             
             % Change the variable name as desired.
             tableCSSummary.Properties.VariableNames = {'No', 'Subject', 'Filter', 'SpatialFrequency', 'VisitDate',...
                 'ThresholdPF', 'MedianThresholdBoot', 'BootCILow', 'BootCIHigh',...
-                'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh'};
+                'LogSensitivityPF', 'LogSensitivityMedianThresholdBoot', 'LogSensitivityBootCILow', 'LogSensitivityBootCIHigh',...
+                'MaxContrastMOA','ImageType','IsContrastInGoodRange','NumBadContrasts','HighestContrastExp','SecondHighestContrastExp'};
             
             % Sort the array in the ascending order of filter and SFs.
             tableCSSummary = sortrows(tableCSSummary,{'Filter','SpatialFrequency'});
@@ -1025,7 +1080,10 @@ if (FITALLATONCE)
     end
 end
 
-%% Run this part only when fitting all at once.
+%% Plot the results and write summary table (WE ARE NOT RUNNING THIS PART ANYMORE, as of 10/25/23).
+%
+% Put the date as 10/25/23 in the section title, but we've been not running
+% this part since we decided not to limit slopes for PF fitting.
 %
 % This part saves some summary text file and plots, we will not run this
 % part when fitting one subject to prevent overwriting the data and figure.
@@ -1033,7 +1091,7 @@ if (FITALLATONCE)
     % Save out full run info. We will use this file to fit CCSF and
     % calculate AUC.
     save(fullfile(getpref('SpatioSpectralStimulator',whichPref),'CSFAnalysisOutput'));
-
+    
     % We used to make CS summary file here, but now we are making it per
     % each subject and merge in one file, so this part will not be running
     % unless we re-activate the slope restriction for PF fitting (as of
