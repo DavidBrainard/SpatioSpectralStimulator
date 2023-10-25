@@ -59,9 +59,10 @@ clear; close all;
 %% Set parameters here.
 VERBOSE = true;
 FITALLATONCE = true;
-SAVETHEPLOT = true;
 RECORDTESTIMAGEPROFILE = true;
 RECORDTEXTSUMMARYPERSUB = true;
+PLOTCSFCURVE = true;
+SAVETHEPLOT = true;
 
 % Added a fitting option to exclude the test contrasts that are beyond the
 % good contrast range to reproduce. (as of 10/03/23).
@@ -82,10 +83,6 @@ end
 % points beyond this criteria.
 marginalContrastLinearNormal = 0.0565;
 marginalContrastLinearHigh = 0.0827;
-
-% Plotting and saving options.
-PLOTCSFCURVE = true;
-SAVECSFCURVE = true;
 
 % We can lock the randomization when we do bootstrapping so that we can get
 % the same results whenever we re-run the analysis.
@@ -127,7 +124,7 @@ slopeRangeLogUnits = 0.2;
 
 % Bootstrap info.
 BOOTSTRAP_RAWFITS = true;
-nBootstraps = 5;
+nBootstraps = 100;
 bootConfInterval = 0.8;
 BOOTSTRAP_SLOPELIMIT = false;
 
@@ -972,7 +969,7 @@ for ss = 1:nSubjects
                 'fontsize', 13, 'location', 'northeast');
             
             % Save the plot if you want.
-            if (SAVECSFCURVE)
+            if (SAVETHEPLOT)
                 if ispref('SpatioSpectralStimulator',whichPref)
                     testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,'CSF');
