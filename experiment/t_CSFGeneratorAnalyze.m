@@ -411,7 +411,7 @@ for ss = 1:nSubjects
                     % We will print out these two when we make summary
                     % file.
                     [highestContrastExperiment idxHighestContrastExperiment] = max(examinedContrastsLinear);
-                    secondHighestContrastExperiment = examinedContrastsLinear(idxHighestContrastExperiment-1);
+                    secondHighestContrastExperiment = max(setdiff(examinedContrastsLinear,highestContrastExperiment));
                     
                     % Check if the session contains bad contrasts. 
                     maxContrastMOA = max(theContrastData.preExpDataStruct.rawData.testContrast);
