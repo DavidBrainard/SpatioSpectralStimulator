@@ -21,7 +21,7 @@ clear; close all;
 %
 % Set this to true if you want to work with the data that we refitted with
 % bad points omitted.
-FITPFONLYGOODTESTCONTRASTS = false;
+FITPFONLYGOODTESTCONTRASTS = true;
 
 % Set directory differently to save.
 if (FITPFONLYGOODTESTCONTRASTS)
@@ -31,7 +31,7 @@ else
 end
 
 % Decide if you want to save out the table made from this routine.
-SAVETHERESULTS = false;
+SAVETHERESULTS = true;
 
 %% Get available subjects.
 if ispref('SpatioSpectralStimulator',whichPref)
@@ -134,14 +134,10 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
     % this, its contrast would be not perfectly modulated as desired.
     %
     % These values were found using the validation code
-    % SpectralCalCheck_ver2.m. This routine searches the affected sessions
-    % based on these information - 'marginalConeContrastNormal' and
-    % 'marginalConeContrastHigh' - so we can update these as we want.
-    marginalConeContrastNormal = [-0.0427 0.0369 -0.0028];
-    marginalConeContrastHigh = [-0.0579 0.0590 -0.0003];
-    
-    marginalImageContrastNormal = sqrt(sum(marginalConeContrastNormal.^2));
-    marginalImageContrastHigh = sqrt(sum(marginalConeContrastHigh.^2));
+    % SpectralCalCheck_ver2.m. This routine searches affected sessions
+    % based on these marginal contrasts.
+    marginalImageContrastNormal = 0.0565;
+    marginalImageContrastHigh = 0.0827;
     
     marginalLogSensitivityNormal = log10(1/marginalImageContrastNormal);
     marginalLogSensitivityHigh = log10(1/marginalImageContrastHigh);
