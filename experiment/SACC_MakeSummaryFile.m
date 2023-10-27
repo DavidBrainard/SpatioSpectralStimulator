@@ -134,8 +134,8 @@ elseif ~FITPFONLYGOODTESTCONTRASTS
     % this, its contrast would be not perfectly modulated as desired.
     %
     % These values were found using the validation code
-    % SpectralCalCheck_ver2.m. This routine searches affected sessions
-    % based on these marginal contrasts.
+    % SpectralCalCheck_ver2.m and SpectralCalCheck_ver3.m. This routine
+    % searches affected sessions based on these marginal contrasts.
     marginalImageContrastNormal = 0.0565;
     marginalImageContrastHigh = 0.0827;
     
