@@ -70,7 +70,9 @@ switch LOADIMAGETYPE
         % ('olderDate' = 0). Otherwise, set it as you want. For example, if
         % olderDate is set to 5, it will search the fifth file to the most
         % recent one.
-        olderDate = 0;
+        %
+        % Set olderDate to 1 for 'high' image, 2 for 'normal' image.
+        olderDate = 2;
         
         % Load the image file.
         if (ispref('SpatioSpectralStimulator','SACCData'))
@@ -101,6 +103,14 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
     spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
     targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
     targetLambda = theData.targetLambda;
+end
+
+% Recognize the image type.
+gaborContrastHighImageSet = 0.10;
+if (theData.spatialGaborTargetContrast == gaborContrastHighImageSet)
+    imageType = 'high';
+else
+    imageType = 'normal';
 end
 
 %% Open up projector and spectroradiometer.
@@ -432,7 +442,13 @@ for pp = 1:nPlots
         if(TESTONEPOINT)
             % We found index = 183 for Normal image set, and index = 185
             % for high image set.
-            index = 183;
+            switch imageType
+                case 'normal'
+                    index = 183;
+                case 'high'
+                    index = 185;
+            end
+            
             % Contrast cut-off point.
             plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
             % Contrast cut-off line.
