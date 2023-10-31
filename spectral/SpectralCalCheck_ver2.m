@@ -72,13 +72,29 @@ switch LOADIMAGETYPE
         % recent one.
         %
         % Set olderDate to 1 for 'high' image, 2 for 'normal' image.
-        olderDate = 2;
+        % This works because we know, counting backwards from most recent,
+        % which data files correspond to which contrast range.
+        olderDate = 1;
+        gaborContrastHighImageSet = 0.10;
         
         % Load the image file.
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
             testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
             theData = load(testFilename);
+            switch (olderDate)
+                case 1
+                    if (theData.spatialGaborTargetContrast ~= 0.10)
+                        error('Mismatch between intended and obtained highest contrast');
+                    end
+                    if (gaborContrastHighImageSet ~= 0.10)
+                        error('Mismatch between intended and obtained highest contrast');
+                    end
+                case 2
+                    if (theData.spatialGaborTargetContrast ~= 0.07)
+                        error('Mismatch between intended and obtained highest contrast');
+                    end
+            end
         end
         
         % Match the data format to run it smoothly.
@@ -106,11 +122,19 @@ if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','
 end
 
 % Recognize the image type.
-gaborContrastHighImageSet = 0.10;
 if (theData.spatialGaborTargetContrast == gaborContrastHighImageSet)
     imageType = 'high';
+    if (olderDate ~= 1)
+        error('Some sort of contrast logic error');
+    end
 else
     imageType = 'normal';
+    if (olderDate ~= 2)
+        error('Some sort of contrast logic error');
+    end
+    if (theData.spatialGaborTargetContrast ~= 0.07)
+        error('Some sort of contrast logic error');
+    end
 end
 
 %% Open up projector and spectroradiometer.
