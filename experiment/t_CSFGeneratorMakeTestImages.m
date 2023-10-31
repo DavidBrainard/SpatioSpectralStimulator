@@ -96,6 +96,13 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     printGaborSpds = false;
     
     % Make contrast gabor images here.
+    %
+    % DHB: 9/19/23 - Because we run the experiment with noISETBio set to
+    % true, the key thing returned here is
+    % sceneParamsStruct.predefinedRGBImages, a cell array of settings
+    % images for each spatial frequency and contrast. As noted in
+    % MakeISETBioContrastGaborImage, these were computed using the standard
+    % rather than the point cloud method.
     [sceneParamsStruct.predefinedSceneSequences, sceneParamsStruct.predefinedRGBImages, experimentParams.screenPrimarySettings desiredSpdGaborCal] = ...
         MakeISETBioContrastGaborImage(experimentParams.stimContrastsToTest, ...
         colorDirectionParams,spatialTemporalParams,'measure',experimentParams.measure,...
@@ -104,7 +111,8 @@ for ss = 1:numel(sineFreqCyclesPerDegTarget)
     % Set some of the scene parameters.
     sceneParamsStruct.predefinedContrasts = experimentParams.stimContrastsToTest;
     
-    % Save the images and params.
+    % Save the images and params.  These are saved out separately for each
+    % spatial frequency.
     if (ispref('SpatioSpectralStimulator','SACCData'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCData');
         dayTimestr = datestr(now,'yyyy-mm-dd_HH-MM-SS');

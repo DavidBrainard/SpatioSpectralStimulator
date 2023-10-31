@@ -165,6 +165,16 @@ nQuantizeBits = 14;
     'printGaborSpds', options.printGaborSpds,'verbose',options.verboseDetail);
 
 %% Make image from point cloud.
+%
+% DHB: 9/19/23 - This is where things go south for the experiment.  The routine
+% MakeImageSettingsFromPtCld computes the point cloud method settings,
+% but then returns the standard imge settings from the passed
+% stadnardGaborCalObject in the gaborImageObject.standardSettingsGaborImage
+% field. The MakeImageSettingsFromPtCld routine should not be passed
+% the standard image settings, and should not return a standard image
+% settings field.  But, that's what happened, so the standard settings
+% rather than the point cloud settings got used.  The MakeSettingsFromPtCld
+% routine does not actually return the point cloud settings.
 gaborImageObject = MakeImageSettingsFromPtCld(ptCldObject,screenCalObj,standardGaborCalObject,...
     backgroundScreenPrimaryObject.screenBgExcitations,stimulusN,'verbose',options.verboseDetail,'lightVer',options.lightVer);
 
@@ -180,6 +190,9 @@ else
 end
 
 %% Save out the images in a single variable.
+%
+% This is a cell array for the set of spatial frequencies and
+% contrasts for each spatial frequency.
 gaborRGBImage = gaborImageObject.standardSettingsGaborImage;
 
 %% Print out gaborcalspd if you want. You can use it when you want to make sRGB images.
