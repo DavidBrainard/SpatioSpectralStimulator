@@ -559,7 +559,7 @@ for ss = 1:nSubjects
             dateBigList{ss,dd,ff} = dateStr;
         end
         
-        % Finish up and save6 the raw fit plot
+        % Finish up and save the raw fit plot.
         testFileNameImagesRefine = strrep(theData.describe.testFileNameImages,'-','/');
         testFileNameImagesRefine = strrep(testFileNameImagesRefine,'_','/');
         
