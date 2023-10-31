@@ -16,23 +16,44 @@
 %                         fine.
 %    09/07/2023  smo      Added an option to use standard method (sensor to
 %                         primary).
+%    09/25/2023  smo      Cleaned up and commented better.
+%    09/26/2023  smo      Added a plot to compare cone contrast vs. image
+%                         contrast.
 
 %% Initialize.
 clear; close all;
 
-%% Set measurement and setting calculation options.
-verbose = true;
+%% Set measurement option and image setting calculation methods.
+%
+% Set it to 'true' for making new measurements, 'false' for nominal
+% calculations. We can choose both for primary measurements
+% (MEASUREPRIMARY) and test contrast measurements (MEASURETARGETCONTRAST).
 MEASUREPRIMARY = false;
 MEASURETARGETCONTRAST = false;
+
+% We can calculate the image settings with both PointCloud and Standard
+% methods for comparison.
 POINTCLOUD = true;
 STANDARD = true;
 
+% Control the messages and plots.
+verbose = true;
+
 %% Load the image data.
 %
-% You can load image either from fresh test image or from the available image
-% from SACCSFA experiment.
+% Set the image type to load.
+%
+% LOADIMAGETYPE to 'new' will load the image data from the results made
+% from the code SpectralCalCompute.m.
+%
+% LOADIMAGETYPE to 'experiment' will load the image data from the SACCSFA
+% validation file. This option has been newly added for this new analysis
+% comparing between PointCloud and Standard methods.
 LOADIMAGETYPE = 'experiment';
+
+% Load the image data here.
 switch LOADIMAGETYPE
+    % Load new image data.
     case 'new'
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = getpref('SpatioSpectralStimulator','SACCData');
@@ -41,46 +62,60 @@ switch LOADIMAGETYPE
             theData = load(testFilename);
         end
         
+        % Load the SACCSFA validation image data.
     case 'experiment'
-        % Read out the calibration data.
-        olderDate = 0;
+        % Set which file to load.
+        %
+        % Default option is to load the most recent validation file
+        % ('olderDate' = 0). Otherwise, set it as you want. For example, if
+        % olderDate is set to 5, it will search the fifth file to the most
+        % recent one.
+        %
+        % Set olderDate to 1 for 'high' image, 2 for 'normal' image.
+        olderDate = 2;
+        
+        % Load the image file.
         if (ispref('SpatioSpectralStimulator','SACCData'))
             testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCData'),'CheckCalibration');
-            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate+1);
+            testFilename = GetMostRecentFileName(testFiledir,'testImageDataCheck_','olderDate',olderDate);
             theData = load(testFilename);
         end
+        
         % Match the data format to run it smoothly.
         screenCalObj_temp = theData.screenCalObj;
         theData = theData.theData;
         theData.screenCalObj = screenCalObj_temp;
-        
-        % Get the date of the experiment.
-        numExtract = regexp(testFilename,'\d+','match');
-        strYear = numExtract{1};
-        strMonth = numExtract{2};
-        strDay = numExtract{3};
-        measureDate = sprintf('_%s-%s-%s',strYear,strMonth,strDay);
 end
 
 %% Set variables here.
+%
+% All variables we need are stored in the image data we just loaded in
+% 'theData'. Extract some for convenience.
 targetScreenSpd = theData.screenCalObj.get('P_device');
 S = theData.S;
 wls = SToWls(S);
-nPrimaries = 3;
+nPrimaries = size(theData.screenPrimarySpd,2);
 nChannels = theData.channelCalObjs{1}.get('nDevices');
 channelNInputLevels = size(theData.channelCalObjs{1}.get('gammaInput'),1);
-logicalToPhysical = [0:15];
-nTestPoints = size(theData.ptCldScreenContrastCheckCal,2);
 T_cones = theData.T_cones;
 
-% Newly added variables.
 if isfield(theData,{'spatialGaborTargetContrast','targetScreenPrimaryContrast','targetLambda'})
     spatialGaborTargetContrast = theData.spatialGaborTargetContrast;
     targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
     targetLambda = theData.targetLambda;
 end
 
+% Recognize the image type.
+gaborContrastHighImageSet = 0.10;
+if (theData.spatialGaborTargetContrast == gaborContrastHighImageSet)
+    imageType = 'high';
+else
+    imageType = 'normal';
+end
+
 %% Open up projector and spectroradiometer.
+%
+% This happens only either when measuring primaries or test contrasts.
 if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
     % Open the projector.
     initialScreenSettings = [1 1 1]';
@@ -91,7 +126,7 @@ if or(MEASURETARGETCONTRAST,MEASUREPRIMARY)
     SetChannelSettings(theData.screenPrimarySettings,'nInputLevels',channelNInputLevels);
 end
 
-%% Measure primaries here. We can load it too if there is a file saved.
+%% Measure primaries here. We can load it too if there is a saved file.
 if (MEASUREPRIMARY)
     % Measure.
     for pp = 1:nPrimaries
@@ -114,14 +149,16 @@ elseif (~MEASUREPRIMARY)
         % Otherwise, load the measured primary file.
         if (ispref('SpatioSpectralStimulator','SACCData'))
             % Load different file name according to 'normal' set or 'high' test
-            % image contrast sets.
+            % image contrast sets. We set the primary contrast as 0.07 for
+            % normal image, and 0.10 for high image.
             targetScreenPrimaryContrast = theData.targetScreenPrimaryContrast;
-            if (targetScreenPrimaryContrast > 0.07)
+            if (targetScreenPrimaryContrast == 0.10)
                 primaryContrast = 'high';
             else
                 primaryContrast = 'normal';
             end
             
+            % File name convention to load the file.
             switch primaryContrast
                 case 'normal'
                     filenamePart = 'targetScreenSpdMeasured_2';
@@ -140,37 +177,42 @@ elseif (~MEASUREPRIMARY)
     end
 end
 
-% Make plot comparing what we wanted for primaries versus what we got.
+%% Compare what we wanted for primaries versus what we got.
+%
 % What we want is in 'targetScreenSpd', what we got is in
 % 'targetScreenSpdMeasured'.
-figure; clf;
-for pp = 1:nPrimaries
-    subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetScreenSpd(:,pp),'k','LineWidth',3)
-    plot(wls,targetScreenSpdMeasured(:,pp),'r','LineWidth',2);
-    xlabel('Wavelength (nm)');
-    ylabel('Spectral power distribution');
-    legend('Target','Measured');
-    title('Comparison of raw measured and desired spds');
-end
-
-%% Get scale factor between target and measured and plot that comparison too
-for pp = 1:nPrimaries
-    scalePrimaryToTargetFactor(pp) = targetScreenSpdMeasured(:,pp)\targetScreenSpd(:,pp);
-    fprintf('Scale factor in measurement for primary %d is %0.3f\n',pp,scalePrimaryToTargetFactor(pp));
-end
-meanPrimaryScaleFactor = mean(scalePrimaryToTargetFactor);
-
-% Make the plot
-figure; clf;
-for pp = 1:nPrimaries
-    subplot(nPrimaries,1,pp); hold on;
-    plot(wls,targetScreenSpd(:,pp),'k','LineWidth',3)
-    plot(wls,scalePrimaryToTargetFactor(pp)*targetScreenSpdMeasured(:,pp),'r','LineWidth',2);
-    xlabel('Wavelength (nm)');
-    ylabel('Spectral power distribution');
-    legend('Target','Measured');
-    title('Comparison of scaled measured and desired spds');
+%
+% This part will be run only when we measure primary.
+if (MEASUREPRIMARY)
+    figure; clf;
+    for pp = 1:nPrimaries
+        subplot(nPrimaries,1,pp); hold on;
+        plot(wls,targetScreenSpd(:,pp),'k','LineWidth',3)
+        plot(wls,targetScreenSpdMeasured(:,pp),'r','LineWidth',2);
+        xlabel('Wavelength (nm)');
+        ylabel('Spectral power distribution');
+        legend('Target','Measured');
+        title('Comparison of raw measured and desired spds');
+    end
+    
+    % Get scale factor between target and measured and plot that comparison too
+    for pp = 1:nPrimaries
+        scalePrimaryToTargetFactor(pp) = targetScreenSpdMeasured(:,pp)\targetScreenSpd(:,pp);
+        fprintf('Scale factor in measurement for primary %d is %0.3f\n',pp,scalePrimaryToTargetFactor(pp));
+    end
+    meanPrimaryScaleFactor = mean(scalePrimaryToTargetFactor);
+    
+    % Make the plot
+    figure; clf;
+    for pp = 1:nPrimaries
+        subplot(nPrimaries,1,pp); hold on;
+        plot(wls,targetScreenSpd(:,pp),'k','LineWidth',3)
+        plot(wls,scalePrimaryToTargetFactor(pp)*targetScreenSpdMeasured(:,pp),'r','LineWidth',2);
+        xlabel('Wavelength (nm)');
+        ylabel('Spectral power distribution');
+        legend('Target','Measured');
+        title('Comparison of scaled measured and desired spds');
+    end
 end
 
 %% Set each primary to the settings we loaded in and measure
@@ -210,14 +252,21 @@ nQuantizeLevels = theData.nQuantizeLevels;
 screenBgSpd = PrimaryToSpd(screenCalObj,SettingsToPrimary(screenCalObj,theData.ptCldScreenSettingsCheckCal(:,1)));
 screenBgExcitations = T_cones * screenBgSpd;
 
-if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
-    rawMonochromeUnquantizedContrastCheckCal = theData.rawMonochromeUnquantizedContrastCheckCal;
-else
-    rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
-end
-
-% We set more contrasts to test if we skip the measurements.
-if ~and(MEASUREPRIMARY,MEASURETARGETCONTRAST)
+% Set test contrasts. We used to use a total of 15 test contrats, but when
+% we do nominal settings comparison, we set far more test contrasts.
+if (MEASURETARGETCONTRAST)
+    % These are 15 contrasts that we used for test image vaildation.
+    if isfield(theData,'rawMonochromeUnquantizedContrastCheckCal')
+        rawMonochromeUnquantizedContrastCheckCal = theData.rawMonochromeUnquantizedContrastCheckCal;
+    else
+        rawMonochromeUnquantizedContrastCheckCal = [0 0.05 -0.05 0.10 -0.10 0.15 -0.15 0.20 -0.20 0.25 -0.25 0.5 -0.5 1 -1];
+    end
+    
+elseif (~MEASURETARGETCONTRAST)
+    % When we use only nominal comparison skipping the measurements, we set
+    % the contrasts a lot more. This setting generates 202 test contrasts.
+    % It is fine enough to decide the maximum contrast that generates
+    % 'good' image.
     contrastPos = [0:0.01:1];
     contrastNeg = [0:-0.01:-1];
     rawMonochromeUnquantizedContrastCheckCal = [contrastPos contrastNeg];
@@ -225,6 +274,7 @@ end
 
 % Calculate the desired cone cone contrasts.
 rawMonochromeContrastCheckCal = 2*(PrimariesToIntegerPrimaries((rawMonochromeUnquantizedContrastCheckCal +1)/2,nQuantizeLevels)/(nQuantizeLevels-1))-1;
+desiredImageContrastCheckCal = theData.spatialGaborTargetContrast * rawMonochromeContrastCheckCal;
 desiredContrastCheckCal = theData.spatialGaborTargetContrast * theData.targetStimulusContrastDir * rawMonochromeContrastCheckCal;
 desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screenBgExcitations);
 
@@ -234,6 +284,7 @@ desiredExcitationsCheckCal = ContrastToExcitation(desiredContrastCheckCal,screen
 if (POINTCLOUD)
     % Optional recompute of target settings.
     RECOMPUTE = true;
+    
     if (RECOMPUTE)
         % Set up point cloud for finding best settings.
         [contrastPtCld,ptCldSettingsCal] = SetupContrastPointCloud(screenCalObj,screenBgExcitations,'verbose',verbose);
@@ -256,77 +307,200 @@ if (POINTCLOUD)
     end
 end
 
-% 2) Standard method
+% 2) Standard method.
 if (STANDARD)
     % Get primaries using standard calibration code, and desired spd without
     % quantizing.
     standardPrimariesGaborCal = SensorToPrimary(screenCalObj,desiredExcitationsCheckCal);
     standardDesiredSpdGaborCal = PrimaryToSpd(screenCalObj,standardPrimariesGaborCal);
     
-    % Gamma correct and quantize (if gamma method set to 2 above; with gamma
-    % method set to zero there is no quantization).  Then convert back from
-    % the gamma corrected settings.
+    % Gamma correct and quantize. Then convert back from the gamma
+    % corrected settings.
     standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
     standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
     standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
     standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 end
 
-%% Compare the nominal contrasts between standard and point cloud methods.
+%% Compare the nominal contrasts to compate Standard method to PointCloud.
 %
-% Get Point cloud settings unless it is re-computed.
+% Get Point cloud settings when it is not recomputed. As we increased the
+% number of test contrasts when we compare the nominal contrasts, so
+% RECOMPUTE should be set as 'true' when we are testing more than 15
+% contrats, which were used in validation for SACCSFA experiment.
 if (~RECOMPUTE)
     ptCldScreenContrastCheckCal = theData.ptCldScreenContrastCheckCal;
 end
 
-% Plot it here.
+%% Plot 1) Desired vs. Nominal contrasts.
 figure; hold on;
-figurePosition = [0 0 1500 500];
+figurePosition = [0 0 1300 700];
 set(gcf,'position',figurePosition);
 sgtitle('Nominal contrast: Standard vs. Point cloud methods');
 titleHandles = {'L-cone', 'M-cone', 'S-cone'};
 markerColorHandles = {'r','g','b'};
 
-% testIndex = 183 for normal image set when we set the interval of 0.01.
-% The highest cone cone trast [L M S] = [-0.0427 0.0369 -0.0028] -> image
-% contrast = 0.0565.
-% testIndex = 101 for normal image set. The other side of good. [0.0493
-% -0.0496 -0.0003] -> 0.0699
-%
-% textIndex = 185 for high image set.
-% The highest cone cone trast [L M S] = [-0.0579 0.0590 -0.0003] -> image
-% contrast = 0.0827
-% testIndex = 101 for high image set. The other side of good. [0.0694
-% -0.0717 -0.0012] -> 0.0998
-testIndex = 101;
-for pp = 1:nPrimaries
-    subplot(1,3,pp); hold on;
+% Make a loop for plotting each cone case. We decided to plot the results
+% separately over the calculation methods, Standard and PointCloud. Making
+% a loop in this way is not the most elaborate, so we may want to update
+% this part later on.
+nPlots = nPrimaries*2;
+for pp = 1:nPlots
+    subplot(2,3,pp); hold on;
     
-    % Standard method.
-    plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+    % Save the calculation type per each order.
+    if ismember(pp,[1 2 3])
+        calculationMethod = 'Standard';
+    elseif ismember (pp, [4 5 6])
+        calculationMethod = 'PointCloud';
+    end
     
-    % PointCloud method
-    plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
-    
-    % Test - Standard method.
-    plot(desiredContrastCheckCal(pp,1:testIndex),standardPredictedContrastGaborCal(pp,1:testIndex),'o','MarkerSize',14,'MarkerFaceColor','c'); 
-    
+    % We will plot Standard and PointCloud methods separately.
+    switch calculationMethod
+        case 'Standard'
+            % Standard method.
+            plot(desiredContrastCheckCal(pp,:),standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        case 'PointCloud'
+            % Update the order to match the array size. Again, this is not
+            % elaborate which will be updated later on.
+            pp = pp - nPrimaries;
+            % PointCloud method
+            plot(desiredContrastCheckCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    end
     title(titleHandles{pp},'fontsize',15);
-    xlabel('Desired contrast','fontsize',15);
-    ylabel('Nominal contrast','fontsize',15);
+    xlabel('Desired cone contrast','fontsize',15);
+    ylabel('Nominal cone contrast','fontsize',15);
     axisLim = 0.10;
     xlim([-axisLim axisLim]);
     ylim([-axisLim axisLim]);
     axis('square');
     line([-axisLim,axisLim], [-axisLim,axisLim], 'LineWidth', 1, 'Color', 'k');
     grid on;
-    legend('Standard','PointCloud','location','southeast','fontsize',13);
+    
+    % Add legend.
+    switch calculationMethod
+        case 'Standard'
+            legend('Standard','location','southeast','fontsize',13);
+        case 'PointCloud'
+            legend('PointCloud','location','southeast','fontsize',13);
+        otherwise
+    end
 end
 
-% Another way to see it.
+% From the above figure, we visually searched that the number of index
+% (183) of the test contrasts was about the marginal contrast that makes a
+% good test images. Its cone contrast was [L M S] = [-0.0427 0.0369
+% -0.0028] which generates the image contrast of 0.0565. The other side
+% (index=101) was good [L M S] = [0.0493 -0.0496 -0.0003], which generates
+% the image contrast of 0.0699. This is for normal image set.
+%
+% Likewise, for high image set, the good test image index was (185) and its
+% cone contrast was [L M S] = [-0.0579 0.0590 -0.0003] which generates the
+% image contrast of 0.0827. Also, the other side was good (index = 101),
+% where its cone contrast was [L M S] = [0.0694 -0.0717 -0.0012], its test
+% image contrast is 0.0998.
+
+%% Plot 2) Nominal cone contrast over desired test image contrast.
+% After the meeting (Semin and David) on 09/26/23, we added this part.
+figure; hold on;
+figurePosition = [0 0 1300 700];
+set(gcf,'position',figurePosition);
+sgtitle('Desired image contrast vs. Nominal contrast');
+titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+markerColorHandles = {'r','g','b'};
+
+% Again, not fancy loop. Same graph as the above, but different way to look
+% at it with updated x-axis as the desired image contrast.
+nPlots = nPrimaries*2;
+for pp = 1:nPlots
+    subplot(2,3,pp); hold on;
+    
+    % Save the calculation type per each order.
+    if ismember(pp,[1 2 3])
+        calculationMethod = 'Standard';
+    elseif ismember (pp, [4 5 6])
+        calculationMethod = 'PointCloud';
+    end
+    
+    % We will plot Standard and PointCloud methods separately.
+    if pp <= nPrimaries
+        % Standard method.
+        plot(desiredImageContrastCheckCal,standardPredictedContrastGaborCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+        
+        % Search for a marginal contrast making a good image. Set the
+        % index from 1 to 202 (number of nominal contrasts to test) so that
+        % you can visually check from when the contrast reproduction goes
+        % bad.
+        %
+        % For now, we set the cone contrasts within the same index of the
+        % test contrats.
+        %
+        % We will mark the cut-off contrast points as a line and a point on
+        % the figure.
+        TESTONEPOINT = true;
+        if(TESTONEPOINT)
+            % We found index = 183 for Normal image set, and index = 185
+            % for high image set.
+            switch imageType
+                case 'normal'
+                    index = 183;
+                case 'high'
+                    index = 185;
+            end
+            
+            % Contrast cut-off point.
+            plot(desiredImageContrastCheckCal(index),standardPredictedContrastGaborCal(pp,index),'o','MarkerSize',14,'markerfacecolor','y','markeredgecolor','k');
+            % Contrast cut-off line.
+            plot(ones(1,2)*desiredImageContrastCheckCal(index),[-0.1 0.1],'color',[1 1 0 0.7],'linewidth',5);
+            
+            % Calculate the marginal contrast from the nominal contrasts to
+            % print out.
+            marginalContrast = sqrt(sum(standardPredictedContrastGaborCal(:,index).^2));
+            % We will only print once by setting 'pp' to 1.
+            if pp == 1
+                fprintf('Good maximum image contrast = (%.4f / %.4f) / Log sensitivity = (%.4f) \n',marginalContrast, abs(desiredImageContrastCheckCal(index)), log10(1/marginalContrast));
+            end
+        end
+    else
+        % Update the order to match the array size. Again, this is not
+        % elaborate which will be updated later on.
+        pp = pp - nPrimaries;
+        
+        % PointCloud method
+        plot(desiredImageContrastCheckCal,ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+        plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+    end
+    title(titleHandles{pp},'fontsize',15);
+    xlabel('Desired image contrast','fontsize',15);
+    ylabel('Nominal cone contrast','fontsize',15);
+    axisLim = 0.10;
+    xlim([-axisLim axisLim]);
+    ylim([-axisLim axisLim]);
+    axis('square');
+    grid on;
+    
+    % Add legend.
+    switch calculationMethod
+        case 'Standard'
+            if TESTONEPOINT
+                legend('Nominal (Standard)','Desired (Standard)','Cut-off point','location','southeast','fontsize',11);
+            else
+                legend('Nominal (Standard)','Desired (Standard)', 'location','southeast','fontsize',11);
+            end
+        case 'PointCloud'
+            legend('Nominal (PointCloud)','Desired (PointCloud)','location','southeast','fontsize',11);
+        otherwise
+    end
+end
+
+%% Plot 3) Direct comparison of nominal contrasts between Standard vs.
+% PointCloud.
 figure; clf;
 set(gcf,'position',figurePosition);
 sgtitle('Direct comparison of nominal contrasts: Standard vs. Point cloud methods');
+
+% Here we make a loop again for each cone case.
 for pp = 1:nPrimaries
     subplot(1,3,pp); hold on;
     plot(standardPredictedContrastGaborCal(pp,:),ptCldScreenContrastCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
@@ -341,12 +515,17 @@ for pp = 1:nPrimaries
     grid on;
 end
 
-%% Measure contrasts of the settings we computed in SpectralTestCal.
+%% From here, we measure the test contrasts using spectroradiometer.
 %
 % Measure the contrast points. We've already got the settings so all we
 % need to do is loop through and set a uniform field to each of the
 % settings in ptCldScreenSettingsCheckCal and measure the corresponding
 % spd.
+%
+% We updated this code to measure the test contrasts from two different
+% methods, PointCloud and Standard at the same time. As we set the test
+% contrasts as 15, so here we will make total 30 measurements (15 contrasts
+% x 2 different methods).
 if (MEASURETARGETCONTRAST)
     % Settings using Point cloud method.
     if (POINTCLOUD)
@@ -355,6 +534,7 @@ if (MEASURETARGETCONTRAST)
             S,window,windowRect,'measurementOption',true,'verbose',verbose);
         disp('Measurements finished - (Settings: Point cloud)');
     end
+    
     % Settings using the standard method.
     if (STANDARD)
         disp('Measurements wil begin! - (Settings: Standard)');
@@ -366,7 +546,10 @@ end
 
 %% Make plot of measured versus desired spds.
 %
-% The desired spds are in ptCldScreenSpdCheckCal
+% The desired spds from  are in ptCldScreenSpdCheckCal. The measured spds
+% from PointCloud is in ptCldSpd and the measured spds from Standard method
+% is in standardSpd. We just shortened the variable names here not to be
+% confused.
 if (MEASURETARGETCONTRAST)
     ptCldSpd = ptCldScreenSpdMeasuredCheckCal;
     standardSpd = standardScreenSpdMeasuredCheckCal;
@@ -376,11 +559,16 @@ if (MEASURETARGETCONTRAST)
     figureSize = 1000;
     figurePosition = [1200 300 figureSize figureSize];
     set(gcf,'position',figurePosition);
+    
+    nTestPoints = size(rawMonochromeUnquantizedContrastCheckCal,2);
     for tt = 1:nTestPoints
         subplot(round(nTestPoints/2),2,tt); hold on;
-        plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3) % Target spectra
-        plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2); % Measured spectra - point cloud
-        plot(wls,standardSpd(:,tt),'b--','LineWidth',2); % Measured spectra - standard
+        % Target spectra.
+        plot(wls,ptCldScreenSpdCheckCal(:,tt),'k-','LineWidth',3);
+        % Measured spectra (PointCloud).
+        plot(wls,ptCldSpd(:,tt),'r-','LineWidth',2);
+        % Measure spectra (Standard).
+        plot(wls,standardSpd(:,tt),'b--','LineWidth',2);
         xlabel('Wavelength (nm)')
         ylabel('Spectral power distribution')
         legend('Target','Measured(PT)','Measured(ST)')
@@ -388,8 +576,9 @@ if (MEASURETARGETCONTRAST)
     end
 end
 
-%% Compute cone contrasts for each spectrum relative to the background
+%% Compute cone contrasts for each spectrum relative to the background.
 %
+% This part only runs when we measured the test contrasts.
 if (MEASURETARGETCONTRAST)
     % 1) Point cloud
     % We use the fact that the background settings are in the first column.
@@ -426,7 +615,6 @@ if (MEASURETARGETCONTRAST)
     legend('L-measured','M-measured','S-measured','L-nominal','M-nominal','S-nominal','location','southeast','fontsize',12);
     title(sprintf('Desired vs. Measured LMS Contrast, %s','Point cloud'));
     
-    
     % 2) Standard method
     % We use the fact that the background settings are in the first column.
     standardExcitationsMeasured = T_cones * standardSpd;
@@ -461,8 +649,11 @@ if (MEASURETARGETCONTRAST)
 end
 
 %% Close screen and save out the measurement data.
+%
+% If we measured new target contrasts, we close the projector and
+% spectroradiometer, and save the results.
 if (MEASURETARGETCONTRAST)
-    % Close.
+    % Close the projector and spectroradiometer.
     CloseScreen;
     CloseSpectroradiometer;
     
@@ -486,8 +677,10 @@ end
 
 %% This part is from SpectralCalAnalyze.
 %
+% This shows basically the same results, but we put it here, which are
+% origianlly from the analyzing code, SpectralCalAnalyze.m.
 if (MEASURETARGETCONTRAST)
-    % 1) Point cloud
+    % 1) Point cloud.
     %
     % Set figure size and position.
     contrastFig = figure; hold on;
@@ -517,7 +710,7 @@ if (MEASURETARGETCONTRAST)
         grid on;
     end
     
-    % 2) Standard method
+    % 2) Standard method.
     %
     % Set figure size and position.
     contrastFig = figure; hold on;
@@ -545,5 +738,87 @@ if (MEASURETARGETCONTRAST)
         legend({'Measured','Nominal'},'location','southeast');
         title(sprintf('Cone class %d',pp),'fontsize',15);
         grid on;
+    end
+    
+    %% After the meeting (David and Semin, 09/26/23), we added one more plot
+    % comparing the desired image contrast vs. cone contrasts.
+    if ~exist('desiredImageContrastCheckCal')
+        desiredImageContrastCheckCal = theData.spatialGaborTargetContrast * rawMonochromeContrastCheckCal;
+    end
+    
+    figure; hold on;
+    figurePosition = [0 0 1300 700];
+    set(gcf,'position',figurePosition);
+    sgtitle('Desired image contrast vs. Nominal contrast');
+    titleHandles = {'L-cone', 'M-cone', 'S-cone'};
+    markerColorHandles = {'r','g','b'};
+    
+    % Again, not fancy loop. Same graph as the above, but different way to look
+    % at it with updated x-axis as the desired image contrast.
+    nPlots = nPrimaries*2;
+    for pp = 1:nPlots
+        subplot(2,3,pp); hold on;
+        
+        % Save the calculation type per each order.
+        if ismember(pp,[1 2 3])
+            calculationMethod = 'Standard';
+        elseif ismember (pp, [4 5 6])
+            calculationMethod = 'PointCloud';
+        end
+        
+        % We will plot Standard and PointCloud methods separately.
+        if pp <= nPrimaries
+            % Standard method.
+            plot(desiredImageContrastCheckCal,standardScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            
+            % Here we sort the desired contrast (x-axis) in an acsending
+            % order so that we can make the line plot correct.
+            [desiredImageContrastCheckCalSorted I] = sort(desiredImageContrastCheckCal);
+            standardPredictedContrastGaborCalSorted = standardPredictedContrastGaborCal(:,I);
+            
+            % Set line color.
+            lineColorHandle = zeros(1,3);
+            lineColorHandle(pp) = 1;
+            lineColorAlpha = 0.2;
+            lineColorHandle(end+1) = lineColorAlpha;
+            plot(desiredImageContrastCheckCalSorted,standardPredictedContrastGaborCalSorted(pp,:),'-','color',lineColorHandle,'linewidth',6);
+        else
+            % Update the order to match the array size. Again, this is not
+            % elaborate which will be updated later on.
+            pp = pp - nPrimaries;
+            
+            % PointCloud method
+            plot(desiredImageContrastCheckCal,ptCldScreenContrastMeasuredCheckCal(pp,:),'o','MarkerSize',14,'MarkerFaceColor',markerColorHandles{pp});
+            plot(desiredImageContrastCheckCal,desiredContrastCheckCal(pp,:),'o','MarkerSize',17,'MarkerEdgeColor',markerColorHandles{pp});
+            
+            % Plot the nominal calculation results at a line.
+            [desiredImageContrastCheckCalSorted I] = sort(desiredImageContrastCheckCal);
+            ptCldScreenContrastCheckCalSorted = ptCldScreenContrastCheckCal(:,I);
+            
+             % Set line color.
+            lineColorHandle = zeros(1,3);
+            lineColorHandle(pp) = 1;
+            lineColorAlpha = 0.2;
+            lineColorHandle(end+1) = lineColorAlpha;
+            plot(desiredImageContrastCheckCalSorted,ptCldScreenContrastCheckCalSorted(pp,:),'-','color',lineColorHandle,'linewidth',6);
+        end
+        title(titleHandles{pp},'fontsize',15);
+        xlabel('Desired image contrast','fontsize',15);
+        ylabel('Cone contrast','fontsize',15);
+        axisLim = 0.10;
+        xlim([-axisLim axisLim]);
+        ylim([-axisLim axisLim]);
+        axis('square');
+        grid on;
+        
+        % Add legend.
+        switch calculationMethod
+            case 'Standard'
+                legend('Measured (Standard)','Desired (Standard)','Nominal (Standard)', 'location','southeast','fontsize',11);
+            case 'PointCloud'
+                legend('Measured (PointCloud)','Desired (PointCloud)','Nominal (PointCloud)', 'location','southeast','fontsize',11);
+            otherwise
+        end
     end
 end

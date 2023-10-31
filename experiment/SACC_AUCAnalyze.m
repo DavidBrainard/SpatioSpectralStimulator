@@ -4,22 +4,38 @@
 % different filters.
 
 % History:
-%    5/2/23    smo    - Wrote it.
-%    5/9/23    smo    - Added some more plots.
+%    05/02/23    smo    - Wrote it.
+%    05/09/23    smo    - Added some more plots.
+%    10/18/23    smo    - Added an option which directory to save the
+%                         results.
 
 %% Initialize.
 clear; close all;
 
 %% Save the plots if you want.
-SAVEPLOTS = false;
+SAVEPLOTS = true;
 imgFileFormat = '.tiff';
 
 %% Read the AUC summary table.
-if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-    testFilename = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_AUC.xlsx');
-    T = readtable(testFilename);
+%
+% Choose the directory where to load the data from and save the results. As
+% we did PF fitting again with bad points omitted, so set
+% 'FITPFONLYGOODTESTCONTRASTS' to true if you want to use the updated
+% results with bad contrasts omitted (as of 10/18/23).
+%
+% However, we will always load the gender, MPOD, and Iso-luminance data
+% from the original analysis folder 'SACC_analysis'.
+FITPFONLYGOODTESTCONTRASTS = true;
+if (FITPFONLYGOODTESTCONTRASTS)
+    whichPref = 'SACCAnalysisFinal';
+else
+    whichPref = 'SACCAnalysis';
 end
+
+% Load the AUC table here.
+testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+testFilename = fullfile(testFiledir, 'SACC_Experiment_Results_Summary_AUC.xlsx');
+T = readtable(testFilename);
 
 %% Calculate mean and standard error of AUC.
 %
@@ -59,15 +75,11 @@ end
 
 % Mean log sensitivity per each filter.
 meanLogSensitivity = mean(logSensitivity);
-% for ss = 1:nSFs
-%     logSensitivityAllFiltersTemp = squeeze(logSensitivity(:,ss,:));
-%     logSensitivityAllFiltersTemp = reshape(logSensitivityAllFiltersTemp, [size(logSensitivityAllFiltersTemp,1)*size(logSensitivityAllFiltersTemp,2) 1]);
-%     stdErrorAllFiltersAndSubjects(ss) = std(logSensitivityAllFiltersTemp)/sqrt(length(logSensitivityAllFiltersTemp));
-% end
 
 %% Get subject gender info, MPOD, Iso-luminance results.
 %
-% Subject gender.
+% Subject gender. We will read this table from the original directory even
+% when we do use the updated data with bad contrasts omitted.
 if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
     testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
     testFilename = fullfile(testFiledir, 'Experiment_Progress.xlsx');
@@ -132,7 +144,6 @@ meanGreenFlicker = mean(cell2mat(dataFlicker.Flicker.RawDataGreen));
 % Calculate flicker score. This will be used for the analysis.
 flickerScore = meanRedNormalizedFlicker./meanGreenFlicker;
 
-%% Plotting the results from here.
 %% 1) Plot AUC over the filters (bar graph)
 figure; hold on;
 xAxisTicks = [1:nFilters];
@@ -152,12 +163,10 @@ subtitle(sprintf('Each bar is the average of (%d) subjects',nSubjects),'FontSize
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('AUC_Over_Filters',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('AUC_Over_Filters',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 2) Plot AUC over the subjects (bar graph)
@@ -181,12 +190,10 @@ sgtitle('AUC results over the subjects per each Filter','Fontsize',20);
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('AUC_Over_Subjects',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('AUC_Over_Subjects',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 3) Plot AUC over the subjects and filters (line graph)
@@ -212,12 +219,10 @@ subtitle(sprintf('Mean result is the average of (%d) subjects',nSubjects),'FontS
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('AUC_Over_SubjetsAndFilters',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('AUC_Over_SubjetsAndFilters',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 4-1) Plot Grand cCSF (line graph - separate).
@@ -264,12 +269,10 @@ title('This is the mean results of all filters and all subjects', 'fontsize',13)
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('AUC_GrandMean',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('AUC_GrandMean',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 4-3) Plot Grand CCSF (line graph - together in one figure).
@@ -293,12 +296,10 @@ title('Mean log sensitivity over spatial frequency per each filter','fontsize',1
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('AUC_GrandMean_Overlap',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('AUC_GrandMean_Overlap',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 5-1) Sensitivity difference across the filters.
@@ -357,12 +358,11 @@ for ff = 2:nFilters
     
     % Save the plot.
     if (SAVEPLOTS)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-            testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s',filterOptions{ff}),imgFileFormat));
-            saveas(gcf,testFilename);
-            fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-        end
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+        testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s',filterOptions{ff}),imgFileFormat));
+        saveas(gcf,testFilename);
+        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
+        
     end
 end
 
@@ -420,12 +420,10 @@ for ff = 2:nFilters
     
     %% Save the plot.
     if (SAVEPLOTS)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-            testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s_over_SFs',filterOptions{ff}),imgFileFormat));
-            saveas(gcf,testFilename);
-            fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-        end
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+        testFilename = fullfile(testFiledir, append(sprintf('SensitivityDifference_A_and_%s_over_SFs',filterOptions{ff}),imgFileFormat));
+        saveas(gcf,testFilename);
+        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
     end
 end
 
@@ -473,12 +471,10 @@ legend(sprintf('Male (N=%d)',nMales),sprintf('Female (N=%d)',nFemales),'fontsize
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('GenderEffect_CCSF',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('GenderEffect_CCSF',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 6-2) Gender effect on AUC.
@@ -541,12 +537,10 @@ legend(f([1 17 33 34]),legendHandles,'location','northeastoutside','fontsize',14
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('GenderEffect_AUC',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('GenderEffect_AUC',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 7-1) MPOD on CCSF - Group results.
@@ -631,12 +625,10 @@ legend(sprintf('MPOD low %.2f (N=%d)',meanMPOD_low,nLows),sprintf('MPOD med %.2f
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('MPOD_CCSF_Group',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('MPOD_CCSF_Group',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 7-2) MPOD on CCSF - Individual results.
@@ -663,12 +655,10 @@ subtitle('More yellowish line is, higher MPOD value', 'fontsize',15);
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('MPOD_CCSF_Individual',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('MPOD_CCSF_Individual',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 7-3) MPOD effect on AUC.
@@ -712,12 +702,10 @@ sgtitle('MPOD vs. AUC', 'fontsize',18);
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('MPOD_AUC',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('MPOD_AUC',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 8-1) Iso-luminance determination results on CCSF - Group results.
@@ -781,12 +769,10 @@ legend(sprintf('Flicker low %.2f (N=%d)',mean(flickerScore(idxFlickerLow)),lengt
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('IsoLuminace_CCSF_Group',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('IsoLuminace_CCSF_Group',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 8-2) Iso-luminance determination results on CCSF - Individual.
@@ -813,12 +799,10 @@ subtitle('More reddish line is, higher flicker score', 'fontsize',15);
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('IsoLuminance_CCSF_Individual',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('IsoLuminance_CCSF_Individual',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end
 
 %% 8-3) Iso-luminance determination results on AUC - Individual.
@@ -864,10 +848,8 @@ sgtitle('Iso-luminance determination vs. AUC', 'fontsize',18);
 
 % Save the plot.
 if (SAVEPLOTS)
-    if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-        testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'));
-        testFilename = fullfile(testFiledir, append('IsoLuminance_AUC',imgFileFormat));
-        saveas(gcf,testFilename);
-        fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
-    end
+    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref));
+    testFilename = fullfile(testFiledir, append('IsoLuminance_AUC',imgFileFormat));
+    saveas(gcf,testFilename);
+    fprintf('Plot has been saved successfully! - (%s) \n', testFilename);
 end

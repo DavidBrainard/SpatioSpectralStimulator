@@ -313,6 +313,8 @@ else
     medianSlopeBoot = [];
     lowSlopeBoot = [];
     highSlopeBoot = [];
+    thresholdFittedBootCross1 = [];
+    thresholdFittedBootCross2 = [];
 end
 
 % Make a smooth curves with finer stimulus levels.
@@ -356,13 +358,27 @@ if (options.verbose)
     end
     
     % Plot best fit here.
+    %
+    % Raw data.
     h_data = scatter(stimLevelsPlot, pCorrect, options.pointSize,...
         'MarkerEdgeColor', zeros(1,3), 'MarkerFaceColor', ones(1,3) * 0.5, 'MarkerFaceAlpha', 0.5);
-    h_pffit = plot(fineStimLevelsPlot,smoothPsychometric,'r','LineWidth',3);
     
-    % Mark the threshold point (red point).
+    % Plot the PF fitting results.
+    %
+    % Set the line color differently if it passes lower than expecteced
+    % number of fitting points. We expect to have the number of 8 points to
+    % fit for SACC project, but as we re-fit the PF without bad contrast
+    % points, so we want to plot it in different color. We may delete this
+    % part later on.
+    %
+    % Now it always draw in red color (as of 10/12/23).
+    PFLineColor = 'r';
+    h_pffit = plot(fineStimLevelsPlot,smoothPsychometric,PFLineColor,'LineWidth',3);
+    
+    % Mark the threshold point (red point or yellow).
     if(options.axisLog)
-        h_thresh = plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor','r','MarkerSize',12);
+        threshMarkerFaceColor = 'r';
+        h_thresh = plot(thresholdFittedLog,options.thresholdCriterion,'ko','MarkerFaceColor',threshMarkerFaceColor,'MarkerSize',12);
         
         % Mark the median bootstrapped threshold point (green point) and
         % its confidence interval (green line).
@@ -445,5 +461,7 @@ if (options.verbose)
     end
     
     drawnow;
-    
+else
+    % Print out the legendHandles empty when the 'verbose' is set to false.
+    legendHandles = [];
 end

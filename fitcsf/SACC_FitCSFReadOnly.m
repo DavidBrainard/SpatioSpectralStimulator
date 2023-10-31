@@ -9,6 +9,8 @@
 %    3/28/23   smo    - Wrote it.
 %    4/24/23   smo    - Now we save the CCSF figure and also read the
 %                       results continuosly by key press.
+%    10/12/23  smo    - Added an option to save the figure in the
+%                       different directory if we omit the bad contrasts.
 
 %% Initialize.
 clear; close all;
@@ -16,7 +18,7 @@ clear; close all;
 %% Set variables.
 SaveFigure = true;
 PlotAllSubjects = true;
-WaitForKeyPress = true;
+WaitForKeyPress = false;
 
 fittingMode = 'crossValBootAcrossFmincon';
 filterOptions = {'A', 'B', 'C', 'D', 'E'};
@@ -24,43 +26,55 @@ imgFormat = 'tiff';
 figureSize = 2000;
 figurePosition = [200 300 figureSize figureSize];
 
+% Set this true if we want to deal with the PF fitting results without the
+% bad points (as of 10/12/23).
+FITPFONLYGOODTESTCONTRASTS = true;
+
+% Set directory differently to save.
+if (FITPFONLYGOODTESTCONTRASTS)
+    whichPref = 'SACCAnalysisFinal';
+else
+    whichPref = 'SACCAnalysis';
+end
+
 %% Check the subjects with all data.
-if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-    testFileList = dir(testFiledir);
+if ispref('SpatioSpectralStimulator',whichPref)
+    testFiledir = getpref('SpatioSpectralStimulator',whichPref);
+end
+testFileList = dir(testFiledir);
+
+% Find available data of subject and spatial frequency.
+for tt = 1:length(testFileList)
+    testFilenameList{tt}  = testFileList(tt).name;
+end
+idxSubjectName = find(str2double(testFilenameList)>0);
+subjectNameOptions = testFilenameList(idxSubjectName);
+
+% Get the subjects having all figures available.
+subjectAvailable = {};
+for ss = 1:length(subjectNameOptions)
+    % Get the subject number.
+    whichSub = subjectNameOptions{ss};
     
-    % Find available data of subject and spatial frequency.
-    for tt = 1:length(testFileList)
-        testFilenameList{tt}  = testFileList(tt).name;
+    % Set the directory of the figures saved per each subject.
+    if ispref('SpatioSpectralStimulator',whichPref)
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
     end
-    idxSubjectName = find(str2double(testFilenameList)>0);
-    subjectNameOptions = testFilenameList(idxSubjectName);
+    targetFilename = append(sprintf('CSF_%s',whichSub));
+    fileList = dir(append(fullfile(testFiledir,targetFilename),'*'));
     
-    % Get the subjects having all figures available.
-    subjectAvailable = {};
-    for ss = 1:length(subjectNameOptions)
-        % Get the subject number.
-        whichSub = subjectNameOptions{ss};
-        
-        % Set the directory of the figures saved per each subject.
-        testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-        testFiledir = fullfile(testFiledir,whichSub,'CSF');
-        targetFilename = append(sprintf('CSF_%s',whichSub));
-        fileList = dir(append(fullfile(testFiledir,targetFilename),'*'));
-        
-        % Check if each subject has CSF plots for all filters.
-        nFiles = 0;
-        for ff = 1:length(filterOptions)
-            fileNameTemp = sprintf('%s_%s.%s',targetFilename,filterOptions{ff},imgFormat);
-            for ll = 1:length(fileList)
-                nFiles = nFiles + contains(fileNameTemp,fileList(ll).name);
-            end
+    % Check if each subject has CSF plots for all filters.
+    nFiles = 0;
+    for ff = 1:length(filterOptions)
+        fileNameTemp = sprintf('%s_%s.%s',targetFilename,filterOptions{ff},imgFormat);
+        for ll = 1:length(fileList)
+            nFiles = nFiles + contains(fileNameTemp,fileList(ll).name);
         end
-        
-        % Save if the subject has all available figures.
-        if (nFiles == length(filterOptions))
-            subjectAvailable{end+1} = whichSub;
-        end
+    end
+    
+    % Save if the subject has all available figures.
+    if (nFiles == length(filterOptions))
+        subjectAvailable{end+1} = whichSub;
     end
 end
 
@@ -97,8 +111,9 @@ for ss = 1:nSubjects
     end
     
     % Get file location.
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-    testFiledir = fullfile(testFiledir,whichSub,'CSF');
+    if ispref('SpatioSpectralStimulator',whichPref)
+        testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
+    end
     
     % Make a figure window.
     figure;
@@ -137,14 +152,12 @@ for ss = 1:nSubjects
     
     % Save the results.
     if (SaveFigure)
-        if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-            testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-            testFiledir = fullfile(testFiledir,whichSub,'CSF');
-            testFilename = fullfile(testFiledir,...
-                sprintf('CSF_%s_AllFiltersSmooth.%s',whichSub,imgFormat));
-            saveas(gcf, testFilename);
-            fprintf('\t CSF plot has been successfully saved! \n');
+        if ispref('SpatioSpectralStimulator',whichPref)
+            testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),whichSub,'CSF');
         end
+        testFilename = fullfile(testFiledir,sprintf('CSF_%s_AllFiltersSmooth.%s',whichSub,imgFormat));
+        saveas(gcf, testFilename);
+        fprintf('\t CSF plot has been successfully saved! \n');
     end
     
     % Key press to draw next plot.

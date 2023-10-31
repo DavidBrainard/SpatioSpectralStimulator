@@ -34,6 +34,8 @@
 %                        filter/subject combination.
 %    04/17/23   smo    - Fitting has been updated to be done in log CS and
 %                        linear SF space.
+%    10/12/23   smo    - Added an option to save the figure in the
+%                        different directory if we omit the bad contrasts.
 
 %% Initialize.
 clear; close all;
@@ -51,12 +53,19 @@ figureSize = 800;
 figurePositionData = [200 300 figureSize figureSize-200];
 figurePositionCross = [200+figureSize 300 figureSize figureSize];
 
-% Temp option for Semin's laptop.
-% figurePositionData = [0 0 1000 1000];
-
 % Fitting options.
-BootstrapAUC = false;
 BootstrapCSF = true;
+
+% Set this to true if we fitted the PF without the bad points (as of
+% 10/12/23).
+FITPFONLYGOODTESTCONTRASTS = true;
+
+% Set directory to differently.
+if (FITPFONLYGOODTESTCONTRASTS)
+    whichPref = 'SACCAnalysisFinal';
+else
+    whichPref = 'SACCAnalysis';
+end
 
 % Set the sensitivity range to pick for bootstrapped values.
 minThresholdContrastBoot = 0.0003;
@@ -90,16 +99,14 @@ RECORDTEXTSUMMARYPERSUB = true;
 lockRand = true;
 
 %% Load and read out the data.
-if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-    testFiledir = getpref('SpatioSpectralStimulator','SACCAnalysis');
-    testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
-    theData = load(testFilename);
-    
-    % Close the plots if any pops up.
-    close all;
-else
-    error('Cannot find the data file!');
+if ispref('SpatioSpectralStimulator',whichPref)
+    testFiledir = getpref('SpatioSpectralStimulator',whichPref);
 end
+testFilename = fullfile(testFiledir,'CSFAnalysisOutput');
+theData = load(testFilename);
+
+% Close the plots if any pops up.
+close all;
 
 % Subject info.
 subjectNameOptions = theData.subjectNameOptions;
@@ -561,11 +568,19 @@ for ss = 1:nSubjects
                 end
             end
             
-            %% Bootstrapping AUC.
+            %% Bootstrapping AUC (NOT RUNNUNG THIS PART).
             %
-            % Here we will repeat the part above that find an optimal
-            % smoothing parameter and calculate AUC.
+            % This part is basically the same as the above (bootstrapping
+            % CCSF and calculate AUC of each), but doing it by grid-search,
+            % not using fmincon. This is an old way to run bootstrapping
+            % before we started using fmincon. We keep the format here, but
+            % we will not run this part for our final analysis (as of
+            % 10/17/23).
             %
+            % Thus, we will keep 'BootstrapAUC' to false so that it won't
+            % run in this routine.
+            BootstrapAUC = false;
+            
             % Set the number of bootrapping the AUC.
             nBootAUC = 20;
             if (BootstrapAUC)
@@ -809,14 +824,14 @@ for ss = 1:nSubjects
             
             %% Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),...
                         subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
-                    testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat));
-                    disp('CSF plot has been saved successfully!');
                 end
+                testFilename = fullfile(testFiledir, sprintf('%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                testFileFormat = '.tiff';
+                saveas(dataFig, append(testFilename,testFileFormat));
+                disp('CSF plot has been saved successfully!');
             end
             
             %% Record the data. We will make a text summary file.
@@ -847,10 +862,10 @@ for ss = 1:nSubjects
         %% Save out the text summary file per each subject.
         if (RECORDTEXTSUMMARYPERSUB)
             if (~pickSubjectAndFilter)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),subjectName,'CSF');
-                    testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),subjectName,'CSF');
                 end
+                testFilename = fullfile(testFiledir,sprintf('AUC_Summary_%s.xlsx',subjectName));
                 
                 % Sort each data in a single column.
                 nAUCPerSub = 5;
@@ -926,14 +941,13 @@ for ss = 1:nSubjects
             
             % Save the CSF plot if you want.
             if (SaveCSFPlot)
-                if (ispref('SpatioSpectralStimulator','SACCAnalysis'))
-                    testFiledir = fullfile(getpref('SpatioSpectralStimulator','SACCAnalysis'),...
-                        subjectName,'CSF');
-                    testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
-                    testFileFormat = '.tiff';
-                    saveas(dataFig, append(testFilename,testFileFormat));
-                    disp('CSF plot has been saved successfully!');
+                if ispref('SpatioSpectralStimulator',whichPref)
+                    testFiledir = fullfile(getpref('SpatioSpectralStimulator',whichPref),subjectName,'CSF');
                 end
+                testFilename = fullfile(testFiledir, sprintf('%s_%s_%s_%s','CSF', subjectName, filterOptions{ff}));
+                testFileFormat = '.tiff';
+                saveas(dataFig, append(testFilename,testFileFormat));
+                disp('CSF plot has been saved successfully!');
             end
             
             % Key stroke to draw next plot.
