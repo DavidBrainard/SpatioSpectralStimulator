@@ -149,5 +149,5 @@ plot([1:1:8],meanContrasts_all,'b.-','markersize',20);
 xticks([1:1:8]);
 xticklabels(legendHandles);
 ylim([0 1]);
-xlabel('Spatial Frequency (cpd)','fontsize',15);
-ylabel('Mean Contrasts','fontsize',15);
+xlabel('Peak Wavelength (nm)','fontsize',15);
+ylabel('Contrast','fontsize',15);
