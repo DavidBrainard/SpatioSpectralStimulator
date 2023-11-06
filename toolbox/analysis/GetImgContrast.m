@@ -1,4 +1,4 @@
-function contrasts = GetImgContrast(image, options)
+function [contrasts averagedESF] = GetImgContrast(image, options)
 % Calculate the contrast from the given image.
 %
 % Syntax:
@@ -86,5 +86,8 @@ if (options.verbose)
     xlabel('Pixel position (horizontal)','fontsize',15);
     ylabel('dRGB','fontsize',15);
     legend('25%','50%','75%','Avg');
+    
+    % Print out the averaged edge spread function.
+    averagedESF = imageCropAvg;
 end
 end
