@@ -29,6 +29,7 @@ spdData = load(fullfile(testFiledir,testFilename));
 % done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
 spd = spdData.spd;
 spd = fliplr(spd);
+nChannels = size(spd,2);
 S = [380 2 201];
 wls = SToWls(S);
 peaks_spd = FindPeakSpds(spd,'verbose',false);
@@ -144,10 +145,14 @@ for cc = 1:nTargetChs
             title(sprintf('%d cpd',targetCyclePerDeg{dd}),'fontsize',15);
             
             % Calculate contrasts.
-            contrastsRawTemp = GetImgContrast(images{dd},'minPeakDistance',minPeakDistance);
+            [contrastsRawTemp ESFTemp] = GetImgContrast(images{dd},'minPeakDistance',minPeakDistance);
             contrastsRaw{dd} = contrastsRawTemp;
             meanContrasts{dd} = mean(contrastsRawTemp);
             stdErrorContrasts{dd} = std(contrastsRawTemp)/sqrt(length(contrastsRawTemp));
+
+            % Print out the Edge spread function to compare across the
+            % channels.
+            ESF{cc,dd} = ESFTemp;
         end
         
         % Save the plot if you want.
@@ -269,26 +274,33 @@ for cc = 1:length(meanContrastsSACCSFAPerfect)
     legend('SACCSFA','location','southeast','fontsize',11);
 end
 
-%% Calculate the ratio of contrast roll-off for the SACCSFA system.
-meanContrastsNorm_all_compare = meanContrastsNorm_all(:,idxChComparison);
-contrastRollOffRatio_SACCSFA = (meanContrastsNorm_all_compare - meanContrasts_SACCSFA)./meanContrastsNorm_all_compare;
+%% Compare ESF across the channels.
+%
+% The size of array 'ESF' is 8 (channels) x 5 (spatial frequency).
+figure; hold on;
+figurePosition = [0 0 1000 1000];
+set(gcf,'position',figurePosition);
+sgtitle('Check spatial position of the waves over different channels');
 
-% Set the min roll-off ratio as 0.
-minRollOffRatio = 0;
-contrastRollOffRatio_SACCSFA(find(contrastRollOffRatio_SACCSFA < minRollOffRatio)) = minRollOffRatio;
+% Make a loop to plot all combinations, channel x spatial frequency.
+% 
+% Spatial frequency.
+for dd = 1:nSFs
+    subplot(5,1,dd); hold on;
+    
+    % Channel.
+    for cc = 1:nChComparison
+        idxTemp = idxChComparison(cc);
+        ESFTemp = ESF{cc,dd};
+        plot( (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp)) );
+        
+        % Generate texts for the legend.
+        legendHandlesESF{cc} = append(num2str(peaks_spd(idxTemp)),' nm');
+    end
 
-% Calculate the ratio in percent.
-contrastRollOffRatio_SACCSFA = 100.*contrastRollOffRatio_SACCSFA;
-
-% Plot it. 
-figure; clf; hold on;
-for cc = 1:length(idxChComparison)
-    plot(cell2mat(targetCyclePerDeg),contrastRollOffRatio_SACCSFA(:,cc),'.-','color',f(idxChComparison(cc)).Color,...
-        'markerfacecolor',f(idxChComparison(cc)).Color,'markersize',20);
+    % Set each graph in format.
+    title(sprintf('%d cpd',targetCyclePerDeg{dd}),'fontsize',15);
+    legend(legendHandlesESF,'fontsize',11,'location','southeast','fontsize',10);
+    xlabel('Pixel position (horizontal)','fontsize',12);
+    ylabel('Normalized dRGB','fontsize',12);
 end
-ylim([0 max(contrastRollOffRatio_SACCSFA,[],'all')*1.1]);
-xlabel('Spatial Frequency (cpd)','fontsize',15);
-ylabel('Ratio Contrast Roll-off (%)','fontsize',15);
-xticks(cell2mat(targetCyclePerDeg));
-legend(legendHandles(idxChComparison),'location','northwest','fontsize',15);
-title('Contrast roll-off (%) in the SACCSFA system','fontsize',15);

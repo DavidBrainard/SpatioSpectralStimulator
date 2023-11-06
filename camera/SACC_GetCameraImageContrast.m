@@ -44,6 +44,9 @@ if (PLOTSPECTRUM)
     spds_newProjector = calData_newProjector.processedData.P_device;
     spds_oldProjector = calData_oldProjector.processedData.P_device;
     
+    % Find the peak wavelength.
+    peaks_spd_new = FindPeakSpds(spds_newProjector);
+    
     % Get spds of the channels used.
     %
     % We used the same channels for both old and new projector [2 5 9 12 15] on
@@ -240,10 +243,11 @@ if (PLOTSLICEDIMAGE)
             % Calculate the contrasts here.
             for tt = 1:nSFs
                 subplot(5,1,tt);
-                contrastsRawTemp = GetImgContrast(images{dd,cc,tt},'minPeakDistance',minPeakDistance(tt));
+                [contrastsRawTemp ESFTemp] = GetImgContrast(images{dd,cc,tt},'minPeakDistance',minPeakDistance(tt));
                 contrastsRaw{dd,cc,tt} = contrastsRawTemp;
                 meanContrasts{dd,cc,tt} = mean(contrastsRawTemp);
                 stdErrorContrasts{dd,cc,tt} = std(contrastsRawTemp)/sqrt(length(contrastsRawTemp));
+                ESF{cc,tt} = ESFTemp;
             end
             
             % Print out progress.
@@ -356,4 +360,34 @@ for cc = 1:nChannels
     
     % Collect the mean contrasts data in an array.
     meanContrasts_all(:,cc) = meanContrastTemp;
+end
+
+%% Compare ESF across the channels.
+%
+% The size of array 'ESF' is 8 (channels) x 5 (spatial frequency).
+figure; hold on;
+figurePosition = [0 0 1000 1000];
+set(gcf,'position',figurePosition);
+sgtitle('Check spatial position of the waves over different channels');
+
+% Make a loop to plot all combinations, channel x spatial frequency.
+%
+% Spatial frequency.
+for dd = 1:nSFs
+    subplot(5,1,dd); hold on;
+    
+    % Channel.
+    for cc = 1:nChannels
+        ESFTemp = ESF{cc,dd};
+        plot( (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp)) );
+        
+        % Generate texts for the legend.
+        legendHandlesESF{cc} = append(num2str(peakWls{cc}),' nm');
+    end
+    
+    % Set each graph in format.
+    title(sprintf('%d cpd',targetCyclePerDeg{dd}),'fontsize',15);
+    legend(legendHandlesESF,'fontsize',11,'location','southeast','fontsize',10);
+    xlabel('Pixel position (horizontal)','fontsize',12);
+    ylabel('Normalized dRGB','fontsize',12);
 end
