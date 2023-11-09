@@ -395,7 +395,7 @@ xlabel('Time (s)');
 ylabel('Amplitude');
 title('Reconstructed Signal (Fundamental Frequency 3)');
 
-%% To use fmincon to fit the signal.
+% Fit the sinusoidal signal using FMINCON.
 %
 % Define the observed waveform data (replace this with your actual data)
 x_data = t;
@@ -405,7 +405,20 @@ observed_waveform = signal-median(signal);
 objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observed_waveform);
 
 % Initial guess for parameters a, b, and c
-initial_guess = [1, 1/0.2, 0];
+switch SF
+case 1
+    b0 = 5/1;
+case 2 
+    b0 = 10/1;
+case 3
+    b0 = 15/1;
+case 4
+    b0 = 2/0.1;
+case 5 
+    b0 = 3/0.1;
+end
+
+initial_guess = [1, b0, 0];
 
 % Lower and upper bounds for parameters
 lb = [0, 0, -pi];
@@ -461,7 +474,7 @@ fprintf('c = %.4f\n', c_optimized);
 % plot(t,signal);
 % plot(t,A*sin(2*pi*f*t+phi));
 
-%% Different method 
+%% Different method to fit the curve.
 figure;
 x = linspace(0,1,N)';
 y = signal';
