@@ -304,3 +304,174 @@ for dd = 1:nSFs
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('Normalized dRGB','fontsize',12);
 end
+
+%% Doing FFT for further analysis.
+%
+% Read the signal
+numChannel = 2;
+SF = 1;
+signal = ESF{numChannel,SF};
+
+% Define the parameters of the complex signal
+% samplingRate = size(signal,2); 
+samplingRate = length(signal);
+
+% Set duration of the signal in seconds. We set arbitrary number here for
+% calculation.
+duration = 1; 
+
+% Generate the time vector
+t = linspace(0,duration,samplingRate);
+
+% Perform the Fourier Transform here.
+N = length(signal);
+frequencies = (0:N-1) * (samplingRate / N);
+signal_fft = fft(signal);
+signal_fft_magnitude = abs(signal_fft) / N;
+
+% Find the fundamental frequencies
+[~, index1] = max(signal_fft_magnitude);
+fundamental_frequency1 = frequencies(index1);
+
+% Find the secound fundamental frequencies. We will remove the peak for the
+% first frequency
+signal_fft_magnitude(index1) = 0; 
+[~, index2] = max(signal_fft_magnitude);
+fundamental_frequency2 = frequencies(index2);
+
+% Find the third fundamental frequencies
+signal_fft_magnitude(index2) = 0; 
+[~, index3] = max(signal_fft_magnitude);
+fundamental_frequency3 = frequencies(index3);
+
+% Plot the original signal and its frequency spectrum
+figure;
+xlim([-1 N]);
+subplot(2, 1, 1);
+plot(t, signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Target signal');
+
+subplot(2, 1, 2);
+plot(frequencies, signal_fft_magnitude);
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+title('Frequency Spectrum');
+
+fprintf('Fundamental Frequency 1: %.2f Hz\n', fundamental_frequency1);
+fprintf('Fundamental Frequency 2: %.2f Hz\n', fundamental_frequency2);
+fprintf('Fundamental Frequency 3: %.2f Hz\n', fundamental_frequency3);
+
+% Plot the reconstructrued signal.
+% Reconstruct the waveform using the fundamental frequency
+reconstructed_signal1 = sin(2 * pi * fundamental_frequency1 * t);
+reconstructed_signal2 = sin(2 * pi * fundamental_frequency2 * t);
+reconstructed_signal3 = sin(2 * pi * fundamental_frequency3 * t);
+
+% Plot the original and reconstructed signals
+figure;
+subplot(4, 1, 1);
+plot(t, signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Original Signal');
+
+subplot(4, 1, 2);
+plot(t, reconstructed_signal1);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Reconstructed Signal (Fundamental Frequency 1)');
+
+subplot(4, 1, 3);
+plot(t, reconstructed_signal2);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Reconstructed Signal (Fundamental Frequency 2)');
+
+subplot(4, 1, 4);
+plot(t, reconstructed_signal3);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Reconstructed Signal (Fundamental Frequency 3)');
+
+%% To use fmincon to fit the signal.
+%
+% Define the observed waveform data (replace this with your actual data)
+x_data = t;
+observed_waveform = signal-median(signal);
+
+% Define the objective function for optimization
+objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observed_waveform);
+
+% Initial guess for parameters a, b, and c
+initial_guess = [1, 1/0.2, 0];
+
+% Lower and upper bounds for parameters
+lb = [0, 0, -pi];
+ub = [Inf, Inf, pi];
+
+% Call fmincon to optimize the parameters
+options = optimoptions('fmincon', 'Display', 'iter');
+optimized_params = fmincon(objective_function, initial_guess, [], [], [], [], lb, ub, [], options);
+
+% Extract optimized parameters
+a_optimized = optimized_params(1);
+b_optimized = optimized_params(2);
+c_optimized = optimized_params(3);
+
+% Generate the fitted waveform using the optimized parameters
+fitted_waveform = a_optimized*sin(2*pi*b_optimized*x_data + c_optimized);
+
+% Plot the observed and fitted waveforms
+figure;
+plot(x_data, observed_waveform, 'b', 'DisplayName', 'Observed Waveform');
+hold on;
+plot(x_data, fitted_waveform, 'r', 'DisplayName', 'Fitted Waveform');
+xlabel('x');
+ylabel('Amplitude');
+legend('show');
+
+% Display optimized parameters
+fprintf('Optimized Parameters:\n');
+fprintf('a = %.4f\n', a_optimized);
+fprintf('b = %.4f\n', b_optimized);
+fprintf('c = %.4f\n', c_optimized);
+
+
+% Different way to do fmincon, but lock for now.
+%
+% Set bounds for parameter x to 0 and 1.
+% x0 = [1, 1/(1/15/(2*pi)), 0];
+% lb = [0.1, 0.1, -pi];
+% ub = [inf, inf, pi];
+% A = [];
+% b = [];
+% Aeq = [];
+% beq = [];
+% options = optimset('fmincon');
+% 
+% x_found = fmincon(@(x) SineFitSearchFunction(signal, t, x), ...
+%     x0, A, b, Aeq, beq, lb, ub, [], options);
+% A = x_found(1);
+% f = x_found(2);
+% phi = x_found(3);
+% 
+% figure; hold on;
+% plot(t,signal);
+% plot(t,A*sin(2*pi*f*t+phi));
+
+%% Different method 
+figure;
+x = linspace(0,1,N)';
+y = signal';
+plot(x,y,'.')
+
+mdl = fittype('a*sin(b*x+c)+d','indep','x');
+fittedmdl2 = fit(x,y,mdl,'start',[rand(),1/(1/5/(2*pi)),rand(),rand()])
+
+figure;
+plot(fittedmdl2)
+hold on
+plot(x,y,'.')
+hold off
