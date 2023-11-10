@@ -292,7 +292,9 @@ for dd = 1:nSFs
     for cc = 1:nChComparison
         idxTemp = idxChComparison(cc);
         ESFTemp = ESF{cc,dd};
-        plot( (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp)) );
+        ESFNormalizedTemp = (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp));
+        ESFNormalized{cc,dd} = 2*(ESFNormalizedTemp-0.5);
+        plot(ESFNormalized{cc,dd});
         
         % Generate texts for the legend.
         legendHandlesESF{cc} = append(num2str(peaks_spd(idxTemp)),' nm');
@@ -308,9 +310,9 @@ end
 %% Doing FFT for further analysis.
 %
 % Read the signal
-numChannel = 4;
-SF = 4;
-signal = ESF{numChannel,SF};
+numChannel = 1;
+SF = 5;
+signal = ESFNormalized{numChannel,SF};
 
 % Define the parameters of the complex signal
 samplingRate = length(signal);
@@ -415,9 +417,9 @@ case 1
 case 2 
     b0 = 10/1;
 case 3
-    b0 = 15/1;
+    b0 = 1.28/0.1;
 case 4
-    b0 = 2.06/0.1;
+    b0 = 1.9/0.1;
 case 5 
     b0 = 3/0.1;
 end
