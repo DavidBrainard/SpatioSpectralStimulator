@@ -309,19 +309,17 @@ end
 
 %% Doing FFT for further analysis.
 %
-% Read the signal
+% Read out the signal.
 numChannel = 1;
-SF = 5;
+SF = 1;
 signal = ESFNormalized{numChannel,SF};
 
-% Define the parameters of the complex signal
-samplingRate = length(signal);
-
+% Generate the time vector. 
+%
 % Set duration of the signal in seconds. We set arbitrary number here for
 % calculation.
+samplingRate = length(signal);
 duration = 1; 
-
-% Generate the time vector
 t = linspace(0,duration,samplingRate);
 
 % Perform the Fourier Transform here.
@@ -331,19 +329,8 @@ signal_fft = fft(signal);
 signal_fft_magnitude = abs(signal_fft) / N;
 
 % Find the fundamental frequencies
-[~, index1] = max(signal_fft_magnitude);
-fundamental_frequency1 = frequencies(index1);
-
-% Find the secound fundamental frequencies. We will remove the peak for the
-% first frequency
-signal_fft_magnitude(index1) = 0; 
-[~, index2] = max(signal_fft_magnitude);
-fundamental_frequency2 = frequencies(index2);
-
-% Find the third fundamental frequencies
-signal_fft_magnitude(index2) = 0; 
-[~, index3] = max(signal_fft_magnitude);
-fundamental_frequency3 = frequencies(index3);
+[~, idxFundamental] = max(signal_fft_magnitude);
+fundamental_frequency = frequencies(idxFundamental);
 
 % Plot the original signal and its frequency spectrum
 figure;
@@ -360,47 +347,30 @@ xlabel('Frequency (Hz)');
 ylabel('Magnitude');
 title('Frequency Spectrum');
 
-fprintf('Fundamental Frequency 1: %.2f Hz\n', fundamental_frequency1);
-fprintf('Fundamental Frequency 2: %.2f Hz\n', fundamental_frequency2);
-fprintf('Fundamental Frequency 3: %.2f Hz\n', fundamental_frequency3);
+fprintf('Fundamental Frequency 1: %.2f Hz\n', fundamental_frequency);
 
-% Plot the reconstructrued signal.
-% Reconstruct the waveform using the fundamental frequency
-reconstructed_signal1 = sin(2 * pi * fundamental_frequency1 * t);
-reconstructed_signal2 = sin(2 * pi * fundamental_frequency2 * t);
-reconstructed_signal3 = sin(2 * pi * fundamental_frequency3 * t);
+% Get the reconstructrued signal.
+reconstructed_signal1 = sin(2 * pi * fundamental_frequency * t);
 
 % Plot the original and reconstructed signals
 figure;
-subplot(4, 1, 1);
+subplot(2, 1, 1);
 plot(t, signal);
 xlabel('Time (s)');
 ylabel('Amplitude');
 title('Original Signal');
 
-subplot(4, 1, 2);
+subplot(2, 1, 2);
 plot(t, reconstructed_signal1);
 xlabel('Time (s)');
 ylabel('Amplitude');
 title('Reconstructed Signal (Fundamental Frequency 1)');
 
-subplot(4, 1, 3);
-plot(t, reconstructed_signal2);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Reconstructed Signal (Fundamental Frequency 2)');
-
-subplot(4, 1, 4);
-plot(t, reconstructed_signal3);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Reconstructed Signal (Fundamental Frequency 3)');
-
-% Fit the sinusoidal signal using FMINCON.
+% Fit the sinusoidal signal using fmincon from here.
 %
 % Define the observed waveform data (replace this with your actual data)
 x_data = t;
-observed_waveform = signal-median(signal);
+observed_waveform = signal;
 
 % Define the objective function for optimization
 objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observed_waveform);
@@ -424,7 +394,9 @@ case 5
     b0 = 3/0.1;
 end
 
-initial_guess = [1, b0, 0];
+a0 = 1;
+c0 = 0;
+initial_guess = [a0, b0, c0];
 
 % Lower and upper bounds for parameters
 lb = [0, 0, -pi];
@@ -450,13 +422,13 @@ plot(x_data, fitted_waveform, 'r', 'DisplayName', 'Fitted Waveform');
 xlabel('x');
 ylabel('Amplitude');
 legend('show');
+grid on;
 
 % Display optimized parameters
 fprintf('Optimized Parameters:\n');
 fprintf('a = %.4f\n', a_optimized);
 fprintf('b = %.4f\n', b_optimized);
 fprintf('c = %.4f\n', c_optimized);
-
 
 % Different way to do fmincon, but lock for now.
 %
@@ -479,18 +451,3 @@ fprintf('c = %.4f\n', c_optimized);
 % figure; hold on;
 % plot(t,signal);
 % plot(t,A*sin(2*pi*f*t+phi));
-
-%% Different method to fit the curve.
-figure;
-x = linspace(0,1,N)';
-y = signal';
-plot(x,y,'.')
-
-mdl = fittype('a*sin(b*x+c)+d','indep','x');
-fittedmdl2 = fit(x,y,mdl,'start',[rand(),1/(1/5/(2*pi)),rand(),rand()])
-
-figure;
-plot(fittedmdl2)
-hold on
-plot(x,y,'.')
-hold off
