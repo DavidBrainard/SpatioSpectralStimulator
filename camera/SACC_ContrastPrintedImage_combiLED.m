@@ -403,7 +403,12 @@ observed_waveform = signal-median(signal);
 % Define the objective function for optimization
 objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observed_waveform);
 
-% Initial guess for parameters a, b, and c
+% Initial guess for parameters a, b, and c.
+%
+% Note that fitting results are very sensitive to how we set the initial
+% guess of its frequency. It should be close to its fundamental frequency
+% of the target waveform, otherwise there is a high chance failing to fit
+% correctly.
 switch SF
 case 1
     b0 = 5/1;
