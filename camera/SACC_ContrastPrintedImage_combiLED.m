@@ -308,12 +308,11 @@ end
 %% Doing FFT for further analysis.
 %
 % Read the signal
-numChannel = 2;
-SF = 1;
+numChannel = 4;
+SF = 4;
 signal = ESF{numChannel,SF};
 
 % Define the parameters of the complex signal
-% samplingRate = size(signal,2); 
 samplingRate = length(signal);
 
 % Set duration of the signal in seconds. We set arbitrary number here for
@@ -413,7 +412,7 @@ case 2
 case 3
     b0 = 15/1;
 case 4
-    b0 = 2/0.1;
+    b0 = 2.06/0.1;
 case 5 
     b0 = 3/0.1;
 end
