@@ -35,7 +35,7 @@ arguments
     options.phi0 (1,1) = 0
     options.lb (1,3) = [0, 0, -pi];
     options.ub (1,3) = [Inf, Inf, pi];
-    options.verbose (1,1) = false
+    options.verbose (1,1) = true
 end
 
 %% Fourier transform.
@@ -58,7 +58,7 @@ if (options.verbose)
     figure;
     xlim([-1 N]);
     subplot(2, 1, 1);
-    plot(t, signal);
+    plot(t, waveform);
     xlabel('Time (s)');
     ylabel('Amplitude');
     title('Target signal');

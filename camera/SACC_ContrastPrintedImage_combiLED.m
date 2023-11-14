@@ -314,140 +314,19 @@ numChannel = 1;
 SF = 1;
 signal = ESFNormalized{numChannel,SF};
 
-% Generate the time vector. 
-%
-% Set duration of the signal in seconds. We set arbitrary number here for
-% calculation.
-samplingRate = length(signal);
-duration = 1; 
-t = linspace(0,duration,samplingRate);
 
-% Perform the Fourier Transform here.
-N = length(signal);
-frequencies = (0:N-1) * (samplingRate / N);
-signal_fft = fft(signal);
-signal_fft_magnitude = abs(signal_fft) / N;
-
-% Find the fundamental frequencies
-[~, idxFundamental] = max(signal_fft_magnitude);
-fundamental_frequency = frequencies(idxFundamental);
-
-% Plot the original signal and its frequency spectrum
-figure;
-xlim([-1 N]);
-subplot(2, 1, 1);
-plot(t, signal);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Target signal');
-
-subplot(2, 1, 2);
-plot(frequencies, signal_fft_magnitude);
-xlabel('Frequency (Hz)');
-ylabel('Magnitude');
-title('Frequency Spectrum');
-
-fprintf('Fundamental Frequency 1: %.2f Hz\n', fundamental_frequency);
-
-% Get the reconstructrued signal.
-reconstructed_signal1 = sin(2 * pi * fundamental_frequency * t);
-
-% Plot the original and reconstructed signals
-figure;
-subplot(2, 1, 1);
-plot(t, signal);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Original Signal');
-
-subplot(2, 1, 2);
-plot(t, reconstructed_signal1);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Reconstructed Signal (Fundamental Frequency 1)');
-
-% Fit the sinusoidal signal using fmincon from here.
-%
-% Define the observed waveform data (replace this with your actual data)
-x_data = t;
-observed_waveform = signal;
-
-% Define the objective function for optimization
-objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observed_waveform);
-
-% Initial guess for parameters a, b, and c.
-%
-% Note that fitting results are very sensitive to how we set the initial
-% guess of its frequency. It should be close to its fundamental frequency
-% of the target waveform, otherwise there is a high chance failing to fit
-% correctly.
 switch SF
 case 1
-    b0 = 5/1;
+    f0 = 5/1;
 case 2 
-    b0 = 10/1;
+    f0 = 10/1;
 case 3
-    b0 = 1.28/0.1;
+    f0 = 1.28/0.1;
 case 4
-    b0 = 1.9/0.1;
+    f0 = 1.9/0.1;
 case 5 
-    b0 = 3/0.1;
+    f0 = 3/0.1;
 end
 
-a0 = 1;
-c0 = 0;
-initial_guess = [a0, b0, c0];
-
-% Lower and upper bounds for parameters
-lb = [0, 0, -pi];
-ub = [Inf, Inf, pi];
-
-% Call fmincon to optimize the parameters
-options = optimoptions('fmincon', 'Display', 'iter');
-optimized_params = fmincon(objective_function, initial_guess, [], [], [], [], lb, ub, [], options);
-
-% Extract optimized parameters
-a_optimized = optimized_params(1);
-b_optimized = optimized_params(2);
-c_optimized = optimized_params(3);
-
-% Generate the fitted waveform using the optimized parameters
-fitted_waveform = a_optimized*sin(2*pi*b_optimized*x_data + c_optimized);
-
-% Plot the observed and fitted waveforms
-figure;
-plot(x_data, observed_waveform, 'b', 'DisplayName', 'Observed Waveform');
-hold on;
-plot(x_data, fitted_waveform, 'r', 'DisplayName', 'Fitted Waveform');
-xlabel('x');
-ylabel('Amplitude');
-legend('show');
-grid on;
-
-% Display optimized parameters
-fprintf('Optimized Parameters:\n');
-fprintf('a = %.4f\n', a_optimized);
-fprintf('b = %.4f\n', b_optimized);
-fprintf('c = %.4f\n', c_optimized);
-
-% Different way to do fmincon, but lock for now.
-%
-% Set bounds for parameter x to 0 and 1.
-% x0 = [1, 1/(1/15/(2*pi)), 0];
-% lb = [0.1, 0.1, -pi];
-% ub = [inf, inf, pi];
-% A = [];
-% b = [];
-% Aeq = [];
-% beq = [];
-% options = optimset('fmincon');
-% 
-% x_found = fmincon(@(x) SineFitSearchFunction(signal, t, x), ...
-%     x0, A, b, Aeq, beq, lb, ub, [], options);
-% A = x_found(1);
-% f = x_found(2);
-% phi = x_found(3);
-% 
-% figure; hold on;
-% plot(t,signal);
-% plot(t,A*sin(2*pi*f*t+phi));
+% Fit sine signal here.
+[params, fittedSignal] = FitSineWave(signal,'f0',f0);
