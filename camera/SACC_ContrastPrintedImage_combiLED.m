@@ -106,7 +106,7 @@ for cc = 1:nTargetChs
     end
     
     %% Plot the camera images.
-    PLOTIMAGE = true;
+    PLOTIMAGE = false;
     if (PLOTIMAGE)
         figure;
         figurePosition = [0 0 800 800];
@@ -121,7 +121,7 @@ for cc = 1:nTargetChs
     end
     
     %% Plot the sliced images.
-    PLOTSLICEDIMAGE = true;
+    PLOTSLICEDIMAGE = false;
     if (PLOTSLICEDIMAGE)
         % Make a new figure.
         figure;
@@ -149,7 +149,7 @@ for cc = 1:nTargetChs
             contrastsRaw{dd} = contrastsRawTemp;
             meanContrasts{dd} = mean(contrastsRawTemp);
             stdErrorContrasts{dd} = std(contrastsRawTemp)/sqrt(length(contrastsRawTemp));
-
+            
             % Print out the Edge spread function to compare across the
             % channels.
             ESF{cc,dd} = ESFTemp;
@@ -210,7 +210,7 @@ meanContrastsNorm_all = meanContrasts_all./refContrasts;
 maxContrast = 1;
 meanContrastsNorm_all(find(meanContrastsNorm_all > maxContrast)) = 1;
 
-% Set the index for searching for the channel to compare MTF with the SACCSFA. 
+% Set the index for searching for the channel to compare MTF with the SACCSFA.
 % The peak wavelengths of the SACCSFA were 422, 476, 530, 592, 658 nm at .
 peaks_spd_SACCSFA = [422 476 530 592 658];
 idxChComparison = [2 3 5 6 8];
@@ -283,7 +283,7 @@ set(gcf,'position',figurePosition);
 sgtitle('Check spatial position of the waves over different channels');
 
 % Make a loop to plot all combinations, channel x spatial frequency.
-% 
+%
 % Spatial frequency.
 for dd = 1:nSFs
     subplot(5,1,dd); hold on;
@@ -299,7 +299,7 @@ for dd = 1:nSFs
         % Generate texts for the legend.
         legendHandlesESF{cc} = append(num2str(peaks_spd(idxTemp)),' nm');
     end
-
+    
     % Set each graph in format.
     title(sprintf('%d cpd',targetCyclePerDeg{dd}),'fontsize',15);
     legend(legendHandlesESF,'fontsize',11,'location','southeast','fontsize',10);
@@ -307,26 +307,56 @@ for dd = 1:nSFs
     ylabel('Normalized dRGB','fontsize',12);
 end
 
-%% Doing FFT for further analysis.
+%% Fit sine function to the signal.
 %
-% Read out the signal.
-numChannel = 1;
-SF = 1;
-signal = ESFNormalized{numChannel,SF};
+% Set initial frequency for fitting sine wave. Fitting results are
+% extremely sensitive how we set the initial guess of its frequency. We
+% recommend setting it close to its fundamental frequency.
+f0Options = [5, 10, 13.5, 19, 30];
 
-
-switch SF
-case 1
-    f0 = 5/1;
-case 2 
-    f0 = 10/1;
-case 3
-    f0 = 1.28/0.1;
-case 4
-    f0 = 1.9/0.1;
-case 5 
-    f0 = 3/0.1;
-end
+% Show FFT results if you want.
+DoFourierTransform = true;
 
 % Fit sine signal here.
-[params, fittedSignal] = FitSineWave(signal,'f0',f0);
+%
+% Loop over the spatial frequency.
+for dd = 1:nSFs
+    % Set initial guess of frequency. We update it per spatial frequency.
+    f0 = f0Options(dd);
+    
+    % Loop over the channels.
+    for cc = 1:nChComparison
+        
+        % Update initial guess of frequency if needed.
+        if and(dd==5,cc==5)
+            f0 = 30.02;
+        end
+        
+        % Get one signal to fit.
+        signalTemp = ESFNormalized{cc,dd};
+        
+        % Fit happens here.
+        [params{cc,dd}, fittedSignal{cc,dd}] = FitSineWave(signalTemp,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+    end
+    fprintf('Fitting progress - (%d/%d) \n',dd,nSFs);
+end
+
+% Plot the results.
+for dd = 1:nSFs
+    % Make a new figure per each spatial frequency.
+    figure;
+    sgtitle(sprintf('%d cpd',targetCyclePerDeg{dd}));
+    
+    % Loop over the channels.
+    for cc = 1:nChComparison
+        subplot(5,1,cc); hold on;
+        title(sprintf('%d nm',peaks_spd(idxChComparison(cc))));
+        
+        % Original.
+        plot(ESFNormalized{cc,dd},'b-');
+        
+        % Fitted signal.
+        plot(fittedSignal{cc,dd},'r-');
+        legend('Origianl','Fit');
+    end
+end
