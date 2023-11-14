@@ -9,23 +9,26 @@ function [params fittedWaveform] = FitSineWave(waveform,options)
 %    chromatic aberration of the SACCSFA system for both LCA and TCA.
 %
 % Inputs:
-%     signal                    - Target signal you want to fit.
+%     waveform                  - Target signal you want to fit.
 %
 % Outputs:
 %    params                     - Parameters fitted. It includes three
 %                                 params, A (amplitute), f (frequency), phi
-%                                 (spatial shift).
+%                                 (phase shift).
 %
 % Optional key/value pairs:
-%
+%    A0                        - Initial amplitude (default: 1).
+%    f0                        - Initial frequency (default: 1).
+%    phi0                      - Initial phase (default: 0).
+%    lb                        - Lower bounds for parameters [A, f, phi] (default: [0, 0, -pi]).
+%    ub                        - Upper bounds for parameters [A, f, phi] (default: [Inf, Inf, pi]).
+%    verbose                   - Display additional information (default: false).
 
 % History:
 %    11/09/23  smo              - Started on it
 
 %% Set variables.
 arguments
-    pararms
-    fittedWaveform
     waveform
     options.A0 (1,1) = 1
     options.f0 (1,1) = 1
@@ -43,7 +46,7 @@ t = linspace(0,duration,samplingRate);
 % Perform the Fourier Transform here.
 N = length(waveform);
 frequencies = (0:N-1) * (samplingRate / N);
-signal_fft = fft(signal);
+signal_fft = fft(waveform);
 signal_fft_magnitude = abs(signal_fft) / N;
 
 % Find the fundamental frequencies
@@ -75,7 +78,7 @@ reconstructed_signal1 = sin(2 * pi * fundamental_frequency * t);
 % Plot the original and reconstructed signals
 figure;
 subplot(2, 1, 1);
-plot(t, signal);
+plot(t, waveform);
 xlabel('Time (s)');
 ylabel('Amplitude');
 title('Original Signal');
@@ -90,7 +93,7 @@ title('Reconstructed Signal (Fundamental Frequency 1)');
 %
 % Define the observed waveform data (replace this with your actual data)
 x_data = t;
-observedWaveform = signal;
+observedWaveform = waveform;
 
 % Define the objective function for optimization
 objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params(3)) - observedWaveform);
@@ -99,8 +102,8 @@ objective_function = @(params) norm(params(1)*sin(2*pi*params(2)*x_data + params
 initial_guess = [options.A0, options.f0, options.phi0];
 
 % Call fmincon to optimize the parameters
-options = optimoptions('fmincon', 'Display', 'iter');
-optimized_params = fmincon(objective_function, initial_guess, [], [], [], [], lb, ub, [], options);
+optionsFmincon = optimoptions('fmincon', 'Display', 'iter');
+optimized_params = fmincon(objective_function, initial_guess, [], [], [], [], options.lb, options.ub, [], optionsFmincon);
 
 % Extract optimized parameters
 A_optimized = optimized_params(1);
