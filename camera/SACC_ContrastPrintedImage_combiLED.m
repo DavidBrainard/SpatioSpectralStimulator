@@ -384,16 +384,16 @@ for dd = 1:nSFs
     end
 end
 
-%% Fit one waveform here.
+%% Here we search the initial guess of frequency to fit sine curve.
 %
-% We want to find a proper initial frequency valie.
-nFits = 20;
-f0_lb = 18;
-f0_ub = 20;
+% Search a value using grid-search.
+nFits = 30;
+f0_lb = 3;
+f0_ub = 6;
 f0Range = linspace(f0_lb,f0_ub,nFits);
 
 % Set the wave to fit.
-SF = 4;
+SF = 1;
 originalSignals = ESFComparison(:,SF);
 
 for cc = 1:nChComparison
@@ -401,6 +401,7 @@ for cc = 1:nChComparison
     figure; hold on;
     figurePosition = [0 0 1000 1000];
     set(gcf,'position',figurePosition);
+    title(sprintf('%d nm', peaks_spd(idxChComparison(cc))));
     
     for ff = 1:nFits
         f0 = f0Range(ff);
@@ -408,7 +409,7 @@ for cc = 1:nChComparison
         [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
         
         % Original.
-        subplot(5,4,ff);
+        subplot(5,6,ff); hold on;
         plot(originalSignal,'b-');
         plot(fittedSignalOne,'r-');
         title(sprintf('f0 = %.4f',f0));
