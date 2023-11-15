@@ -121,7 +121,7 @@ for cc = 1:nTargetChs
     end
     
     %% Plot the sliced images.
-    PLOTSLICEDIMAGE = false;
+    PLOTSLICEDIMAGE = true;
     if (PLOTSLICEDIMAGE)
         % Make a new figure.
         figure;
@@ -285,19 +285,18 @@ sgtitle('Check spatial position of the waves over different channels');
 % Make a loop to plot all combinations, channel x spatial frequency.
 %
 % Spatial frequency.
+ESFComparison = ESF(idxChComparison,:);
+peaks_spd_comparison = peaks_spd(idxChComparison);
 for dd = 1:nSFs
     subplot(5,1,dd); hold on;
     
     % Channel.
     for cc = 1:nChComparison
-        idxTemp = idxChComparison(cc);
-        ESFTemp = ESF{cc,dd};
-        ESFNormalizedTemp = (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp));
-        ESFNormalized{cc,dd} = 2*(ESFNormalizedTemp-0.5);
-        plot(ESFNormalized{cc,dd});
+        ESFTemp = ESFComparison{cc,dd};
+        plot(ESFTemp);
         
         % Generate texts for the legend.
-        legendHandlesESF{cc} = append(num2str(peaks_spd(idxTemp)),' nm');
+        legendHandlesESF{cc} = append(num2str(peaks_spd_comparison(cc)),' nm');
     end
     
     % Set each graph in format.
@@ -312,31 +311,55 @@ end
 % Set initial frequency for fitting sine wave. Fitting results are
 % extremely sensitive how we set the initial guess of its frequency. We
 % recommend setting it close to its fundamental frequency.
-f0Options = [5, 10, 13.5, 19, 30];
+f0Options = [5.5, 10, 15, 19.1, 30.5];
 
 % Show FFT results if you want.
-DoFourierTransform = true;
+DoFourierTransform = false;
 
 % Fit sine signal here.
 %
 % Loop over the spatial frequency.
 for dd = 1:nSFs
-    % Set initial guess of frequency. We update it per spatial frequency.
-    f0 = f0Options(dd);
-    
     % Loop over the channels.
     for cc = 1:nChComparison
+        % Set initial guess of frequency. We update it per spatial frequency.
+        f0 = f0Options(dd);
         
         % Update initial guess of frequency if needed.
-        if and(dd==5,cc==5)
-            f0 = 30.02;
+        if dd == 5
+            switch cc
+                case 1
+                    f0 = 29.5;
+                case 2
+                    f0 = 30.01;
+                case 4 
+                    f0 = 29.9474;
+                case 5
+                    f0 = 30.02;
+            end
+        elseif dd == 4
+            switch cc
+                case 1
+                    f0 = 29;
+                case 2
+                    f0 = 18.6316;
+                case 3 
+                    f0 = 18.6316;
+                case 4 
+                    f0 = 18.9474;
+                case 5 
+                    f0 = 18;
+            end
         end
         
         % Get one signal to fit.
-        signalTemp = ESFNormalized{cc,dd};
+        signalTemp = ESFComparison{cc,dd};
         
         % Fit happens here.
         [params{cc,dd}, fittedSignal{cc,dd}] = FitSineWave(signalTemp,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+        
+        % Clear the initial guess of frequency for next fit.
+        clear f0;
     end
     fprintf('Fitting progress - (%d/%d) \n',dd,nSFs);
 end
@@ -353,10 +376,45 @@ for dd = 1:nSFs
         title(sprintf('%d nm',peaks_spd(idxChComparison(cc))));
         
         % Original.
-        plot(ESFNormalized{cc,dd},'b-');
+        plot(ESFComparison{cc,dd},'b-');
         
         % Fitted signal.
         plot(fittedSignal{cc,dd},'r-');
         legend('Origianl','Fit');
+    end
+end
+
+%% Fit one waveform here.
+%
+% We want to find a proper initial frequency valie.
+nFits = 20;
+f0_lb = 18;
+f0_ub = 20;
+f0Range = linspace(f0_lb,f0_ub,nFits);
+
+% Set the wave to fit.
+SF = 4;
+originalSignals = ESFComparison(:,SF);
+
+for cc = 1:nChComparison
+    % Make a new figure per each channel.
+    figure; hold on;
+    figurePosition = [0 0 1000 1000];
+    set(gcf,'position',figurePosition);
+    
+    for ff = 1:nFits
+        f0 = f0Range(ff);
+        originalSignal = originalSignals{cc};
+        [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+        
+        % Original.
+        subplot(5,4,ff);
+        plot(originalSignal,'b-');
+        plot(fittedSignalOne,'r-');
+        title(sprintf('f0 = %.4f',f0));
+        legend('Origianl','Fit');
+        ylim([0 max(originalSignal)*1.05]);
+        
+        clear f0;
     end
 end
