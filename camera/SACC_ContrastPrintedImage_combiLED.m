@@ -308,11 +308,6 @@ end
 
 %% Fit sine function to the signal.
 %
-% Set initial frequency for fitting sine wave. Fitting results are
-% extremely sensitive how we set the initial guess of its frequency. We
-% recommend setting it close to its fundamental frequency.
-f0Options = [5.5, 10, 15, 19.1, 30.5];
-
 % Show FFT results if you want.
 DoFourierTransform = false;
 
@@ -322,35 +317,25 @@ DoFourierTransform = false;
 for dd = 1:nSFs
     % Loop over the channels.
     for cc = 1:nChComparison
-        % Set initial guess of frequency. We update it per spatial frequency.
-        f0 = f0Options(dd);
         
-        % Update initial guess of frequency if needed.
-        if dd == 5
-            switch cc
-                case 1
-                    f0 = 29.5;
-                case 2
-                    f0 = 30.01;
-                case 4 
-                    f0 = 29.9474;
-                case 5
-                    f0 = 30.02;
-            end
-        elseif dd == 4
-            switch cc
-                case 1
-                    f0 = 29;
-                case 2
-                    f0 = 18.6316;
-                case 3 
-                    f0 = 18.6316;
-                case 4 
-                    f0 = 18.9474;
-                case 5 
-                    f0 = 18;
-            end
+        % Set initial frequency for fitting sine wave. Fitting results are
+        % extremely sensitive how we set the initial guess of its frequency. We
+        % recommend setting it close to its fundamental frequency.
+        switch dd
+            case 1
+                f0Options = [3.3684 3.6316 3.6316 3.6316 3.6316];
+            case 2
+                f0Options = [7.3333 6 7.1282 7.3333 7.5789];
+            case 3
+                f0Options = [13.5641 14.4211 14.8276 14.4211 14.4211];
+            case 4
+                f0Options = [29 18.6316 18.6316 18.9474 18];
+            case 5
+                f0Options = [29.5 30.01 30.5 29.9474 30.02];
         end
+        
+        % Update initial guess of frequency here.
+        f0 = f0Options(cc);
         
         % Get one signal to fit.
         signalTemp = ESFComparison{cc,dd};
@@ -368,12 +353,16 @@ end
 for dd = 1:nSFs
     % Make a new figure per each spatial frequency.
     figure;
+    figurePosition = [0 0 800 800];
+    set(gcf,'position',figurePosition);
     sgtitle(sprintf('%d cpd',targetCyclePerDeg{dd}));
     
     % Loop over the channels.
     for cc = 1:nChComparison
         subplot(5,1,cc); hold on;
         title(sprintf('%d nm',peaks_spd(idxChComparison(cc))));
+        xlabel('Pixel position');
+        ylabel('dRGB');
         
         % Original.
         plot(ESFComparison{cc,dd},'b-');
@@ -387,9 +376,9 @@ end
 %% Here we search the initial guess of frequency to fit sine curve.
 %
 % Search a value using grid-search.
-nFits = 30;
+nFits = 20;
 f0_lb = 3;
-f0_ub = 6;
+f0_ub = 5;
 f0Range = linspace(f0_lb,f0_ub,nFits);
 
 % Set the wave to fit.
@@ -401,7 +390,7 @@ for cc = 1:nChComparison
     figure; hold on;
     figurePosition = [0 0 1000 1000];
     set(gcf,'position',figurePosition);
-    title(sprintf('%d nm', peaks_spd(idxChComparison(cc))));
+    sgtitle(sprintf('%d nm', peaks_spd(idxChComparison(cc))));
     
     for ff = 1:nFits
         f0 = f0Range(ff);
@@ -409,7 +398,7 @@ for cc = 1:nChComparison
         [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
         
         % Original.
-        subplot(5,6,ff); hold on;
+        subplot(5,4,ff); hold on;
         plot(originalSignal,'b-');
         plot(fittedSignalOne,'r-');
         title(sprintf('f0 = %.4f',f0));
