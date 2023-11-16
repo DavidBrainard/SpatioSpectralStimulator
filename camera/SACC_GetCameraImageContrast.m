@@ -379,7 +379,7 @@ for dd = 1:nSFs
     % Channel.
     for cc = 1:nChannels
         ESFTemp = ESF{cc,dd};
-        plot( (ESFTemp-min(ESFTemp)) ./ (max(ESFTemp)-min(ESFTemp)) );
+        plot(ESFTemp);
         
         % Generate texts for the legend.
         legendHandlesESF{cc} = append(num2str(peakWls{cc}),' nm');
@@ -390,4 +390,108 @@ for dd = 1:nSFs
     legend(legendHandlesESF,'fontsize',11,'location','southeast','fontsize',10);
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('Normalized dRGB','fontsize',12);
+end
+
+%% Fit sine function to the signal.
+%
+% Show FFT results if you want.
+DoFourierTransform = false;
+
+% Fit sine signal here.
+%
+% Loop over the spatial frequency.
+for dd = 1:nSFs
+    % Loop over the channels.
+    for cc = 1:nChannels
+        
+        % Set initial frequency for fitting sine wave. Fitting results are
+        % extremely sensitive how we set the initial guess of its frequency. We
+        % recommend setting it close to its fundamental frequency.
+        switch dd
+            case 1
+                f0Options = [2.63158 2.10526 2.10526 2.42105 2.52632];
+            case 2
+                f0Options = [7.68421 7.26316 7.05263 7.26316 6.63158];
+            case 3
+                f0Options = [12.73684 12.52632 12.94747 11.5 13.89474];
+            case 4
+                f0Options = [16 16.94737   19.15789  18.36842  17.73684];
+            case 5
+                f0Options = [29.52632 30.36842 30.42105 29.31579 29];
+        end
+        
+        % Update initial guess of frequency here.
+        f0 = f0Options(cc);
+        
+        % Get one signal to fit.
+        signalTemp = ESF{cc,dd};
+        
+        % Fit happens here.
+        [params{cc,dd}, fittedSignal{cc,dd}] = FitSineWave(signalTemp,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+        
+        % Clear the initial guess of frequency for next fit.
+        clear f0;
+    end
+    fprintf('Fitting progress - (%d/%d) \n',dd,nSFs);
+end
+
+% Plot the results.
+for dd = 1:nSFs
+    % Make a new figure per each spatial frequency.
+    figure;
+    figurePosition = [0 0 800 800];
+    set(gcf,'position',figurePosition);
+    sgtitle(sprintf('%d cpd',targetCyclePerDeg{dd}));
+    
+    % Loop over the channels.
+    for cc = 1:nChannels
+        subplot(5,1,cc); hold on;
+        title(sprintf('%s nm',peakWls{cc}));
+        xlabel('Pixel position');
+        ylabel('dRGB');
+        ylim([0 220]);
+        
+        % Original.
+        plot(ESF{cc,dd},'b-');
+        
+        % Fitted signal.
+        plot(fittedSignal{cc,dd},'r-');
+        legend('Origianl','Fit');
+    end
+end
+
+%% we search the initial guess of frequency to fit sine curve.
+%
+% Search a value using grid-search.
+nFits = 20;
+f0_lb = 2;
+f0_ub = 4;
+f0Range = linspace(f0_lb,f0_ub,nFits);
+
+% Set the wave to fit.
+SF = 1;
+originalSignals = ESF(:,SF);
+
+for cc = 1:nChannels
+    % Make a new figure per each channel.
+    figure; hold on;
+    figurePosition = [0 0 1000 1000];
+    set(gcf,'position',figurePosition);
+    sgtitle(sprintf('%s nm', peakWls{cc}));
+    
+    for ff = 1:nFits
+        f0 = f0Range(ff);
+        originalSignal = originalSignals{cc};
+        [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+        
+        % Original.
+        subplot(5,4,ff); hold on;
+        plot(originalSignal,'b-');
+        plot(fittedSignalOne,'r-');
+        title(sprintf('f0 = %.5f',f0));
+        legend('Origianl','Fit');
+        ylim([0 max(originalSignal)*1.05]);
+        
+        clear f0;
+    end
 end
