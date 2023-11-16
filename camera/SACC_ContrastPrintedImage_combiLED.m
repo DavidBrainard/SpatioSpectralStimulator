@@ -363,6 +363,7 @@ for dd = 1:nSFs
         title(sprintf('%d nm',peaks_spd(idxChComparison(cc))));
         xlabel('Pixel position');
         ylabel('dRGB');
+        ylim([0 220]);
         
         % Original.
         plot(ESFComparison{cc,dd},'b-');
