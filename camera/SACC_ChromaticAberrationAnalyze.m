@@ -61,7 +61,7 @@ meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all;
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',viewingMedia);
 folderList = dir(testFiledir);
-folderList = folderList(4:end); 
+folderList = folderList(4:end);
 
 % Find the most recent measurement.
 for i = 1:numel(folderList)
@@ -111,14 +111,10 @@ for cc = 1:nChannels
         title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
         
         % Calculate contrasts.
-        [contrastsRawTemp ESFTemp] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance);
+        [contrastsRawTemp ESF{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance);
         contrastsRaw{ss} = contrastsRawTemp;
         meanContrasts{ss} = mean(contrastsRawTemp);
         stdErrorContrasts{ss} = std(contrastsRawTemp)/sqrt(length(contrastsRawTemp));
-        
-        % Print out the Edge spread function to compare across the
-        % channels.
-        ESF{cc,ss} = ESFTemp;
     end
     
     % Collect the mean contrast results.
@@ -134,12 +130,15 @@ end
 % the left and the other half as white on the right). Measured on
 % 09/05/2023.
 contrastSingleCyclePerChannel = [0.8811 0.8756 0.8938 0.8891 0.8863 0.8870 0.8853 0.8868];
+if strcmp(viewingMedia,'SACCSFA')
+    idxChComparison = [2 3 5 6 8];
+    contrastSingleCyclePerChannel = contrastSingleCyclePerChannel(idxChComparison);
+end
 
 figure; clf;
 figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
 sgtitle('MTF comparison: Camera vs. SACCSFA', 'fontsize', 15);
-ss = 1;
 
 % Normalize the contrast by dividing the single cycle contrast.
 meanContrastsNorm_all = meanContrasts_all./contrastSingleCyclePerChannel;
@@ -158,26 +157,16 @@ nChComparison = length(idxChComparison);
 for cc = 1:nChComparison
     subplot(2,3,cc); hold on;
     
-    % Set target channel temporarily.
-    targetChTemp = idxChComparison(cc);
     % Printed pattern.
-    meanContrastsTemp = meanContrastsNorm_all(:,targetChTemp);
+    meanContrastsTemp = meanContrastsNorm_all(:,cc);
     plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % SACCSFA.
-    if ismember(targetChTemp,idxChComparison)
-        plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,ss),...
-            'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
-        ss = ss + 1;
-        
-        % Add legend.
-        legend('Camera','SACCSFA','location','southeast','fontsize',11);
-    else
-        % Add legend.
-        legend('Camera','location','southeast','fontsize',11);
-    end
+    plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,ss),...
+        'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
+    legend('Raw','SACCSFA','location','southeast','fontsize',11);
     ylim([0 1.1]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
@@ -188,7 +177,7 @@ end
 %% Plot the MTF of SACCSFA under assumption using a perfect camera.
 %
 % Here we divide the MTF by camera MTF.
-meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
+meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(idxChComparison);
 
 % Set the contrast within the range.
 maxContrast = 1;
@@ -223,14 +212,13 @@ sgtitle('Check spatial position of the waves over different channels');
 % Make a loop to plot all combinations, channel x spatial frequency.
 %
 % Spatial frequency.
-ESFComparison = ESF(idxChComparison,:);
 peaks_spd_comparison = peaks_spd(idxChComparison);
 for ss = 1:nSFs
     subplot(5,1,ss); hold on;
     
     % Channel.
     for cc = 1:nChComparison
-        ESFTemp = ESFComparison{cc,ss};
+        ESFTemp = ESF{cc,ss};
         plot(ESFTemp);
         
         % Generate texts for the legend.
@@ -259,24 +247,39 @@ for ss = 1:nSFs
         % Set initial frequency for fitting sine wave. Fitting results are
         % extremely sensitive how we set the initial guess of its frequency. We
         % recommend setting it close to its fundamental frequency.
-        switch ss
-            case 1
-                f0Options = [3.3684 3.6316 3.6316 3.6316 3.6316];
-            case 2
-                f0Options = [7.3333 6 7.1282 7.3333 7.5789];
-            case 3
-                f0Options = [13.5641 14.4211 14.8276 14.4211 14.4211];
-            case 4
-                f0Options = [29 18.6316 18.6316 18.9474 18];
-            case 5
-                f0Options = [29.5 30.01 30.5 29.9474 30.02];
+        if strcmp(viewingMedia,'Print')
+            switch ss
+                case 1
+                    f0Options = [3.3684 3.6316 3.6316 3.6316 3.6316];
+                case 2
+                    f0Options = [7.3333 6 7.1282 7.3333 7.5789];
+                case 3
+                    f0Options = [13.5641 14.4211 14.8276 14.4211 14.4211];
+                case 4
+                    f0Options = [29 18.6316 18.6316 18.9474 18];
+                case 5
+                    f0Options = [29.5 30.01 30.5 29.9474 30.02];
+            end
+        elseif strcmp(viewingMedia,'SACCSFA')
+            switch ss
+                case 1
+                    f0Options = [2.63158 2.10526 2.10526 2.42105 2.52632];
+                case 2
+                    f0Options = [7.68421 7.26316 7.05263 7.26316 6.63158];
+                case 3
+                    f0Options = [12.73684 12.52632 12.94747 11.5 13.89474];
+                case 4
+                    f0Options = [16 16.94737   19.15789  18.36842  17.73684];
+                case 5
+                    f0Options = [29.52632 30.36842 30.42105 29.31579 29];
+            end
         end
         
         % Update initial guess of frequency here.
         f0 = f0Options(cc);
         
         % Get one signal to fit.
-        signalTemp = ESFComparison{cc,ss};
+        signalTemp = ESF{cc,ss};
         
         % Fit happens here.
         [params{cc,ss}, fittedSignal{cc,ss}] = FitSineWave(signalTemp,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
@@ -304,7 +307,7 @@ for ss = 1:nSFs
         ylim([0 220]);
         
         % Original.
-        plot(ESFComparison{cc,ss},'b-');
+        plot(ESF{cc,ss},'b-');
         
         % Fitted signal.
         plot(fittedSignal{cc,ss},'r-');
@@ -315,35 +318,39 @@ end
 %% Here we search the initial guess of frequency to fit sine curve.
 %
 % Search a value using grid-search.
-nFits = 20;
-f0_lb = 3;
-f0_ub = 5;
-f0Range = linspace(f0_lb,f0_ub,nFits);
+FINDINITIALFREQUENCYTOFIT = true;
 
-% Set the wave to fit.
-SF = 1;
-originalSignals = ESFComparison(:,SF);
-
-for cc = 1:nChComparison
-    % Make a new figure per each channel.
-    figure; hold on;
-    figurePosition = [0 0 1000 1000];
-    set(gcf,'position',figurePosition);
-    sgtitle(sprintf('%d nm', peaks_spd(idxChComparison(cc))));
+if (FINDINITIALFREQUENCYTOFIT)
+    nFits = 20;
+    f0_lb = 3;
+    f0_ub = 5;
+    f0Range = linspace(f0_lb,f0_ub,nFits);
     
-    for ff = 1:nFits
-        f0 = f0Range(ff);
-        originalSignal = originalSignals{cc};
-        [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+    % Set the wave to fit.
+    SF = 1;
+    originalSignals = ESF(:,SF);
+    
+    for cc = 1:nChComparison
+        % Make a new figure per each channel.
+        figure; hold on;
+        figurePosition = [0 0 1000 1000];
+        set(gcf,'position',figurePosition);
+        sgtitle(sprintf('%d nm', peaks_spd(idxChComparison(cc))));
         
-        % Original.
-        subplot(5,4,ff); hold on;
-        plot(originalSignal,'b-');
-        plot(fittedSignalOne,'r-');
-        title(sprintf('f0 = %.4f',f0));
-        legend('Origianl','Fit');
-        ylim([0 max(originalSignal)*1.05]);
-        
-        clear f0;
+        for ff = 1:nFits
+            f0 = f0Range(ff);
+            originalSignal = originalSignals{cc};
+            [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+            
+            % Original.
+            subplot(5,4,ff); hold on;
+            plot(originalSignal,'b-');
+            plot(fittedSignalOne,'r-');
+            title(sprintf('f0 = %.4f',f0));
+            legend('Origianl','Fit');
+            ylim([0 max(originalSignal)*1.05]);
+            
+            clear f0;
+        end
     end
 end
