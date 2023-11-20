@@ -13,7 +13,7 @@ clear; close all;
 
 %% Set variables.
 targetCyclePerDeg = {3,6,9,12,18};
-measureDate = '0905';
+measureDate = '2023-09-05';
 focusedImage = false;
 
 %% Plot spectra.
@@ -21,7 +21,7 @@ PLOTSPECTRA = false;
 measureDateSPD = '0829';
 
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDateSPD);
+testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
 testFilename = 'spd_combiLED.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
@@ -57,7 +57,7 @@ end
 
 %% Load SACCSFA MTF results to compare.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDate);
+testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
 testFilename = 'MTF_SACCSFA.mat';
 data_SACCSFA = load(fullfile(testFiledir,testFilename));
 meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all;
@@ -73,7 +73,7 @@ for cc = 1:nTargetChs
     targetChTemp = targetChOptions{cc};
     if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-        testFiledir = fullfile(testFiledir,'Camera','PrintedImageContrast',measureDate,targetChTemp);
+        testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','Print',measureDate,targetChTemp);
     else
         error('Cannot find data file list!');
     end
