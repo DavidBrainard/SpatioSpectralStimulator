@@ -19,11 +19,17 @@
 clear; close all;
 
 %% Set variables.
+%
+% Set the index for searching for the channel to compare MTF with the SACCSFA.
+% The peak wavelengths of the SACCSFA were 422, 476, 530, 592, 658 nm at .
 targetCyclePerDeg = {3,6,9,12,18};
 nSFs = length(targetCyclePerDeg);
+peaks_spd_SACCSFA = [422 476 530 592 658];
+idxChComparison = [2 3 5 6 8];
+nChComparison = length(idxChComparison);
 
 % Set which viewing media data to analyze.
-numViewingMedia = 2;
+numViewingMedia = 1;
 switch numViewingMedia
     case 1
         viewingMedia = 'SACCSFA';
@@ -78,10 +84,16 @@ channelFolderList = channelFolderList(4:end);
 nChannels = numel(channelFolderList);
 nSFs = length(targetCyclePerDeg);
 
+% Get the available channels by getting the folder names.
+for cc = 1:nChannels
+    channelOptions{cc} = channelFolderList(cc).name;
+end
+
+% Sort the channel options in an ascending order.
+numChannels = regexp(channelOptions, '\d+', 'match');
+
 % Load all images here for all channels and spatial frequencies.
 for cc = 1:nChannels
-    % Set the folder of each channel.
-    channelOptions{cc} = channelFolderList(cc).name;
     oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
     
     % Loop over for all spatial frequency.
@@ -129,81 +141,76 @@ end
 % These are the contrats when measuring only one cycle (so, half black on
 % the left and the other half as white on the right). Measured on
 % 09/05/2023.
-testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
-testFilename = 'Contrast_SingleCycle_combiLED.mat';
-singleCycleContrastData = load(fullfile(testFiledir,testFilename));
-contrastSingleCyclePerChannel = singleCycleContrastData.contrastSingleCyclePerChannel;
-
-if strcmp(viewingMedia,'SACCSFA')
-    idxChComparison = [2 3 5 6 8];
-    contrastSingleCyclePerChannel = contrastSingleCyclePerChannel(idxChComparison);
-end
-
-figure; clf;
-figureSize = [0 0 1000 500];
-set(gcf,'position',figureSize);
-sgtitle('MTF comparison: Camera vs. SACCSFA', 'fontsize', 15);
-
-% Normalize the contrast by dividing the single cycle contrast.
-meanContrastsNorm_all = meanContrasts_all./contrastSingleCyclePerChannel;
-
-% Set the contrast within the range.
-maxContrast = 1;
-meanContrastsNorm_all(find(meanContrastsNorm_all > maxContrast)) = 1;
-
-% Set the index for searching for the channel to compare MTF with the SACCSFA.
-% The peak wavelengths of the SACCSFA were 422, 476, 530, 592, 658 nm at .
-peaks_spd_SACCSFA = [422 476 530 592 658];
-idxChComparison = [2 3 5 6 8];
-nChComparison = length(idxChComparison);
-
-% Make a loop to plot the results of each channel.
-for cc = 1:nChComparison
-    subplot(2,3,cc); hold on;
+if strcmp(viewingMedia,'Print')
+    testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+    testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
+    testFilename = 'Contrast_SingleCycle_combiLED.mat';
+    singleCycleContrastData = load(fullfile(testFiledir,testFilename));
+    contrastSingleCyclePerChannel = singleCycleContrastData.contrastSingleCyclePerChannel;
     
-    % Printed pattern.
-    meanContrastsTemp = meanContrastsNorm_all(:,idxChComparison(cc));
-    plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+    if strcmp(viewingMedia,'SACCSFA')
+        contrastSingleCyclePerChannel = contrastSingleCyclePerChannel(idxChComparison);
+    end
     
-    % SACCSFA.
-    plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,cc),...
-        'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
+    figure; clf;
+    figureSize = [0 0 1000 500];
+    set(gcf,'position',figureSize);
+    sgtitle('MTF comparison: Camera vs. SACCSFA', 'fontsize', 15);
     
-    legend('Raw','SACCSFA','location','southeast','fontsize',11);
-    ylim([0 1.1]);
-    xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
-    xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
-end
-
-% Now plot the MTF of SACCSFA under assumption using a perfect camera.
-%
-% Here we divide the MTF by camera MTF.
-meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
-
-% Set the contrast within the range.
-maxContrast = 1;
-meanContrastsSACCSFAPerfect(find(meanContrastsSACCSFAPerfect > maxContrast)) = 1;
-
-% Make a new figure.
-figure; clf;
-set(gcf,'position',figureSize);
-
-% Make a loop to plot the results of each channel.
-for cc = 1:length(meanContrastsSACCSFAPerfect)
-    subplot(2,3,cc); hold on;
-    meanContrastsTemp = meanContrastsSACCSFAPerfect(:,cc);
-    plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
-        'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
-    ylim([0 1.1]);
-    xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
-    xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
-    legend('SACCSFA','location','southeast','fontsize',11);
+    % Normalize the contrast by dividing the single cycle contrast.
+    meanContrastsNorm_all = meanContrasts_all./contrastSingleCyclePerChannel;
+    
+    % Set the contrast within the range.
+    maxContrast = 1;
+    meanContrastsNorm_all(find(meanContrastsNorm_all > maxContrast)) = 1;
+    
+    % Make a loop to plot the results of each channel.
+    for cc = 1:nChComparison
+        subplot(2,3,cc); hold on;
+        
+        % Printed pattern.
+        meanContrastsTemp = meanContrastsNorm_all(:,idxChComparison(cc));
+        plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
+            'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+        
+        % SACCSFA.
+        plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,cc),...
+            'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
+        
+        legend('Raw','SACCSFA','location','southeast','fontsize',11);
+        ylim([0 1.1]);
+        xlabel('Spatial Frequency (cpd)','fontsize',15);
+        ylabel('Mean Contrasts','fontsize',15);
+        xticks(cell2mat(targetCyclePerDeg));
+        title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+    end
+    
+    % Now plot the MTF of SACCSFA under assumption using a perfect camera.
+    %
+    % Here we divide the MTF by camera MTF.
+    meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
+    
+    % Set the contrast within the range.
+    maxContrast = 1;
+    meanContrastsSACCSFAPerfect(find(meanContrastsSACCSFAPerfect > maxContrast)) = 1;
+    
+    % Make a new figure.
+    figure; clf;
+    set(gcf,'position',figureSize);
+    
+    % Make a loop to plot the results of each channel.
+    for cc = 1:length(meanContrastsSACCSFAPerfect)
+        subplot(2,3,cc); hold on;
+        meanContrastsTemp = meanContrastsSACCSFAPerfect(:,cc);
+        plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
+            'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
+        ylim([0 1.1]);
+        xlabel('Spatial Frequency (cpd)','fontsize',15);
+        ylabel('Mean Contrasts','fontsize',15);
+        xticks(cell2mat(targetCyclePerDeg));
+        title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+        legend('SACCSFA','location','southeast','fontsize',11);
+    end
 end
 
 %% Compare ESF across the channels.
@@ -278,7 +285,7 @@ for ss = 1:nSFs
                 case 3
                     f0Options = [12.73684 12.52632 12.94747 11.5 13.89474];
                 case 4
-                    f0Options = [16 16.94737   19.15789  18.36842  17.73684];
+                    f0Options = [16 16.94737 19.15789 18.36842 17.73684];
                 case 5
                     f0Options = [29.52632 30.36842 30.42105 29.31579 29];
             end
@@ -333,7 +340,7 @@ for ss = 1:nSFs
         contrast = A/B;
         if contrast > 1
             contrast = 1;
-        elseif contrast < 0 
+        elseif contrast < 0
             contrast = 0;
         end
         contrastSine(cc,ss) = contrast;
