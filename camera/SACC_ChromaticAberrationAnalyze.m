@@ -129,7 +129,12 @@ end
 % These are the contrats when measuring only one cycle (so, half black on
 % the left and the other half as white on the right). Measured on
 % 09/05/2023.
-contrastSingleCyclePerChannel = [0.8811 0.8756 0.8938 0.8891 0.8863 0.8870 0.8853 0.8868];
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
+testFilename = 'Contrast_SingleCycle_combiLED.mat';
+singleCycleContrastData = load(fullfile(testFiledir,testFilename));
+contrastSingleCyclePerChannel = singleCycleContrastData.contrastSingleCyclePerChannel;
+
 if strcmp(viewingMedia,'SACCSFA')
     idxChComparison = [2 3 5 6 8];
     contrastSingleCyclePerChannel = contrastSingleCyclePerChannel(idxChComparison);
@@ -158,12 +163,12 @@ for cc = 1:nChComparison
     subplot(2,3,cc); hold on;
     
     % Printed pattern.
-    meanContrastsTemp = meanContrastsNorm_all(:,cc);
+    meanContrastsTemp = meanContrastsNorm_all(:,idxChComparison(cc));
     plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % SACCSFA.
-    plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,ss),...
+    plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,cc),...
         'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
     legend('Raw','SACCSFA','location','southeast','fontsize',11);
@@ -177,7 +182,7 @@ end
 %% Plot the MTF of SACCSFA under assumption using a perfect camera.
 %
 % Here we divide the MTF by camera MTF.
-meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(idxChComparison);
+meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
 
 % Set the contrast within the range.
 maxContrast = 1;
@@ -237,6 +242,7 @@ end
 % Show FFT results if you want.
 DoFourierTransform = false;
 
+ESF = ESF(idxChComparison,:);
 % Fit sine signal here.
 %
 % Loop over the spatial frequency.
@@ -318,7 +324,7 @@ end
 %% Here we search the initial guess of frequency to fit sine curve.
 %
 % Search a value using grid-search.
-FINDINITIALFREQUENCYTOFIT = true;
+FINDINITIALFREQUENCYTOFIT = false;
 
 if (FINDINITIALFREQUENCYTOFIT)
     nFits = 20;
