@@ -179,7 +179,7 @@ for cc = 1:nChComparison
     title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
 end
 
-%% Plot the MTF of SACCSFA under assumption using a perfect camera.
+% Now plot the MTF of SACCSFA under assumption using a perfect camera.
 %
 % Here we divide the MTF by camera MTF.
 meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
@@ -242,7 +242,10 @@ end
 % Show FFT results if you want.
 DoFourierTransform = false;
 
-ESF = ESF(idxChComparison,:);
+if strcmp(viewingMedia,'Print')
+    ESF = ESF(idxChComparison,:);
+end
+
 % Fit sine signal here.
 %
 % Loop over the spatial frequency.
@@ -318,6 +321,22 @@ for ss = 1:nSFs
         % Fitted signal.
         plot(fittedSignal{cc,ss},'r-');
         legend('Origianl','Fit');
+    end
+end
+
+% Calculate contrast from the sine fitted curve.
+for ss = 1:nSFs
+    for cc = 1:nChComparison
+        paramsTemp = params{cc,ss};
+        A = paramsTemp(1);
+        B = paramsTemp(4);
+        contrast = A/B;
+        if contrast > 1
+            contrast = 1;
+        elseif contrast < 0 
+            contrast = 0;
+        end
+        contrastSine(cc,ss) = contrast;
     end
 end
 
