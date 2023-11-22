@@ -29,7 +29,7 @@ idxChComparison = [2 3 5 6 8];
 nChComparison = length(idxChComparison);
 
 % Set which viewing media data to analyze.
-numViewingMedia = 1;
+numViewingMedia = 2;
 switch numViewingMedia
     case 1
         viewingMedia = 'SACCSFA';
@@ -39,7 +39,7 @@ switch numViewingMedia
         viewingMedia = 'RawProjector';
 end
 
-%% Get the peak wave length values.
+%% Get the peak wavelength of the Combi-LED.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
 testFilename = 'spd_combiLED.mat';
@@ -59,7 +59,7 @@ testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
 testFilename = 'MTF_SACCSFA.mat';
 data_SACCSFA = load(fullfile(testFiledir,testFilename));
-meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all;
+meanContrasts_SACCSFA = data_SACCSFA.meanContrasts_all';
 
 %% Load all images here.
 %
@@ -133,12 +133,12 @@ for cc = 1:nChannels
         % Calculate contrasts.
         [contrastsRawTemp ESF{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance);
         contrastsRaw{ss} = contrastsRawTemp;
-        meanContrasts{ss} = mean(contrastsRawTemp);
+        meanContrasts(ss) = mean(contrastsRawTemp);
         stdErrorContrasts{ss} = std(contrastsRawTemp)/sqrt(length(contrastsRawTemp));
     end
     
     % Collect the mean contrast results.
-    meanContrasts_all(:,cc) = cell2mat(meanContrasts);
+    meanContrasts_all(cc,:) = meanContrasts;
 end
 
 %% Plot MTF comparing with SACCSFA results.
@@ -154,7 +154,7 @@ if strcmp(viewingMedia,'Print')
     testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
     testFilename = 'Contrast_SingleCycle_combiLED.mat';
     singleCycleContrastData = load(fullfile(testFiledir,testFilename));
-    contrastSingleCyclePerChannel = singleCycleContrastData.contrastSingleCyclePerChannel;
+    contrastSingleCyclePerChannel = singleCycleContrastData.contrastSingleCyclePerChannel';
     
     if strcmp(viewingMedia,'SACCSFA')
         contrastSingleCyclePerChannel = contrastSingleCyclePerChannel(idxChComparison);
@@ -177,12 +177,12 @@ if strcmp(viewingMedia,'Print')
         subplot(2,3,cc); hold on;
         
         % Printed pattern.
-        meanContrastsTemp = meanContrastsNorm_all(:,idxChComparison(cc));
+        meanContrastsTemp = meanContrastsNorm_all(idxChComparison(cc),:);
         plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
             'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
         
         % SACCSFA.
-        plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(:,cc),...
+        plot(cell2mat(targetCyclePerDeg),meanContrasts_SACCSFA(cc,:),...
             'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
         
         legend('Raw','SACCSFA','location','southeast','fontsize',11);
@@ -196,7 +196,7 @@ if strcmp(viewingMedia,'Print')
     % Now plot the MTF of SACCSFA under assumption using a perfect camera.
     %
     % Here we divide the MTF by camera MTF.
-    meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(:,idxChComparison);
+    meanContrastsSACCSFAPerfect = meanContrasts_SACCSFA./meanContrastsNorm_all(idxChComparison,:);
     
     % Set the contrast within the range.
     maxContrast = 1;
@@ -209,7 +209,7 @@ if strcmp(viewingMedia,'Print')
     % Make a loop to plot the results of each channel.
     for cc = 1:length(meanContrastsSACCSFAPerfect)
         subplot(2,3,cc); hold on;
-        meanContrastsTemp = meanContrastsSACCSFAPerfect(:,cc);
+        meanContrastsTemp = meanContrastsSACCSFAPerfect(cc,:);
         plot(cell2mat(targetCyclePerDeg),meanContrastsTemp,...
             'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
         ylim([0 1.1]);
