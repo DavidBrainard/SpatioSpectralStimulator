@@ -87,10 +87,18 @@ nSFs = length(targetCyclePerDeg);
 % Get the available channels by getting the folder names.
 for cc = 1:nChannels
     channelOptions{cc} = channelFolderList(cc).name;
+    
+    % Extract the number of channels only. We will set it in an ascending
+    % order.
+    numChannelTemp = regexp(channelOptions{cc}, '\d+', 'match');
+    numChannels(cc) = str2num(cell2mat(numChannelTemp));
 end
 
 % Sort the channel options in an ascending order.
-numChannels = regexp(channelOptions, '\d+', 'match');
+[numChannelsSorted I] = sort(numChannels,'ascend');
+
+% Sort the channel options in a ascending order here.
+channelOptions = channelOptions(I);
 
 % Load all images here for all channels and spatial frequencies.
 for cc = 1:nChannels
