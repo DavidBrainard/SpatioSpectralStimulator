@@ -71,23 +71,24 @@ end
 %% Show the results if you want.
 if (options.verbose)
     % Show image.
-%     imshow(image);
-
+    %     imshow(image);
+    
     % Plot it.
     hold on;
     plot(imageCrop25, 'r-', 'LineWidth',1);
     plot(imageCrop50, 'g-', 'LineWidth',1);
     plot(imageCrop75, 'b-', 'LineWidth',1);
     plot(imageCropAvg, 'k-', 'color', [0 0 0 0.2], 'LineWidth',5);
-
+    
     % Plot the peak and valley points.
     plot(locs_peaks,imageCropAvg(locs_peaks),'bo','markersize',4,'markerfacecolor','b','markeredgecolor','k');
     plot(locs_valleys,imageCropAvg(locs_valleys),'ro','markersize',4,'markerfacecolor','r','markeredgecolor','k');
     xlabel('Pixel position (horizontal)','fontsize',15);
     ylabel('dRGB','fontsize',15);
     legend('25%','50%','75%','Avg');
-    
-    % Print out the averaged edge spread function.
-    averagedESF = imageCropAvg;
 end
+
+% Print out the averaged edge spread function.
+averagedESF = imageCropAvg;
+
 end
