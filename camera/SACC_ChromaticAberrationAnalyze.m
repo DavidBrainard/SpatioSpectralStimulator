@@ -384,6 +384,38 @@ for ss = 1:nSFs
     end
 end
 
+%% Plot the raw MTF (Camera).
+%
+% Choose which way to calculate the contrast.
+switch contrastCalMethod
+    case 'MeanIntensityProfile'
+        contrastRaw_camera = meanContrasts_camera(idxChannelTarget,:);
+    case 'Sinefit'
+        contrastRaw_camera = contrastsFit_camera;
+end
+
+% Plot the raw camera MTF results.
+figure; clf;
+figureSize = [0 0 1000 500];
+set(gcf,'position',figureSize);
+sgtitle('Raw camera MTF', 'fontsize', 15);
+
+for cc = 1:nChannelsTarget
+    subplot(2,3,cc); hold on;
+    
+    % Camera MTF.
+    contrastRawOneChannel = contrastRaw_camera(cc,:);
+    plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+    
+    legend('Raw','location','southeast','fontsize',11);
+    ylim([0 1.1]);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrasts','fontsize',15);
+    xticks(cell2mat(targetCyclePerDeg));
+    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+end
+
 %% Calculate the compensated MTF (Camera).
 %
 % Here we compensate the limitation of using printed paper by dividing the
