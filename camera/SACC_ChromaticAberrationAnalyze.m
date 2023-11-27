@@ -33,19 +33,24 @@ peaks_spd_SACCSFA = [422 476 530 592 658];
 idxChannelTarget = [2 3 5 6 8];
 nChannelsTarget = length(idxChannelTarget);
 
+% Choose which contrast calculation method to use. 
+%
+% Set 'optionContrastCalMethod' to 1 will show the results using the
+% contrasts calculated directly from the intensity profile of each image.
+%
+% Set it 2 shows the results by doing sine fitting to the intensity profile
+% and calculating the contrasts from the fitting.
+optionContrastCalMethod = 1;
+switch optionContrastCalMethod
+    case 1
+        contrastCalMethod = 'MeanIntensityProfile';
+    case 2
+        contrastCalMethod = 'Sinefit';
+end
+
+% Set additional analysis options.
 DoFourierTransform = false;
 plotIntensityProfile = false;
-
-% Set which viewing media data to analyze.
-numViewingMedia = 2;
-switch numViewingMedia
-    case 1
-        viewingMedia = 'SACCSFA';
-    case 2
-        viewingMedia = 'Print';
-    case 3
-        viewingMedia = 'RawProjector';
-end
 
 %% Get the peak wavelength of the Combi-LED.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
@@ -404,9 +409,8 @@ contrastsFit_cameraNorm(find(contrastsFit_cameraNorm > maxContrast)) = 1;
 
 %% 3) Calculate the compensated MTF (SACCSFA).
 %
-% Choose which contrast calculation method to use.
-contrastCalMethod = 'MeanIntensityProfile';
-
+% We used two different methods to calculate contrast. Choose either one to
+% plot the results. It was chosen at the very beginning of this routine.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
         contrast_camera = meanContrasts_cameraNorm(idxChannelTarget,:);
