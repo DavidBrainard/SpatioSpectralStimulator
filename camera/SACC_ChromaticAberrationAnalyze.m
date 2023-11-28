@@ -33,14 +33,14 @@ peaks_spd_SACCSFA = [422 476 530 592 658];
 idxChannelTarget = [2 3 5 6 8];
 nChannelsTarget = length(idxChannelTarget);
 
-% Choose which contrast calculation method to use. 
+% Choose which contrast calculation method to use.
 %
 % Set 'optionContrastCalMethod' to 1 will show the results using the
 % contrasts calculated directly from the intensity profile of each image.
 %
 % Set it 2 shows the results by doing sine fitting to the intensity profile
 % and calculating the contrasts from the fitting.
-optionContrastCalMethod = 1;
+optionContrastCalMethod = 2;
 switch optionContrastCalMethod
     case 1
         contrastCalMethod = 'MeanIntensityProfile';
@@ -138,7 +138,7 @@ for cc = 1:nChannelsTarget
         end
         
         % Calculate contrasts.
-        [contrastsTemp IP{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        [contrastsTemp IP_SACCSFA{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
         meanContrastsOneChannel(ss) = mean(contrastsTemp);
     end
     
@@ -147,10 +147,7 @@ for cc = 1:nChannelsTarget
 end
 
 %% Fit sine function to the signal (SACCSFA).
-if strcmp(viewingMedia,'Print')
-    IP = IP(idxChannelTarget,:);
-end
-
+%
 % Fit sine signal here.
 for ss = 1:nSFs
     for cc = 1:nChannelsTarget
@@ -165,15 +162,15 @@ for ss = 1:nSFs
             case 4
                 f0Options = [16 16.94737 19.15789 18.36842 17.73684];
             case 5
-                f0Options = [29.52632 30.36842 30.42105 29.31579 29];
+                f0Options = [30.9211 30.36842 30.42105 29.31579 29];
         end
         
         % Update initial guess of frequency here.
         f0 = f0Options(cc);
         
         % Fit happens here.
-        signalToFit = IP{cc,ss};
-        [params_SACSSFA{cc,ss}, fittedSignal_SACCSFA{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+        signalToFit = IP_SACCSFA{cc,ss};
+        [params_SACCSFA{cc,ss}, fittedSignal_SACCSFA{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
         
         % Clear the initial guess of frequency for next fit.
         clear f0;
@@ -197,7 +194,7 @@ for ss = 1:nSFs
         ylim([0 220]);
         
         % Original.
-        plot(IP{cc,ss},'b-');
+        plot(IP_SACCSFA{cc,ss},'b-');
         
         % Fitted signal.
         plot(fittedSignal_SACCSFA{cc,ss},'r-');
@@ -208,7 +205,7 @@ end
 % Calculate contrast from the sine fitted curve.
 for ss = 1:nSFs
     for cc = 1:nChannelsTarget
-        paramsTemp = params_SACSSFA{cc,ss};
+        paramsTemp = params_SACCSFA{cc,ss};
         A = paramsTemp(1);
         B = paramsTemp(4);
         contrast = A/B;
@@ -292,7 +289,7 @@ for cc = 1:nChannels
         end
         
         % Calculate contrasts.
-        [contrastsTemp IP{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        [contrastsTemp IP_camera{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
         meanContrastsOneChannel(ss) = mean(contrastsTemp);
     end
     
@@ -301,9 +298,9 @@ for cc = 1:nChannels
 end
 
 %% Fit sine function to the signal (Camera).
-if strcmp(viewingMedia,'Print')
-    IP = IP(idxChannelTarget,:);
-end
+%
+% Get the corresponding channels to compare with SACCSFA.
+IP_camera = IP_camera(idxChannelTarget,:);
 
 % Fit sine signal here.
 %
@@ -332,7 +329,7 @@ for ss = 1:nSFs
         f0 = f0Options(cc);
         
         % Fit happens here.
-        signalToFit = IP{cc,ss};
+        signalToFit = IP_camera{cc,ss};
         [params_camera{cc,ss}, fittedSignal_camera{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
         
         % Clear the initial guess of frequency for next fit.
@@ -360,7 +357,7 @@ for ss = 1:nSFs
         ylim([0 220]);
         
         % Original.
-        plot(IP{cc,ss},'b-');
+        plot(IP_camera{cc,ss},'b-');
         
         % Fitted signal.
         plot(fittedSignal_camera{cc,ss},'r-');
@@ -464,7 +461,7 @@ for cc = 1:nChannelsTarget
     % Camera MTF.
     meanContrastsOneChannel = contrast_camera(cc,:);
     plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',12);
     
     % SACCSFA MTF.
     plot(cell2mat(targetCyclePerDeg),contrast_SACCSFA(cc,:),...
@@ -507,34 +504,150 @@ end
 
 %% Transverse Chromatic Aberration (TCA) - (Camera).
 %
-% Here we will compare intensity profile across the channels.
+% 1) Plot raw intensity profiles.
 figure; hold on;
 figurePosition = [0 0 1000 1000];
 set(gcf,'position',figurePosition);
-sgtitle('Check spatial position of the waves over different channels');
+sgtitle('Raw intensity profile over the channels (Camera)');
+minY = -20;
+maxY = 220;
 
-% Make a loop to plot all combinations, channel x spatial frequency.
-%
-% Spatial frequency.
+% Get the channels used for comparison.
 peaks_spd_camera_compare = peaks_spd_camera(idxChannelTarget);
+
+% Make a loop to plot.
 for ss = 1:nSFs
     subplot(5,1,ss); hold on;
     
     % Channel.
     for cc = 1:nChannelsTarget
-        ESFTemp = IP{cc,ss};
-        plot(ESFTemp);
+        plot(IP_camera{cc,ss});
         
-        % Generate texts for the legend.
-        legendHandlesESF{cc} = append(num2str(peaks_spd_camera_compare(cc)),' nm');
+        % Generate texts for the legend for each graph.
+        legendHandles{cc} = append(num2str(peaks_spd_camera_compare(cc)),' nm');
+        
+        % Extract the fitted parameter, phi, for all channels and spatial
+        % frequencies.
+        idxParamPhi = 3;
+        phi_camera(cc,ss) = params_camera{cc,ss}(idxParamPhi);
     end
     
-    % Set each graph in format.
+    % Set each graph in the same format.
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
-    legend(legendHandlesESF,'fontsize',11,'location','southeast','fontsize',10);
+    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
     xlabel('Pixel position (horizontal)','fontsize',12);
-    ylabel('Normalized dRGB','fontsize',12);
+    ylabel('dRGB','fontsize',12);
+    ylim([minY maxY]);
 end
+
+% 2) Plot the sine fitted graphs (Camera).
+figure; hold on;
+set(gcf,'position',figurePosition);
+sgtitle('Fitted intensity profile over the channels (Camera)');
+
+% Loop over Spatial frequency.
+for ss = 1:nSFs
+    subplot(5,1,ss); hold on;
+    
+    % Loop over Channel.
+    for cc = 1:nChannelsTarget
+        plot(fittedSignal_camera{cc,ss});
+    end
+    
+    % Set each graph in the same format.
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    xlabel('Pixel position (horizontal)','fontsize',12);
+    ylabel('dRGB','fontsize',12);
+    ylim([minY maxY]);
+end
+
+% 3) Plot the comparison of the parameter phi over the channels.
+%
+% Define the x-ticks for the plot.
+xticksPlot = linspace(1,nChannelsTarget,nChannelsTarget);
+
+figure; hold on;
+title('Fitted parameter phi comparison (Camera)','fontsize',15);
+plot(xticksPlot,phi_camera,'o-');
+xticks(xticksPlot);
+xticklabels(peaks_spd_camera_compare);
+xlabel('Peak wavelength (nm)','fontsize',15);
+ylabel('Fitted phi','fontsize',15);
+
+% Add legend.
+for ss = 1:length(targetCyclePerDeg)
+    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+end
+legend(legendHandles,'fontsize',12,'location','northeastoutside');
+
+%% Transverse Chromatic Aberration (TCA) - (SACCSFA).
+%
+% 1) Plot raw intensity profiles.
+figure; hold on;
+set(gcf,'position',figurePosition);
+sgtitle('Raw intensity profile over the channels (SACCSFA)');
+
+% Make a loop to plot.
+for ss = 1:nSFs
+    subplot(5,1,ss); hold on;
+    
+    % Channel.
+    for cc = 1:nChannelsTarget
+        plot(IP_SACCSFA{cc,ss});
+        
+        % Generate texts for the legend for each graph.
+        legendHandles{cc} = append(num2str(peaks_spd_SACCSFA(cc)),' nm');
+        
+        % Extract the fitted parameter, phi, for all channels and spatial
+        % frequencies.
+        idxParamPhi = 3;
+        phi_SACCSFA(cc,ss) = params_SACCSFA{cc,ss}(idxParamPhi);
+    end
+    
+    % Set each graph in the same format.
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    xlabel('Pixel position (horizontal)','fontsize',12);
+    ylabel('dRGB','fontsize',12);
+    ylim([minY maxY]);
+end
+
+% 2) Plot the sine fitted graphs (SACCSFA).
+figure; hold on;
+set(gcf,'position',figurePosition);
+sgtitle('Fitted intensity profile over the channels (SACCSFA)');
+
+for ss = 1:nSFs
+    subplot(5,1,ss); hold on;
+    
+    % Channel.
+    for cc = 1:nChannelsTarget
+        plot(fittedSignal_SACCSFA{cc,ss});
+    end
+    
+    % Set each graph in the same format.
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    xlabel('Pixel position (horizontal)','fontsize',12);
+    ylabel('dRGB','fontsize',12);
+    ylim([minY maxY]);
+end
+
+% 3) Plot the comparison of the parameter phi over the channels.
+figure; hold on;
+title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
+plot(xticksPlot,phi_SACCSFA,'o-');
+xticks(xticksPlot);
+xticklabels(peaks_spd_SACCSFA);
+xlabel('Peak wavelength (nm)','fontsize',15);
+ylabel('Fitted phi','fontsize',15);
+
+% Add legend.
+for ss = 1:length(targetCyclePerDeg)
+    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+end
+legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
 %% For better fitting the sine curve, we can search the initial guess of frequency.
 %
@@ -547,13 +660,13 @@ FINDINITIALFREQUENCYTOFIT = false;
 
 if (FINDINITIALFREQUENCYTOFIT)
     nFits = 20;
-    f0_lb = 3;
-    f0_ub = 5;
+    f0_lb = 29.5;
+    f0_ub = 31;
     f0Range = linspace(f0_lb,f0_ub,nFits);
     
     % Set the wave to fit.
-    SF = 1;
-    originalSignals = IP(:,SF);
+    SF = 5;
+    originalSignals = IP_SACCSFA(:,SF);
     
     for cc = 1:nChannelsTarget
         % Make a new figure per each channel.
