@@ -31,9 +31,9 @@ for dd = 1:length(projectorSettings)
     if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
         if dd == 3
-            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,projectorSettingTemp,'Focus Separately');
+            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','OLD',measureDate,projectorSettingTemp,'Focus Separately');
         else
-            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',measureDate,projectorSettingTemp);
+            testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','OLD',measureDate,projectorSettingTemp);
         end
         
         testFileList = dir(fullfile(testFiledir,'Ch*'));
