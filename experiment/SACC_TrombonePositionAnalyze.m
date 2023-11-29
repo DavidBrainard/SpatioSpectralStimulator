@@ -58,10 +58,13 @@ figure; hold on;
 nSubjects = length(subjectOptions);
 
 % Histogram.
-histData = histogram(trombone,'FaceColor','y');
+binWidth = 5;
+histData = histogram(trombone,'FaceColor','y','binwidth',binWidth);
 xlabel('Trombone position (mm)','fontsize',15);
 ylabel('Population','fontsize',15);
 title(sprintf('Trombone position distribution (N = %d)',nSubjects),'fontsize',15);
+subtitle(sprintf('Max = %d mm / Min = %d mm / Median = %d mm',...
+    max(trombone),min(trombone),round(median(trombone))));
 
 % Add reference line of emmentropic.
 plot([tromboneEmmentropic tromboneEmmentropic],[0 max(histData.Values)],...
