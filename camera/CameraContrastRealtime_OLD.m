@@ -7,15 +7,57 @@
 %    06/13/23    smo     - Cleaned up from the old script.
 %    08/31/23    smo     - Moved to project repository as Trombone laptop
 %                          is now able to use git.
-%    11/29/23    smo     - Parts were subsituted with function.
 
-%% Initialize.
+%% Open camera preview.
+%
+% Initialize.
 clear; close all; clc;
 
-%% Open camera.
-vid = OpenCamera;
+% Load the camera info.
+vid = videoinput('gentl', 1, 'Mono8');
+vidRes = get(vid, 'VideoResolution');
+nBands = get(vid, 'NumberOfBands');
 
-%% Capture image and calculate contrast.
+% Set the preferred window size to preview
+% The screen ratio to original. 0.25 means 25% raw image (type 0 to 1).
+windowsize = 0.25;
+vidRes_resize = vidRes.*windowsize;
+hFig = figure('Units', 'pixels', 'Position', [100 100 vidRes_resize(1) vidRes_resize(2)]);
+hAxes = axes('Units', 'pixels', 'Position', [10 10 vidRes_resize(1) vidRes_resize(2)]);
+hImage = image( zeros(vidRes(2), vidRes(1), nBands) );
+
+% Info about the marker position at the center.
+imWidth = vidRes(1);
+imHeight = vidRes(2);
+numBands = vid.NumberOfBands;
+markerindex = 0.5;
+
+% Show camera preview here.
+preview(vid, hImage)
+hLine = line(hAxes, round([markerindex*imWidth, markerindex*imWidth]),...
+    round([markerindex*imHeight, markerindex*imHeight]),...
+    'Marker','+','MarkerSize',30,'color','r','LineWidth',1,'LineStyle','none');
+
+% Set the targeted area of the image.
+% a = rect starting x-coordinate, b =rect starting y-coordinate,
+% c = rect width, d = rect height.
+ratioWidth = 0.1;
+ratioHeight = 0.08;
+a = (0.5-ratioWidth/2)*imWidth;
+b = (0.5-ratioHeight/2)*imHeight;
+c = ratioWidth * imWidth;
+d = ratioHeight * imHeight;
+
+% Show the target area in a rectangle.
+rectangle('Position',[a,b,c,d],'Curvature',[0,0],'LineWidth',1,'LineStyle','--','edgecolor','y')
+txtrect = 'Measure area';
+text(0.44*imWidth,0.43*imHeight,txtrect,'Color','y','fontsize',12);
+
+% Set the title of the image.
+txtcamera = 'Real time Camera Image';
+text(0.36*imWidth,0.05*imHeight,txtcamera,'Color','w','fontsize',14);
+
+%% Measure contrast.
 %
 % Repeat this part to update the contrast calculation results on the camera
 % preview screen. It is not 100% real-time measurements, but works pretty
