@@ -23,6 +23,15 @@ VERBOSE = true;
 CALCULATIONMETHOD = 'direct';
 
 %% Load target image and get size in pixels.
+%
+% Save the current directory. We will set it back to it in the end.
+currentDir = cd;
+
+% Get the directory where the images were at.
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir, 'Camera', 'ImagesForCalculateFOV');
+cd(testFiledir);
+
 imgFileName = 'infinity_DMD.tiff';
 img = imread(imgFileName);
 imgSize = size(img);
@@ -155,3 +164,6 @@ targetImgVerticalDeg = targetImgVerticalDegLeft + targetImgVerticalDegRight;
 
 % Combined.
 targetImgDeg = [targetImgHorizontalDeg targetImgVerticalDeg]
+
+%% Set directory to the initial.
+cd(currentDir);
