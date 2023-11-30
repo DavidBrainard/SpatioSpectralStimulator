@@ -10,7 +10,7 @@
 %    11/29/23    smo     - Parts were subsituted with function.
 
 %% Initialize.
-clear; close all; clc;
+clear; close all;
 
 %% Open camera.
 rectRatioWidth = 0.1;

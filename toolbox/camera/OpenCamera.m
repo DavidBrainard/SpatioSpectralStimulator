@@ -77,9 +77,9 @@ hLine = line(hAxes, round([markerindex*imWidth, markerindex*imWidth]),...
 % c = rect width
 % d = rect height
 a = (0.5 - options.rectRatioWidth/2) * imWidth;
-b = (0.5 - options.rectRatioHeigh/2) * imHeight;
+b = (0.5 - options.rectRatioHeight/2) * imHeight;
 c = options.rectRatioWidth * imWidth;
-d = options.rectRatioHeigh * imHeight;
+d = options.rectRatioHeight * imHeight;
 
 % Draw the rectangle here. It will be shown in the yellow lines.
 rectangle('Position',[a,b,c,d],'Curvature',[0,0],'LineWidth',1,'LineStyle','--','edgecolor','y')
@@ -93,6 +93,6 @@ txtcamera = 'Real time Camera Image';
 text(0.36*imWidth,0.05*imHeight,txtcamera,'Color','w','fontsize',14);
 
 % Print out if all worked.
-fprintf('Camera is connected and working now: Rect area = %d x %d (pixels) \n', c, d);
+fprintf('Camera is connected and working now! \n Rect area = %.0f x %.0f (pixels) \n', c, d);
 
 end
