@@ -26,25 +26,41 @@ textObjects = findall(fig,'Type','text');
 delete(textObjects);
 
 % Set which channel and spatial frequency to test.
-numChannel = 1;
+numChannel = 15;
 cyclesPerDeg = 3;
-
-% Set it differently over the channel. This value was found when we turn on
-% a single channel of combi-LED in input setting of 0.5 intensity (0-1).
-exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
-exposureTime = exposureTimePerChannel(numChannel);
-
-% Set min peak distance between peaks for calculating spatial frequency.
-minPeakDistancePixel = 40;
+numViewingMedia = 1;
 
 % Set which viewing media to use either SACCSFA or printed target for
 % camera MTF.
-numViewingMedia = 1;
 switch numViewingMedia
     case 1
         viewingMedia = 'SACCSFA';
     case 2
         viewingMedia = 'Print';
+end
+
+% Set it differently over the channel. This value was found when we turn on
+% a single channel of combi-LED in input setting of 0.5 intensity (0-1).
+switch viewingMedia
+    case 'SACCSFA'
+        exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
+    case 'Print'
+        exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
+end
+exposureTime = exposureTimePerChannel(numChannel);
+
+% Set min peak distance between peaks for calculating spatial frequency.
+switch cyclesPerDeg
+    case 3
+        minPeakDistancePixel = 40;
+    case 6
+        minPeakDistancePixel = 17;
+    case 9
+        minPeakDistancePixel = 5;
+    case 12 
+        minPeakDistancePixel = 5;
+    case 18
+        minPeakDistancePixel = 5;
 end
 
 % Get today's date.
@@ -61,7 +77,7 @@ saveImageDir = fullfile(saveImageDir,'Camera','ChromaticAberration',viewingMedia
 % Capture an image here and do analysis of it.
 CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
     'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
-    'saveImagedir',saveImageDir,'saveImageFilename',SF);
+    'saveImagedir',[],'saveImageFilename',SF);
 
 %% Test for one image.
 %
