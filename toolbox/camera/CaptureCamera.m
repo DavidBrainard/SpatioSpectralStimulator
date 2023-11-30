@@ -31,12 +31,12 @@ arguments
     options.rectRatioWidth (1,1) = 0.08
     options.minPeakDistancePixel (1,1) = 10
     options.saveImageDir = []
-    options.saveImageFilename (1,1)
+    options.saveImageFilename
 end
 
 %% Control exposure time.
 src = getselectedsource(vid);
-src.exposureTime = options.exposureTime;
+src.ExposureTime = options.exposureTime;
 
 %% Save a camera image. We will calculate the contrast from still image.
 start(vid);
@@ -112,7 +112,7 @@ fprintf('Spatial frequency = (%.1f) \n', cyclesPerDeg);
 
 % Add spatial frequency on the camera preview.
 textCyclesPerDeg = sprintf('Spatial frequency: %.1f',cyclesPerDeg);
-text(1.05*imWidth*markerindex, 1.1*imHeight*markerindex, textCyclesPerDeg, 'Color', 'w');
+text(1.05*imWidth*markerIndex, 1.1*imHeight*markerIndex, textCyclesPerDeg, 'Color', 'w');
 
 % Save the image if you want.
 if ~isempty(options.saveImageDir)

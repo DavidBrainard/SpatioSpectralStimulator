@@ -34,6 +34,9 @@ cyclesPerDeg = 3;
 exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
 exposureTime = exposureTimePerChannel(numChannel);
 
+% Set min peak distance between peaks for calculating spatial frequency.
+minPeakDistancePixel = 40;
+
 % Set which viewing media to use either SACCSFA or printed target for
 % camera MTF.
 numViewingMedia = 1;
