@@ -19,16 +19,26 @@ vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWid
 
 %% Capture image and calculate contrast.
 %
-% Clear text on the camera preview. This would make sort of real-time
+% Set which channel and spatial frequency to test.
+numChannel = 15;
+cyclesPerDegOptions = [3 6 9 12 18];
+numViewingMedia = 1;
+
+% Make a loop to measure for all spatial frequencies.
+nSFs = length(cyclesPerDegOptions);
+for ss = 1:nSFs
+       % Set the target spatial frequency.
+   cyclesPerDeg = cyclesPerDegOptions(ss);
+    
+   % Get a key stroke before starting each meausrement.
+    fprintf('Press any to start measurement - (Ch %d) and (%d cpd) \n',numChannel,cyclesPerDeg);
+    pause;
+
+   % Clear text on the camera preview. This would make sort of real-time
 % measurement by updating the numbers.
 fig = gcf;
 textObjects = findall(fig,'Type','text');
 delete(textObjects);
-
-% Set which channel and spatial frequency to test.
-numChannel = 15;
-cyclesPerDeg = 3;
-numViewingMedia = 1;
 
 % Set which viewing media to use either SACCSFA or printed target for
 % camera MTF.
@@ -77,7 +87,8 @@ saveImageDir = fullfile(saveImageDir,'Camera','ChromaticAberration',viewingMedia
 % Capture an image here and do analysis of it.
 CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
     'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
-    'saveImagedir',[],'saveImageFilename',SF);
+    'saveImagedir',saveImageDir,'saveImageFilename',SF);
+end
 
 %% Test for one image.
 %
