@@ -30,7 +30,7 @@ nChannels = 16;
 % order.
 peaks = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
 index = [1:1:length(peaks)];
-whichChannelPrimary1 = 1;
+whichChannelPrimary1 = 15;
 whichChannelPrimary2 = [];
 whichChannelPrimary3 = [];
 
@@ -48,18 +48,28 @@ SetChannelSettings(channelSettings);
 GetChannelSettings;
 
 %% Which spatial frequency to use.
-while 1
-    inputMessageSpatialFrequency = 'Which spatial frequency to test [3,6,9,12,18]: ';
-    sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
-    sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
-    
-    if ismember(sineFreqCyclesPerDeg, sineFreqCyclesPerDegOptions)
-        break
-    end
-    
-    disp('Spatial frequency should be within the above range!');
-end
+sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
+% while 1
+%     inputMessageSpatialFrequency = 'Which spatial frequency to test [3,6,9,12,18]: ';
+%     sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
+%     sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
+%     
+%     if ismember(sineFreqCyclesPerDeg, sineFreqCyclesPerDegOptions)
+%         break
+%     end
+%     
+%     disp('Spatial frequency should be within the above range!');
+% end
 
+nSFs = length(sineFreqCyclesPerDegOptions);
+for ss = 1:nSFs
+    % Set spatial frequency.
+    sineFreqCyclesPerDeg = sineFreqCyclesPerDegOptions(ss);
+    
+    % Get a key press to start to display image.
+    fprintf('Press any key to display image \n',whichChannelPrimary1,sineFreqCyclesPerDeg);
+    pause;
+    
 %% Set which type of screen to display here.
 % 
 % Set one among [Circle, Contrast, SingleLine]
@@ -206,6 +216,10 @@ switch ScreenPatternType
         
     otherwise 
 end
+
+fprintf('\t Now displaying - (Ch %d) / (%d cpd) \n',whichChannelPrimary1,sineFreqCyclesPerDeg);
+    
+end 
 
 %% Activate the following commands if you want to quit the screen with key stroke
 KEYPRESSTOCLOSE = false;
