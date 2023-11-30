@@ -118,6 +118,11 @@ text(1.05*imWidth*markerIndex, 1.1*imHeight*markerIndex, textCyclesPerDeg, 'Colo
 if ~isempty(options.saveImageDir)
     testfileDir = options.saveImageDir;
     
+    % Make a new directory if there is no directory with the name.
+    if ~isdir(testfileDir)
+        mkdir(testfileDir);
+    end
+    
     % Get the date for the file name.
     dayTimeStr = datestr(now,'yyyy-mm-dd_HH-MM-SS');
     
