@@ -28,10 +28,9 @@ nChannels = 16;
 %
 % Peak wavelength in order of channel number. Note that it is not ascending
 % order.
-% [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632]
 peaks = [422,448,476,474,506,402,532,552,558,592,610,618,632,418,658,632];
 index = [1:1:length(peaks)];
-whichChannelPrimary1 = 14;
+whichChannelPrimary1 = 1;
 whichChannelPrimary2 = [];
 whichChannelPrimary3 = [];
 
@@ -47,6 +46,19 @@ channelSettings(whichChannelPrimary3, 3) = channelIntensityPrimary3;
 % Set channel setting here.
 SetChannelSettings(channelSettings);
 GetChannelSettings;
+
+%% Which spatial frequency to use.
+while 1
+    inputMessageSpatialFrequency = 'Which spatial frequency to test [3,6,9,12,18]: ';
+    sineFreqCyclesPerDeg = input(inputMessageSpatialFrequency);
+    sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
+    
+    if ismember(sineFreqCyclesPerDeg, sineFreqCyclesPerDegOptions)
+        break
+    end
+    
+    disp('Spatial frequency should be within the above range!');
+end
 
 %% Set which type of screen to display here.
 % 
@@ -69,7 +81,7 @@ switch ScreenPatternType
         rectColor = [0 0 0];
         
         % Set the barwidth and directions.
-        cyclesPerDeg = 18;
+        cyclesPerDeg = sineFreqCyclesPerDeg;
         projectorOption = 'SACCSFA';
         
         if strcmp(projectorOption,'Raw')
