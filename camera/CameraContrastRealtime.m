@@ -99,9 +99,9 @@ obj = CombiLEDcontrol();
 %% Capture image and calculate contrast (PRINT).
 %
 % Set which channel and spatial frequency to test.
-cyclesPerDeg = 3;
+cyclesPerDeg = 18;
 channelOptions = [1 2 3 4 5 6 7 8];
-channelIntensity = 0.5;
+channelIntensity = 1;
 maxChannelIntensity = 1;
 numViewingMedia = 2;
 
@@ -120,7 +120,7 @@ for ss = 1:nChannels
     
     % Get a key stroke before starting each meausrement.
     fprintf('Press any to start measurement - (Ch %d: %.1f/%.1f) and (%d cpd) \n',numChannel,channelIntensity,maxChannelIntensity,cyclesPerDeg);
-    pause;
+    pause(3);
     
     % Clear text on the camera preview. This would make sort of real-time
     % measurement by updating the numbers.
@@ -143,12 +143,15 @@ for ss = 1:nChannels
         case 'SACCSFA'
             exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
         case 'Print'
-            exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
+%             exposureTimePerChannel = [340000 45000 40000 58000 21000 210000 47000 47000]; 
+            exposureTimePerChannel = [400000 700000 370000 660000 130000 990000 500000 350000];
     end
     exposureTime = exposureTimePerChannel(numChannel);
     
     % Set min peak distance between peaks for calculating spatial frequency.
     switch cyclesPerDeg
+        case 1
+            minPeakDistancePixel = 100;
         case 3
             minPeakDistancePixel = 40;
         case 6
@@ -182,12 +185,23 @@ end
 %
 % Here we are not saving the image and just checking if everything works
 % fine before running the routine.
-CAPTUREONEIMAGE = false;
+CAPTUREONEIMAGE = true;
 
 if (CAPTUREONEIMAGE)
+    
+     channelSettings = [0,0,0,0,0,0,0,0];
+    
+    % Turn on the target channel.
+    numChannel = 8;
+    channelSettings(numChannel) = 1;
+    
+    % Send the settings
+    obj.setPrimaries(channelSettings);
+
     % Set variables.
-    exposureTime = 10000;
-    minPeakDistancePixel = 40;
+    exposureTimePerChannel = [550000 900000 750000 850000 300000 990000 750000 600000];
+    exposureTime = exposureTimePerChannel(numChannel);
+    minPeakDistancePixel = 100;
     
     % Capture image here.
     CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
