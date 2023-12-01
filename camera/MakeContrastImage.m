@@ -18,8 +18,8 @@ image = ones(imageHeight, imageWidth);
 % cpd). This is the number when measuring the printed pattern outside the
 % SACCSFA room, on the hallway of 4th floor at Goddard.
 %
-% Set numStripes = 150 (18 cpd) / 100 (12 cpd) / 75 (9 cpd) / 50 (6 cpd)/ 25 (3 cpd). 
-numStripes = 25;
+% Set numStripes = 150 (18 cpd) / 100 (12 cpd) / 75 (9 cpd) / 50 (6 cpd)/ 25 (3 cpd) / 8 (1 cpd). 
+numStripes = 8;
 totalStripeWidth = imageWidth / numStripes;
 
 %% Generate the alternating black and white stripes
