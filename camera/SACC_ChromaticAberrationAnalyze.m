@@ -68,13 +68,13 @@ spdData = load(fullfile(testFiledir,testFilename));
 
 % Extract the spd data and flip left to right, becasue the measurement was
 % done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
-spd = spdData.spd;
-spd = fliplr(spd);
-nChannels = size(spd,2);
+spd_camera = spdData.spd;
+spd_camera = fliplr(spd_camera);
+nChannels = size(spd_camera,2);
 
 S = [380 2 201];
 wls = SToWls(S);
-peaks_spd_camera = FindPeakSpds(spd,'verbose',false);
+peaks_spd_camera = FindPeakSpds(spd_camera,'verbose',false);
 
 %% 1) Calculate the MTF (SACCSFA).
 %
@@ -340,7 +340,7 @@ for cc = 1:nChannels
     image = imread(testFilename);
     
     % Set min distance between adjacent peaks.
-    minPeakDistance = 50;
+    minPeakDistance = 30;
     
     % Calculate contrasts.
     if (plotIntensityProfile)
@@ -451,7 +451,7 @@ for ss = 1:nSFs
     end
 end
 
-%% Plot the raw MTF and compensate it (Camera).
+%% 2) Plot the raw MTF and compensate it (Camera).
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
