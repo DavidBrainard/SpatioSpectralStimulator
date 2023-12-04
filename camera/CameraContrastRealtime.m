@@ -20,7 +20,7 @@ vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWid
 %% Capture image and calculate contrast (SACCSFA).
 %
 % Set which channel and spatial frequency to test.
-numChannel = 15;
+numChannel = 16;
 cyclesPerDegOptions = [3 6 9 12 18];
 numViewingMedia = 1;
 
@@ -53,7 +53,11 @@ for ss = 1:nSFs
     % a single channel of combi-LED in input setting of 0.5 intensity (0-1).
     switch viewingMedia
         case 'SACCSFA'
-            exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
+%             exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
+              exposureTimePerChannel = [230000 180000 92000 140000 182000,...
+          990000 210000 115000 160000 190000,...
+          210000 140000 130000 340000 140000 170000];
+
         case 'Print'
             exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
     end
@@ -88,8 +92,10 @@ for ss = 1:nSFs
     CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
         'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
         'saveImagedir',saveImageDir,'saveImageFilename',SF);
+    
+    % Play a sound after capturing the image.
+    beep;
 end
-
 
 %% Open the combi-LED projector before to use.
 %
@@ -202,14 +208,18 @@ if (CAPTUREONEIMAGE)
     channelSettings = [0,0,0,0,0,0,0,0];
     
     % Turn on the target channel.
-    numChannel = 8;
+    numChannel = 16;
     channelSettings(numChannel) = 1;
     
     % Send the settings
-    obj.setPrimaries(channelSettings);
+%     obj.setPrimaries(channelSettings);
 
     % Set variables.
-    exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
+%     exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
+      exposureTimePerChannel = [230000 180000 92000 140000 182000,...
+          990000 210000 115000 160000 190000,...
+          210000 140000 130000 340000 140000 170000];
+        
     exposureTime = exposureTimePerChannel(numChannel);
     minPeakDistancePixel = 5;
     
