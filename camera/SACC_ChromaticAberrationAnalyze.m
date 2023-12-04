@@ -27,12 +27,6 @@ clear; close all;
 targetCyclePerDeg = {3,6,9,12,18};
 nSFs = length(targetCyclePerDeg);
 
-% Set the index for searching for the channel to compare MTF with the SACCSFA.
-% The peak wavelengths of the SACCSFA were 422, 476, 530, 592, 658 nm at .
-peaks_spd_SACCSFA = [422 476 530 592 658];
-idxChannelTarget = [2 3 5 6 8];
-nChannelsTarget = length(idxChannelTarget);
-
 % Choose which contrast calculation method to use.
 %
 % Set 'optionContrastCalMethod' to 1 will show the results using the
@@ -40,7 +34,7 @@ nChannelsTarget = length(idxChannelTarget);
 %
 % Set it 2 shows the results by doing sine fitting to the intensity profile
 % and calculating the contrasts from the fitting.
-optionContrastCalMethod = 2;
+optionContrastCalMethod = 1;
 switch optionContrastCalMethod
     case 1
         contrastCalMethod = 'MeanIntensityProfile';
@@ -51,6 +45,20 @@ end
 % Set additional analysis options.
 DoFourierTransform = false;
 plotIntensityProfile = false;
+
+%% Get the peak wavelengths (SACCSFA).
+%
+% Load the calibration data. We will load the most recent calibration
+% results.
+testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+testFiledir = fullfile(testFiledir,'Calibration');
+testFilename = 'SACCPrimary1.mat';
+calData = load(fullfile(testFiledir,testFilename));
+recentCalData = calData.cals{end};
+
+% Get the peaks from the spds.
+spd_SACCSFA = recentCalData.processedData.P_device;
+peaks_spd_SACCSFA = FindPeakSpds(spd_SACCSFA,'verbose',false);
 
 %% Get the peak wavelength of the Combi-LED.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
@@ -106,14 +114,25 @@ end
 
 % Sort the channel options in an ascending order.
 [numChannelsSorted I] = sort(numChannels,'ascend');
+peaks_spd_SACCSFA = sort(peaks_spd_SACCSFA,'ascend');
 
 % Sort the channel options in a ascending order here.
 channelOptions = channelOptions(I);
 
 % Load all images here for all channels and spatial frequencies.
-for cc = 1:nChannelsTarget
+nChannels = length(channelOptions);
+for cc = 1:nChannels
     oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
     
+    % We collect the channel index here.
+    idxChannels_SACCSFA(cc) = str2num(cell2mat(regexp(channelOptions{cc},'\d+','match')));
+    
+    % Make a new figure if we plot the intensity profile.
+    if (plotIntensityProfile)
+        figure;
+        sgtitle(sprintf('%d nm (%s)',peaks_spd_SACCSFA(idxChannels_SACCSFA(cc)),viewingMedia),'fontsize',15);
+    end
+
     % Get the images of all spatial frequency.
     for ss = 1:nSFs
         testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
@@ -138,7 +157,7 @@ for cc = 1:nChannelsTarget
         end
         
         % Calculate contrasts.
-        [contrastsTemp IP_SACCSFA{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        [contrastsTemp, IP_SACCSFA{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
         meanContrastsOneChannel(ss) = mean(contrastsTemp);
     end
     
@@ -150,7 +169,7 @@ end
 %
 % Fit sine signal here.
 for ss = 1:nSFs
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         % Set initial frequency for fitting sine wave.
         switch ss
             case 1
@@ -164,6 +183,9 @@ for ss = 1:nSFs
             case 5
                 f0Options = [30.9211 30.36842 30.42105 29.31579 29];
         end
+        
+        % This is temp options.
+        f0Options = ones(1, nChannels);
         
         % Update initial guess of frequency here.
         f0 = f0Options(cc);
@@ -186,8 +208,8 @@ for ss = 1:nSFs
     sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
     
     % Loop over the channels.
-    for cc = 1:nChannelsTarget
-        subplot(5,1,cc); hold on;
+    for cc = 1:nChannels
+        subplot(round(nChannels/2),2,cc); hold on;
         title(sprintf('%d nm',peaks_spd_SACCSFA((cc))));
         xlabel('Pixel position');
         ylabel('dRGB');
@@ -204,7 +226,7 @@ end
 
 % Calculate contrast from the sine fitted curve.
 for ss = 1:nSFs
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         paramsTemp = params_SACCSFA{cc,ss};
         A = paramsTemp(1);
         B = paramsTemp(4);
@@ -243,6 +265,12 @@ channelFolderList = dir(recentTestFiledir);
 
 % Get the available channels by getting the folder names.
 countChannel = 1;
+if exist('numChannels')
+   clear numChannels;
+end
+if exist('channelOptions')
+   clear channelOptions;
+end
 for cc = 1:length(channelFolderList)
     channelFoldernameTemp = channelFolderList(cc).name;
     
@@ -257,13 +285,21 @@ end
 
 % Sort the channel options in an ascending order.
 [numChannelsSorted I] = sort(numChannels,'ascend');
+peaks_spd_camera = sort(peaks_spd_camera,'ascend');
 
 % Sort the channel options in a ascending order here.
 channelOptions = channelOptions(I);
 
 % Load all images here for all channels and spatial frequencies.
+nChannels = length(channelOptions);
 for cc = 1:nChannels
     oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
+    
+    % Make a new figure if we plot the intensity profile.
+    if (plotIntensityProfile)
+        figure;
+        sgtitle(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
+    end
     
     % Get the images of all spatial frequency.
     for ss = 1:nSFs
@@ -295,19 +331,50 @@ for cc = 1:nChannels
     
     % Collect the mean contrast results.
     meanContrasts_camera(cc,:) = meanContrastsOneChannel;
+    
+    %% Here we get 1 cpd image and calculate contrast to compensate the camera MTF.
+    testFilename = '1cpd_crop';
+    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
+    
+    % We save all images here.
+    image = imread(testFilename);
+    
+    % Set min distance between adjacent peaks.
+    minPeakDistance = 50;
+    
+    % Calculate contrasts.
+    if (plotIntensityProfile)
+        figure;
+        title(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
+        subtitle('1 cpd','fontsize',13);
+    end
+    [contrastsTemp, IP_camera_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+    meanContrasts_camera_1cpd(cc) = mean(contrastsTemp);
+    
+    % Now fit sine curve to the 1 cpd to calculate contrast.
+    f0 = 10;
+    signalToFit = IP_camera_1cpd{cc};
+    [params_camera_1cpd{cc}, fittedSignal_camera_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+    
+    % Clear the initial guess of frequency for next fit.
+    clear f0;
+    
+    % Calculate contrast.
+    paramsTemp = params_camera_1cpd{cc};
+    A = paramsTemp(1);
+    B = paramsTemp(4);
+    contrast = A/B;
+    contrastsFit_camera_1cpd(cc) = contrast;
 end
 
 %% Fit sine function to the signal (Camera).
 %
-% Get the corresponding channels to compare with SACCSFA.
-IP_camera = IP_camera(idxChannelTarget,:);
-
 % Fit sine signal here.
 %
 % Loop over the spatial frequency.
 for ss = 1:nSFs
     % Loop over the channels.
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         
         % Set initial frequency for fitting sine wave. Fitting results are
         % extremely sensitive how we set the initial guess of its frequency. We
@@ -324,6 +391,9 @@ for ss = 1:nSFs
             case 5
                 f0Options = [29.5 30.01 30.5 29.9474 30.02];
         end
+        
+        % This is temp options.
+        f0Options = ones(1, nChannels);
         
         % Update initial guess of frequency here.
         f0 = f0Options(cc);
@@ -349,9 +419,9 @@ for ss = 1:nSFs
     sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
     
     % Loop over the channels.
-    for cc = 1:nChannelsTarget
-        subplot(5,1,cc); hold on;
-        title(sprintf('%d nm',peaks_spd_camera(idxChannelTarget(cc))));
+    for cc = 1:nChannels
+        subplot(round(nChannels/2),2,cc); hold on;
+        title(sprintf('%d nm',peaks_spd_camera(cc)));
         xlabel('Pixel position');
         ylabel('dRGB');
         ylim([0 220]);
@@ -367,7 +437,7 @@ end
 
 % Calculate contrast from the sine fitted curve.
 for ss = 1:nSFs
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         paramsTemp = params_camera{cc,ss};
         A = paramsTemp(1);
         B = paramsTemp(4);
@@ -381,14 +451,16 @@ for ss = 1:nSFs
     end
 end
 
-%% Plot the raw MTF (Camera).
+%% Plot the raw MTF and compensate it (Camera).
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
-        contrastRaw_camera = meanContrasts_camera(idxChannelTarget,:);
+        contrastRaw_camera = meanContrasts_camera;
+        contrast_camera_1cpd = meanContrasts_camera_1cpd;
     case 'Sinefit'
         contrastRaw_camera = contrastsFit_camera;
+        contrast_camera_1cpd = contrastsFit_camera_1cpd;
 end
 
 % Plot the raw camera MTF results.
@@ -397,8 +469,8 @@ figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
 sgtitle('Raw camera MTF', 'fontsize', 15);
 
-for cc = 1:nChannelsTarget
-    subplot(2,3,cc); hold on;
+for cc = 1:nChannels
+    subplot(2,4,cc); hold on;
     
     % Camera MTF.
     contrastRawOneChannel = contrastRaw_camera(cc,:);
@@ -410,31 +482,18 @@ for cc = 1:nChannelsTarget
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
 end
 
-%% Calculate the compensated MTF (Camera).
+% Calculate the compensated MTF (Camera).
 %
 % Here we compensate the limitation of using printed paper by dividing the
-% MTF of a single cycle to the camera MTF.
+% MTF of a 1 cpd to the raw camera MTF. We will calculate the contrasts
+% using two different methods.
 %
-% Get the pre-saved MTF of the signle cycle. It contains a total of 8
-% elements which match with the number of channels in the Combi-LED
-% projector.
-testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
-testFilename = 'Contrast_SingleCycle_combiLED.mat';
-data = load(fullfile(testFiledir,testFilename));
-contrast_singleCycle = data.contrastSingleCyclePerChannel';
-
 % Normalize the contrast by dividing the single cycle contrast.
-meanContrasts_cameraNorm = meanContrasts_camera./contrast_singleCycle;
-contrastsFit_cameraNorm = contrastsFit_camera./contrast_singleCycle(idxChannelTarget);
-
-% Set the contrast within the range.
-maxContrast = 1;
-meanContrasts_cameraNorm(find(meanContrasts_cameraNorm > maxContrast)) = 1;
-contrastsFit_cameraNorm(find(contrastsFit_cameraNorm > maxContrast)) = 1;
+meanContrasts_cameraNorm = meanContrasts_camera./contrast_camera_1cpd';
+contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
 
 %% 3) Calculate the compensated MTF (SACCSFA).
 %
@@ -442,12 +501,32 @@ contrastsFit_cameraNorm(find(contrastsFit_cameraNorm > maxContrast)) = 1;
 % plot the results. It was chosen at the very beginning of this routine.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
-        contrast_camera = meanContrasts_cameraNorm(idxChannelTarget,:);
+        contrast_camera = meanContrasts_cameraNorm;
         contrast_SACCSFA = meanContrasts_SACCSFA;
     case 'Sinefit'
         contrast_camera = contrastsFit_cameraNorm;
         contrast_SACCSFA = contrastsFit_SACCSFA;
 end
+
+% Here we choose which channel of the combi-LED to compare to each channel
+% of SACCSFA. We will choose the one with the closest peak wavelength
+% between combi-LED and SACCSFA to compare.
+peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(idxChannels_SACCSFA);
+nChannelsTest = length(peaks_spd_SACCSFA_test);
+for tt = 1:nChannelsTest
+    % Get one channel from SACCSFA to find the corresponding channel within
+    % the combi-LED.
+    peak_spd_SACCSFA = peaks_spd_SACCSFA_test(tt);
+    
+    % Here we find the channel within the combi-LED that has the minimum
+    % difference of the above channel in the SACCSFA.
+    [~, idx] = min(abs(peaks_spd_camera - peak_spd_SACCSFA));
+    
+    % Save out the peak wavelength within the combi-LED that has the
+    % closest value to the SACCSFA channel wavelength.
+    idx_camera_test(tt) = idx;
+    peaks_spd_camera_test(tt) = peaks_spd_camera(idx);
+end 
 
 % Make a loop to plot the results of each channel.
 figure; clf;
@@ -455,30 +534,40 @@ figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
 sgtitle('MTF: Camera vs. SACCSFA', 'fontsize', 15);
 
-for cc = 1:nChannelsTarget
-    subplot(2,3,cc); hold on;
-    
-    % Camera MTF.
-    meanContrastsOneChannel = contrast_camera(cc,:);
-    plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',12);
+for cc = 1:nChannelsTest
+    subplot(2,round(nChannelsTest)/2,cc); hold on;
     
     % SACCSFA MTF.
     plot(cell2mat(targetCyclePerDeg),contrast_SACCSFA(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
-    legend('Raw','SACCSFA','location','southeast','fontsize',11);
+    % Camera MTF.
+    %
+    % We saved the index of corresponding channel to compare within the
+    % combi-LED in 'idx_camera_test'.
+    meanContrastsOneChannel = contrast_camera(idx_camera_test(cc),:);
+    plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',12);
+    
+    % Save out camera MTF to test.
+    %
+    % We will use this to compensate the SACCSFA MTF later on.
+    contrast_camera_test(cc,:) = meanContrastsOneChannel;
+    
+    % Plot stuffs.
+    legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))),...
+        sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
     ylim([0 1.1]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))), 'fontsize', 15);
 end
 
 % Now plot the MTF of SACCSFA under assumption using a perfect camera.
 %
 % Here we divide the MTF by camera MTF.
-contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera;
+contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera_test;
 
 % Set the contrast within the range.
 maxContrast = 1;
@@ -489,8 +578,8 @@ figure; clf;
 set(gcf,'position',figureSize);
 
 % Make a loop to plot the results of each channel.
-for cc = 1:length(contrast_SACCSFA_compensated)
-    subplot(2,3,cc); hold on;
+for cc = 1:nChannelsTest
+    subplot(2,round(nChannelsTest)/2,cc); hold on;
     meanContrastsOneChannel = contrast_SACCSFA_compensated(cc,:);
     plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
@@ -498,7 +587,7 @@ for cc = 1:length(contrast_SACCSFA_compensated)
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(cc)), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))), 'fontsize', 15);
     legend('SACCSFA','location','southeast','fontsize',11);
 end
 
