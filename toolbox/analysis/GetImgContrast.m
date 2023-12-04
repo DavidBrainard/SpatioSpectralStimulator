@@ -57,22 +57,15 @@ nValleys = length(valleys);
 
 nContrasts = min(nPeaks,nValleys);
 for pp = 1:nContrasts-1
+    
     % Get contrast per each cycle.
     white = peaks(pp);
     black = valleys(pp);
     contrasts(pp) = (white-black)/(white+black);
 end
 
-% white = max(imageCropAvg);
-% black = min(imageCropAvg);
-% contrast = (white-black)/(white+black);
-% contrasts(:) = contrast;
-
 %% Show the results if you want.
 if (options.verbose)
-    % Show image.
-    %     imshow(image);
-    
     % Plot it.
     hold on;
     plot(imageCrop25, 'r-', 'LineWidth',1);
