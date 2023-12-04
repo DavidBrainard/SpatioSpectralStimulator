@@ -44,7 +44,7 @@ end
 
 % Set additional analysis options.
 DoFourierTransform = false;
-plotIntensityProfile = false;
+plotIntensityProfile = true;
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -405,9 +405,6 @@ for ss = 1:nSFs
         % Clear the initial guess of frequency for next fit.
         clear f0;
     end
-    
-    % Show the progress.
-    fprintf('Fitting progress - (%d/%d) \n',ss,nSFs);
 end
 
 % Plot the results.
