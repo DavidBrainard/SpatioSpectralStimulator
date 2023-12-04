@@ -120,7 +120,13 @@ for ss = 1:nChannels
     
     % Get a key stroke before starting each meausrement.
     fprintf('Press any to start measurement - (Ch %d: %.1f/%.1f) and (%d cpd) \n',numChannel,channelIntensity,maxChannelIntensity,cyclesPerDeg);
-    pause(3);
+    
+    % Pause for a sec.
+    waitTime = 3;
+    for tt = 1:waitTime
+        fprintf('Measurement will begin in (%d/%d) sec...\n',tt,waitTime);
+        pause(tt);
+    end
     
     % Clear text on the camera preview. This would make sort of real-time
     % measurement by updating the numbers.
@@ -144,7 +150,8 @@ for ss = 1:nChannels
             exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
         case 'Print'
 %             exposureTimePerChannel = [340000 45000 40000 58000 21000 210000 47000 47000]; 
-            exposureTimePerChannel = [400000 700000 370000 660000 130000 990000 500000 350000];
+%             exposureTimePerChannel = [400000 700000 370000 660000 130000 990000 500000 350000];
+              exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
     end
     exposureTime = exposureTimePerChannel(numChannel);
     
@@ -179,6 +186,9 @@ for ss = 1:nChannels
     CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
         'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
         'saveImagedir',saveImageDir,'saveImageFilename',SF);
+    
+    % Play a sound after capturing the image.
+    beep;
 end
 
 %% Test for one image.
@@ -189,7 +199,7 @@ CAPTUREONEIMAGE = true;
 
 if (CAPTUREONEIMAGE)
     
-     channelSettings = [0,0,0,0,0,0,0,0];
+    channelSettings = [0,0,0,0,0,0,0,0];
     
     % Turn on the target channel.
     numChannel = 8;
@@ -199,9 +209,9 @@ if (CAPTUREONEIMAGE)
     obj.setPrimaries(channelSettings);
 
     % Set variables.
-    exposureTimePerChannel = [550000 900000 750000 850000 300000 990000 750000 600000];
+    exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
     exposureTime = exposureTimePerChannel(numChannel);
-    minPeakDistancePixel = 100;
+    minPeakDistancePixel = 5;
     
     % Capture image here.
     CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
