@@ -23,7 +23,7 @@ screenYpixels = windowRect(4);
 nPrimaries = 3;
 nChannels = 16;
 
-sineFreqCyclesPerDeg = 18;
+sineFreqCyclesPerDeg = 1;
 % Make a loop here so that we can display all spatial frequencies one by
 % one.
 sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
@@ -104,6 +104,8 @@ GetChannelSettings;
             % On the optical system (SACCSFA, new projector).
             if strcmp(projectorOption,'SACCSFA')
                 switch cyclesPerDeg
+                    case 1
+                        barWidthPixel = 68;
                     case 3
                         barWidthPixel = 23;
                     case 6
