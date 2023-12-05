@@ -389,24 +389,25 @@ for ss = 1:nSFs
     % Loop over the channels.
     for cc = 1:nChannels
         
-        % Set initial frequency for fitting sine wave. Fitting results are
-        % extremely sensitive how we set the initial guess of its frequency. We
-        % recommend setting it close to its fundamental frequency.
-        switch ss
-            case 1
-                f0Options = [3.3684 3.6316 3.6316 3.6316 3.6316];
-            case 2
-                f0Options = [7.3333 6 7.1282 7.3333 7.5789];
+        % Set initial frequency for fitting sine wave.
+        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+        switch cyclesPerDeg
             case 3
-                f0Options = [13.5641 14.4211 14.8276 14.4211 14.4211];
-            case 4
-                f0Options = [29 18.6316 18.6316 18.9474 18];
-            case 5
-                f0Options = [29.5 30.01 30.5 29.9474 30.02];
+                % 3 cpd
+                f0Options = [3.758621 3.793103 2.137931 4.620690 2.137931 4.620690 4.620690 4.620690];
+            case 6
+                % 6 cpd
+                f0Options = [2.103448 4.103448 3.206897 4.206897 5.241379  4.172414 6.379310 4.482759];
+            case 9
+                % 9 cpd
+                f0Options = [7.517241 9.931034 8.724138 9.068966 9.241379 8.551724 9.586207 8.206897];
+            case 12
+                % 12 cpd
+                f0Options = [12.620690 12.724138 13.655172 13.137931 13.655172 12.206897 13.034483 13.034483];
+            case 18
+                % 18cpd
+                f0Options = [29.689655 29.482759 30.793103 30.379310 29.758621 30.034483 30.034483 30.517241];
         end
-        
-        % This is temp options.
-        f0Options = ones(1, nChannels);
         
         % Update initial guess of frequency here.
         f0 = f0Options(cc);
@@ -759,17 +760,17 @@ FINDINITIALFREQUENCYTOFIT = true;
 
 if (FINDINITIALFREQUENCYTOFIT)
     % Set the wave to fit.
-    SF = 1;
-    originalSignals = IP_SACCSFA(8,SF);
+    SF = 2;
+    originalSignals = IP_camera(8,SF);
     
     nFits = 30;
     switch SF
         case 1
             f0_lb = 1;
-            f0_ub = 6;
+            f0_ub = 4;
         case 2
-            f0_lb = 4;
-            f0_ub = 7;
+            f0_lb = 2;
+            f0_ub = 5;
         case 3
             f0_lb = 7;
             f0_ub = 12;
@@ -788,7 +789,7 @@ if (FINDINITIALFREQUENCYTOFIT)
         figure; hold on;
         figurePosition = [0 0 1300 1000];
         set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)));
+        sgtitle(sprintf('%d nm', peaks_spd_camera(cc)));
         
         for ff = 1:nFits
             f0 = f0Range(ff);
@@ -808,7 +809,7 @@ if (FINDINITIALFREQUENCYTOFIT)
         end
         
         % Show progress
-        fprintf('Searching progess - (%d/%d) \n',cc,nChannelsTest);
+        fprintf('Searching progess - (%d/%d) \n',cc,length(originalSignals));
     end
 end
 
@@ -816,17 +817,17 @@ end
      switch cyclesPerDeg
             case 3
                 % 3 cpd
-                f0Options = [2.75862 6 5.8621  3.48276  2.24138 3.27586 2.96552 2.89655 2.55172 2.86207];
+                f0Options = [3.758621 3.793103 2.137931 4.620690 2.137931 4.620690 4.620690 4.620690];
             case 6
                 % 6 cpd
-                f0Options = [4.41379 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 6.03448 6.0345];
+                f0Options = [6.068966 4.103448 3.206897 4.206897 5.241379 5.034483 6.379310 4.310345];
             case 9
                 % 9 cpd
-                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.44828 10.31034 7.13793 7.13793 8.10345];
+                f0Options = [8.206897 9.931034 8.724138 9.068966 8.724138 8.551724 9.586207 8.206897];
             case 12
                 % 12 cpd
-                f0Options = [12.31034 13.03448 12.82759 14.17241 12.72414 12.10345 12.10345 12.93103 12.72414 12.93103];
+                f0Options = [12.620690 12.724138 13.655172 13.137931 13.655172 12.206897 13.034483 13.034483];
             case 18
                 % 18cpd
-                f0Options = [30.4483 29.4828 30.0526 29.2759 29.8421 30.4737 30.3684 29.1053 28.8276 29];
+                f0Options = [29.689655 29.482759 29.965517 30.379310 29.758621 30.034483 30.034483 30.517241];
         end
