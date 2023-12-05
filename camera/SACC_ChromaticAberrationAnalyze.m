@@ -248,6 +248,64 @@ for ss = 1:nSFs
     end
 end
 
+%% Get contrasts of 1 cpd image for compensation (SACCSFA).
+figure; hold on;
+sgtitle(sprintf('1 cpd (%s)',viewingMedia));
+for cc = 1:nChannelsTest
+    oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
+    testFilename = '1cpd_crop';
+    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
+    
+    % We save an image here.
+    image = imread(testFilename);
+    
+    % Set min distance between adjacent peaks.
+    minPeakDistance = 30;
+    
+    % Calculate contrasts.
+    if (plotIntensityProfile)
+        figure;
+        title(sprintf('%d nm (%s)',peaks_spd_SACCSFA_test(cc),viewingMedia),'fontsize',15);
+        subtitle('1 cpd','fontsize',13);
+    end
+    [contrastsTemp, IP_SACCSFA_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+    meanContrasts_SACCSFA_1cpd(cc) = mean(contrastsTemp);
+    
+    % Now fit sine curve to the 1 cpd to calculate contrast.
+    %
+    % Set initial f0 options for sine fitting.
+    f0Options = [3.275862 3.275862 3.275862 3.275862 3.275862 3.379310 3.275862 3.379310 3.275862 3.379310];
+    f0 = f0Options(cc);
+    
+    % Fit happens here.
+    signalToFit = IP_SACCSFA_1cpd{cc};
+    [params_SACCSFA_1cpd{cc}, fittedSignal_SACCSFA_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+    
+    % Clear the initial guess of frequency for next fit.
+    clear f0;
+    
+    % Plot the results.
+    subplot(round(nChannels/2),2,cc); hold on;
+    title(sprintf('%d nm',peaks_spd_SACCSFA_test(cc)));
+    xlabel('Pixel position');
+    ylabel('dRGB');
+    ylim([-20 240]);
+    
+    % Original.
+    plot(IP_SACCSFA_1cpd{cc},'b-');
+    
+    % Fitted signal.
+    plot(fittedSignal_SACCSFA_1cpd{cc},'r-');
+    legend('Origianl','Fit');
+    
+    % Calculate contrast.
+    paramsTemp = params_SACCSFA_1cpd{cc};
+    A = paramsTemp(1);
+    B = paramsTemp(4);
+    contrast = A/B;
+    contrastsFit_SACCSFA_1cpd(cc) = contrast;
+end
+
 %% 2) Calculate the MTF (Camera).
 %
 % Set the viewing media for the camera MTF measurement. We used the printed
@@ -341,63 +399,6 @@ for cc = 1:nChannels
     meanContrasts_camera(cc,:) = meanContrastsOneChannel;
 end
 
-%% Here we get 1 cpd image and calculate contrast to compensate the camera MTF.
-figure; hold on;
-for cc = 1:nChannels
-    oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
-    testFilename = '1cpd_crop';
-    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
-    
-    % We save an image here.
-    image = imread(testFilename);
-    
-    % Set min distance between adjacent peaks.
-    minPeakDistance = 30;
-    
-    % Calculate contrasts.
-    if (plotIntensityProfile)
-        figure;
-        title(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
-        subtitle('1 cpd','fontsize',13);
-    end
-    [contrastsTemp, IP_camera_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-    meanContrasts_camera_1cpd(cc) = mean(contrastsTemp);
-    
-    % Now fit sine curve to the 1 cpd to calculate contrast.
-    %
-    % Set initial f0 options for sine fitting.
-    f0Options = [2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 1.931034];
-    f0 = f0Options(cc);
-    
-    % Fit happens here.
-    signalToFit = IP_camera_1cpd{cc};
-    [params_camera_1cpd{cc}, fittedSignal_camera_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-    
-    % Clear the initial guess of frequency for next fit.
-    clear f0;
-    
-    % Plot the results.
-    subplot(round(nChannels/2),2,cc); hold on;
-    title(sprintf('%d nm',peaks_spd_camera(cc)));
-    xlabel('Pixel position');
-    ylabel('dRGB');
-    ylim([-20 240]);
-    
-    % Original.
-    plot(IP_camera_1cpd{cc},'b-');
-    
-    % Fitted signal.
-    plot(fittedSignal_camera_1cpd{cc},'r-');
-    legend('Origianl','Fit');
-    
-    % Calculate contrast.
-    paramsTemp = params_camera_1cpd{cc};
-    A = paramsTemp(1);
-    B = paramsTemp(4);
-    contrast = A/B;
-    contrastsFit_camera_1cpd(cc) = contrast;
-end
-
 %% Fit sine function to the signal (Camera).
 %
 % Fit sine signal here.
@@ -475,16 +476,71 @@ for ss = 1:nSFs
     end
 end
 
+%% Get contrasts of 1 cpd image for compensation (Camera).
+figure; hold on;
+for cc = 1:nChannels
+    oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
+    testFilename = '1cpd_crop';
+    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
+    
+    % We save an image here.
+    image = imread(testFilename);
+    
+    % Set min distance between adjacent peaks.
+    minPeakDistance = 30;
+    
+    % Calculate contrasts.
+    if (plotIntensityProfile)
+        figure;
+        title(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
+        subtitle('1 cpd','fontsize',13);
+    end
+    [contrastsTemp, IP_camera_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+    meanContrasts_camera_1cpd(cc) = mean(contrastsTemp);
+    
+    % Now fit sine curve to the 1 cpd to calculate contrast.
+    %
+    % Set initial f0 options for sine fitting.
+    f0Options = [2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 1.931034];
+    f0 = f0Options(cc);
+    
+    % Fit happens here.
+    signalToFit = IP_camera_1cpd{cc};
+    [params_camera_1cpd{cc}, fittedSignal_camera_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+    
+    % Clear the initial guess of frequency for next fit.
+    clear f0;
+    
+    % Plot the results.
+    subplot(round(nChannels/2),2,cc); hold on;
+    title(sprintf('%d nm',peaks_spd_camera(cc)));
+    xlabel('Pixel position');
+    ylabel('dRGB');
+    ylim([-20 240]);
+    
+    % Original.
+    plot(IP_camera_1cpd{cc},'b-');
+    
+    % Fitted signal.
+    plot(fittedSignal_camera_1cpd{cc},'r-');
+    legend('Origianl','Fit');
+    
+    % Calculate contrast.
+    paramsTemp = params_camera_1cpd{cc};
+    A = paramsTemp(1);
+    B = paramsTemp(4);
+    contrast = A/B;
+    contrastsFit_camera_1cpd(cc) = contrast;
+end
+
 %% 2) Plot the raw MTF and compensate it (Camera).
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
         contrastRaw_camera = meanContrasts_camera;
-        contrast_camera_1cpd = meanContrasts_camera_1cpd;
     case 'Sinefit'
         contrastRaw_camera = contrastsFit_camera;
-        contrast_camera_1cpd = contrastsFit_camera_1cpd;
 end
 
 % Plot the raw camera MTF results.
@@ -516,8 +572,11 @@ end
 % using two different methods.
 %
 % Normalize the contrast by dividing the single cycle contrast.
-meanContrasts_cameraNorm = meanContrasts_camera./contrast_camera_1cpd';
+meanContrasts_cameraNorm = meanContrasts_camera./meanContrasts_camera_1cpd';
 contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
+
+meanContrasts_SACCSFANorm = meanContrasts_SACCSFA./meanContrasts_SACCSFA_1cpd';
+contrastsFit_SACCSFANorm = contrastsFit_SACCSFA./contrastsFit_SACCSFA_1cpd';
 
 %% 3) Calculate the compensated MTF (SACCSFA).
 %
@@ -526,10 +585,10 @@ contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
 switch contrastCalMethod
     case 'MeanIntensityProfile'
         contrast_camera = meanContrasts_cameraNorm;
-        contrast_SACCSFA = meanContrasts_SACCSFA;
+        contrast_SACCSFA = meanContrasts_SACCSFANorm;
     case 'Sinefit'
         contrast_camera = contrastsFit_cameraNorm;
-        contrast_SACCSFA = contrastsFit_SACCSFA;
+        contrast_SACCSFA = contrastsFit_SACCSFANorm;
 end
 
 % Here we choose which channel of the combi-LED to compare to each channel
@@ -773,7 +832,7 @@ FINDINITIALFREQUENCYTOFIT = false;
 if (FINDINITIALFREQUENCYTOFIT)
     % Set the wave to fit.
     SF = 1;
-    originalSignals = IP_camera_1cpd;
+    originalSignals = IP_SACCSFA_1cpd;
     
     nFits = 30;
     switch SF
@@ -824,6 +883,3 @@ if (FINDINITIALFREQUENCYTOFIT)
         fprintf('Searching progess - (%d/%d) \n',cc,length(originalSignals));
     end
 end
-
-%% SACCSFA f0 options found
-f0Options = [2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 1.931034];
