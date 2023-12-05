@@ -22,15 +22,19 @@ vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWid
 % Set which channel and spatial frequency to test.
 numChannel = 16;
 cyclesPerDegOptions = [3 6 9 12 18];
+nSFs = length(cyclesPerDegOptions);
+
+testingChannels = [1 3 5 6 7 8 10 12 13 15];
+nTestingChannels = length(testingChannels);
+
 numViewingMedia = 1;
 
+% Set the target spatial frequency.
+    cyclesPerDeg = 18;
 % Make a loop to measure for all spatial frequencies.
-nSFs = length(cyclesPerDegOptions);
-for ss = 1:nSFs
-    % Set the target spatial frequency.
-    cyclesPerDeg = cyclesPerDegOptions(ss);
-    
+for ss = 1:nTestingChannels
     % Get a key stroke before starting each meausrement.
+    numChannel = testingChannels(ss);
     fprintf('Press any to start measurement - (Ch %d) and (%d cpd) \n',numChannel,cyclesPerDeg);
     pause;
     
