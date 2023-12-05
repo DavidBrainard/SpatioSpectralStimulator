@@ -114,7 +114,6 @@ end
 
 % Sort the channel options in an ascending order.
 [numChannelsSorted I] = sort(numChannels,'ascend');
-peaks_spd_SACCSFA = sort(peaks_spd_SACCSFA,'ascend');
 
 % Sort the channel options in a ascending order here.
 channelOptions = channelOptions(I);
@@ -132,7 +131,7 @@ for cc = 1:nChannels
         figure;
         sgtitle(sprintf('%d nm (%s)',peaks_spd_SACCSFA(idxChannels_SACCSFA(cc)),viewingMedia),'fontsize',15);
     end
-
+    
     % Get the images of all spatial frequency.
     for ss = 1:nSFs
         testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
@@ -164,6 +163,11 @@ for cc = 1:nChannels
     % Collect the mean contrast results.
     meanContrasts_SACCSFA(cc,:) = meanContrastsOneChannel;
 end
+
+% Sort the contrasts in an ascending order of the channels.
+peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
+[peaks_spd_SACCSFA_test I] = sort(peaks_spd_SACCSFA_test,'ascend');
+meanContrasts_SACCSFA = meanContrasts_SACCSFA(I,:);
 
 %% Fit sine function to the signal (SACCSFA).
 %
@@ -266,10 +270,10 @@ channelFolderList = dir(recentTestFiledir);
 % Get the available channels by getting the folder names.
 countChannel = 1;
 if exist('numChannels')
-   clear numChannels;
+    clear numChannels;
 end
 if exist('channelOptions')
-   clear channelOptions;
+    clear channelOptions;
 end
 for cc = 1:length(channelFolderList)
     channelFoldernameTemp = channelFolderList(cc).name;
@@ -508,7 +512,6 @@ end
 % Here we choose which channel of the combi-LED to compare to each channel
 % of SACCSFA. We will choose the one with the closest peak wavelength
 % between combi-LED and SACCSFA to compare.
-peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(idxChannels_SACCSFA);
 nChannelsTest = length(peaks_spd_SACCSFA_test);
 for tt = 1:nChannelsTest
     % Get one channel from SACCSFA to find the corresponding channel within
@@ -523,7 +526,7 @@ for tt = 1:nChannelsTest
     % closest value to the SACCSFA channel wavelength.
     idx_camera_test(tt) = idx;
     peaks_spd_camera_test(tt) = peaks_spd_camera(idx);
-end 
+end
 
 % Make a loop to plot the results of each channel.
 figure; clf;
@@ -552,13 +555,13 @@ for cc = 1:nChannelsTest
     contrast_camera_test(cc,:) = meanContrastsOneChannel;
     
     % Plot stuffs.
-    legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))),...
+    legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
         sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
     ylim([0 1.1]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
 end
 
 % Now plot the MTF of SACCSFA under assumption using a perfect camera.
@@ -584,7 +587,7 @@ for cc = 1:nChannelsTest
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
-    title(sprintf('%d nm', peaks_spd_SACCSFA(idxChannels_SACCSFA(cc))), 'fontsize', 15);
+    title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
     legend('SACCSFA','location','southeast','fontsize',11);
 end
 
@@ -598,19 +601,16 @@ sgtitle('Raw intensity profile over the channels (Camera)');
 minY = -20;
 maxY = 220;
 
-% Get the channels used for comparison.
-peaks_spd_camera_compare = peaks_spd_camera(idxChannelTarget);
-
 % Make a loop to plot.
 for ss = 1:nSFs
-    subplot(5,1,ss); hold on;
+    subplot(nSFs,1,ss); hold on;
     
     % Channel.
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         plot(IP_camera{cc,ss});
         
         % Generate texts for the legend for each graph.
-        legendHandles{cc} = append(num2str(peaks_spd_camera_compare(cc)),' nm');
+        legendHandles{cc} = append(num2str(peaks_spd_camera(cc)),' nm');
         
         % Extract the fitted parameter, phi, for all channels and spatial
         % frequencies.
@@ -633,10 +633,10 @@ sgtitle('Fitted intensity profile over the channels (Camera)');
 
 % Loop over Spatial frequency.
 for ss = 1:nSFs
-    subplot(5,1,ss); hold on;
+    subplot(nSFs,1,ss); hold on;
     
     % Loop over Channel.
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannels
         plot(fittedSignal_camera{cc,ss});
     end
     
@@ -651,13 +651,13 @@ end
 % 3) Plot the comparison of the parameter phi over the channels.
 %
 % Define the x-ticks for the plot.
-xticksPlot = linspace(1,nChannelsTarget,nChannelsTarget);
+xticksPlot = linspace(1,nChannels,nChannels);
 
 figure; hold on;
 title('Fitted parameter phi comparison (Camera)','fontsize',15);
 plot(xticksPlot,phi_camera,'o-');
 xticks(xticksPlot);
-xticklabels(peaks_spd_camera_compare);
+xticklabels(peaks_spd_camera);
 xlabel('Peak wavelength (nm)','fontsize',15);
 ylabel('Fitted phi','fontsize',15);
 
@@ -679,11 +679,11 @@ for ss = 1:nSFs
     subplot(5,1,ss); hold on;
     
     % Channel.
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannelsTest
         plot(IP_SACCSFA{cc,ss});
         
         % Generate texts for the legend for each graph.
-        legendHandles{cc} = append(num2str(peaks_spd_SACCSFA(cc)),' nm');
+        legendHandles{cc} = append(num2str(peaks_spd_SACCSFA_test(cc)),' nm');
         
         % Extract the fitted parameter, phi, for all channels and spatial
         % frequencies.
@@ -708,7 +708,7 @@ for ss = 1:nSFs
     subplot(5,1,ss); hold on;
     
     % Channel.
-    for cc = 1:nChannelsTarget
+    for cc = 1:nChannelsTest
         plot(fittedSignal_SACCSFA{cc,ss});
     end
     
@@ -721,11 +721,15 @@ for ss = 1:nSFs
 end
 
 % 3) Plot the comparison of the parameter phi over the channels.
+%
+% Define the x-ticks for the plot.
+xticksPlot = linspace(1,nChannelsTest,nChannelsTest);
+
 figure; hold on;
 title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
 plot(xticksPlot,phi_SACCSFA,'o-');
 xticks(xticksPlot);
-xticklabels(peaks_spd_SACCSFA);
+xticklabels(peaks_spd_SACCSFA_test);
 xlabel('Peak wavelength (nm)','fontsize',15);
 ylabel('Fitted phi','fontsize',15);
 
