@@ -99,7 +99,7 @@ objective_function = @(params) norm((params(1)*sin(2*pi*params(2)*x_data + param
 initial_guess = [options.A0, options.f0, options.phi0, options.B0];
 
 % Call fmincon to optimize the parameters.
-optionsFmincon = optimoptions('fmincon');
+optionsFmincon = optimoptions('fmincon','Display','off');
 params = fmincon(objective_function, initial_guess, [], [], [], [], options.lb, options.ub, [], optionsFmincon);
 
 % Generate the fitted waveform using the optimized parameters.
