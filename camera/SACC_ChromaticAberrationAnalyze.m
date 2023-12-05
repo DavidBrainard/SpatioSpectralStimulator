@@ -44,7 +44,7 @@ end
 
 % Set additional analysis options.
 DoFourierTransform = false;
-plotIntensityProfile = true;
+plotIntensityProfile = false;
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -168,6 +168,10 @@ end
 peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
 [peaks_spd_SACCSFA_test I] = sort(peaks_spd_SACCSFA_test,'ascend');
 meanContrasts_SACCSFA = meanContrasts_SACCSFA(I,:);
+IP_SACCSFA = IP_SACCSFA(I,:);
+
+% Get number of channels to compare with the camera MTF.
+nChannelsTest = length(peaks_spd_SACCSFA_test);
 
 %% Fit sine function to the signal (SACCSFA).
 %
@@ -175,32 +179,37 @@ meanContrasts_SACCSFA = meanContrasts_SACCSFA(I,:);
 for ss = 1:nSFs
     for cc = 1:nChannels
         % Set initial frequency for fitting sine wave.
-        switch ss
-            case 1
-                f0Options = [2.63158 2.10526 2.10526 2.42105 2.52632];
-            case 2
-                f0Options = [7.68421 7.26316 7.05263 7.26316 6.63158];
+        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+        switch cyclesPerDeg
             case 3
-                f0Options = [12.73684 12.52632 12.94747 11.5 13.89474];
-            case 4
-                f0Options = [16 16.94737 19.15789 18.36842 17.73684];
-            case 5
-                f0Options = [30.9211 30.36842 30.42105 29.31579 29];
+                % 3 cpd
+                f0Options = [2.75862 6 5.8621  3.48276  2.24138 3.27586 2.965517 2.896552 2.55172 2.86207];
+            case 6
+                % 6 cpd
+                f0Options = [4.41379 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
+            case 9
+                % 9 cpd
+                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.44828 10.31034 7.13793 7.13793 8.10345];
+            case 12
+                % 12 cpd
+                f0Options = [12.31034 13.03448 12.82759 14.17241 12.72414 12.10345 12.10345 13.03448 12.72414 12.93103];
+            case 18
+                % 18cpd
+                f0Options = [30.4483 29.4828 30.0526 29.2759 29.8421 30.4737 30.3684 29.1053 28.8276 29];
         end
         
-        % This is temp options.
-        f0Options = ones(1, nChannels);
-        
-        % Update initial guess of frequency here.
         f0 = f0Options(cc);
         
         % Fit happens here.
         signalToFit = IP_SACCSFA{cc,ss};
         [params_SACCSFA{cc,ss}, fittedSignal_SACCSFA{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-        
+            
         % Clear the initial guess of frequency for next fit.
         clear f0;
     end
+    
+     % Show progress.
+        fprintf('Fitting progress - (%d/%d) \n',ss,nSFs);
 end
 
 % Plot the results.
@@ -214,7 +223,7 @@ for ss = 1:nSFs
     % Loop over the channels.
     for cc = 1:nChannels
         subplot(round(nChannels/2),2,cc); hold on;
-        title(sprintf('%d nm',peaks_spd_SACCSFA((cc))));
+        title(sprintf('%d nm',peaks_spd_SACCSFA_test((cc))));
         xlabel('Pixel position');
         ylabel('dRGB');
         ylim([0 220]);
@@ -512,7 +521,6 @@ end
 % Here we choose which channel of the combi-LED to compare to each channel
 % of SACCSFA. We will choose the one with the closest peak wavelength
 % between combi-LED and SACCSFA to compare.
-nChannelsTest = length(peaks_spd_SACCSFA_test);
 for tt = 1:nChannelsTest
     % Get one channel from SACCSFA to find the corresponding channel within
     % the combi-LED.
@@ -746,39 +754,79 @@ legend(legendHandles,'fontsize',12,'location','northeastoutside');
 % this part inside the fitting routine.
 %
 % Search a value using grid-search.
-FINDINITIALFREQUENCYTOFIT = false;
+FINDINITIALFREQUENCYTOFIT = true;
+% close all;
 
 if (FINDINITIALFREQUENCYTOFIT)
-    nFits = 20;
-    f0_lb = 29.5;
-    f0_ub = 31;
-    f0Range = linspace(f0_lb,f0_ub,nFits);
-    
     % Set the wave to fit.
-    SF = 5;
-    originalSignals = IP_SACCSFA(:,SF);
+    SF = 1;
+    originalSignals = IP_SACCSFA(8,SF);
     
-    for cc = 1:nChannelsTarget
+    nFits = 30;
+    switch SF
+        case 1
+            f0_lb = 1;
+            f0_ub = 6;
+        case 2
+            f0_lb = 4;
+            f0_ub = 7;
+        case 3
+            f0_lb = 7;
+            f0_ub = 12;
+        case 4
+            f0_lb = 12;
+            f0_ub = 15;
+        case 5
+            f0_lb = 29;
+            f0_ub = 31;
+    end
+    f0Range = linspace(f0_lb,f0_ub,nFits);
+
+    % Make a loop to search from here.
+    for cc = 1:length(originalSignals)
         % Make a new figure per each channel.
         figure; hold on;
-        figurePosition = [0 0 1000 1000];
+        figurePosition = [0 0 1300 1000];
         set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d nm', peaks_spd_camera(idxChannelTarget(cc))));
+        sgtitle(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)));
         
         for ff = 1:nFits
             f0 = f0Range(ff);
             originalSignal = originalSignals{cc};
             [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
             
-            % Original.
-            subplot(5,4,ff); hold on;
+            % Plot it.
+            subplot(5,round(nFits/5),ff); hold on;
             plot(originalSignal,'b-');
             plot(fittedSignalOne,'r-');
-            title(sprintf('f0 = %.4f',f0));
+            title(sprintf('f0 = %.6f',f0));
             legend('Origianl','Fit');
             ylim([0 max(originalSignal)*1.05]);
             
+            % Clear f
             clear f0;
         end
+        
+        % Show progress
+        fprintf('Searching progess - (%d/%d) \n',cc,nChannelsTest);
     end
 end
+
+%% SACCSFA f0 options found
+     switch cyclesPerDeg
+            case 3
+                % 3 cpd
+                f0Options = [2.75862 6 5.8621  3.48276  2.24138 3.27586 2.96552 2.89655 2.55172 2.86207];
+            case 6
+                % 6 cpd
+                f0Options = [4.41379 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 6.03448 6.0345];
+            case 9
+                % 9 cpd
+                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.44828 10.31034 7.13793 7.13793 8.10345];
+            case 12
+                % 12 cpd
+                f0Options = [12.31034 13.03448 12.82759 14.17241 12.72414 12.10345 12.10345 12.93103 12.72414 12.93103];
+            case 18
+                % 18cpd
+                f0Options = [30.4483 29.4828 30.0526 29.2759 29.8421 30.4737 30.3684 29.1053 28.8276 29];
+        end
