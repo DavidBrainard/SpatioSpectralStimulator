@@ -209,7 +209,7 @@ for ss = 1:nSFs
     end
     
     % Show progress.
-    fprintf('Fitting progress - (%d/%d) \n',ss,nSFs);
+    fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
 end
 
 % Plot the results.
@@ -438,6 +438,9 @@ for ss = 1:nSFs
         % Clear the initial guess of frequency for next fit.
         clear f0;
     end
+    
+    % Show progress.
+    fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
 end
 
 % Plot the results.
