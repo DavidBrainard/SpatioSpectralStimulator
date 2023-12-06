@@ -60,7 +60,7 @@ recentCalData = calData.cals{end};
 spd_SACCSFA = recentCalData.processedData.P_device;
 peaks_spd_SACCSFA = FindPeakSpds(spd_SACCSFA,'verbose',false);
 
-%% Get the peak wavelength of the Combi-LED.
+%% Get the peak wavelength of the Combi-LED (Camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
 testFilename = 'spd_combiLED.mat';
@@ -70,7 +70,6 @@ spdData = load(fullfile(testFiledir,testFilename));
 % done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
 spd_camera = spdData.spd;
 spd_camera = fliplr(spd_camera);
-nChannels = size(spd_camera,2);
 peaks_spd_camera = FindPeakSpds(spd_camera,'verbose',false);
 
 %% 1) Calculate the MTF (SACCSFA).
@@ -765,7 +764,7 @@ for ss = 1:nSFs
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
         fitted_phi_temp = params_temp(3);
         phi_camera(cc,ss) = fitted_phi_temp;
-      
+        
         % Get period and phase shift in pixel here.
         onePeriod_pixel_camera(cc,ss) = numPixels/fitted_f_temp;
         phaseShift_pixel_camera(cc,ss) = onePeriod_pixel_camera(cc,ss) * fitted_phi_temp/(2*pi);
@@ -903,7 +902,7 @@ for ss = 1:nSFs
         
         
         
-        % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMP).
+        % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMPSOLUTION).
         if and(cc==1,ss==2)
             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
         end
@@ -929,7 +928,7 @@ x_data = linspace(1,nChannelsTest,nChannelsTest);
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
     plot(x_data, onePeriod_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
-     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
