@@ -34,7 +34,7 @@ nSFs = length(targetCyclePerDeg);
 %
 % Set it 2 shows the results by doing sine fitting to the intensity profile
 % and calculating the contrasts from the fitting.
-optionContrastCalMethod = 2;
+optionContrastCalMethod = 1;
 switch optionContrastCalMethod
     case 1
         contrastCalMethod = 'MeanIntensityProfile';
@@ -71,9 +71,6 @@ spdData = load(fullfile(testFiledir,testFilename));
 spd_camera = spdData.spd;
 spd_camera = fliplr(spd_camera);
 nChannels = size(spd_camera,2);
-
-S = [380 2 201];
-wls = SToWls(S);
 peaks_spd_camera = FindPeakSpds(spd_camera,'verbose',false);
 
 %% 1) Calculate the MTF (SACCSFA).
@@ -186,10 +183,11 @@ for ss = 1:nSFs
                 f0Options = [2.75862 6 5.8621  3.48276  2.24138 3.27586 2.965517 2.896552 2.55172 2.86207];
             case 6
                 % 6 cpd
-                f0Options = [4.41379 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
+                % f0Options = [4.172414 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
+                f0Options = [6.965517 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
             case 9
                 % 9 cpd
-                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.44828 10.31034 7.13793 7.13793 8.10345];
+                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.206897 10.31034 7.13793 7.13793 8.10345];
             case 12
                 % 12 cpd
                 f0Options = [12.31034 13.03448 12.82759 14.17241 12.72414 12.10345 12.10345 13.03448 12.72414 12.93103];
@@ -560,8 +558,8 @@ for cc = 1:nChannels
     plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
-    legend('Raw','location','southeast','fontsize',11);
-    ylim([0 max(contrastRaw_camera,[],'all')*1.05]);
+    legend('Camera (Raw)','location','southeast','fontsize',11);
+    ylim([0 1.15]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -616,7 +614,7 @@ end
 figure; clf;
 figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
-sgtitle('MTF: Camera vs. SACCSFA', 'fontsize', 15);
+sgtitle('Compensated MTF: Camera vs. SACCSFA', 'fontsize', 15);
 
 for cc = 1:nChannelsTest
     subplot(2,round(nChannelsTest)/2,cc); hold on;
@@ -631,7 +629,7 @@ for cc = 1:nChannelsTest
     % combi-LED in 'idx_camera_test'.
     meanContrastsOneChannel = contrast_camera(idx_camera_test(cc),:);
     plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',12);
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % Save out camera MTF to test.
     %
@@ -641,7 +639,7 @@ for cc = 1:nChannelsTest
     % Plot stuffs.
     legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
         sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
-    ylim([0 max([contrast_SACCSFA; contrast_camera],[],'all')*1.05]);
+    ylim([0 1.15]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -660,6 +658,7 @@ contrast_SACCSFA_compensated(find(contrast_SACCSFA_compensated > maxContrast)) =
 % Make a new figure.
 figure; clf;
 set(gcf,'position',figureSize);
+sgtitle('Compensated SACCSFA MTF (SACCSFA MTF/Camera MTF)', 'fontsize', 15);
 
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannelsTest
@@ -667,7 +666,7 @@ for cc = 1:nChannelsTest
     meanContrastsOneChannel = contrast_SACCSFA_compensated(cc,:);
     plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
-    ylim([0 1.1]);
+    ylim([0 1.15]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -683,7 +682,7 @@ figurePosition = [0 0 1000 1000];
 set(gcf,'position',figurePosition);
 sgtitle('Raw intensity profile over the channels (Camera)');
 minY = -20;
-maxY = 220;
+maxY = 230;
 
 % Make a loop to plot.
 for ss = 1:nSFs
@@ -750,6 +749,68 @@ for ss = 1:length(targetCyclePerDeg)
     legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
 end
 legend(legendHandles,'fontsize',12,'location','northeastoutside');
+
+% Calculate the phase shift in pixel.
+%
+% Get the number of the pixels. All signals should have the same size of
+% the frame, so we pick one from the fitted signals.
+numPixels = length(fittedSignal_camera{1,1});
+
+% Get the amount of phase shift in pixel domain.
+for ss = 1:nSFs
+    for cc = 1:nChannels
+        params_temp = params_camera{cc,ss};
+        fitted_f_temp = params_temp(2);
+        
+        % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
+        fitted_phi_temp = params_temp(3);
+        phi_camera(cc,ss) = fitted_phi_temp;
+      
+        % Get period and phase shift in pixel here.
+        onePeriod_pixel_camera(cc,ss) = numPixels/fitted_f_temp;
+        phaseShift_pixel_camera(cc,ss) = onePeriod_pixel_camera(cc,ss) * fitted_phi_temp/(2*pi);
+    end
+end
+
+% Plot the period in pixel per spatial frequency..
+figure;
+figureSize = [0 0 600 800];
+set(gcf,'position',figureSize);
+sgtitle('Sine fitted period in pixel (Camera)');
+x_data = linspace(1,nChannels,nChannels);
+for ss = 1:nSFs
+    subplot(nSFs,1,ss);
+    plot(x_data, onePeriod_pixel_camera(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticklabels(peaks_spd_camera);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Period (pixel)','fontsize',15);
+    ylim([0 1.3*max(onePeriod_pixel_camera,[],'all')]);
+end
+
+% Plot the phase shift in pixel per spatial frequency.
+%
+% We will compare based on the channel that we focused with the camera.
+channelFocus = 598;
+idxChannelFocus = find(peaks_spd_camera == channelFocus);
+phaseShift_pixel_camera_ref = phaseShift_pixel_camera(idxChannelFocus,:);
+phaseShift_pixel_camera_diff = abs(round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1));
+
+% Plot the phase shift in pixel.
+figure;
+figureSize = [0 0 600 800];
+set(gcf,'position',figureSize);
+
+sgtitle('Phase shift in pixel (Camera)');
+for ss = 1:nSFs
+    subplot(nSFs,1,ss);
+    plot(x_data, phaseShift_pixel_camera_diff(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticklabels(peaks_spd_camera);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Shift (pixel)','fontsize',15);
+    ylim([0 4]);
+end
 
 %% Transverse Chromatic Aberration (TCA) - (SACCSFA).
 %
@@ -823,6 +884,121 @@ for ss = 1:length(targetCyclePerDeg)
 end
 legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
+% Calculate the phase shift in pixel.
+%
+% Get the number of the pixels. All signals should have the same size of
+% the frame, so we pick one from the fitted signals.
+numPixels = length(fittedSignal_SACCSFA{1,1});
+
+% Get the amount of phase shift in pixel domain.
+for ss = 1:nSFs
+    for cc = 1:nChannelsTest
+        params_temp = params_SACCSFA{cc,ss};
+        fitted_f_temp = params_temp(2);
+        
+        % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
+        fitted_phi_temp = params_temp(3);
+        phi_SACCSFA(cc,ss) = fitted_phi_temp;
+        
+        
+        
+        
+        % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMP).
+        if and(cc==1,ss==2)
+            phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+        end
+        
+        
+        
+        
+        % Get period and phase shift in pixel here.
+        onePeriod_pixel_SACCSFA(cc,ss) = numPixels/fitted_f_temp;
+        
+        % Calculate the phase shift in pixel here.
+        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_SACCSFA(cc,ss)/(2*pi);
+    end
+end
+
+% Plot the period in pixel per channel.
+figure;
+figureSize = [0 0 600 800];
+set(gcf,'position',figureSize);
+
+sgtitle('Sine fitted period in pixel (SACCSFA)');
+x_data = linspace(1,nChannelsTest,nChannelsTest);
+for ss = 1:nSFs
+    subplot(nSFs,1,ss);
+    plot(x_data, onePeriod_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticklabels(peaks_spd_SACCSFA_test);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Period (pixel)','fontsize',15);
+    ylim([0 1.3*max(onePeriod_pixel_SACCSFA,[],'all')]);
+end
+
+% Plot the phase shift in pixel per spatial frequency.
+%
+% We will compare based on the channel that we focused with the camera.
+channelFocus = 592;
+idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
+phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
+phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1));
+
+% Plot the phase shift in pixel.
+figure;
+figureSize = [0 0 600 800];
+set(gcf,'position',figureSize);
+
+sgtitle('Phase shift in pixel (SACCSFA)');
+for ss = 1:nSFs
+    subplot(nSFs,1,ss);
+    plot(x_data, phaseShift_pixel_SACCSFA_diff(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+    title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticklabels(peaks_spd_SACCSFA_test);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Shift (pixel)','fontsize',15);
+    ylim([0 4]);
+end
+
+%% Plot the channels that we used in this study.
+PLOTSPECTRUM = true;
+
+if (PLOTSPECTRUM)
+    % SACCSFA.
+    figure; hold on;
+    S = recentCalData.rawData.S;
+    wls = SToWls(S);
+    p1 = plot(wls,spd_SACCSFA,'k-');
+    p2 = plot(wls,spd_SACCSFA(:,idxChannels_SACCSFA),'-','linewidth',5,'color',[1 0 0 0.3]);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    ylim([0 max(spd_SACCSFA,[],'all')*1.01]);
+    legend([p1(1) p2(1)],'All channels (N=16)','Tested channel (N=10)','fontsize',12,'location','northwest');
+    title('SACCSFA','fontsize',15);
+    
+    % Camera.
+    figure; hold on;
+    p3 = plot(wls,spd_camera,'k-');
+    p4 = plot(wls,spd_camera,'-','linewidth',5,'color',[0 1 0 0.3]);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Spectral power','fontsize',15);
+    ylim([0 max(spd_camera,[],'all')*1.01]);
+    legend([p3(1) p4(1)],'All channels (N=8)','Tested channel (N=8)','fontsize',12,'location','northeast');
+    title('Camera (Combi-LED)','fontsize',15);
+    
+    % Spectrum comparison: SACCSFA vs. Camera
+    figure; hold on;
+    for tt = 1:nChannelsTest
+        subplot(2,round(nChannelsTest/2),tt); hold on;
+        
+        xlabel('Wavelength (nm)','fontsize',15);
+        ylabel('Spectral power','fontsize',15);
+        ylim([0 max(spd_camera,[],'all')*1.01]);
+        
+        title('Camera (Combi-LED)','fontsize',15);
+    end
+end
+
 %% For better fitting the sine curve, we can search the initial guess of frequency.
 %
 % We already found optimal values of initial frequency settings, but we
@@ -830,12 +1006,12 @@ legend(legendHandles,'fontsize',12,'location','northeastoutside');
 % this part inside the fitting routine.
 %
 % Search a value using grid-search.
-FINDINITIALFREQUENCYTOFIT = false;
+FINDINITIALFREQUENCYTOFIT = true;
 
 if (FINDINITIALFREQUENCYTOFIT)
     % Set the wave to fit.
-    SF = 1;
-    originalSignals = IP_SACCSFA_1cpd;
+    SF = 2;
+    originalSignals = IP_SACCSFA(1,SF);
     
     nFits = 30;
     switch SF
@@ -843,10 +1019,10 @@ if (FINDINITIALFREQUENCYTOFIT)
             f0_lb = 1;
             f0_ub = 4;
         case 2
-            f0_lb = 2;
-            f0_ub = 5;
+            f0_lb = 5;
+            f0_ub = 8;
         case 3
-            f0_lb = 7;
+            f0_lb = 8;
             f0_ub = 12;
         case 4
             f0_lb = 12;
@@ -868,10 +1044,10 @@ if (FINDINITIALFREQUENCYTOFIT)
         for ff = 1:nFits
             f0 = f0Range(ff);
             originalSignal = originalSignals{cc};
-            [~, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+            [params{ff}, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
             
             % Plot it.
-            subplot(5,round(nFits/5),ff); hold on;
+            subplot(round(nFits/5),5,ff); hold on;
             plot(originalSignal,'b-');
             plot(fittedSignalOne,'r-');
             title(sprintf('f0 = %.6f',f0));
