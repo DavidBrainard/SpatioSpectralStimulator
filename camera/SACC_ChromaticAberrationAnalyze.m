@@ -1009,7 +1009,7 @@ FINDINITIALFREQUENCYTOFIT = true;
 
 if (FINDINITIALFREQUENCYTOFIT)
     % Set the wave to fit.
-    SF = 2;
+    SF = 1;
     originalSignals = IP_SACCSFA(1,SF);
     
     nFits = 30;
@@ -1043,12 +1043,12 @@ if (FINDINITIALFREQUENCYTOFIT)
         for ff = 1:nFits
             f0 = f0Range(ff);
             originalSignal = originalSignals{cc};
-            [params{ff}, fittedSignalOne] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+            [params{ff}, fittedSignal] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
             
             % Plot it.
             subplot(round(nFits/5),5,ff); hold on;
             plot(originalSignal,'b-');
-            plot(fittedSignalOne,'r-');
+            plot(fittedSignal,'r-');
             title(sprintf('f0 = %.6f',f0));
             legend('Origianl','Fit');
             ylim([0 max(originalSignal)*1.05]);
@@ -1059,5 +1059,88 @@ if (FINDINITIALFREQUENCYTOFIT)
         
         % Show progress
         fprintf('Searching progess - (%d/%d) \n',cc,length(originalSignals));
+    end
+end
+
+%% Search f0 using while loop
+if (FINDINITIALFREQUENCYTOFIT)
+    for cc = 1:10
+        % Set the wave to fit.
+        SF = 3;
+        originalSignals = IP_SACCSFA(cc,SF);
+        originalSignal = originalSignals{1};
+        
+        % Set the initial f0 value differently over spatial frequency. This
+        % will speed up the searching process.
+        switch SF
+            case 1
+                f0_lb = 0;
+            case 2
+                f0_lb = 3;
+            case 3
+                f0_lb = 0;
+            case 4
+                f0_lb = 8;
+            case 5
+                f0_lb = 20;
+        end
+        
+        % We update the f0 value by this much.
+        f0_increase = 0.05;
+        
+        % Make a loop to search from here.
+        f0 = f0_lb;
+        trial = 1;
+        while 1
+            % Fitting happens here.
+            [params{cc}, fittedSignal] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
+            
+            % Stop the loop if we found a fit exceeding the criteria. We find
+            % it based on the correlation between the original and fitted
+            % signal.
+            %
+            % Set the target correlation differently. For lower spatial
+            % frequency, it's not possible to achieve 99% correlation between
+            % two curves.
+            switch SF
+                case 1
+                    targetCorrSignals = 0.95;
+                otherwise
+                    targetCorrSignals = 0.97;
+            end
+            
+            % Check correlation. If it it achieves the target, break the loop
+            % here and we will print out the parameters that we found.
+            fittedCorrSignals = corr(originalSignal',fittedSignal');
+            if fittedCorrSignals > targetCorrSignals
+                break;
+            end
+            
+            % If not, we will update f0 value and keep searching.
+            f0 = f0 + f0_increase;
+            trial = trial+1;
+            
+            % Show progress every 10 trials.
+            if mod(trial,10) == 0
+                fprintf('Fitting progress - Number of trials = (%d) \n',trial);
+            end
+        end
+        
+        % Show progress
+        fprintf('Fitting completed! \n');
+        
+        % Make a new figure if we found a fit.
+        figure; hold on;
+        figurePosition = [0 0 1300 1000];
+        set(gcf,'position',figurePosition);
+        sgtitle(sprintf('%d nm', peaks_spd_camera(cc)));
+        
+        % Plot it.
+        figure; hold on;
+        plot(originalSignal,'b-');
+        plot(fittedSignal,'r-');
+        title(sprintf('f0 = %.6f',f0));
+        legend('Origianl','Fit');
+        ylim([0 max(originalSignal)*1.05]);
     end
 end
