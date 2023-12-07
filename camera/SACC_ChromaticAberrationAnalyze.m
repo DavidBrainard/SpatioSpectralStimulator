@@ -62,14 +62,15 @@ peaks_spd_SACCSFA = FindPeakSpds(spd_SACCSFA,'verbose',false);
 
 %% Get the peak wavelength of the Combi-LED (Camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration');
-testFilename = 'spd_combiLED.mat';
+testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','Spectra');
+testFilename = 'CombiLED_Spectra.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
-% Extract the spd data and flip left to right, becasue the measurement was
-% done from Ch8 (high, 652 nm) to Ch1 (low, 406 nm).
-spd_camera = spdData.spd;
-spd_camera = fliplr(spd_camera);
+% Extract black and white measurements per each channel.
+spd_camera = spdData.spds.white;
+spd_camera_black = spdData.spds.black;
+
+% Get peak wavelengths.
 peaks_spd_camera = FindPeakSpds(spd_camera,'verbose',false);
 
 %% 1) Calculate the MTF (SACCSFA).
