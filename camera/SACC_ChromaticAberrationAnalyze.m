@@ -1065,6 +1065,11 @@ end
 
 %% Search f0 using while loop
 if (FINDINITIALFREQUENCYTOFIT)
+    % Make a new figure if we found a fit.
+    figure; hold on;
+    figurePosition = [0 0 1300 1000];
+    set(gcf,'position',figurePosition);
+    
     for cc = 1:10
         % Set the wave to fit.
         SF = 3;
@@ -1128,16 +1133,10 @@ if (FINDINITIALFREQUENCYTOFIT)
         end
         
         % Show progress
-        fprintf('Fitting completed! \n');
-        
-        % Make a new figure if we found a fit.
-        figure; hold on;
-        figurePosition = [0 0 1300 1000];
-        set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d nm', peaks_spd_camera(cc)));
-        
+        fprintf('    Fitting completed! - (%d/%d) \n',cc,10);
+
         % Plot it.
-        figure; hold on;
+        subplot(2,5,cc); hold on;
         plot(originalSignal,'b-');
         plot(fittedSignal,'r-');
         title(sprintf('f0 = %.6f',f0));
