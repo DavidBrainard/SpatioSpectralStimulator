@@ -1070,9 +1070,10 @@ if (FINDINITIALFREQUENCYTOFIT)
     figurePosition = [0 0 1300 1000];
     set(gcf,'position',figurePosition);
     
+    % Set spatial frequency.
+    SF = 1;
     for cc = 1:10
-        % Set the wave to fit.
-        SF = 3;
+        % Load the waves of one channel.
         originalSignals = IP_SACCSFA(cc,SF);
         originalSignal = originalSignals{1};
         
@@ -1084,7 +1085,7 @@ if (FINDINITIALFREQUENCYTOFIT)
             case 2
                 f0_lb = 3;
             case 3
-                f0_lb = 0;
+                f0_lb = 5;
             case 4
                 f0_lb = 8;
             case 5
@@ -1110,7 +1111,9 @@ if (FINDINITIALFREQUENCYTOFIT)
             % two curves.
             switch SF
                 case 1
-                    targetCorrSignals = 0.95;
+                    targetCorrSignals = 0.92;
+                case 2 
+                    targetCorrSignals = 0.94;
                 otherwise
                     targetCorrSignals = 0.97;
             end
@@ -1136,7 +1139,7 @@ if (FINDINITIALFREQUENCYTOFIT)
         fprintf('    Fitting completed! - (%d/%d) \n',cc,10);
 
         % Plot it.
-        subplot(2,5,cc); hold on;
+        subplot(5,2,cc); hold on;
         plot(originalSignal,'b-');
         plot(fittedSignal,'r-');
         title(sprintf('f0 = %.6f',f0));
