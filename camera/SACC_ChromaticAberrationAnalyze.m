@@ -172,31 +172,55 @@ nChannelsTest = length(peaks_spd_SACCSFA_test);
 
 %% Fit sine function to the signal (SACCSFA).
 %
-% Fit sine signal here.
+% Load the saved initial frequencies. In not, we will newly search the
+% values.
+testFilename = fullfile(recentTestFiledir,'f0Options.mat');
+
+% Load the file here.
+if isfile(testFilename)
+    fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
+    f0Options = load(testFilename);
+    f0Options = f0Options.f0Options;
+else
+    % If not, we will search the initial frequencies to fit sine to the
+    % intensity profiles.
+    fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
+    f0Options = struct();
+    for ss = 1:nSFs
+        % Set spatial frequency.
+        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+        
+        % Set field name in the struct.
+        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+        
+        for cc = 1:nChannels
+            % Search the initial frequency here.
+            signalToFit = IP_SACCSFA{cc,ss};
+            f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+            
+            % Show the fitting progress.
+            fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels,cyclesPerDeg);
+        end
+        
+        % Save the value in the struct.
+        f0Options = setfield(f0Options,f0FieldName,f0_found);
+    end
+    
+    % Save out the found initial frequencies. We will load it to use next
+    % time.
+    save(testFilename,'f0Options');
+end
+
+% Fit sine signal.
 for ss = 1:nSFs
     for cc = 1:nChannels
         % Set initial frequency for fitting sine wave.
         cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
-        switch cyclesPerDeg
-            case 3
-                % 3 cpd
-                f0Options = [2.75862 6 5.8621  3.48276  2.24138 3.27586 2.965517 2.896552 2.55172 2.86207];
-            case 6
-                % 6 cpd
-                % f0Options = [4.172414 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
-                f0Options = [6.965517 5.48276 4.10345 6.03448 6.0345 7.2759 6.0345 6.0345 5.13793 6.0345];
-            case 9
-                % 9 cpd
-                f0Options = [9.20690 8.24138 9.20690 7.17241 10.03448 10.206897 10.31034 7.13793 7.13793 8.10345];
-            case 12
-                % 12 cpd
-                f0Options = [12.31034 13.03448 12.82759 14.17241 12.72414 12.10345 12.10345 13.03448 12.72414 12.93103];
-            case 18
-                % 18cpd
-                f0Options = [30.4483 29.4828 30.0526 29.2759 29.8421 30.4737 30.3684 29.1053 28.8276 29];
-        end
         
-        f0 = f0Options(cc);
+        % Update initial frequency (f0) here.
+        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+        f0OptionsTemp = getfield(f0Options,f0FieldName);
+        f0 = f0OptionsTemp(cc);
         
         % Fit happens here.
         signalToFit = IP_SACCSFA{cc,ss};
@@ -399,35 +423,59 @@ end
 
 %% Fit sine function to the signal (Camera).
 %
+% Load the saved initial frequencies. In not, we will newly search the
+% values.
+testFilename = fullfile(recentTestFiledir,'f0Options.mat');
+
+% Load the file here.
+if isfile(testFilename)
+    fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
+    f0Options = load(testFilename);
+    f0Options = f0Options.f0Options;
+else
+    % If not, we will search the initial frequencies to fit sine to the
+    % intensity profiles.
+    fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
+    f0Options = struct();
+    for ss = 1:nSFs
+        % Set spatial frequency.
+        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+        
+        % Set field name in the struct.
+        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+        
+        for cc = 1:nChannels
+            % Search the initial frequency here.
+            signalToFit = IP_SACCSFA{cc,ss};
+            f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+            
+            % Show the fitting progress.
+            fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels,cyclesPerDeg);
+        end
+        
+        % Save the value in the struct.
+        f0Options = setfield(f0Options,f0FieldName,f0_found);
+    end
+    
+    % Save out the found initial frequencies. We will load it to use next
+    % time.
+    save(testFilename,'f0Options');
+end
+
 % Fit sine signal here.
 %
 % Loop over the spatial frequency.
 for ss = 1:nSFs
+    % Set initial frequency for fitting sine wave.
+    cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+    f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+    f0OptionsTemp = getfield(f0Options,f0FieldName);
+    
     % Loop over the channels.
     for cc = 1:nChannels
         
-        % Set initial frequency for fitting sine wave.
-        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
-        switch cyclesPerDeg
-            case 3
-                % 3 cpd
-                f0Options = [3.758621 3.793103 2.137931 4.620690 2.137931 4.620690 4.620690 4.620690];
-            case 6
-                % 6 cpd
-                f0Options = [2.103448 4.103448 3.206897 4.206897 5.241379  4.172414 6.379310 4.482759];
-            case 9
-                % 9 cpd
-                f0Options = [7.517241 9.931034 8.724138 9.068966 9.241379 8.551724 9.586207 8.206897];
-            case 12
-                % 12 cpd
-                f0Options = [12.620690 12.724138 13.655172 13.137931 13.655172 12.206897 13.034483 13.034483];
-            case 18
-                % 18cpd
-                f0Options = [29.689655 29.482759 30.793103 30.379310 29.758621 30.034483 30.034483 30.517241];
-        end
-        
-        % Update initial guess of frequency here.
-        f0 = f0Options(cc);
+        % Update initial frequency (f0) here.
+        f0 = f0OptionsTemp(cc);
         
         % Fit happens here.
         signalToFit = IP_camera{cc,ss};
@@ -745,6 +793,7 @@ xlabel('Peak wavelength (nm)','fontsize',15);
 ylabel('Fitted phi','fontsize',15);
 
 % Add legend.
+clear legendHandles;
 for ss = 1:length(targetCyclePerDeg)
     legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
 end
@@ -879,6 +928,7 @@ xlabel('Peak wavelength (nm)','fontsize',15);
 ylabel('Fitted phi','fontsize',15);
 
 % Add legend.
+clear legendHandles;
 for ss = 1:length(targetCyclePerDeg)
     legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
 end
@@ -996,154 +1046,5 @@ if (PLOTSPECTRUM)
         ylim([0 max(spd_camera,[],'all')*1.01]);
         
         title('Camera (Combi-LED)','fontsize',15);
-    end
-end
-
-%% For better fitting the sine curve, we can search the initial guess of frequency.
-%
-% We already found optimal values of initial frequency settings, but we
-% keep this routine here for further use. Eventually we may want to put
-% this part inside the fitting routine.
-%
-% Search a value using grid-search.
-FINDINITIALFREQUENCYTOFIT = true;
-
-if (FINDINITIALFREQUENCYTOFIT)
-    % Set the wave to fit.
-    SF = 1;
-    originalSignals = IP_SACCSFA(1,SF);
-    
-    nFits = 30;
-    switch SF
-        case 1
-            f0_lb = 1;
-            f0_ub = 4;
-        case 2
-            f0_lb = 5;
-            f0_ub = 8;
-        case 3
-            f0_lb = 8;
-            f0_ub = 12;
-        case 4
-            f0_lb = 12;
-            f0_ub = 15;
-        case 5
-            f0_lb = 29;
-            f0_ub = 31;
-    end
-    f0Range = linspace(f0_lb,f0_ub,nFits);
-    
-    % Make a loop to search from here.
-    for cc = 1:length(originalSignals)
-        % Make a new figure per each channel.
-        figure; hold on;
-        figurePosition = [0 0 1300 1000];
-        set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d nm', peaks_spd_camera(cc)));
-        
-        for ff = 1:nFits
-            f0 = f0Range(ff);
-            originalSignal = originalSignals{cc};
-            [params{ff}, fittedSignal] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
-            
-            % Plot it.
-            subplot(round(nFits/5),5,ff); hold on;
-            plot(originalSignal,'b-');
-            plot(fittedSignal,'r-');
-            title(sprintf('f0 = %.6f',f0));
-            legend('Origianl','Fit');
-            ylim([0 max(originalSignal)*1.05]);
-            
-            % Clear f
-            clear f0;
-        end
-        
-        % Show progress
-        fprintf('Searching progess - (%d/%d) \n',cc,length(originalSignals));
-    end
-end
-
-%% Search f0 using while loop
-if (FINDINITIALFREQUENCYTOFIT)
-    % Make a new figure if we found a fit.
-    figure; hold on;
-    figurePosition = [0 0 1300 1000];
-    set(gcf,'position',figurePosition);
-    
-    % Set spatial frequency.
-    SF = 1;
-    for cc = 1:10
-        % Load the waves of one channel.
-        originalSignals = IP_SACCSFA(cc,SF);
-        originalSignal = originalSignals{1};
-        
-        % Set the initial f0 value differently over spatial frequency. This
-        % will speed up the searching process.
-        switch SF
-            case 1
-                f0_lb = 0;
-            case 2
-                f0_lb = 3;
-            case 3
-                f0_lb = 5;
-            case 4
-                f0_lb = 8;
-            case 5
-                f0_lb = 20;
-        end
-        
-        % We update the f0 value by this much.
-        f0_increase = 0.05;
-        
-        % Make a loop to search from here.
-        f0 = f0_lb;
-        trial = 1;
-        while 1
-            % Fitting happens here.
-            [params{cc}, fittedSignal] = FitSineWave(originalSignal,'f0',f0,'verbose',false,'FFT',false);
-            
-            % Stop the loop if we found a fit exceeding the criteria. We find
-            % it based on the correlation between the original and fitted
-            % signal.
-            %
-            % Set the target correlation differently. For lower spatial
-            % frequency, it's not possible to achieve 99% correlation between
-            % two curves.
-            switch SF
-                case 1
-                    targetCorrSignals = 0.92;
-                case 2 
-                    targetCorrSignals = 0.94;
-                otherwise
-                    targetCorrSignals = 0.97;
-            end
-            
-            % Check correlation. If it it achieves the target, break the loop
-            % here and we will print out the parameters that we found.
-            fittedCorrSignals = corr(originalSignal',fittedSignal');
-            if fittedCorrSignals > targetCorrSignals
-                break;
-            end
-            
-            % If not, we will update f0 value and keep searching.
-            f0 = f0 + f0_increase;
-            trial = trial+1;
-            
-            % Show progress every 10 trials.
-            if mod(trial,10) == 0
-                fprintf('Fitting progress - Number of trials = (%d) \n',trial);
-            end
-        end
-        
-        % Show progress
-        fprintf('    Fitting completed! - (%d/%d) \n',cc,10);
-
-        % Plot it.
-        subplot(5,2,cc); hold on;
-        plot(originalSignal,'b-');
-        plot(fittedSignal,'r-');
-        title(sprintf('f0 = %.6f',f0));
-        legend('Origianl','Fit');
-        ylim([0 max(originalSignal)*1.05]);
     end
 end
