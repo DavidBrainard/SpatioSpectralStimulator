@@ -1035,16 +1035,4 @@ if (PLOTSPECTRUM)
     ylim([0 max(spd_camera,[],'all')*1.01]);
     legend([p3(1) p4(1)],'All channels (N=8)','Tested channel (N=8)','fontsize',12,'location','northeast');
     title('Camera (Combi-LED)','fontsize',15);
-    
-    % Spectrum comparison: SACCSFA vs. Camera
-    figure; hold on;
-    for tt = 1:nChannelsTest
-        subplot(2,round(nChannelsTest/2),tt); hold on;
-        
-        xlabel('Wavelength (nm)','fontsize',15);
-        ylabel('Spectral power','fontsize',15);
-        ylim([0 max(spd_camera,[],'all')*1.01]);
-        
-        title('Camera (Combi-LED)','fontsize',15);
-    end
 end
