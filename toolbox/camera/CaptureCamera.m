@@ -27,8 +27,8 @@ function [image] = CaptureCamera(vid,options)
 arguments
     vid
     options.exposureTime (1,1) = 10000
-    options.rectRatioHeight (1,1) = 0.1
-    options.rectRatioWidth (1,1) = 0.08
+    options.rectRatioHeight (1,1) = 0.08
+    options.rectRatioWidth (1,1) = 0.1
     options.minPeakDistancePixel (1,1) = 10
     options.saveImageDir = []
     options.saveImageFilename
