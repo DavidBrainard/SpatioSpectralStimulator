@@ -6,7 +6,7 @@ function [f0] = FindInitialFrequencyToFitSineWave(waveform,options)
 %
 % Description:
 %    This function runs a loop to grid search an initial frequency value to
-%    fit sinusoidal waveform. 
+%    fit sinusoidal waveform.
 %
 % Inputs:
 %     waveform                  - Target signal you want to fit.
@@ -63,13 +63,9 @@ while 1
     % Fitting happens here.
     [params, fittedSignal] = FitSineWave(waveform,'f0',f0,'verbose',false,'FFT',false);
     
-    % Stop the loop if we found a fit exceeding the criteria. We find
-    % it based on the correlation between the original and fitted
-    % signal.
-    %
-    % Set the target correlation differently. For lower spatial
-    % frequency, it's not possible to achieve 99% correlation between
-    % two curves.
+    % Set the target correlation differently. For lower spatial frequency,
+    % it's not possible to achieve as high as 99% correlation between two
+    % curves.
     switch options.SF
         case 3
             targetCorrSignals = 0.92;
@@ -79,8 +75,10 @@ while 1
             targetCorrSignals = 0.97;
     end
     
-    % Check correlation. If it it achieves the target, break the loop
-    % here and we will print out the parameters that we found.
+    
+    % Stop the loop if we found a fit exceeding the criteria. We find
+    % it based on the correlation between the original and fitted
+    % signal.
     fittedCorrSignals = corr(waveform',fittedSignal');
     if fittedCorrSignals > targetCorrSignals
         break;
