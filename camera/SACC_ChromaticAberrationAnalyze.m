@@ -295,12 +295,11 @@ for cc = 1:nChannelsTest
     
     % Now fit sine curve to the 1 cpd to calculate contrast.
     %
-    % Set initial f0 options for sine fitting.
-    f0Options = [3.275862 3.275862 3.275862 3.275862 3.275862 3.379310 3.275862 3.379310 3.275862 3.379310];
-    f0 = f0Options(cc);
+    % Find initial frequency to fit.
+    signalToFit = IP_SACCSFA_1cpd{cc};
+    f0 = FindInitialFrequencyToFitSineWave(signalToFit,'SF',1,'verbose',false);
     
     % Fit happens here.
-    signalToFit = IP_SACCSFA_1cpd{cc};
     [params_SACCSFA_1cpd{cc}, fittedSignal_SACCSFA_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
     
     % Clear the initial guess of frequency for next fit.
@@ -549,12 +548,11 @@ for cc = 1:nChannels
     
     % Now fit sine curve to the 1 cpd to calculate contrast.
     %
-    % Set initial f0 options for sine fitting.
-    f0Options = [2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 2.551724 1.931034];
-    f0 = f0Options(cc);
+    % Find initial frequency to fit.
+    signalToFit = IP_camera_1cpd{cc};
+    f0 = FindInitialFrequencyToFitSineWave(signalToFit,'SF',1,'verbose',false);
     
     % Fit happens here.
-    signalToFit = IP_camera_1cpd{cc};
     [params_camera_1cpd{cc}, fittedSignal_camera_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
     
     % Clear the initial guess of frequency for next fit.

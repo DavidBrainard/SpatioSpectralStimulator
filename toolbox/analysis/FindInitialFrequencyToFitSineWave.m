@@ -67,6 +67,8 @@ while 1
     % it's not possible to achieve as high as 99% correlation between two
     % curves.
     switch options.SF
+        case 1
+            targetCorrSignals = 0.90;
         case 3
             targetCorrSignals = 0.92;
         case 6
