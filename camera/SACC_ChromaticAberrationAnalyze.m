@@ -34,7 +34,7 @@ nSFs = length(targetCyclePerDeg);
 %
 % Set it 2 shows the results by doing sine fitting to the intensity profile
 % and calculating the contrasts from the fitting.
-optionContrastCalMethod = 1;
+optionContrastCalMethod = 2;
 switch optionContrastCalMethod
     case 1
         contrastCalMethod = 'MeanIntensityProfile';
@@ -81,16 +81,48 @@ viewingMedia = 'SACCSFA';
 % Load all images here.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',viewingMedia);
-folderList = dir(testFiledir);
-folderList = folderList(4:end);
+folders = dir(testFiledir);
+dates = cell(1, numel(folders));
 
-% Find the most recent measurement.
-for i = 1:numel(folderList)
-    folderDate(i) = datetime(folderList(i).name);
+% Regular expression pattern to match dates in the folder names
+datePattern = '\d{4}-\d{2}-\d{2}';
+
+idxFolders = [];
+% Loop through each folder and extract the date
+for i = 1:numel(folders)
+    folderName = folders(i).name;
+    
+    % Use regular expression to find the date pattern in the folder name
+    match = regexp(folderName, datePattern, 'match');
+    
+    % Check if a date pattern was found
+    if ~isempty(match)
+        dates{i} = match{1};
+        idxFolders(end+1) = i;
+    end
 end
-[recentDate, idxRecentDate] = max(folderDate);
-recentFolderName = folderList(idxRecentDate).name;
+
+% Extract only folders with the date in the name.
+folders = folders(idxFolders);
+
+% Remove empty cells.
+dates = dates(~cellfun('isempty', dates));
+
+% Sanity check.
+if ~(numel(folders) == numel(dates))
+    error(fprintf('Number of the folders (%d) and date strings (%d) does not match!',...
+        numel(folders),numel(dates)));
+    
+end
+
+% Get the most recent date folder directory.
+dateNumbers = datenum(dates, 'yyyy-mm-dd');
+[recentDateNumber, idxRecentDate] = max(dateNumbers);
+recentFolderName = folders(idxRecentDate).name;
 recentTestFiledir = fullfile(testFiledir,recentFolderName);
+
+% Print out which data will be loaded.
+fprintf('The data of (%s) now loading was measured on (%s) \n',viewingMedia,recentFolderName);
 
 % Find available channels.
 channelFolderList = dir(recentTestFiledir);
@@ -209,6 +241,7 @@ else
     % Save out the found initial frequencies. We will load it to use next
     % time.
     save(testFilename,'f0Options');
+    fpritnf('All initial frequency settings found successfully and saved! - (%s) \n',viewingMedia);
 end
 
 % Fit sine signal.
@@ -333,19 +366,51 @@ end
 % target so the images were saved in the folder 'Print'.
 viewingMedia = 'Print';
 
-% Load all images.
+% Load all images here.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',viewingMedia);
-folderList = dir(testFiledir);
-folderList = folderList(4:end);
+folders = dir(testFiledir);
+dates = cell(1, numel(folders));
 
-% Find the most recent measurement.
-for i = 1:numel(folderList)
-    folderDate(i) = datetime(folderList(i).name);
+% Regular expression pattern to match dates in the folder names
+datePattern = '\d{4}-\d{2}-\d{2}';
+
+idxFolders = [];
+% Loop through each folder and extract the date
+for i = 1:numel(folders)
+    folderName = folders(i).name;
+    
+    % Use regular expression to find the date pattern in the folder name
+    match = regexp(folderName, datePattern, 'match');
+    
+    % Check if a date pattern was found
+    if ~isempty(match)
+        dates{i} = match{1};
+        idxFolders(end+1) = i;
+    end
 end
-[recentDate, idxRecentDate] = max(folderDate);
-recentFolderName = folderList(idxRecentDate).name;
+
+% Extract only folders with the date in the name.
+folders = folders(idxFolders);
+
+% Remove empty cells.
+dates = dates(~cellfun('isempty', dates));
+
+% Sanity check.
+if ~(numel(folders) == numel(dates))
+    error(fprintf('Number of the folders (%d) and date strings (%d) does not match!',...
+        numel(folders),numel(dates)));
+    
+end
+
+% Get the most recent date folder directory.
+dateNumbers = datenum(dates, 'yyyy-mm-dd');
+[recentDateNumber, idxRecentDate] = max(dateNumbers);
+recentFolderName = folders(idxRecentDate).name;
 recentTestFiledir = fullfile(testFiledir,recentFolderName);
+
+% Print out which data will be loaded.
+fprintf('The data of (%s) now loading was measured on (%s) \n',viewingMedia,recentFolderName);
 
 % Find available channels.
 channelFolderList = dir(recentTestFiledir);
@@ -952,10 +1017,16 @@ for ss = 1:nSFs
         
         
         % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMPSOLUTION).
-        if and(cc==1,ss==2)
-            phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-        end
-        
+%         if and(cc==1,ss==2)
+%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+%         end
+%         if and(cc==1,ss==3)
+%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+%         end
+% 
+%         if and(cc==2,ss==3)
+%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+%         end
         
         
         
@@ -1005,11 +1076,11 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([0 4]);
+    ylim([0 5]);
 end
 
 %% Plot the channels that we used in this study.
-PLOTSPECTRUM = true;
+PLOTSPECTRUM = false;
 
 if (PLOTSPECTRUM)
     % SACCSFA.
