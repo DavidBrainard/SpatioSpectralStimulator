@@ -37,7 +37,7 @@ nSFs = length(targetCyclePerDeg);
 optionContrastCalMethod = 2;
 switch optionContrastCalMethod
     case 1
-        contrastCalMethod = 'MeanIntensityProfile';
+        contrastCalMethod = 'Average';
     case 2
         contrastCalMethod = 'Sinefit';
 end
@@ -649,7 +649,7 @@ end
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
-    case 'MeanIntensityProfile'
+    case 'Average'
         contrastRaw_camera = contrastsAvg_camera;
     case 'Sinefit'
         contrastRaw_camera = contrastsFit_camera;
@@ -695,7 +695,7 @@ contrastsFit_SACCSFANorm = contrastsFit_SACCSFA./contrastsFit_SACCSFA_1cpd';
 % We used two different methods to calculate contrast. Choose either one to
 % plot the results. It was chosen at the very beginning of this routine.
 switch contrastCalMethod
-    case 'MeanIntensityProfile'
+    case 'Average'
         contrast_camera = contrastsAvg_cameraNorm;
         contrast_SACCSFA = contrastsAvg_SACCSFANorm;
     case 'Sinefit'
@@ -1017,16 +1017,16 @@ for ss = 1:nSFs
         
         
         % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMPSOLUTION).
-%         if and(cc==1,ss==2)
-%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-%         end
-%         if and(cc==1,ss==3)
-%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-%         end
-% 
-%         if and(cc==2,ss==3)
-%             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-%         end
+        if and(cc==1,ss==2)
+            phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+        end
+        %         if and(cc==1,ss==3)
+        %             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+        %         end
+        %
+        %         if and(cc==2,ss==3)
+        %             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
+        %         end
         
         
         
@@ -1080,7 +1080,7 @@ for ss = 1:nSFs
 end
 
 %% Plot the channels that we used in this study.
-PLOTSPECTRUM = false;
+PLOTSPECTRUM = true;
 
 if (PLOTSPECTRUM)
     % SACCSFA.
