@@ -186,17 +186,17 @@ for cc = 1:nChannels
         
         % Calculate contrasts.
         [contrastsTemp, IP_SACCSFA{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        meanContrastsOneChannel(ss) = mean(contrastsTemp);
+        contrastsAvgOneChannel(ss) = mean(contrastsTemp);
     end
     
     % Collect the mean contrast results.
-    meanContrasts_SACCSFA(cc,:) = meanContrastsOneChannel;
+    contrastsAvg_SACCSFA(cc,:) = contrastsAvgOneChannel;
 end
 
 % Sort the contrasts in an ascending order of the channels.
 peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
 [peaks_spd_SACCSFA_test I] = sort(peaks_spd_SACCSFA_test,'ascend');
-meanContrasts_SACCSFA = meanContrasts_SACCSFA(I,:);
+contrastsAvg_SACCSFA = contrastsAvg_SACCSFA(I,:);
 IP_SACCSFA = IP_SACCSFA(I,:);
 
 % Get number of channels to compare with the camera MTF.
@@ -324,7 +324,7 @@ for cc = 1:nChannelsTest
         subtitle('1 cpd','fontsize',13);
     end
     [contrastsTemp, IP_SACCSFA_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-    meanContrasts_SACCSFA_1cpd(cc) = mean(contrastsTemp);
+    contrastsAvg_SACCSFA_1cpd(cc) = mean(contrastsTemp);
     
     % Now fit sine curve to the 1 cpd to calculate contrast.
     %
@@ -478,11 +478,11 @@ for cc = 1:nChannels
         
         % Calculate contrasts.
         [contrastsTemp IP_camera{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        meanContrastsOneChannel(ss) = mean(contrastsTemp);
+        contrastsAvgOneChannel(ss) = mean(contrastsTemp);
     end
     
     % Collect the mean contrast results.
-    meanContrasts_camera(cc,:) = meanContrastsOneChannel;
+    contrastsAvg_camera(cc,:) = contrastsAvgOneChannel;
 end
 
 %% Fit sine function to the signal (Camera).
@@ -567,7 +567,7 @@ for ss = 1:nSFs
         title(sprintf('%d nm',peaks_spd_camera(cc)));
         xlabel('Pixel position');
         ylabel('dRGB');
-        ylim([0 220]);
+        ylim([-10 230]);
         
         % Original.
         plot(IP_camera{cc,ss},'b-');
@@ -609,7 +609,7 @@ for cc = 1:nChannels
         subtitle('1 cpd','fontsize',13);
     end
     [contrastsTemp, IP_camera_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-    meanContrasts_camera_1cpd(cc) = mean(contrastsTemp);
+    contrastsAvg_camera_1cpd(cc) = mean(contrastsTemp);
     
     % Now fit sine curve to the 1 cpd to calculate contrast.
     %
@@ -650,7 +650,7 @@ end
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
-        contrastRaw_camera = meanContrasts_camera;
+        contrastRaw_camera = contrastsAvg_camera;
     case 'Sinefit'
         contrastRaw_camera = contrastsFit_camera;
 end
@@ -684,10 +684,10 @@ end
 % using two different methods.
 %
 % Normalize the contrast by dividing the single cycle contrast.
-meanContrasts_cameraNorm = meanContrasts_camera./meanContrasts_camera_1cpd';
+contrastsAvg_cameraNorm = contrastsAvg_camera./contrastsAvg_camera_1cpd';
 contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
 
-meanContrasts_SACCSFANorm = meanContrasts_SACCSFA./meanContrasts_SACCSFA_1cpd';
+contrastsAvg_SACCSFANorm = contrastsAvg_SACCSFA./contrastsAvg_SACCSFA_1cpd';
 contrastsFit_SACCSFANorm = contrastsFit_SACCSFA./contrastsFit_SACCSFA_1cpd';
 
 %% 3) Calculate the compensated MTF (SACCSFA).
@@ -696,8 +696,8 @@ contrastsFit_SACCSFANorm = contrastsFit_SACCSFA./contrastsFit_SACCSFA_1cpd';
 % plot the results. It was chosen at the very beginning of this routine.
 switch contrastCalMethod
     case 'MeanIntensityProfile'
-        contrast_camera = meanContrasts_cameraNorm;
-        contrast_SACCSFA = meanContrasts_SACCSFANorm;
+        contrast_camera = contrastsAvg_cameraNorm;
+        contrast_SACCSFA = contrastsAvg_SACCSFANorm;
     case 'Sinefit'
         contrast_camera = contrastsFit_cameraNorm;
         contrast_SACCSFA = contrastsFit_SACCSFANorm;
@@ -738,14 +738,14 @@ for cc = 1:nChannelsTest
     %
     % We saved the index of corresponding channel to compare within the
     % combi-LED in 'idx_camera_test'.
-    meanContrastsOneChannel = contrast_camera(idx_camera_test(cc),:);
-    plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
+    contrastsCameraOneChannel = contrast_camera(idx_camera_test(cc),:);
+    plot(cell2mat(targetCyclePerDeg),contrastsCameraOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % Save out camera MTF to test.
     %
     % We will use this to compensate the SACCSFA MTF later on.
-    contrast_camera_test(cc,:) = meanContrastsOneChannel;
+    contrast_camera_test(cc,:) = contrastsCameraOneChannel;
     
     % Plot stuffs.
     legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
@@ -774,8 +774,8 @@ sgtitle('Compensated SACCSFA MTF (SACCSFA MTF/Camera MTF)', 'fontsize', 15);
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannelsTest
     subplot(2,round(nChannelsTest)/2,cc); hold on;
-    meanContrastsOneChannel = contrast_SACCSFA_compensated(cc,:);
-    plot(cell2mat(targetCyclePerDeg),meanContrastsOneChannel,...
+    contrastsSACCSFAOneChannel = contrast_SACCSFA_compensated(cc,:);
+    plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
     ylim([0 1.15]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
