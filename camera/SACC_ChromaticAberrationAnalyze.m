@@ -241,7 +241,7 @@ else
     % Save out the found initial frequencies. We will load it to use next
     % time.
     save(testFilename,'f0Options');
-    fpritnf('All initial frequency settings found successfully and saved! - (%s) \n',viewingMedia);
+    fprintf('All initial frequency settings found successfully and saved! - (%s) \n',viewingMedia);
 end
 
 % Fit sine signal.
