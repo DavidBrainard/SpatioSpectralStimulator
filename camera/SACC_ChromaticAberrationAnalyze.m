@@ -687,20 +687,18 @@ end
 contrastsAvg_cameraNorm = contrastsAvg_camera./contrastsAvg_camera_1cpd';
 contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
 
-contrastsAvg_SACCSFANorm = contrastsAvg_SACCSFA./contrastsAvg_SACCSFA_1cpd';
-contrastsFit_SACCSFANorm = contrastsFit_SACCSFA./contrastsFit_SACCSFA_1cpd';
-
 %% 3) Calculate the compensated MTF (SACCSFA).
 %
 % We used two different methods to calculate contrast. Choose either one to
 % plot the results. It was chosen at the very beginning of this routine.
+factorContSineToAvg = 1/(4/pi);
 switch contrastCalMethod
     case 'Average'
         contrast_camera = contrastsAvg_cameraNorm;
-        contrast_SACCSFA = contrastsAvg_SACCSFANorm;
+        contrast_SACCSFA = contrastsAvg_SACCSFA;
     case 'Sinefit'
         contrast_camera = contrastsFit_cameraNorm;
-        contrast_SACCSFA = contrastsFit_SACCSFANorm;
+        contrast_SACCSFA = contrastsFit_SACCSFA .* factorSineToAvg;
 end
 
 % Here we choose which channel of the combi-LED to compare to each channel
@@ -980,22 +978,22 @@ end
 % 3) Plot the comparison of the parameter phi over the channels.
 %
 % Define the x-ticks for the plot.
-xticksPlot = linspace(1,nChannelsTest,nChannelsTest);
-
-figure; hold on;
-title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
-plot(xticksPlot,phi_SACCSFA,'o-');
-xticks(xticksPlot);
-xticklabels(peaks_spd_SACCSFA_test);
-xlabel('Peak wavelength (nm)','fontsize',15);
-ylabel('Fitted phi','fontsize',15);
-
-% Add legend.
-clear legendHandles;
-for ss = 1:length(targetCyclePerDeg)
-    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
-end
-legend(legendHandles,'fontsize',12,'location','northeastoutside');
+% xticksPlot = linspace(1,nChannelsTest,nChannelsTest);
+%
+% figure; hold on;
+% title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
+% plot(xticksPlot,phi_SACCSFA,'o-');
+% xticks(xticksPlot);
+% xticklabels(peaks_spd_SACCSFA_test);
+% xlabel('Peak wavelength (nm)','fontsize',15);
+% ylabel('Fitted phi','fontsize',15);
+%
+% % Add legend.
+% clear legendHandles;
+% for ss = 1:length(targetCyclePerDeg)
+%     legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+% end
+% legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
 % Calculate the phase shift in pixel.
 %
