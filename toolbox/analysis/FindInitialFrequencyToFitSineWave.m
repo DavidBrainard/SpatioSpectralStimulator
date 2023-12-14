@@ -45,7 +45,7 @@ switch options.SF
     case 6
         f0_lb = 3;
     case 9
-        f0_lb = 5;
+        f0_lb = 4;
     case 12
         f0_lb = 8;
     case 18
@@ -73,6 +73,8 @@ while 1
             targetCorrSignals = 0.92;
         case 6
             targetCorrSignals = 0.94;
+        case 9 
+            targetCorrSignals = 0.96;
         otherwise
             targetCorrSignals = 0.97;
     end
