@@ -17,6 +17,7 @@
 %    11/22/23   smo    - Cleared up a lot and now it is working by
 %                        calculating the MTF of both camera and SACCSFA
 %                        within this routine.
+%    12/14/23   smo    - Included 1 cpd point to all MTF measurements.
 
 %% Initialize.
 clear; close all;
@@ -24,7 +25,7 @@ clear; close all;
 %% Set variables.
 %
 % Set spatial frequency levels.
-targetCyclePerDeg = {3,6,9,12,18};
+targetCyclePerDeg = {1,3,6,9,12,18};
 nSFs = length(targetCyclePerDeg);
 
 % Choose which contrast calculation method to use.
@@ -170,12 +171,19 @@ for cc = 1:nChannels
         images{ss} = imread(testFilenameTemp);
         
         % Set min distance between adjacent peaks.
-        if ss == 1
-            minPeakDistance = 35;
-        elseif ss == 2
-            minPeakDistance = 20;
-        else
-            minPeakDistance = 5;
+        SF = targetCyclePerDeg{ss};
+        switch SF
+            % 1 cpd
+            case 1
+                minPeakDistance = 35;
+                % 3 cpd
+            case 3
+                minPeakDistance = 35;
+                %  cpd
+            case 6
+                minPeakDistance = 20;
+            otherwise
+                minPeakDistance = 5;
         end
         
         % Make a subplot per each spatial frequency.
@@ -303,63 +311,6 @@ for ss = 1:nSFs
     end
 end
 
-%% Get contrasts of 1 cpd image for compensation (SACCSFA).
-figure; hold on;
-sgtitle(sprintf('1 cpd (%s)',viewingMedia));
-for cc = 1:nChannelsTest
-    oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
-    testFilename = '1cpd_crop';
-    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
-    
-    % We save an image here.
-    image = imread(testFilename);
-    
-    % Set min distance between adjacent peaks.
-    minPeakDistance = 30;
-    
-    % Calculate contrasts.
-    if (plotIntensityProfile)
-        figure;
-        title(sprintf('%d nm (%s)',peaks_spd_SACCSFA_test(cc),viewingMedia),'fontsize',15);
-        subtitle('1 cpd','fontsize',13);
-    end
-    [contrastsTemp, IP_SACCSFA_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-    contrastsAvg_SACCSFA_1cpd(cc) = mean(contrastsTemp);
-    
-    % Now fit sine curve to the 1 cpd to calculate contrast.
-    %
-    % Find initial frequency to fit.
-    signalToFit = IP_SACCSFA_1cpd{cc};
-    f0 = FindInitialFrequencyToFitSineWave(signalToFit,'SF',1,'verbose',false);
-    
-    % Fit happens here.
-    [params_SACCSFA_1cpd{cc}, fittedSignal_SACCSFA_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-    
-    % Clear the initial guess of frequency for next fit.
-    clear f0;
-    
-    % Plot the results.
-    subplot(round(nChannels/2),2,cc); hold on;
-    title(sprintf('%d nm',peaks_spd_SACCSFA_test(cc)));
-    xlabel('Pixel position');
-    ylabel('dRGB');
-    ylim([-20 240]);
-    
-    % Original.
-    plot(IP_SACCSFA_1cpd{cc},'b-');
-    
-    % Fitted signal.
-    plot(fittedSignal_SACCSFA_1cpd{cc},'r-');
-    legend('Origianl','Fit');
-    
-    % Calculate contrast.
-    paramsTemp = params_SACCSFA_1cpd{cc};
-    A = paramsTemp(1);
-    B = paramsTemp(4);
-    contrast = A/B;
-    contrastsFit_SACCSFA_1cpd(cc) = contrast;
-end
-
 %% 2) Calculate the MTF (Camera).
 %
 % Set the viewing media for the camera MTF measurement. We used the printed
@@ -462,12 +413,19 @@ for cc = 1:nChannels
         images{ss} = imread(testFilenameTemp);
         
         % Set min distance between adjacent peaks.
-        if ss == 1
-            minPeakDistance = 35;
-        elseif ss == 2
-            minPeakDistance = 20;
-        else
-            minPeakDistance = 5;
+        SF = targetCyclePerDeg{ss};
+        switch SF
+            % 1 cpd
+            case 1
+                minPeakDistance = 35;
+                % 3 cpd
+            case 3
+                minPeakDistance = 35;
+                % 6 cpd
+            case 6
+                minPeakDistance = 20;
+            otherwise
+                minPeakDistance = 5;
         end
         
         % Make a subplot per each spatial frequency.
@@ -510,7 +468,7 @@ else
         
         for cc = 1:nChannels
             % Search the initial frequency here.
-            signalToFit = IP_SACCSFA{cc,ss};
+            signalToFit = IP_camera{cc,ss};
             f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
             
             % Show the fitting progress.
@@ -589,62 +547,6 @@ for ss = 1:nSFs
     end
 end
 
-%% Get contrasts of 1 cpd image for compensation (Camera).
-figure; hold on;
-for cc = 1:nChannels
-    oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
-    testFilename = '1cpd_crop';
-    testFilename = GetMostRecentFileName(oneChannelFileDir,testFilename);
-    
-    % We save an image here.
-    image = imread(testFilename);
-    
-    % Set min distance between adjacent peaks.
-    minPeakDistance = 30;
-    
-    % Calculate contrasts.
-    if (plotIntensityProfile)
-        figure;
-        title(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
-        subtitle('1 cpd','fontsize',13);
-    end
-    [contrastsTemp, IP_camera_1cpd{cc}] = GetImgContrast(image,'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-    contrastsAvg_camera_1cpd(cc) = mean(contrastsTemp);
-    
-    % Now fit sine curve to the 1 cpd to calculate contrast.
-    %
-    % Find initial frequency to fit.
-    signalToFit = IP_camera_1cpd{cc};
-    f0 = FindInitialFrequencyToFitSineWave(signalToFit,'SF',1,'verbose',false);
-    
-    % Fit happens here.
-    [params_camera_1cpd{cc}, fittedSignal_camera_1cpd{cc}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-    
-    % Clear the initial guess of frequency for next fit.
-    clear f0;
-    
-    % Plot the results.
-    subplot(round(nChannels/2),2,cc); hold on;
-    title(sprintf('%d nm',peaks_spd_camera(cc)));
-    xlabel('Pixel position');
-    ylabel('dRGB');
-    ylim([-20 240]);
-    
-    % Original.
-    plot(IP_camera_1cpd{cc},'b-');
-    
-    % Fitted signal.
-    plot(fittedSignal_camera_1cpd{cc},'r-');
-    legend('Origianl','Fit');
-    
-    % Calculate contrast.
-    paramsTemp = params_camera_1cpd{cc};
-    A = paramsTemp(1);
-    B = paramsTemp(4);
-    contrast = A/B;
-    contrastsFit_camera_1cpd(cc) = contrast;
-end
-
 %% 2) Plot the raw MTF and compensate it (Camera).
 %
 % Choose which way to calculate the contrast.
@@ -670,28 +572,28 @@ for cc = 1:nChannels
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     legend('Camera (Raw)','location','southeast','fontsize',11);
-    ylim([0 1.15]);
+    ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
 end
 
-% Calculate the compensated MTF (Camera).
-%
-% Here we compensate the limitation of using printed paper by dividing the
-% MTF of a 1 cpd to the raw camera MTF. We will calculate the contrasts
-% using two different methods.
-%
-% Normalize the contrast by dividing the single cycle contrast.
-contrastsAvg_cameraNorm = contrastsAvg_camera./contrastsAvg_camera_1cpd';
-contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd';
+% Get 1cpd contrasts.
+contrastsAvg_camera_1cpd = contrastsAvg_camera(:,1);
+contrastsFit_camera_1cpd = contrastsFit_camera(:,1);
+
+% Calculate the compensated MTF (Camera). Here we compensate the limitation
+% of using printed paper by dividing the MTF of a 1 cpd to the raw camera
+% MTF.
+contrastsAvg_cameraNorm = contrastsAvg_camera./contrastsAvg_camera_1cpd;
+contrastsFit_cameraNorm = contrastsFit_camera./contrastsFit_camera_1cpd;
 
 %% 3) Calculate the compensated MTF (SACCSFA).
 %
 % We used two different methods to calculate contrast. Choose either one to
 % plot the results. It was chosen at the very beginning of this routine.
-factorContSineToAvg = 1/(4/pi);
+factorSineToAvg = 1/(4/pi);
 switch contrastCalMethod
     case 'Average'
         contrast_camera = contrastsAvg_cameraNorm;
@@ -931,7 +833,7 @@ sgtitle('Raw intensity profile over the channels (SACCSFA)');
 
 % Make a loop to plot.
 for ss = 1:nSFs
-    subplot(5,1,ss); hold on;
+    subplot(nSFs,1,ss); hold on;
     
     % Channel.
     for cc = 1:nChannelsTest
@@ -960,7 +862,7 @@ set(gcf,'position',figurePosition);
 sgtitle('Fitted intensity profile over the channels (SACCSFA)');
 
 for ss = 1:nSFs
-    subplot(5,1,ss); hold on;
+    subplot(nSFs,1,ss); hold on;
     
     % Channel.
     for cc = 1:nChannelsTest
@@ -978,22 +880,22 @@ end
 % 3) Plot the comparison of the parameter phi over the channels.
 %
 % Define the x-ticks for the plot.
-% xticksPlot = linspace(1,nChannelsTest,nChannelsTest);
-%
-% figure; hold on;
-% title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
-% plot(xticksPlot,phi_SACCSFA,'o-');
-% xticks(xticksPlot);
-% xticklabels(peaks_spd_SACCSFA_test);
-% xlabel('Peak wavelength (nm)','fontsize',15);
-% ylabel('Fitted phi','fontsize',15);
-%
-% % Add legend.
-% clear legendHandles;
-% for ss = 1:length(targetCyclePerDeg)
-%     legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
-% end
-% legend(legendHandles,'fontsize',12,'location','northeastoutside');
+xticksPlot = linspace(1,nChannelsTest,nChannelsTest);
+
+figure; hold on;
+title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
+plot(xticksPlot,phi_SACCSFA,'o-');
+xticks(xticksPlot);
+xticklabels(peaks_spd_SACCSFA_test);
+xlabel('Peak wavelength (nm)','fontsize',15);
+ylabel('Fitted phi','fontsize',15);
+
+% Add legend.
+clear legendHandles;
+for ss = 1:length(targetCyclePerDeg)
+    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+end
+legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
 % Calculate the phase shift in pixel.
 %
