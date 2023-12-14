@@ -73,11 +73,14 @@ testFilename = 'CombiLED_Spectra.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
 % Extract black and white measurements per each channel.
-spd_camera = spdData.spds.white;
+spd_camera_white = spdData.spds.white;
 spd_camera_black = spdData.spds.black;
 
 % Get peak wavelengths.
-peaks_spd_camera = FindPeakSpds(spd_camera,'verbose',false);
+peaks_spd_camera = FindPeakSpds(spd_camera_white,'verbose',false);
+
+% Calculate the contrasts.
+
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -1022,11 +1025,11 @@ if (PLOTSPECTRUM)
     
     % Camera.
     figure; hold on;
-    p3 = plot(wls,spd_camera,'k-');
-    p4 = plot(wls,spd_camera,'-','linewidth',5,'color',[0 1 0 0.3]);
+    p3 = plot(wls,spd_camera_white,'k-');
+    p4 = plot(wls,spd_camera_white,'-','linewidth',5,'color',[0 1 0 0.3]);
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Spectral power','fontsize',15);
-    ylim([0 max(spd_camera,[],'all')*1.01]);
+    ylim([0 max(spd_camera_white,[],'all')*1.01]);
     legend([p3(1) p4(1)],'All channels (N=8)','Tested channel (N=8)','fontsize',12,'location','northeast');
     title('Camera (Combi-LED)','fontsize',15);
 end
