@@ -80,7 +80,19 @@ spd_camera_black = spdData.spds.black;
 peaks_spd_camera = FindPeakSpds(spd_camera_white,'verbose',false);
 
 % Calculate the contrasts.
+%
+% Load CMFs.
+S = [380 2 201];
+load T_xyzJuddVos
+T_XYZ = T_xyzJuddVos;
+T_XYZ = 683*SplineCmf(S_xyzJuddVos,T_xyzJuddVos,S);
 
+% Get XYZ values.
+XYZ_camera_white = spd_camera_white'*T_XYZ';
+XYZ_camera_black = spd_camera_black'*T_XYZ';
+
+% Calculate contrasts.
+contrasts_camera_PR670 = (XYZ_camera_white(:,2) - XYZ_camera_black(:,2))./(XYZ_camera_white(:,2) + XYZ_camera_black(:,2));
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -593,8 +605,18 @@ for cc = 1:nChannels_Camera
     plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
-    legend('Camera (Raw)','location','southeast','fontsize',11);
-    ylim([0 1.2]);
+    % Camera MTF (average method).
+    factor = 4/pi;
+    contrastsAvg_1cpd = contrastsAvg_camera(:,1);
+    plot(cell2mat(targetCyclePerDeg(1)),contrastsAvg_1cpd(cc)*factor,...
+        'ko-','markeredgecolor','k','markerfacecolor','g', 'markersize',10);
+    
+    % Contrasts from PR670 measurements.
+    plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
+        '+','markeredgecolor','g','markerfacecolor','g','linewidth',3,'markersize',11);
+    
+    legend('Camera (Raw)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',11);
+    ylim([0 1.25]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
