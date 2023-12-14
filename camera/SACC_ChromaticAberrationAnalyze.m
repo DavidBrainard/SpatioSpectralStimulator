@@ -792,15 +792,15 @@ numPixels = length(fittedSignal_camera{1,1});
 for ss = 1:nSFs
     for cc = 1:nChannels_Camera
         params_temp = params_camera{cc,ss};
-        fitted_f_temp = params_temp(2);
+        f_temp = params_temp(2);
         
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        fitted_phi_temp = params_temp(3);
-        phi_camera(cc,ss) = fitted_phi_temp;
+        phi_temp = params_temp(3);
+        phi_camera(cc,ss) = phi_temp;
         
         % Get period and phase shift in pixel here.
-        onePeriod_pixel_camera(cc,ss) = numPixels/fitted_f_temp;
-        phaseShift_pixel_camera(cc,ss) = onePeriod_pixel_camera(cc,ss) * fitted_phi_temp/(2*pi);
+        onePeriod_pixel_camera(cc,ss) = numPixels/f_temp;
+        phaseShift_pixel_camera(cc,ss) = onePeriod_pixel_camera(cc,ss) * phi_temp/(2*pi);
     end
 end
 
@@ -861,11 +861,6 @@ for ss = 1:nSFs
         
         % Generate texts for the legend for each graph.
         legendHandles{cc} = append(num2str(peaks_spd_SACCSFA_test(cc)),' nm');
-        
-        % Extract the fitted parameter, phi, for all channels and spatial
-        % frequencies.
-        idxParamPhi = 3;
-        phi_SACCSFA(cc,ss) = params_SACCSFA{cc,ss}(idxParamPhi);
     end
     
     % Set each graph in the same format.
@@ -897,9 +892,60 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% 3) Plot the comparison of the parameter phi over the channels.
+% 3) Calculate the phase shift in pixel.
 %
-% Define the x-ticks for the plot.
+% Get the number of the pixels. All signals should have the same size
+% of the frame, so we pick one from the fitted signals.
+numPixels = length(fittedSignal_SACCSFA{1,1});
+
+% Get the amount of phase shift in pixel domain.
+for ss = 1:nSFs
+    % Get spatial frequency.
+    SF = targetCyclePerDeg{ss};
+    
+    for cc = 1:nChannels_test
+        params_temp = params_SACCSFA{cc,ss};
+        f_temp = params_temp(2);
+        
+        % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
+        phi_temp = params_temp(3);
+        phi_SACCSFA(cc,ss) = phi_temp;
+        
+        % Correct phi to calculate the phase shift correct. For now, we
+        % manually correct it, but maybe we want to do this part more
+        % elaborately later on.
+        switch viewingMediaSACCSFA
+            case 'SACCSFA'
+                if and(cc==1,SF==6)
+                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
+                end
+            case 'SACCSFA170'
+                if and(cc==1,SF==9)
+                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
+                elseif and(cc==2,SF==9)
+                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
+                elseif and(cc==10,SF==9)
+                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
+                end
+            case 'SACCSFA185'
+                if and(cc==8,SF==3)
+                    phi_SACCSFA(cc,ss) = phi_temp + 2*pi;
+                elseif and(cc==9,SF==3)
+                    phi_SACCSFA(cc,ss) = phi_temp + 2*pi;
+                elseif and(cc==1,SF==12)
+                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
+                end
+        end
+        
+        % Get period and phase shift in pixel here.
+        onePeriod_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
+        
+        % Calculate the phase shift in pixel here.
+        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_SACCSFA(cc,ss)/(2*pi);
+    end
+end
+
+% 3-a) Plot the comparison of the parameter phi over the channels.
 xticksPlot = linspace(1,nChannels_test,nChannels_test);
 
 figure; hold on;
@@ -917,48 +963,7 @@ for ss = 1:length(targetCyclePerDeg)
 end
 legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
-% Calculate the phase shift in pixel.
-%
-% Get the number of the pixels. All signals should have the same size of
-% the frame, so we pick one from the fitted signals.
-numPixels = length(fittedSignal_SACCSFA{1,1});
-
-% Get the amount of phase shift in pixel domain.
-for ss = 1:nSFs
-    for cc = 1:nChannels_test
-        params_temp = params_SACCSFA{cc,ss};
-        fitted_f_temp = params_temp(2);
-        
-        % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        fitted_phi_temp = params_temp(3);
-        phi_SACCSFA(cc,ss) = fitted_phi_temp;
-        
-        
-        
-        
-        % THIS IS TEMP SOLUTION WHICH WILL BE FIXED (TEMPSOLUTION).
-        if and(cc==1,ss==3)
-            phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-        end
-        %         if and(cc==1,ss==3)
-        %             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-        %         end
-        %
-        %         if and(cc==2,ss==3)
-        %             phi_SACCSFA(cc,ss)=  phi_SACCSFA(cc,ss) - 2*pi;
-        %         end
-        
-        
-        
-        % Get period and phase shift in pixel here.
-        onePeriod_pixel_SACCSFA(cc,ss) = numPixels/fitted_f_temp;
-        
-        % Calculate the phase shift in pixel here.
-        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_SACCSFA(cc,ss)/(2*pi);
-    end
-end
-
-% Plot the period in pixel per channel.
+% 3-b) Plot the period in pixel per channel.
 figure;
 figureSize = [0 0 600 800];
 set(gcf,'position',figureSize);
@@ -975,7 +980,7 @@ for ss = 1:nSFs
     ylim([0 1.3*max(onePeriod_pixel_SACCSFA,[],'all')]);
 end
 
-% Plot the phase shift in pixel per spatial frequency.
+% 3-c) Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
@@ -983,7 +988,7 @@ idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
 phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
 phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1));
 
-% Plot the phase shift in pixel.
+% Plot happens here.
 figure;
 figureSize = [0 0 600 800];
 set(gcf,'position',figureSize);
