@@ -28,20 +28,39 @@ clear; close all;
 targetCyclePerDeg = {1,3,6,9,12,18};
 nSFs = length(targetCyclePerDeg);
 
-% Choose which contrast calculation method to use.
-%
-% Set 'optionContrastCalMethod' to 1 will show the results using the
-% contrasts calculated directly from the intensity profile of each image.
-%
-% Set it 2 shows the results by doing sine fitting to the intensity profile
-% and calculating the contrasts from the fitting.
-optionContrastCalMethod = 2;
+% Get the contrast calculation method.
+while 1
+    optionContrastCalMethod = input('Which method to calculate contrasts? [1:Average, 2:Sinefit] \n');
+    if ismember(optionContrastCalMethod,[1 2])
+        break
+    end
+    disp('Choose one between 1 (Average) and 2 (Sinefit)!');
+end
 switch optionContrastCalMethod
     case 1
         contrastCalMethod = 'Average';
     case 2
         contrastCalMethod = 'Sinefit';
 end
+fprintf('\t Contrast calculation will be based on this method - (%s) \n',contrastCalMethod);
+
+% Get the SACCSFA trombone setting.
+while 1
+    tromboneSetting = input('Which Trombone setting to use? [1:Emmentropic, 2:170 nm, 3:185 nm] \n');
+    if ismember(tromboneSetting,[1 2 3])
+        break
+    end
+    disp('Choose one among 1 (Emmentropic), 2 (170 nm), 3 (185 nm)!');
+end
+switch tromboneSetting
+    case 1
+        viewingMediaSACCSFA = 'SACCSFA';
+    case 2
+        viewingMediaSACCSFA = 'SACCSFA170';
+    case 3
+        viewingMediaSACCSFA = 'SACCSFA185';
+end
+fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 
 % Set additional analysis options.
 DoFourierTransform = false;
@@ -313,7 +332,7 @@ end
 %% 2) Calculate the MTF (SACCSFA).
 %
 % Set viewing media to load the images.
-viewingMedia = 'SACCSFA';
+viewingMedia = viewingMediaSACCSFA;
 
 % Load all images here.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
