@@ -70,9 +70,9 @@ while 1
         case 1
             targetCorrSignals = 0.90;
         case 3
-            targetCorrSignals = 0.92;
+            targetCorrSignals = 0.945;
         case 6
-            targetCorrSignals = 0.94;
+            targetCorrSignals = 0.95;
         case 9 
             targetCorrSignals = 0.96;
         otherwise
