@@ -595,7 +595,7 @@ end
 figure; clf;
 figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
-sgtitle('Raw camera MTF', 'fontsize', 15);
+sgtitle(sprintf('Raw camera MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 for cc = 1:nChannels_Camera
     subplot(2,4,cc); hold on;
@@ -670,7 +670,7 @@ end
 figure; clf;
 figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
-sgtitle('Compensated MTF: Camera vs. SACCSFA', 'fontsize', 15);
+sgtitle(sprintf('Compensated MTF: Camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
@@ -714,7 +714,7 @@ contrast_SACCSFA_compensated(find(contrast_SACCSFA_compensated > maxContrast)) =
 % Make a new figure.
 figure; clf;
 set(gcf,'position',figureSize);
-sgtitle('Compensated SACCSFA MTF (SACCSFA MTF/Camera MTF)', 'fontsize', 15);
+sgtitle(sprintf('Final SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannels_test
