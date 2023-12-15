@@ -953,11 +953,7 @@ for ss = 1:nSFs
                     phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
                 end
             case 'SACCSFA185'
-                if and(cc==8,SF==3)
-                    phi_SACCSFA(cc,ss) = phi_temp + 2*pi;
-                elseif and(cc==9,SF==3)
-                    phi_SACCSFA(cc,ss) = phi_temp + 2*pi;
-                elseif and(cc==1,SF==12)
+                if and(cc==1,SF==12)
                     phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
                 end
         end
