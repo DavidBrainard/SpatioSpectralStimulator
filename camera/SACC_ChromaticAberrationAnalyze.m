@@ -613,9 +613,9 @@ for cc = 1:nChannels_Camera
     
     % Contrasts from PR670 measurements.
     plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
-        '+','markeredgecolor','g','markerfacecolor','g','linewidth',3,'markersize',11);
+        '+','markeredgecolor','g','linewidth',3,'markersize',11);
     
-    legend('Camera (Raw)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',11);
+    legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',11);
     ylim([0 1.25]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
