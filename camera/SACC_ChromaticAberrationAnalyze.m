@@ -593,7 +593,7 @@ end
 
 % Plot the raw camera MTF results.
 figure; clf;
-figureSize = [0 0 1000 500];
+figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
 sgtitle(sprintf('Raw camera MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
@@ -613,14 +613,20 @@ for cc = 1:nChannels_Camera
     
     % Contrasts from PR670 measurements.
     plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
-        '+','markeredgecolor','g','linewidth',3,'markersize',11);
+        '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
     
-    legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',11);
     ylim([0 1.25]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
+    
+    % Add legend.
+    if cc == 1
+        legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','northeast','fontsize',8);
+    else
+        legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',8);
+    end
 end
 
 %% 4) Calculate the compensated MTF (Camera and SACCSFA).
@@ -668,7 +674,6 @@ end
 
 % Make a new figure.
 figure; clf;
-figureSize = [0 0 1000 500];
 set(gcf,'position',figureSize);
 sgtitle(sprintf('Compensated MTF: Camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
@@ -693,13 +698,20 @@ for cc = 1:nChannels_test
     contrast_camera_test(cc,:) = contrastsCameraOneChannel;
     
     % Plot stuffs.
-    legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
-        sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
     ylim([0 1.15]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
+    
+    % Add legend.
+    if cc == 1
+        legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
+            sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','northeast','fontsize',8);
+    else
+        legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
+            sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
+    end
 end
 
 %% 5) Calculate the final compensated MTF (SACCSFA).
@@ -727,7 +739,7 @@ for cc = 1:nChannels_test
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
-    legend('SACCSFA','location','southeast','fontsize',11);
+    legend('Final SACCSFA MTF','location','southeast','fontsize',10);
 end
 
 %% Transverse Chromatic Aberration (TCA) - (Camera).
