@@ -615,7 +615,7 @@ for cc = 1:nChannels_Camera
     plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
         '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
     
-    ylim([0 1.25]);
+    ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -698,7 +698,7 @@ for cc = 1:nChannels_test
     contrast_camera_test(cc,:) = contrastsCameraOneChannel;
     
     % Plot stuffs.
-    ylim([0 1.15]);
+    ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -734,7 +734,7 @@ for cc = 1:nChannels_test
     contrastsSACCSFAOneChannel = contrast_SACCSFA_compensated(cc,:);
     plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
-    ylim([0 1.15]);
+    ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -750,7 +750,7 @@ figurePosition = [0 0 1000 1000];
 set(gcf,'position',figurePosition);
 sgtitle('Raw intensity profile over the channels (Camera)');
 minY = -20;
-maxY = 230;
+maxY = 245;
 
 % Make a loop to plot.
 for ss = 1:nSFs
@@ -771,7 +771,7 @@ for ss = 1:nSFs
     
     % Set each graph in the same format.
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
-    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    legend(legendHandles,'fontsize',11,'location','southeastoutside','fontsize',8);
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
@@ -793,7 +793,7 @@ for ss = 1:nSFs
     
     % Set each graph in the same format.
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
-    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    legend(legendHandles,'fontsize',11,'location','southeastoutside','fontsize',8);
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
@@ -854,7 +854,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    ylim([0 1.3*max(onePeriod_pixel_camera,[],'all')]);
+    ylim([0 230]);
 end
 
 % Plot the phase shift in pixel per spatial frequency.
@@ -878,7 +878,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([0 4]);
+    ylim([0 5]);
 end
 
 %% Transverse Chromatic Aberration (TCA) - (SACCSFA).
@@ -902,7 +902,7 @@ for ss = 1:nSFs
     
     % Set each graph in the same format.
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
-    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    legend(legendHandles,'fontsize',11,'location','southeastoutside','fontsize',8);
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
@@ -923,7 +923,7 @@ for ss = 1:nSFs
     
     % Set each graph in the same format.
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
-    legend(legendHandles,'fontsize',11,'location','southeast','fontsize',10);
+    legend(legendHandles,'fontsize',11,'location','southeastoutside','fontsize',8);
     xlabel('Pixel position (horizontal)','fontsize',12);
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
@@ -998,19 +998,21 @@ legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
 % 3-b) Plot the period in pixel per channel.
 figure;
-figureSize = [0 0 600 800];
+figureSize = [0 0 450 800];
 set(gcf,'position',figureSize);
 
-sgtitle('Sine fitted period in pixel (SACCSFA)');
+sgtitle(sprintf('Sine fitted period in pixel (%s)',viewingMediaSACCSFA));
+
 x_data = linspace(1,nChannels_test,nChannels_test);
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
     plot(x_data, onePeriod_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticks(x_data);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    ylim([0 1.3*max(onePeriod_pixel_SACCSFA,[],'all')]);
+    ylim([0 230]);
 end
 
 % 3-c) Plot the phase shift in pixel per spatial frequency.
@@ -1023,14 +1025,15 @@ phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_
 
 % Plot happens here.
 figure;
-figureSize = [0 0 600 800];
+figureSize = [0 0 450 800];
 set(gcf,'position',figureSize);
 
-sgtitle('Phase shift in pixel (SACCSFA)');
+sgtitle(sprintf('Phase shift in pixel (%s)',viewingMediaSACCSFA));
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
     plot(x_data, phaseShift_pixel_SACCSFA_diff(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
+    xticks(x_data);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
