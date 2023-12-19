@@ -46,7 +46,7 @@ fprintf('\t Contrast calculation will be based on this method - (%s) \n',contras
 
 % Get the SACCSFA trombone setting.
 while 1
-    tromboneSetting = input('Which Trombone setting to use? [1:Emmentropic, 2:170 nm, 3:185 nm] \n');
+    tromboneSetting = input('Which Trombone setting to use? [1:Emmetropic, 2:170 nm, 3:185 nm] \n');
     if ismember(tromboneSetting,[1 2 3])
         break
     end
