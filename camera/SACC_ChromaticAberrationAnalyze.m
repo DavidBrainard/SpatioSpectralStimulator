@@ -108,7 +108,7 @@ recentCalData = calData.cals{end};
 spd_SACCSFA = recentCalData.processedData.P_device;
 peaks_spd_SACCSFA = FindPeakSpds(spd_SACCSFA,'verbose',false);
 
-%% 1) Calculate the MTF (Camera).
+%% 1-a) Calculate the MTF using Average method (Camera).
 %
 % Set the viewing media for the camera MTF measurement. We used the printed
 % target so the images were saved in the folder 'Print'.
@@ -240,7 +240,7 @@ for cc = 1:nChannels_Camera
     contrastsAvg_camera(cc,:) = contrastsAvgOneChannel;
 end
 
-%% Fit sine function to the signal (Camera).
+%% 1-b) Calculate the MTF using Sine fitting (Camera).
 %
 % Load the saved initial frequencies. In not, we will newly search the
 % values.
@@ -344,7 +344,7 @@ for ss = 1:nSFs
     end
 end
 
-%% 2) Calculate the MTF (SACCSFA).
+%% 2-a) Calculate the MTF using Average method (SACCSFA).
 %
 % Set viewing media to load the images.
 viewingMedia = viewingMediaSACCSFA;
@@ -480,7 +480,7 @@ IP_SACCSFA = IP_SACCSFA(I,:);
 % Get number of channels to compare with the camera MTF.
 nChannels_test = length(peaks_spd_SACCSFA_test);
 
-%% Fit sine function to the signal (SACCSFA).
+%% 2-b) Calculate the MTF using Sine fitting method (SACCSFA).
 %
 % Load the saved initial frequencies. In not, we will newly search the
 % values.
@@ -742,7 +742,7 @@ for cc = 1:nChannels_test
     legend('Final SACCSFA MTF','location','southeast','fontsize',10);
 end
 
-%% Transverse Chromatic Aberration (TCA) - (Camera).
+%% 6) Transverse Chromatic Aberration (TCA) - (Camera).
 %
 % 1) Plot raw intensity profiles.
 figure; hold on;
@@ -881,7 +881,7 @@ for ss = 1:nSFs
     ylim([0 5]);
 end
 
-%% Transverse Chromatic Aberration (TCA) - (SACCSFA).
+%% 7) Transverse Chromatic Aberration (TCA) - (SACCSFA).
 %
 % 1) Plot raw intensity profiles.
 figure; hold on;
