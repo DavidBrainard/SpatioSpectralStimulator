@@ -721,7 +721,7 @@ for cc = 1:nChannels_test
     end
 end
 
-%% 5) Calculate the final compensated MTF (SACCSFA).
+%% 5) Calculate the inherent compensated MTF (SACCSFA).
 %
 % Here we divide the SACCSFA MTF by the camera MTF.
 contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera_test;
@@ -733,7 +733,7 @@ contrast_SACCSFA_compensated(find(contrast_SACCSFA_compensated > maxContrast)) =
 % Make a new figure.
 figure; clf;
 set(gcf,'position',figureSize);
-sgtitle(sprintf('Final SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
+sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannels_test
