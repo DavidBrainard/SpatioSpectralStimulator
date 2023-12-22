@@ -595,7 +595,7 @@ end
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
-sgtitle(sprintf('Raw camera MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
+sgtitle(sprintf('Raw camera MTF (%s)',contrastCalMethod),'fontsize', 15);
 
 for cc = 1:nChannels_Camera
     subplot(2,4,cc); hold on;
@@ -606,15 +606,17 @@ for cc = 1:nChannels_Camera
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % Camera MTF (average method).
-    factor = 4/pi;
-    contrastsAvg_1cpd = contrastsAvg_camera(:,1);
-    plot(cell2mat(targetCyclePerDeg(1)),contrastsAvg_1cpd(cc)*factor,...
-        'ko-','markeredgecolor','k','markerfacecolor','g', 'markersize',10);
-    
-    % Contrasts from PR670 measurements.
-    plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
-        '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
-    
+    if strcmp(contrastCalMethod,'Sinefit')
+        factor = 4/pi;
+        contrastsAvg_1cpd = contrastsAvg_camera(:,1);
+        plot(cell2mat(targetCyclePerDeg(1)),contrastsAvg_1cpd(cc)*factor,...
+            'ko-','markeredgecolor','k','markerfacecolor','g', 'markersize',10);
+        
+        % Contrasts from PR670 measurements.
+        plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
+            '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
+    end
+
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
@@ -622,10 +624,15 @@ for cc = 1:nChannels_Camera
     title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
     
     % Add legend.
-    if cc == 1
-        legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','northeast','fontsize',8);
-    else
-        legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',8);
+    switch contrastCalMethod
+        case 'Average'
+            legend('Camera (Avg)','location','northeast','fontsize',8);
+        case 'Sinefit'
+            if cc == 1
+                legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','northeast','fontsize',8);
+            else
+                legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',8);
+            end
     end
 end
 
