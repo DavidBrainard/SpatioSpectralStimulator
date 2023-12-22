@@ -663,8 +663,8 @@ contrastsAvg_camera_norm = contrastsAvg_camera./contrastsAvg_camera_1cpd;
 contrastsFit_camera_norm = contrastsFit_camera./contrastsFit_camera_1cpd;
 
 % Compensate the SACCSFA MTF by multiplying the factor.
-factorSineToAvg = 1/(4/pi);
-contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToAvg;
+factorSineToSqaurewave = 1/(4/pi);
+contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
 
 % Plot the compensated MTF results (Camera and SACCSFA).
 %
