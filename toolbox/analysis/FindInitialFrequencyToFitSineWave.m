@@ -77,11 +77,14 @@ while 1
         case 3
             targetCorrSignals = 0.915;
         case 6
-            targetCorrSignals = 0.93;
+            targetCorrSignals = 0.937;
         case 9
-            targetCorrSignals = 0.945;
+            targetCorrSignals = 0.97;
+            
+            % For Camera MTF.
+%             targetCorrSignals = 0.945;
         case 12
-            targetCorrSignals = 0.95;
+            targetCorrSignals = 0.96;
         case 18
             targetCorrSignals = 0.96;
         otherwise
