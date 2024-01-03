@@ -30,8 +30,13 @@ function [f0] = FindInitialFrequencyToFitSineWave(waveform,options)
 arguments
     waveform
     options.SF (1,1) = 3
-    options.f0_searchInterval (1,1) = 0.05
+    options.f0_searchInterval (1,1) = 0.025
     options.verbose (1,1) = true
+end
+
+%% Set the waveform class as double.
+if ~strcmp(class(waveform),'double')
+    waveform = double(waveform);
 end
 
 %% Here we runs a loop to grid search an initial frequency value.
@@ -70,15 +75,18 @@ while 1
         case 1
             targetCorrSignals = 0.90;
         case 3
-            targetCorrSignals = 0.945;
+            targetCorrSignals = 0.93;
         case 6
-            targetCorrSignals = 0.95;
+            targetCorrSignals = 0.93;
         case 9 
+            targetCorrSignals = 0.95;
+        case 12
             targetCorrSignals = 0.96;
+        case 18
+            targetCorrSignals = 0.97;
         otherwise
             targetCorrSignals = 0.97;
     end
-    
     
     % Stop the loop if we found a fit exceeding the criteria. We find
     % it based on the correlation between the original and fitted
