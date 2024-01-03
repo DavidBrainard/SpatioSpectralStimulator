@@ -217,7 +217,7 @@ for cc = 1:nChannels_camera
         IP_camera_25{cc,ss} = image_temp(round(0.25*Ypixel),:);
         IP_camera_50{cc,ss} = image_temp(round(0.50*Ypixel),:);
         IP_camera_75{cc,ss} = image_temp(round(0.75*Ypixel),:);
-       
+        
         % Set min distance between adjacent peaks.
         SF = targetCyclePerDeg{ss};
         switch SF
@@ -241,9 +241,9 @@ for cc = 1:nChannels_camera
         end
         
         % Calculate contrasts.
-        contrastsAvg_camera_25(cc,ss) = GetIPContrast(IP_camera_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
-        contrastsAvg_camera_50(cc,ss) = GetIPContrast(IP_camera_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
-        contrastsAvg_camera_75(cc,ss) = GetIPContrast(IP_camera_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_camera_25(cc,ss) = GetIPContrast(IP_camera_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_camera_50(cc,ss) = GetIPContrast(IP_camera_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_camera_75(cc,ss) = GetIPContrast(IP_camera_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
     end
 end
 
@@ -271,8 +271,8 @@ for ii = 1:nIPOptions
         case '75'
             IP_camera = IP_camera_75;
     end
-
-
+    
+    
     % Load the saved initial frequencies. In not, we will newly search the
     % values.
     testFilename = fullfile(recentTestFiledir,sprintf('f0Options_%s.mat',whichIP));
@@ -329,7 +329,7 @@ for ii = 1:nIPOptions
             
             % Fit happens here.
             signalToFit = IP_camera{cc,ss};
-            [params_camera{cc,ss}, fittedSignal_camera{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+            [params_camera_temp{cc,ss}, fittedSignal_camera_temp{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
             
             % Clear the initial guess of frequency for next fit.
             clear f0;
@@ -359,7 +359,7 @@ for ii = 1:nIPOptions
             plot(IP_camera{cc,ss},'b-');
             
             % Fitted signal.
-            plot(fittedSignal_camera{cc,ss},'r-');
+            plot(fittedSignal_camera_temp{cc,ss},'r-');
             legend('Origianl','Fit');
         end
     end
@@ -367,7 +367,7 @@ for ii = 1:nIPOptions
     % Calculate contrast from the sine fitted cure.
     for ss = 1:nSFs
         for cc = 1:nChannels_camera
-            paramsTemp = params_camera{cc,ss};
+            paramsTemp = params_camera_temp{cc,ss};
             A = paramsTemp(1);
             B = paramsTemp(4);
             contrast = A/B;
@@ -523,9 +523,9 @@ for cc = 1:nChannels_SACCSFA
         end
         
         % Calculate contrasts.
-        contrastsAvg_SACCSFA_25(cc,ss) = GetIPContrast(IP_SACCSFA_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
-        contrastsAvg_SACCSFA_50(cc,ss) = GetIPContrast(IP_SACCSFA_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
-        contrastsAvg_SACCSFA_75(cc,ss) = GetIPContrast(IP_SACCSFA_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_SACCSFA_25(cc,ss) = GetIPContrast(IP_SACCSFA_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_SACCSFA_50(cc,ss) = GetIPContrast(IP_SACCSFA_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_SACCSFA_75(cc,ss) = GetIPContrast(IP_SACCSFA_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
     end
 end
 
@@ -536,7 +536,9 @@ contrastsAvg_SACCSFA = (contrastsAvg_SACCSFA_25 + contrastsAvg_SACCSFA_50 + cont
 peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
 [peaks_spd_SACCSFA_test I] = sort(peaks_spd_SACCSFA_test,'ascend');
 contrastsAvg_SACCSFA = contrastsAvg_SACCSFA(I,:);
-IP_SACCSFA = IP_SACCSFA(I,:);
+IP_SACCSFA_25 = IP_SACCSFA_25(I,:);
+IP_SACCSFA_50 = IP_SACCSFA_50(I,:);
+IP_SACCSFA_75 = IP_SACCSFA_75(I,:);
 
 % Get number of channels to compare with the camera MTF.
 nChannels_test = length(peaks_spd_SACCSFA_test);
@@ -566,7 +568,7 @@ for ii = 1:nIPOptions
     % Load the saved initial frequencies. In not, we will newly search the
     % values.
     testFilename = fullfile(recentTestFiledir,sprintf('f0Options_%s.mat',whichIP));
-
+    
     % Load the file here.
     if isfile(testFilename)
         fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
@@ -717,7 +719,7 @@ for cc = 1:nChannels_camera
         plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
             '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
     end
-
+    
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
@@ -866,7 +868,7 @@ for ss = 1:nSFs
     
     % Channel.
     for cc = 1:nChannels_camera
-        plot(IP_camera{cc,ss});
+        plot(IP_camera_50{cc,ss});
         
         % Generate texts for the legend for each graph.
         legendHandles{cc} = append(num2str(peaks_spd_camera(cc)),' nm');
@@ -874,7 +876,9 @@ for ss = 1:nSFs
         % Extract the fitted parameter, phi, for all channels and spatial
         % frequencies.
         idxParamPhi = 3;
-        phi_camera(cc,ss) = params_camera{cc,ss}(idxParamPhi);
+        phi_camera_25(cc,ss) = params_camera_25{cc,ss}(idxParamPhi);
+        phi_camera_50(cc,ss) = params_camera_50{cc,ss}(idxParamPhi);
+        phi_camera_75(cc,ss) = params_camera_75{cc,ss}(idxParamPhi);
     end
     
     % Set each graph in the same format.
@@ -884,6 +888,12 @@ for ss = 1:nSFs
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
 end
+
+% Match up the period scale.
+phi_camera_25(3:5,5) = phi_camera_25(3:5,5) + 2*pi;
+
+% Calculate the mean phi.
+phi_camera = (phi_camera_25 + phi_camera_50 + phi_camera_75)/3;
 
 % 2) Plot the sine fitted graphs (camera).
 figure; hold on;
@@ -896,7 +906,7 @@ for ss = 1:nSFs
     
     % Loop over Channel.
     for cc = 1:nChannels_camera
-        plot(fittedSignal_camera{cc,ss});
+        plot(fittedSignal_camera_50{cc,ss});
     end
     
     % Set each graph in the same format.
@@ -931,17 +941,21 @@ legend(legendHandles,'fontsize',12,'location','northeastoutside');
 %
 % Get the number of the pixels. All signals should have the same size of
 % the frame, so we pick one from the fitted signals.
-numPixels = length(fittedSignal_camera{1,1});
+numPixels = length(fittedSignal_camera_50{1,1});
 
 % Get the amount of phase shift in pixel domain.
 for ss = 1:nSFs
     for cc = 1:nChannels_camera
-        params_temp = params_camera{cc,ss};
-        f_temp = params_temp(2);
+        idxParamf = 2;
+        f_temp_25 = params_camera_25{cc,ss}(idxParamf);
+        f_temp_50 = params_camera_50{cc,ss}(idxParamf);
+        f_temp_75 = params_camera_75{cc,ss}(idxParamf);
+        
+        % Make an average.
+        f_temp = mean([f_temp_25 f_temp_50 f_temp_75]);
         
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        phi_temp = params_temp(3);
-        phi_camera(cc,ss) = phi_temp;
+        phi_temp = mean([phi_camera_25(cc,ss) phi_camera_50(cc,ss) phi_camera_75(cc,ss)]);
         
         % Get period and phase shift in pixel here.
         onePeriod_pixel_camera(cc,ss) = numPixels/f_temp;
@@ -1003,10 +1017,17 @@ for ss = 1:nSFs
     
     % Channel.
     for cc = 1:nChannels_test
-        plot(IP_SACCSFA{cc,ss});
+        plot(IP_SACCSFA_50{cc,ss});
         
         % Generate texts for the legend for each graph.
         legendHandles{cc} = append(num2str(peaks_spd_SACCSFA_test(cc)),' nm');
+        
+        % Extract the fitted parameter, phi, for all channels and spatial
+        % frequencies.
+        idxParamPhi = 3;
+        phi_SACCSFA_25(cc,ss) = params_SACCSFA_25{cc,ss}(idxParamPhi);
+        phi_SACCSFA_50(cc,ss) = params_SACCSFA_50{cc,ss}(idxParamPhi);
+        phi_SACCSFA_75(cc,ss) = params_SACCSFA_75{cc,ss}(idxParamPhi);
     end
     
     % Set each graph in the same format.
@@ -1016,6 +1037,12 @@ for ss = 1:nSFs
     ylabel('dRGB','fontsize',12);
     ylim([minY maxY]);
 end
+
+% Match up the period scale.
+phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
+
+% Calculate the mean phi.
+phi_SACCSFA = (phi_SACCSFA_25 + phi_SACCSFA_50 + phi_SACCSFA_75)/3;
 
 % 2) Plot the sine fitted graphs (SACCSFA).
 figure; hold on;
@@ -1027,7 +1054,7 @@ for ss = 1:nSFs
     
     % Channel.
     for cc = 1:nChannels_test
-        plot(fittedSignal_SACCSFA{cc,ss});
+        plot(fittedSignal_SACCSFA_50{cc,ss});
     end
     
     % Set each graph in the same format.
@@ -1038,11 +1065,24 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
+% 3) Plot the comparison of the parameter phi over the channels.
+%
+% Define the x-ticks for the plot.
+xticksPlot = linspace(1,nChannels_test,nChannels_test);
+
+figure; hold on;
+title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
+plot(xticksPlot,phi_SACCSFA,'o-');
+xticks(xticksPlot);
+xticklabels(peaks_spd_SACCSFA_test);
+xlabel('Peak wavelength (nm)','fontsize',15);
+ylabel('Fitted phi','fontsize',15);
+
 % 3) Calculate the phase shift in pixel.
 %
 % Get the number of the pixels. All signals should have the same size
 % of the frame, so we pick one from the fitted signals.
-numPixels = length(fittedSignal_SACCSFA{1,1});
+numPixels = length(fittedSignal_SACCSFA_50{1,1});
 
 % Get the amount of phase shift in pixel domain.
 for ss = 1:nSFs
@@ -1050,21 +1090,25 @@ for ss = 1:nSFs
     SF = targetCyclePerDeg{ss};
     
     for cc = 1:nChannels_test
-        params_temp = params_SACCSFA{cc,ss};
-        f_temp = params_temp(2);
+        
+        % Get frequency.
+        idxParamf = 2;
+        f_temp_25 = params_SACCSFA_25{cc,ss}(idxParamf);
+        f_temp_50 = params_SACCSFA_50{cc,ss}(idxParamf);
+        f_temp_75 = params_SACCSFA_75{cc,ss}(idxParamf);
+        
+        % Make an average.
+        f_temp = mean([f_temp_25 f_temp_50 f_temp_75]);
         
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        phi_temp = params_temp(3);
-        phi_SACCSFA(cc,ss) = phi_temp;
+        phi_temp = mean([phi_SACCSFA_25(cc,ss) phi_SACCSFA_50(cc,ss) phi_SACCSFA_75(cc,ss)]);
         
         % Correct phi to calculate the phase shift correct. For now, we
         % manually correct it, but maybe we want to do this part more
         % elaborately later on.
         switch viewingMediaSACCSFA
             case 'SACCSFA'
-                if and(cc==1,SF==6)
-                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
-                end
+                
             case 'SACCSFA170'
                 if and(cc==1,SF==9)
                     phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
@@ -1083,7 +1127,7 @@ for ss = 1:nSFs
         onePeriod_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
         
         % Calculate the phase shift in pixel here.
-        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_SACCSFA(cc,ss)/(2*pi);
+        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_temp/(2*pi);
     end
 end
 
