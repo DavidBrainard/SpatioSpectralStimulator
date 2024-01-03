@@ -44,6 +44,11 @@ arguments
     options.verbose (1,1) = true
 end
 
+%% Set the waveform in double.
+if ~strcmp(class(waveform),'double')
+    waveform = double(waveform);
+end
+
 %% Fourier transform.
 %
 % Set variables for Fourier transform.
