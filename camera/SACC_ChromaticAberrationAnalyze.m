@@ -9,7 +9,7 @@
 % using the Printed image.
 %
 % See also:
-%    SACC_GetCameraImageContrast, SACC_ContrastPrintedImage_combiLED
+%    SACC_GetcameraImageContrast, SACC_ContrastPrintedImage_combiLED
 
 % History:
 %    11/17/23   smo    - Wrote it to use the routine for all viewing
@@ -66,9 +66,9 @@ fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 DoFourierTransform = false;
 plotIntensityProfile = false;
 
-%% Get the peak wavelength of the Combi-LED (Camera).
+%% Get the peak wavelength of the Combi-LED (camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration','Spectra');
+testFiledir = fullfile(testFiledir,'camera','ChromaticAberration','Spectra');
 testFilename = 'CombiLED_Spectra.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
@@ -108,7 +108,7 @@ recentCalData = calData.cals{end};
 spd_SACCSFA = recentCalData.processedData.P_device;
 peaks_spd_SACCSFA = FindPeakSpds(spd_SACCSFA,'verbose',false);
 
-%% 1-a) Calculate the MTF using Average method (Camera).
+%% 1-a) Calculate the MTF using Average method (camera).
 %
 % Set the viewing media for the camera MTF measurement. We used the printed
 % target so the images were saved in the folder 'Print'.
@@ -116,7 +116,7 @@ viewingMedia = 'Print';
 
 % Load all images here.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',viewingMedia);
+testFiledir = fullfile(testFiledir,'camera','ChromaticAberration',viewingMedia);
 folders = dir(testFiledir);
 dates = cell(1, numel(folders));
 
@@ -191,8 +191,8 @@ peaks_spd_camera = sort(peaks_spd_camera,'ascend');
 channelOptions = channelOptions(I);
 
 % Load all images here for all channels and spatial frequencies.
-nChannels_Camera = length(channelOptions);
-for cc = 1:nChannels_Camera
+nChannels_camera = length(channelOptions);
+for cc = 1:nChannels_camera
     oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
     
     % Make a new figure if we plot the intensity profile.
@@ -207,8 +207,17 @@ for cc = 1:nChannels_Camera
             append(num2str(targetCyclePerDeg{ss}),'cpd_crop'));
         
         % We save all images here.
-        images{ss} = imread(testFilenameTemp);
+        images_camera{cc,ss} = imread(testFilenameTemp);
         
+        % Get intensity profile of the image.
+        image_temp = images_camera{cc,ss};
+        [Ypixel Xpixel] = size(image_temp);
+        
+        % We will use the average of the 25% / 50% / 75% positions of the cropped image.
+        IP_camera_25{cc,ss} = image_temp(round(0.25*Ypixel),:);
+        IP_camera_50{cc,ss} = image_temp(round(0.50*Ypixel),:);
+        IP_camera_75{cc,ss} = image_temp(round(0.75*Ypixel),:);
+       
         % Set min distance between adjacent peaks.
         SF = targetCyclePerDeg{ss};
         switch SF
@@ -232,117 +241,159 @@ for cc = 1:nChannels_Camera
         end
         
         % Calculate contrasts.
-        [contrastsTemp IP_camera{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvgOneChannel(ss) = mean(contrastsTemp);
+        contrastsAvg_camera_25(cc,ss) = GetIPContrast(IP_camera_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_camera_50(cc,ss) = GetIPContrast(IP_camera_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_camera_75(cc,ss) = GetIPContrast(IP_camera_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
     end
-    
-    % Collect the mean contrast results.
-    contrastsAvg_camera(cc,:) = contrastsAvgOneChannel;
 end
 
-%% 1-b) Calculate the MTF using Sine fitting (Camera).
-%
-% Load the saved initial frequencies. In not, we will newly search the
-% values.
-testFilename = fullfile(recentTestFiledir,'f0Options.mat');
+% Calculate the mean contrasts here.
+contrastsAvg_camera = (contrastsAvg_camera_25 + contrastsAvg_camera_50 + contrastsAvg_camera_75)/3;
 
-% Load the file here.
-if isfile(testFilename)
-    fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
-    f0Options = load(testFilename);
-    f0Options = f0Options.f0Options;
-else
-    % If not, we will search the initial frequencies to fit sine to the
-    % intensity profiles.
-    fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
-    f0Options = struct();
-    for ss = 1:nSFs
-        % Set spatial frequency.
-        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
-        
-        % Set field name in the struct.
-        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
-        
-        for cc = 1:nChannels_Camera
-            % Search the initial frequency here.
-            signalToFit = IP_camera{cc,ss};
-            f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+%% 1-b) Calculate the MTF using Sine fitting (camera).
+%
+% Here we make a loop to fit all 25%, 50%, 75% vertical positions of the
+% intensity profiles
+IPOptions = {'25','50','75'};
+nIPOptions = length(IPOptions);
+
+for ii = 1:nIPOptions
+    
+    % Set which intensity profile to load.
+    whichIP = IPOptions{ii};
+    
+    % Load intensity profile according to the vertical positions.
+    switch whichIP
+        case '25'
+            IP_camera = IP_camera_25;
+        case '50'
+            IP_camera = IP_camera_50;
+        case '75'
+            IP_camera = IP_camera_75;
+    end
+
+
+    % Load the saved initial frequencies. In not, we will newly search the
+    % values.
+    testFilename = fullfile(recentTestFiledir,sprintf('f0Options_%s.mat',whichIP));
+    
+    % Load the file here.
+    if isfile(testFilename)
+        fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
+        f0Options = load(testFilename);
+        f0Options = f0Options.f0Options;
+    else
+        % If not, we will search the initial frequencies to fit sine to the
+        % intensity profiles.
+        fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
+        f0Options = struct();
+        for ss = 1:nSFs
+            % Set spatial frequency.
+            cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
             
-            % Show the fitting progress.
-            fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels_Camera,cyclesPerDeg);
+            % Set field name in the struct.
+            f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+            
+            for cc = 1:nChannels_camera
+                % Search the initial frequency here.
+                signalToFit = IP_camera{cc,ss};
+                f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+                
+                % Show the fitting progress.
+                fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels_camera,cyclesPerDeg);
+            end
+            
+            % Save the value in the struct.
+            f0Options = setfield(f0Options,f0FieldName,f0_found);
         end
         
-        % Save the value in the struct.
-        f0Options = setfield(f0Options,f0FieldName,f0_found);
+        % Save out the found initial frequencies. We will load it to use next
+        % time.
+        save(testFilename,'f0Options');
     end
     
-    % Save out the found initial frequencies. We will load it to use next
-    % time.
-    save(testFilename,'f0Options');
+    % Fit sine signal here.
+    %
+    % Loop over the spatial frequency.
+    for ss = 1:nSFs
+        % Set initial frequency for fitting sine wave.
+        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+        f0OptionsTemp = getfield(f0Options,f0FieldName);
+        
+        % Loop over the channels.
+        for cc = 1:nChannels_camera
+            
+            % Update initial frequency (f0) here.
+            f0 = f0OptionsTemp(cc);
+            
+            % Fit happens here.
+            signalToFit = IP_camera{cc,ss};
+            [params_camera{cc,ss}, fittedSignal_camera{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+            
+            % Clear the initial guess of frequency for next fit.
+            clear f0;
+        end
+        
+        % Show progress.
+        fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
+    end
+    
+    % Plot the results.
+    for ss = 1:nSFs
+        % Make a new figure per each spatial frequency.
+        figure;
+        figurePosition = [0 0 800 800];
+        set(gcf,'position',figurePosition);
+        sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
+        
+        % Loop over the channels.
+        for cc = 1:nChannels_camera
+            subplot(round(nChannels_camera/2),2,cc); hold on;
+            title(sprintf('%d nm',peaks_spd_camera(cc)));
+            xlabel('Pixel position');
+            ylabel('dRGB');
+            ylim([-10 230]);
+            
+            % Original.
+            plot(IP_camera{cc,ss},'b-');
+            
+            % Fitted signal.
+            plot(fittedSignal_camera{cc,ss},'r-');
+            legend('Origianl','Fit');
+        end
+    end
+    
+    % Calculate contrast from the sine fitted cure.
+    for ss = 1:nSFs
+        for cc = 1:nChannels_camera
+            paramsTemp = params_camera{cc,ss};
+            A = paramsTemp(1);
+            B = paramsTemp(4);
+            contrast = A/B;
+            contrastsFit_camera_temp(cc,ss) = contrast;
+        end
+    end
+    
+    % Save out the fitting results.
+    switch whichIP
+        case '25'
+            params_camera_25       = params_camera_temp;
+            fittedSignal_camera_25 = fittedSignal_camera_temp;
+            contrastsFit_camera_25 = contrastsFit_camera_temp;
+        case '50'
+            params_camera_50       = params_camera_temp;
+            fittedSignal_camera_50 = fittedSignal_camera_temp;
+            contrastsFit_camera_50 = contrastsFit_camera_temp;
+        case '75'
+            params_camera_75       = params_camera_temp;
+            fittedSignal_camera_75 = fittedSignal_camera_temp;
+            contrastsFit_camera_75 = contrastsFit_camera_temp;
+    end
 end
 
-% Fit sine signal here.
-%
-% Loop over the spatial frequency.
-for ss = 1:nSFs
-    % Set initial frequency for fitting sine wave.
-    cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
-    f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
-    f0OptionsTemp = getfield(f0Options,f0FieldName);
-    
-    % Loop over the channels.
-    for cc = 1:nChannels_Camera
-        
-        % Update initial frequency (f0) here.
-        f0 = f0OptionsTemp(cc);
-        
-        % Fit happens here.
-        signalToFit = IP_camera{cc,ss};
-        [params_camera{cc,ss}, fittedSignal_camera{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-        
-        % Clear the initial guess of frequency for next fit.
-        clear f0;
-    end
-    
-    % Show progress.
-    fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
-end
-
-% Plot the results.
-for ss = 1:nSFs
-    % Make a new figure per each spatial frequency.
-    figure;
-    figurePosition = [0 0 800 800];
-    set(gcf,'position',figurePosition);
-    sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
-    
-    % Loop over the channels.
-    for cc = 1:nChannels_Camera
-        subplot(round(nChannels_Camera/2),2,cc); hold on;
-        title(sprintf('%d nm',peaks_spd_camera(cc)));
-        xlabel('Pixel position');
-        ylabel('dRGB');
-        ylim([-10 230]);
-        
-        % Original.
-        plot(IP_camera{cc,ss},'b-');
-        
-        % Fitted signal.
-        plot(fittedSignal_camera{cc,ss},'r-');
-        legend('Origianl','Fit');
-    end
-end
-
-% Calculate contrast from the sine fitted curve.
-for ss = 1:nSFs
-    for cc = 1:nChannels_Camera
-        paramsTemp = params_camera{cc,ss};
-        A = paramsTemp(1);
-        B = paramsTemp(4);
-        contrast = A/B;
-        contrastsFit_camera(cc,ss) = contrast;
-    end
-end
+% Make an average of the contrasts.
+contrastsFit_camera = (contrastsFit_camera_25 + contrastsFit_camera_50 + contrastsFit_camera_75)/3;
 
 %% 2-a) Calculate the MTF using Average method (SACCSFA).
 %
@@ -351,7 +402,7 @@ viewingMedia = viewingMediaSACCSFA;
 
 % Load all images here.
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir,'Camera','ChromaticAberration',viewingMedia);
+testFiledir = fullfile(testFiledir,'camera','ChromaticAberration',viewingMedia);
 folders = dir(testFiledir);
 dates = cell(1, numel(folders));
 
@@ -438,7 +489,16 @@ for cc = 1:nChannels_SACCSFA
             append(num2str(targetCyclePerDeg{ss}),'cpd_crop'));
         
         % We save all images here.
-        images{ss} = imread(testFilenameTemp);
+        images_SACCSFA{cc,ss} = imread(testFilenameTemp);
+        
+        % Get intensity profile of the image.
+        image_temp = images_SACCSFA{cc,ss};
+        [Ypixel Xpixel] = size(image_temp);
+        
+        % We will use the average of the 25% / 50% / 75% positions of the cropped image.
+        IP_SACCSFA_25{cc,ss} = image_temp(round(0.25*Ypixel),:);
+        IP_SACCSFA_50{cc,ss} = image_temp(round(0.50*Ypixel),:);
+        IP_SACCSFA_75{cc,ss} = image_temp(round(0.75*Ypixel),:);
         
         % Set min distance between adjacent peaks.
         SF = targetCyclePerDeg{ss};
@@ -463,13 +523,14 @@ for cc = 1:nChannels_SACCSFA
         end
         
         % Calculate contrasts.
-        [contrastsTemp, IP_SACCSFA{cc,ss}] = GetImgContrast(images{ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvgOneChannel(ss) = mean(contrastsTemp);
+        contrastsAvg_SACCSFA_25(cc,ss) = GetIPContrast(IP_SACCSFA_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_SACCSFA_50(cc,ss) = GetIPContrast(IP_SACCSFA_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
+        contrastsAvg_SACCSFA_75(cc,ss) = GetIPContrast(IP_SACCSFA_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile); 
     end
-    
-    % Collect the mean contrast results.
-    contrastsAvg_SACCSFA(cc,:) = contrastsAvgOneChannel;
 end
+
+% Calculate the mean contrasts here.
+contrastsAvg_SACCSFA = (contrastsAvg_SACCSFA_25 + contrastsAvg_SACCSFA_50 + contrastsAvg_SACCSFA_75)/3;
 
 % Sort the contrasts in an ascending order of the channels.
 peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
@@ -482,106 +543,146 @@ nChannels_test = length(peaks_spd_SACCSFA_test);
 
 %% 2-b) Calculate the MTF using Sine fitting method (SACCSFA).
 %
-% Load the saved initial frequencies. In not, we will newly search the
-% values.
-testFilename = fullfile(recentTestFiledir,'f0Options.mat');
+% Here we make a loop to fit all 25%, 50%, 75% vertical positions of the
+% intensity profiles
+IPOptions = {'25','50','75'};
+nIPOptions = length(IPOptions);
 
-% Load the file here.
-if isfile(testFilename)
-    fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
-    f0Options = load(testFilename);
-    f0Options = f0Options.f0Options;
-else
-    % If not, we will search the initial frequencies to fit sine to the
-    % intensity profiles.
-    fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
-    f0Options = struct();
-    for ss = 1:nSFs
-        % Set spatial frequency.
-        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
-        
-        % Set field name in the struct.
-        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
-        
-        for cc = 1:nChannels_SACCSFA
-            % Search the initial frequency here.
-            signalToFit = IP_SACCSFA{cc,ss};
-            f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+for ii = 1:nIPOptions
+    
+    % Set which intensity profile to load.
+    whichIP = IPOptions{ii};
+    
+    % Load intensity profile according to the vertical positions.
+    switch whichIP
+        case '25'
+            IP_SACCSFA = IP_SACCSFA_25;
+        case '50'
+            IP_SACCSFA = IP_SACCSFA_50;
+        case '75'
+            IP_SACCSFA = IP_SACCSFA_75;
+    end
+    
+    % Load the saved initial frequencies. In not, we will newly search the
+    % values.
+    testFilename = fullfile(recentTestFiledir,sprintf('f0Options_%s.mat',whichIP));
+
+    % Load the file here.
+    if isfile(testFilename)
+        fprintf('Pre-saved f0 options file found! We will load it for sine fitting - (%s) \n',viewingMedia);
+        f0Options = load(testFilename);
+        f0Options = f0Options.f0Options;
+    else
+        % If not, we will search the initial frequencies to fit sine to the
+        % intensity profiles.
+        fprintf('We will start searching for initial frequency (f0) for sine fitting - (%s) \n',viewingMedia);
+        f0Options = struct();
+        for ss = 1:nSFs
+            % Set spatial frequency.
+            cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
             
-            % Show the fitting progress.
-            fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels_SACCSFA,cyclesPerDeg);
+            % Set field name in the struct.
+            f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+            
+            for cc = 1:nChannels_SACCSFA
+                % Search the initial frequency here.
+                signalToFit = IP_SACCSFA{cc,ss};
+                f0_found(cc) = FindInitialFrequencyToFitSineWave(signalToFit,'SF',cyclesPerDeg,'verbose',false);
+                
+                % Show the fitting progress.
+                fprintf('(%s) Searching initial frequency progress (Ch: %d/%d), (SF:%d cpd) \n',viewingMedia,cc,nChannels_SACCSFA,cyclesPerDeg);
+            end
+            
+            % Save the value in the struct.
+            f0Options = setfield(f0Options,f0FieldName,f0_found);
         end
         
-        % Save the value in the struct.
-        f0Options = setfield(f0Options,f0FieldName,f0_found);
+        % Save out the found initial frequencies. We will load it to use next
+        % time.
+        save(testFilename,'f0Options');
+        fprintf('All initial frequency settings found successfully and saved! - (%s) \n',viewingMedia);
     end
     
-    % Save out the found initial frequencies. We will load it to use next
-    % time.
-    save(testFilename,'f0Options');
-    fprintf('All initial frequency settings found successfully and saved! - (%s) \n',viewingMedia);
-end
-
-% Fit sine signal.
-for ss = 1:nSFs
-    for cc = 1:nChannels_SACCSFA
-        % Set initial frequency for fitting sine wave.
-        cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+    % Fit sine signal.
+    for ss = 1:nSFs
+        for cc = 1:nChannels_SACCSFA
+            % Set initial frequency for fitting sine wave.
+            cyclesPerDeg = cell2mat(targetCyclePerDeg(ss));
+            
+            % Update initial frequency (f0) here.
+            f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
+            f0OptionsTemp = getfield(f0Options,f0FieldName);
+            f0 = f0OptionsTemp(cc);
+            
+            % Fit happens here.
+            signalToFit = IP_SACCSFA{cc,ss};
+            [params_SACCSFA_temp{cc,ss}, fittedSignal_SACCSFA_temp{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
+            
+            % Clear the initial guess of frequency for next fit.
+            clear f0;
+        end
         
-        % Update initial frequency (f0) here.
-        f0FieldName = append('SF_',num2str(cyclesPerDeg),'cpd');
-        f0OptionsTemp = getfield(f0Options,f0FieldName);
-        f0 = f0OptionsTemp(cc);
-        
-        % Fit happens here.
-        signalToFit = IP_SACCSFA{cc,ss};
-        [params_SACCSFA{cc,ss}, fittedSignal_SACCSFA{cc,ss}] = FitSineWave(signalToFit,'f0',f0,'verbose',false,'FFT',DoFourierTransform);
-        
-        % Clear the initial guess of frequency for next fit.
-        clear f0;
+        % Show progress.
+        fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
     end
     
-    % Show progress.
-    fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
-end
-
-% Plot the results.
-for ss = 1:nSFs
-    % Make a new figure per each spatial frequency.
-    figure;
-    figurePosition = [0 0 800 800];
-    set(gcf,'position',figurePosition);
-    sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
+    % Plot the results.
+    for ss = 1:nSFs
+        % Make a new figure per each spatial frequency.
+        figure;
+        figurePosition = [0 0 800 800];
+        set(gcf,'position',figurePosition);
+        sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
+        
+        % Loop over the channels.
+        for cc = 1:nChannels_SACCSFA
+            subplot(round(nChannels_SACCSFA/2),2,cc); hold on;
+            title(sprintf('%d nm',peaks_spd_SACCSFA_test((cc))));
+            xlabel('Pixel position');
+            ylabel('dRGB');
+            ylim([0 220]);
+            
+            % Original.
+            plot(IP_SACCSFA{cc,ss},'b-');
+            
+            % Fitted signal.
+            plot(fittedSignal_SACCSFA_temp{cc,ss},'r-');
+            legend('Origianl','Fit');
+        end
+    end
     
-    % Loop over the channels.
-    for cc = 1:nChannels_SACCSFA
-        subplot(round(nChannels_SACCSFA/2),2,cc); hold on;
-        title(sprintf('%d nm',peaks_spd_SACCSFA_test((cc))));
-        xlabel('Pixel position');
-        ylabel('dRGB');
-        ylim([0 220]);
-        
-        % Original.
-        plot(IP_SACCSFA{cc,ss},'b-');
-        
-        % Fitted signal.
-        plot(fittedSignal_SACCSFA{cc,ss},'r-');
-        legend('Origianl','Fit');
+    % Calculate contrast from the sine fitted curve.
+    for ss = 1:nSFs
+        for cc = 1:nChannels_SACCSFA
+            paramsTemp = params_SACCSFA_temp{cc,ss};
+            A = paramsTemp(1);
+            B = paramsTemp(4);
+            contrast = A/B;
+            contrastsFit_SACCSFA_temp(cc,ss) = contrast;
+        end
+    end
+    
+    % Save out the fitting results.
+    switch whichIP
+        case '25'
+            params_SACCSFA_25       = params_SACCSFA_temp;
+            fittedSignal_SACCSFA_25 = fittedSignal_SACCSFA_temp;
+            contrastsFit_SACCSFA_25 = contrastsFit_SACCSFA_temp;
+        case '50'
+            params_SACCSFA_50       = params_SACCSFA_temp;
+            fittedSignal_SACCSFA_50 = fittedSignal_SACCSFA_temp;
+            contrastsFit_SACCSFA_50 = contrastsFit_SACCSFA_temp;
+        case '75'
+            params_SACCSFA_75       = params_SACCSFA_temp;
+            fittedSignal_SACCSFA_75 = fittedSignal_SACCSFA_temp;
+            contrastsFit_SACCSFA_75 = contrastsFit_SACCSFA_temp;
     end
 end
 
-% Calculate contrast from the sine fitted curve.
-for ss = 1:nSFs
-    for cc = 1:nChannels_SACCSFA
-        paramsTemp = params_SACCSFA{cc,ss};
-        A = paramsTemp(1);
-        B = paramsTemp(4);
-        contrast = A/B;
-        contrastsFit_SACCSFA(cc,ss) = contrast;
-    end
-end
+% Make an average of the contrasts.
+contrastsFit_SACCSFA = (contrastsFit_SACCSFA_25 + contrastsFit_SACCSFA_50 + contrastsFit_SACCSFA_75)/3;
 
-%% 3) Plot the raw MTF (Camera).
+%% 3) Plot the raw MTF (camera).
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
@@ -597,15 +698,15 @@ figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
 sgtitle(sprintf('Raw camera MTF (%s)',contrastCalMethod),'fontsize', 15);
 
-for cc = 1:nChannels_Camera
+for cc = 1:nChannels_camera
     subplot(2,4,cc); hold on;
     
-    % Camera MTF.
+    % camera MTF.
     contrastRawOneChannel = contrastRaw_camera(cc,:);
     plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
-    % Camera MTF (average method).
+    % camera MTF (average method).
     if strcmp(contrastCalMethod,'Sinefit')
         factor = 4/pi;
         contrastsAvg_1cpd = contrastsAvg_camera(:,1);
@@ -626,17 +727,17 @@ for cc = 1:nChannels_Camera
     % Add legend.
     switch contrastCalMethod
         case 'Average'
-            legend('Camera (Avg)','location','northeast','fontsize',8);
+            legend('camera (Avg)','location','northeast','fontsize',8);
         case 'Sinefit'
             if cc == 1
-                legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','northeast','fontsize',8);
+                legend('camera (Sine)','camera (Avg)*4/pi','camera (PR670)*4/pi','location','northeast','fontsize',8);
             else
-                legend('Camera (Sine)','Camera (Avg)*4/pi','Camera (PR670)*4/pi','location','southeast','fontsize',8);
+                legend('camera (Sine)','camera (Avg)*4/pi','camera (PR670)*4/pi','location','southeast','fontsize',8);
             end
     end
 end
 
-%% 4) Calculate the compensated MTF (Camera and SACCSFA).
+%% 4) Calculate the compensated MTF (camera and SACCSFA).
 %
 % Here we choose which channel of the combi-LED to compare to each channel
 % of SACCSFA. We will choose the one with the closest peak wavelength
@@ -656,7 +757,7 @@ for tt = 1:nChannels_test
     peaks_spd_camera_test(tt) = peaks_spd_camera(idx);
 end
 
-% Compensate the Camera MTF by dividing the 1 cpd contrasts.
+% Compensate the camera MTF by dividing the 1 cpd contrasts.
 contrastsAvg_camera_1cpd = contrastsAvg_camera(:,1);
 contrastsFit_camera_1cpd = contrastsFit_camera(:,1);
 contrastsAvg_camera_norm = contrastsAvg_camera./contrastsAvg_camera_1cpd;
@@ -666,7 +767,7 @@ contrastsFit_camera_norm = contrastsFit_camera./contrastsFit_camera_1cpd;
 factorSineToSqaurewave = 1/(4/pi);
 contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
 
-% Plot the compensated MTF results (Camera and SACCSFA).
+% Plot the compensated MTF results (camera and SACCSFA).
 %
 % We used two different methods to calculate contrast. Choose either one to
 % plot the results. It was chosen at the very beginning of this routine.
@@ -682,7 +783,7 @@ end
 % Make a new figure.
 figure; clf;
 set(gcf,'position',figureSize);
-sgtitle(sprintf('Compensated MTF: Camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
+sgtitle(sprintf('Compensated MTF: camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
@@ -691,18 +792,18 @@ for cc = 1:nChannels_test
     plot(cell2mat(targetCyclePerDeg),contrast_SACCSFA(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
-    % Camera MTF.
+    % camera MTF.
     %
     % We saved the index of corresponding channel to compare within the
     % combi-LED in 'idx_camera_test'.
-    contrastsCameraOneChannel = contrast_camera(idx_camera_test(cc),:);
-    plot(cell2mat(targetCyclePerDeg),contrastsCameraOneChannel,...
+    contrastscameraOneChannel = contrast_camera(idx_camera_test(cc),:);
+    plot(cell2mat(targetCyclePerDeg),contrastscameraOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % Save out camera MTF to test.
     %
     % We will use this to compensate the SACCSFA MTF later on.
-    contrast_camera_test(cc,:) = contrastsCameraOneChannel;
+    contrast_camera_test(cc,:) = contrastscameraOneChannel;
     
     % Plot stuffs.
     ylim([0 1.2]);
@@ -714,10 +815,10 @@ for cc = 1:nChannels_test
     % Add legend.
     if cc == 1
         legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
-            sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','northeast','fontsize',8);
+            sprintf('camera (%d nm)',peaks_spd_camera_test(cc)),'location','northeast','fontsize',8);
     else
         legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
-            sprintf('Camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
+            sprintf('camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
     end
 end
 
@@ -749,13 +850,13 @@ for cc = 1:nChannels_test
     legend('Final SACCSFA MTF','location','southeast','fontsize',10);
 end
 
-%% 6) Transverse Chromatic Aberration (TCA) - (Camera).
+%% 6) Transverse Chromatic Aberration (TCA) - (camera).
 %
 % 1) Plot raw intensity profiles.
 figure; hold on;
 figurePosition = [0 0 1000 1000];
 set(gcf,'position',figurePosition);
-sgtitle('Raw intensity profile over the channels (Camera)');
+sgtitle('Raw intensity profile over the channels (camera)');
 minY = -20;
 maxY = 245;
 
@@ -764,7 +865,7 @@ for ss = 1:nSFs
     subplot(nSFs,1,ss); hold on;
     
     % Channel.
-    for cc = 1:nChannels_Camera
+    for cc = 1:nChannels_camera
         plot(IP_camera{cc,ss});
         
         % Generate texts for the legend for each graph.
@@ -784,17 +885,17 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% 2) Plot the sine fitted graphs (Camera).
+% 2) Plot the sine fitted graphs (camera).
 figure; hold on;
 set(gcf,'position',figurePosition);
-sgtitle('Fitted intensity profile over the channels (Camera)');
+sgtitle('Fitted intensity profile over the channels (camera)');
 
 % Loop over Spatial frequency.
 for ss = 1:nSFs
     subplot(nSFs,1,ss); hold on;
     
     % Loop over Channel.
-    for cc = 1:nChannels_Camera
+    for cc = 1:nChannels_camera
         plot(fittedSignal_camera{cc,ss});
     end
     
@@ -809,10 +910,10 @@ end
 % 3) Plot the comparison of the parameter phi over the channels.
 %
 % Define the x-ticks for the plot.
-xticksPlot = linspace(1,nChannels_Camera,nChannels_Camera);
+xticksPlot = linspace(1,nChannels_camera,nChannels_camera);
 
 figure; hold on;
-title('Fitted parameter phi comparison (Camera)','fontsize',15);
+title('Fitted parameter phi comparison (camera)','fontsize',15);
 plot(xticksPlot,phi_camera,'o-');
 xticks(xticksPlot);
 xticklabels(peaks_spd_camera);
@@ -834,7 +935,7 @@ numPixels = length(fittedSignal_camera{1,1});
 
 % Get the amount of phase shift in pixel domain.
 for ss = 1:nSFs
-    for cc = 1:nChannels_Camera
+    for cc = 1:nChannels_camera
         params_temp = params_camera{cc,ss};
         f_temp = params_temp(2);
         
@@ -852,8 +953,8 @@ end
 figure;
 figureSize = [0 0 600 800];
 set(gcf,'position',figureSize);
-sgtitle('Sine fitted period in pixel (Camera)');
-x_data = linspace(1,nChannels_Camera,nChannels_Camera);
+sgtitle('Sine fitted period in pixel (camera)');
+x_data = linspace(1,nChannels_camera,nChannels_camera);
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
     plot(x_data, onePeriod_pixel_camera(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
@@ -870,14 +971,15 @@ end
 channelFocus = 598;
 idxChannelFocus = find(peaks_spd_camera == channelFocus);
 phaseShift_pixel_camera_ref = phaseShift_pixel_camera(idxChannelFocus,:);
-phaseShift_pixel_camera_diff = abs(round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1));
+% phaseShift_pixel_camera_diff = abs(round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1));
+phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1);
 
 % Plot the phase shift in pixel.
 figure;
 figureSize = [0 0 600 800];
 set(gcf,'position',figureSize);
 
-sgtitle('Phase shift in pixel (Camera)');
+sgtitle('Phase shift in pixel (camera)');
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
     plot(x_data, phaseShift_pixel_camera_diff(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
@@ -885,7 +987,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([0 5]);
+    ylim([-5 5]);
 end
 
 %% 7) Transverse Chromatic Aberration (TCA) - (SACCSFA).
@@ -1028,7 +1130,9 @@ end
 channelFocus = 592;
 idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
 phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
-phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1));
+% phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1));
+phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1);
+
 
 % Plot happens here.
 figure;
@@ -1044,7 +1148,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([0 5]);
+    ylim([-5 5]);
 end
 
 %% Plot the channels that we used in this study.
@@ -1063,7 +1167,7 @@ if (PLOTSPECTRUM)
     legend([p1(1) p2(1)],'All channels (N=16)','Tested channel (N=10)','fontsize',12,'location','northwest');
     title('SACCSFA','fontsize',15);
     
-    % Camera.
+    % camera.
     figure; hold on;
     p3 = plot(wls,spd_camera_white,'k-');
     p4 = plot(wls,spd_camera_white,'-','linewidth',5,'color',[0 1 0 0.3]);
@@ -1071,5 +1175,5 @@ if (PLOTSPECTRUM)
     ylabel('Spectral power','fontsize',15);
     ylim([0 max(spd_camera_white,[],'all')*1.01]);
     legend([p3(1) p4(1)],'All channels (N=8)','Tested channel (N=8)','fontsize',12,'location','northeast');
-    title('Camera (Combi-LED)','fontsize',15);
+    title('camera (Combi-LED)','fontsize',15);
 end
