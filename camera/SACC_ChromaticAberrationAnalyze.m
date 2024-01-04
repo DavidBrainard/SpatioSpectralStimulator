@@ -250,6 +250,22 @@ end
 % Calculate the mean contrasts here.
 contrastsAvg_camera = (contrastsAvg_camera_25 + contrastsAvg_camera_50 + contrastsAvg_camera_75)/3;
 
+% Show the image if you want.
+SHOWRAWIMAGE = true;
+if (SHOWRAWIMAGE)
+    figure; hold on;
+    figurePosition = [0 0 1000 1000];
+    set(gcf,'position',figurePosition);
+    sgtitle(sprintf('Camera captured raw images (%s)',viewingMedia));
+    for cc = 1:nChannels_camera
+        for ss = 1:nSFs
+            subplot(nChannels_camera,nSFs,ss+nSFs*(cc-1));
+            imshow(images_camera{cc,ss});
+            title(sprintf('%d nm / %d cpd',peaks_spd_camera(cc),targetCyclePerDeg{ss}));
+        end
+    end
+end
+
 %% 1-b) Calculate the MTF using Sine fitting (camera).
 %
 % Here we make a loop to fit all 25%, 50%, 75% vertical positions of the
@@ -539,9 +555,26 @@ contrastsAvg_SACCSFA = contrastsAvg_SACCSFA(I,:);
 IP_SACCSFA_25 = IP_SACCSFA_25(I,:);
 IP_SACCSFA_50 = IP_SACCSFA_50(I,:);
 IP_SACCSFA_75 = IP_SACCSFA_75(I,:);
+images_SACCSFA = images_SACCSFA(I,:);
 
 % Get number of channels to compare with the camera MTF.
 nChannels_test = length(peaks_spd_SACCSFA_test);
+
+% Show the image if you want.
+SHOWRAWIMAGE = true;
+if (SHOWRAWIMAGE)
+    figure; hold on;
+    figurePosition = [0 0 1000 1000];
+    set(gcf,'position',figurePosition);
+    sgtitle(sprintf('Camera captured raw images (%s)',viewingMedia));
+    for cc = 1:nChannels_test
+        for ss = 1:nSFs
+            subplot(nChannels_test,nSFs,ss+nSFs*(cc-1));
+            imshow(images_SACCSFA{cc,ss});
+            title(sprintf('%d nm / %d cpd',peaks_spd_SACCSFA_test(cc),targetCyclePerDeg{ss}));
+        end
+    end
+end
 
 %% 2-b) Calculate the MTF using Sine fitting method (SACCSFA).
 %
