@@ -815,8 +815,35 @@ switch contrastCalMethod
         contrast_SACCSFA = contrastsFit_SACCSFA_norm;
 end
 
+% Interpolation of the camera MTF.
+%
+% Here we interpolate the camera MTF to estimate the MTF for any wavelength
+% and spatial frequency combinations. We want to calculate the camera MTF
+% at the same wavelengths that were used for measuring the SACCSFA MTF.
+% This way, we can calculate an accruate inherent SACCSFA MTF.
+z = contrast_camera;
+[r c] = size(z);
+% x = repmat(peaks_spd_camera',1,c);
+x = peaks_spd_camera;
+% y = repmat(cell2mat(targetCyclePerDeg),r,1);
+y = cell2mat(targetCyclePerDeg)';
+
+% Check the matrix size.
+% if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
+%     error('Matrix sizes no not match!');
+% end
+
+% Fitting happens here.
+f =  fit([x,y],z,'lowess');
+
+
+
+
+
+
 % Make a new figure.
 figure; clf;
+figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
 sgtitle(sprintf('Compensated MTF: camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
