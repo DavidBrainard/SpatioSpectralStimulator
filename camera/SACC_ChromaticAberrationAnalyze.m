@@ -863,11 +863,13 @@ end
 contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera_test;
 
 % Set the contrast within the range.
+contrast_SACCSFA_compensated_norm = contrast_SACCSFA_compensated;
 maxContrast = 1;
-contrast_SACCSFA_compensated(find(contrast_SACCSFA_compensated > maxContrast)) = 1;
+contrast_SACCSFA_compensated_norm(find(contrast_SACCSFA_compensated_norm > maxContrast)) = 1;
 
 % Make a new figure.
-figure; clf;
+figure; hold on; clf;
+figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
 sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
@@ -875,14 +877,24 @@ sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15)
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
     contrastsSACCSFAOneChannel = contrast_SACCSFA_compensated(cc,:);
+    contrastsSACCSFAOneChannel_norm = contrast_SACCSFA_compensated_norm(cc,:);
+    
+    % Plot it.
+    %
+    % Inherent SACCSFA MTF.
     plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel,...
+        'ko','markeredgecolor','r','markersize',13);
+    
+    % Inherent SACCSFA MTF (cut off the contrast over 1.0).
+    plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel_norm,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
-    ylim([0 1.2]);
+    
+    ylim([0 1.5]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
-    legend('Final SACCSFA MTF','location','southeast','fontsize',10);
+    legend('SACCSFA-raw','SACCSFA-norm','location','southeast','fontsize',10);
 end
 
 %% 6) Transverse Chromatic Aberration (TCA) - (camera).
