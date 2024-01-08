@@ -1009,7 +1009,8 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    ylim([0 230]);
+    maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
+    ylim([0 maxY_period]);
 end
 
 % Plot the phase shift in pixel per spatial frequency.
@@ -1018,7 +1019,6 @@ end
 channelFocus = 598;
 idxChannelFocus = find(peaks_spd_camera == channelFocus);
 phaseShift_pixel_camera_ref = phaseShift_pixel_camera(idxChannelFocus,:);
-% phaseShift_pixel_camera_diff = abs(round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1));
 phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1);
 
 % Plot the phase shift in pixel.
@@ -1192,13 +1192,15 @@ sgtitle(sprintf('Sine fitted period in pixel (%s)',viewingMediaSACCSFA));
 x_data = linspace(1,nChannels_test,nChannels_test);
 for ss = 1:nSFs
     subplot(nSFs,1,ss);
+    
     plot(x_data, onePeriod_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticks(x_data);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    ylim([0 230]);
+    maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
+    ylim([0 maxY_period]);
 end
 
 % 3-c) Plot the phase shift in pixel per spatial frequency.
@@ -1207,9 +1209,7 @@ end
 channelFocus = 592;
 idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
 phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
-% phaseShift_pixel_SACCSFA_diff = abs(round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1));
 phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1);
-
 
 % Plot happens here.
 figure;
