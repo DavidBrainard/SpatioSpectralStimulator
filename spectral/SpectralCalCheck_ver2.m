@@ -342,6 +342,7 @@ if (STANDARD)
     % corrected settings.
     standardSettingsGaborCal = PrimaryToSettings(screenCalObj,standardPrimariesGaborCal);
     standardPredictedPrimariesGaborCal = SettingsToPrimary(screenCalObj,standardSettingsGaborCal);
+    standardPredictedScreenSpdCheckCal = PrimaryToSpd(screenCalObj,standardPredictedPrimariesGaborCal);
     standardPredictedExcitationsGaborCal = PrimaryToSensor(screenCalObj,standardPredictedPrimariesGaborCal);
     standardPredictedContrastGaborCal = ExcitationsToContrast(standardPredictedExcitationsGaborCal,screenBgExcitations);
 end
@@ -846,3 +847,30 @@ if (MEASURETARGETCONTRAST)
         end
     end
 end
+
+%% Load the spectra of the low and high ends of the modulation (added 01/12/24).
+%
+% In this script, we tested out the raw monochrome contrast from -1 to +1.
+% The contrast of +1 is the high end of the modulation (L-M), and the
+% contrast of -1 is the low end of the modulation (-L+M).
+%
+% All tested raw monochrome contrasts are saved in
+% 'rawMonochromeUnquantizedContrastCheckCal', and we will find the index of
+% +1 (high end) and -1 (low end) to plot its spectra.
+%
+% Find the index.
+idxHighEnd = find(rawMonochromeUnquantizedContrastCheckCal == 1);
+idxLowEnd = find(rawMonochromeUnquantizedContrastCheckCal == -1);
+
+% Get the spectra.
+spd_highEnd = standardPredictedScreenSpdCheckCal(:,idxHighEnd);
+spd_lowEnd = standardPredictedScreenSpdCheckCal(:,idxLowEnd);
+
+% Plot it.
+figure; hold on;
+plot(wls,spd_highEnd,'r');
+plot(wls,spd_lowEnd,'g');
+title('Spectra of high and low ends of the modulation','fontsize',15);
+xlabel('Wavelength (nm)','fontsize',15);
+ylabel('Spectral power','fontsize',15);
+legend('High end','Low end','fontsize',15);
