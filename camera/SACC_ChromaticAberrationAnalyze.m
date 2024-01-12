@@ -1140,10 +1140,9 @@ for ss = 1:nSFs
 end
 
 
-   % Correct phi to calculate the phase shift correct. For now, we
-        % manually correct it, but maybe we want to do this part more
-        % elaborately later on.
-% Match up the period scale.
+% Correct phi to calculate the phase shift correct. For now, we
+% manually correct it, but maybe we want to do this part more
+% elaborately later on.
 switch viewingMediaSACCSFA
     case 'SACCSFA'
         phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
@@ -1164,7 +1163,7 @@ switch viewingMediaSACCSFA
         phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
 end
 
-% Calculate the mean phi.
+% Calculate the mean phi here.
 phi_SACCSFA = (phi_SACCSFA_25 + phi_SACCSFA_50 + phi_SACCSFA_75)/3;
 
 % 2) Plot the sine fitted graphs (SACCSFA).
