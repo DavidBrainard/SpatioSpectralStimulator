@@ -576,6 +576,34 @@ if (SHOWRAWIMAGE)
     end
 end
 
+% Plot the intensity profile if you want.
+PLOTINTENSITYPROFILE = true;
+
+if (PLOTINTENSITYPROFILE)
+    whichChannel = 7;
+    whichSF = 2;
+    
+    figure;
+    figureSize = [0 0 1000 300];
+    set(gcf,'position',figureSize);
+    
+    % Raw image.
+    subplot(1,2,1);
+    imshow(images_SACCSFA{whichChannel,whichSF});
+    title(sprintf('Raw image \n (%d cpd / %d nm) - %s',...
+        targetCyclePerDeg{whichSF},peaks_spd_SACCSFA_test(whichChannel),viewingMedia),'fontsize',15);
+    
+    % Intensity profile.
+    subplot(1,2,2); hold on;
+    plot(IP_SACCSFA_25{whichChannel,whichSF}, 'r-', 'LineWidth',1);
+    plot(IP_SACCSFA_50{whichChannel,whichSF}, 'g-', 'LineWidth',1);
+    plot(IP_SACCSFA_75{whichChannel,whichSF}, 'b-', 'LineWidth',1);
+    title('Intensity profile','fontsize',15);
+    xlabel('Pixel position (horizontal)','fontsize',15);
+    ylabel('dRGB','fontsize',15);
+    legend('25%','50%','75%');
+end
+
 %% 2-b) Calculate the MTF using Sine fitting method (SACCSFA).
 %
 % Here we make a loop to fit all 25%, 50%, 75% vertical positions of the
