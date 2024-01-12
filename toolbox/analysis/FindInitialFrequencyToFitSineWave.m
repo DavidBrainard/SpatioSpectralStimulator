@@ -75,7 +75,9 @@ while 1
         case 1
             targetCorrSignals = 0.90;
         case 3
-            targetCorrSignals = 0.915;
+%             targetCorrSignals = 0.915;
+            % For SACCSFA185.
+            targetCorrSignals = 0.941; 
         case 6
             targetCorrSignals = 0.937;
         case 9

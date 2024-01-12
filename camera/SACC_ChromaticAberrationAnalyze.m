@@ -843,26 +843,26 @@ switch contrastCalMethod
         contrast_SACCSFA = contrastsFit_SACCSFA_norm;
 end
 
-% Interpolation of the camera MTF.
-%
-% Here we interpolate the camera MTF to estimate the MTF for any wavelength
-% and spatial frequency combinations. We want to calculate the camera MTF
-% at the same wavelengths that were used for measuring the SACCSFA MTF.
-% This way, we can calculate an accruate inherent SACCSFA MTF.
-z = contrast_camera;
-[r c] = size(z);
-% x = repmat(peaks_spd_camera',1,c);
-x = peaks_spd_camera;
-% y = repmat(cell2mat(targetCyclePerDeg),r,1);
-y = cell2mat(targetCyclePerDeg)';
-
-% Check the matrix size.
-% if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
-%     error('Matrix sizes no not match!');
-% end
-
-% Fitting happens here.
-f =  fit([x,y],z,'lowess');
+% % Interpolation of the camera MTF.
+% %
+% % Here we interpolate the camera MTF to estimate the MTF for any wavelength
+% % and spatial frequency combinations. We want to calculate the camera MTF
+% % at the same wavelengths that were used for measuring the SACCSFA MTF.
+% % This way, we can calculate an accruate inherent SACCSFA MTF.
+% z = contrast_camera;
+% [r c] = size(z);
+% % x = repmat(peaks_spd_camera',1,c);
+% x = peaks_spd_camera;
+% % y = repmat(cell2mat(targetCyclePerDeg),r,1);
+% y = cell2mat(targetCyclePerDeg)';
+% 
+% % Check the matrix size.
+% % if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
+% %     error('Matrix sizes no not match!');
+% % end
+% 
+% % Fitting happens here.
+% f =  fit([x,y],z,'lowess');
 
 
 
@@ -1063,7 +1063,7 @@ for ss = 1:nSFs
     end
 end
 
-% Plot the period in pixel per spatial frequency..
+% Plot the period in pixel per spatial frequency.
 figure;
 figureSize = [0 0 600 800];
 set(gcf,'position',figureSize);
@@ -1077,7 +1077,8 @@ for ss = 1:nSFs
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
     maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
-    ylim([0 maxY_period]);
+    ylim([0 round(maxY_period)]);
+    yticks(round([0 maxY_period/2 maxY_period]));
 end
 
 % Plot the phase shift in pixel per spatial frequency.
@@ -1086,7 +1087,7 @@ end
 channelFocus = 598;
 idxChannelFocus = find(peaks_spd_camera == channelFocus);
 phaseShift_pixel_camera_ref = phaseShift_pixel_camera(idxChannelFocus,:);
-phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera - phaseShift_pixel_camera_ref,1);
+phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera_ref - phaseShift_pixel_camera,1);
 
 % Plot the phase shift in pixel.
 figure;
@@ -1138,8 +1139,30 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
+
+   % Correct phi to calculate the phase shift correct. For now, we
+        % manually correct it, but maybe we want to do this part more
+        % elaborately later on.
 % Match up the period scale.
-phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
+switch viewingMediaSACCSFA
+    case 'SACCSFA'
+        phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
+    case 'SACCSFA170'
+        phi_SACCSFA_25(1,4) = phi_SACCSFA_25(1,4) - 2*pi;
+        phi_SACCSFA_50(1,4) = phi_SACCSFA_50(1,4) - 2*pi;
+        phi_SACCSFA_75(1,4) = phi_SACCSFA_75(1,4) - 2*pi;
+        
+        phi_SACCSFA_25(2,4) = phi_SACCSFA_25(2,4) - 2*pi;
+        phi_SACCSFA_50(2,4) = phi_SACCSFA_50(2,4) - 2*pi;
+        phi_SACCSFA_75(2,4) = phi_SACCSFA_75(2,4) - 2*pi;
+        
+        phi_SACCSFA_75(9,4) = phi_SACCSFA_75(9,4) - 2*pi;
+    case 'SACCSFA185'
+        phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) - 2*pi;
+        phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) - 2*pi;
+        
+        phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
+end
 
 % Calculate the mean phi.
 phi_SACCSFA = (phi_SACCSFA_25 + phi_SACCSFA_50 + phi_SACCSFA_75)/3;
@@ -1203,26 +1226,6 @@ for ss = 1:nSFs
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
         phi_temp = mean([phi_SACCSFA_25(cc,ss) phi_SACCSFA_50(cc,ss) phi_SACCSFA_75(cc,ss)]);
         
-        % Correct phi to calculate the phase shift correct. For now, we
-        % manually correct it, but maybe we want to do this part more
-        % elaborately later on.
-        switch viewingMediaSACCSFA
-            case 'SACCSFA'
-                
-            case 'SACCSFA170'
-                if and(cc==1,SF==9)
-                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
-                elseif and(cc==2,SF==9)
-                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
-                elseif and(cc==10,SF==9)
-                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
-                end
-            case 'SACCSFA185'
-                if and(cc==1,SF==12)
-                    phi_SACCSFA(cc,ss) = phi_temp - 2*pi;
-                end
-        end
-        
         % Get period and phase shift in pixel here.
         onePeriod_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
         
@@ -1267,7 +1270,8 @@ for ss = 1:nSFs
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
     maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
-    ylim([0 maxY_period]);
+    ylim([0 round(maxY_period)]);
+    yticks(round([0 maxY_period/2 maxY_period]));
 end
 
 % 3-c) Plot the phase shift in pixel per spatial frequency.
@@ -1276,7 +1280,7 @@ end
 channelFocus = 592;
 idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
 phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
-phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA - phaseShift_pixel_SACCSFA_ref,1);
+phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA_ref - phaseShift_pixel_SACCSFA,1);
 
 % Plot happens here.
 figure;
