@@ -376,7 +376,7 @@ for ii = 1:nIPOptions
             
             % Fitted signal.
             plot(fittedSignal_camera_temp{cc,ss},'r-');
-            legend('Origianl','Fit');
+            legend('Original','Fit');
         end
     end
     
@@ -710,7 +710,7 @@ for ii = 1:nIPOptions
             
             % Fitted signal.
             plot(fittedSignal_SACCSFA_temp{cc,ss},'r-');
-            legend('Origianl','Fit');
+            legend('Original','Fit');
         end
     end
     
