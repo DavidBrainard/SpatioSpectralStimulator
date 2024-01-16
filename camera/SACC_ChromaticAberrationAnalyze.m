@@ -843,33 +843,56 @@ switch contrastCalMethod
         contrast_SACCSFA = contrastsFit_SACCSFA_norm;
 end
 
-% % Interpolation of the camera MTF.
-% %
-% % Here we interpolate the camera MTF to estimate the MTF for any wavelength
-% % and spatial frequency combinations. We want to calculate the camera MTF
-% % at the same wavelengths that were used for measuring the SACCSFA MTF.
-% % This way, we can calculate an accruate inherent SACCSFA MTF.
-% z = contrast_camera;
-% [r c] = size(z);
-% % x = repmat(peaks_spd_camera',1,c);
-% x = peaks_spd_camera;
-% % y = repmat(cell2mat(targetCyclePerDeg),r,1);
-% y = cell2mat(targetCyclePerDeg)';
-% 
-% % Check the matrix size.
-% % if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
-% %     error('Matrix sizes no not match!');
-% % end
-% 
-% % Fitting happens here.
-% f =  fit([x,y],z,'lowess');
+% Interpolation of the camera MTF.
+%
+% Here we interpolate the camera MTF to estimate the MTF for any wavelength
+% and spatial frequency combinations. We want to calculate the camera MTF
+% at the same wavelengths that were used for measuring the SACCSFA MTF.
+% This way, we can calculate an accruate inherent SACCSFA MTF.
+z = contrast_camera;
+[r c] = size(z);
+x = repmat(peaks_spd_camera',1,c);
+y = repmat(cell2mat(targetCyclePerDeg),r,1);
 
+% Check the matrix size.
+if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
+    error('Matrix sizes no not match!');
+end
 
+% Fitting happens here.
+% Create a lowess surface fit using fit
+sf = fit([x(:), y(:)], z(:), 'lowess');
 
+% Create a 3D plot to compare raw data and fitted surface
+figure;
+figureSize = [0 0 1500 1000];
+set(gcf,'position',figureSize);
 
+% Raw data.
+subplot(1, 2, 1);
+scatter3(x(:), y(:), z(:), 'b.','sizedata',120);
+title('Raw Data');
+xlabel('Wavelength (nm)','fontsize',15);
+ylabel('Spatial frequency (cpd)','fontsize',15);
+zlabel('Contrast','fontsize',15);
 
+% Fitted surface.
+subplot(1, 2, 2);
+f_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',120);
+hold on;
+f_fit = plot(sf);
+title('Fitted Surface');
+xlabel('Wavelength (nm)','fontsize',15);
+ylabel('Spatial frequency (cpd)','fontsize',15);
+zlabel('Contrast','fontsize',15);
+legend([f_raw f_fit], 'Raw Data','Fitted Surface');
 
-% Make a new figure.
+% Get the specific value.
+x_eval = 500;  
+y_eval = 18;  
+z_eval = feval(sf, [x_eval, y_eval]);
+
+% Plot the compensated MTF.
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
