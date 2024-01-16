@@ -865,10 +865,21 @@ ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
 
 % Fitted surface.
+InterpolatedCameraMTFPlotType = 2;
+
 subplot(1, 2, 2);
 f_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
 hold on;
-f_fit = plot(f_cameraMTF);
+
+switch InterpolatedCameraMTFPlotType
+    case 1
+        f_fit = plot(f_cameraMTF);
+    case 2
+        [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
+        Z = feval(f_cameraMTF, [X(:), Y(:)]);
+        f_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
+end
+
 title('Fitted Surface');
 zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
@@ -897,12 +908,12 @@ for cc = 1:nChannels_test
     % We fit camera MTF for wavelength and spatial frequency, so here we
     % read the camera MTF from the fitting that corresponds to the SACCSFA
     % MTF.
-    % 
+    %
     % Load the camera MTF from the fitting here.
     for ss = 1:nSFs
         sfTemp = targetCyclePerDeg{ss};
         contrastscameraOneChannel(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
-    end 
+    end
     plot(cell2mat(targetCyclePerDeg),contrastscameraOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
