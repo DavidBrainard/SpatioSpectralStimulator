@@ -62,9 +62,13 @@ switch tromboneSetting
 end
 fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 
-% Set additional analysis options.
+% Set additional analysis and plotting options.
 DoFourierTransform = false;
-plotIntensityProfile = false;
+PlotIntensityProfile = false;
+PlotOneIntensityProfile = false;
+PlotSineFitting = false;
+PlotRawImage = false;
+PlotPhiParam = false;
 
 %% Get the peak wavelength of the Combi-LED (camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
@@ -196,7 +200,7 @@ for cc = 1:nChannels_camera
     oneChannelFileDir = fullfile(recentTestFiledir,channelOptions{cc});
     
     % Make a new figure if we plot the intensity profile.
-    if (plotIntensityProfile)
+    if (PlotIntensityProfile)
         figure;
         sgtitle(sprintf('%d nm (%s)',peaks_spd_camera(cc),viewingMedia),'fontsize',15);
     end
@@ -235,15 +239,15 @@ for cc = 1:nChannels_camera
         end
         
         % Make a subplot per each spatial frequency.
-        if (plotIntensityProfile)
+        if (PlotIntensityProfile)
             subplot(nSFs,1,ss);
             title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
         end
         
         % Calculate contrasts.
-        contrastsAvg_camera_25(cc,ss) = GetIPContrast(IP_camera_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvg_camera_50(cc,ss) = GetIPContrast(IP_camera_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvg_camera_75(cc,ss) = GetIPContrast(IP_camera_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_camera_25(cc,ss) = GetIPContrast(IP_camera_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
+        contrastsAvg_camera_50(cc,ss) = GetIPContrast(IP_camera_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
+        contrastsAvg_camera_75(cc,ss) = GetIPContrast(IP_camera_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
     end
 end
 
@@ -251,8 +255,7 @@ end
 contrastsAvg_camera = (contrastsAvg_camera_25 + contrastsAvg_camera_50 + contrastsAvg_camera_75)/3;
 
 % Show the image if you want.
-SHOWRAWIMAGE = true;
-if (SHOWRAWIMAGE)
+if (PlotRawImage)
     figure; hold on;
     figurePosition = [0 0 1000 1000];
     set(gcf,'position',figurePosition);
@@ -355,28 +358,30 @@ for ii = 1:nIPOptions
         fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
     end
     
-    % Plot the results.
-    for ss = 1:nSFs
-        % Make a new figure per each spatial frequency.
-        figure;
-        figurePosition = [0 0 800 800];
-        set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
-        
-        % Loop over the channels.
-        for cc = 1:nChannels_camera
-            subplot(round(nChannels_camera/2),2,cc); hold on;
-            title(sprintf('%d nm',peaks_spd_camera(cc)));
-            xlabel('Pixel position');
-            ylabel('dRGB');
-            ylim([-10 230]);
+    % Plot the results if you want.
+    if (PlotSineFitting)
+        for ss = 1:nSFs
+            % Make a new figure per each spatial frequency.
+            figure;
+            figurePosition = [0 0 800 800];
+            set(gcf,'position',figurePosition);
+            sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
             
-            % Original.
-            plot(IP_camera{cc,ss},'b-');
-            
-            % Fitted signal.
-            plot(fittedSignal_camera_temp{cc,ss},'r-');
-            legend('Original','Fit');
+            % Loop over the channels.
+            for cc = 1:nChannels_camera
+                subplot(round(nChannels_camera/2),2,cc); hold on;
+                title(sprintf('%d nm',peaks_spd_camera(cc)));
+                xlabel('Pixel position');
+                ylabel('dRGB');
+                ylim([-10 230]);
+                
+                % Original.
+                plot(IP_camera{cc,ss},'b-');
+                
+                % Fitted signal.
+                plot(fittedSignal_camera_temp{cc,ss},'r-');
+                legend('Original','Fit');
+            end
         end
     end
     
@@ -494,7 +499,7 @@ for cc = 1:nChannels_SACCSFA
     idxChannels_SACCSFA(cc) = str2num(cell2mat(regexp(channelOptions{cc},'\d+','match')));
     
     % Make a new figure if we plot the intensity profile.
-    if (plotIntensityProfile)
+    if (PlotIntensityProfile)
         figure;
         sgtitle(sprintf('%d nm (%s)',peaks_spd_SACCSFA(idxChannels_SACCSFA(cc)),viewingMedia),'fontsize',15);
     end
@@ -533,15 +538,15 @@ for cc = 1:nChannels_SACCSFA
         end
         
         % Make a subplot per each spatial frequency.
-        if (plotIntensityProfile)
+        if (PlotIntensityProfile)
             subplot(nSFs,1,ss);
             title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
         end
         
         % Calculate contrasts.
-        contrastsAvg_SACCSFA_25(cc,ss) = GetIPContrast(IP_SACCSFA_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvg_SACCSFA_50(cc,ss) = GetIPContrast(IP_SACCSFA_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
-        contrastsAvg_SACCSFA_75(cc,ss) = GetIPContrast(IP_SACCSFA_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',plotIntensityProfile);
+        contrastsAvg_SACCSFA_25(cc,ss) = GetIPContrast(IP_SACCSFA_25{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
+        contrastsAvg_SACCSFA_50(cc,ss) = GetIPContrast(IP_SACCSFA_50{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
+        contrastsAvg_SACCSFA_75(cc,ss) = GetIPContrast(IP_SACCSFA_75{cc,ss},'minPeakDistance',minPeakDistance,'verbose',PlotIntensityProfile);
     end
 end
 
@@ -561,8 +566,7 @@ images_SACCSFA = images_SACCSFA(I,:);
 nChannels_test = length(peaks_spd_SACCSFA_test);
 
 % Show the image if you want.
-SHOWRAWIMAGE = true;
-if (SHOWRAWIMAGE)
+if (PlotRawImage)
     figure; hold on;
     figurePosition = [0 0 1000 1000];
     set(gcf,'position',figurePosition);
@@ -577,9 +581,7 @@ if (SHOWRAWIMAGE)
 end
 
 % Plot the intensity profile if you want.
-PLOTINTENSITYPROFILE = true;
-
-if (PLOTINTENSITYPROFILE)
+if (PlotOneIntensityProfile)
     whichChannel = 7;
     whichSF = 2;
     
@@ -689,28 +691,30 @@ for ii = 1:nIPOptions
         fprintf('(%s) Sine fitting in progress - (%d/%d) \n',viewingMedia,ss,nSFs);
     end
     
-    % Plot the results.
-    for ss = 1:nSFs
-        % Make a new figure per each spatial frequency.
-        figure;
-        figurePosition = [0 0 800 800];
-        set(gcf,'position',figurePosition);
-        sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
-        
-        % Loop over the channels.
-        for cc = 1:nChannels_SACCSFA
-            subplot(round(nChannels_SACCSFA/2),2,cc); hold on;
-            title(sprintf('%d nm',peaks_spd_SACCSFA_test((cc))));
-            xlabel('Pixel position');
-            ylabel('dRGB');
-            ylim([0 220]);
+    % Plot the results if you want.
+    if (PlotSineFitting)
+        for ss = 1:nSFs
+            % Make a new figure per each spatial frequency.
+            figure;
+            figurePosition = [0 0 800 800];
+            set(gcf,'position',figurePosition);
+            sgtitle(sprintf('%d cpd (%s)',targetCyclePerDeg{ss},viewingMedia));
             
-            % Original.
-            plot(IP_SACCSFA{cc,ss},'b-');
-            
-            % Fitted signal.
-            plot(fittedSignal_SACCSFA_temp{cc,ss},'r-');
-            legend('Original','Fit');
+            % Loop over the channels.
+            for cc = 1:nChannels_SACCSFA
+                subplot(round(nChannels_SACCSFA/2),2,cc); hold on;
+                title(sprintf('%d nm',peaks_spd_SACCSFA_test((cc))));
+                xlabel('Pixel position');
+                ylabel('dRGB');
+                ylim([0 220]);
+                
+                % Original.
+                plot(IP_SACCSFA{cc,ss},'b-');
+                
+                % Fitted signal.
+                plot(fittedSignal_SACCSFA_temp{cc,ss},'r-');
+                legend('Original','Fit');
+            end
         end
     end
     
@@ -765,19 +769,20 @@ for cc = 1:nChannels_camera
     subplot(2,4,cc); hold on;
     
     % camera MTF.
+    factorSineToSqaurewave = 1/(4/pi);
     contrastRawOneChannel = contrastRaw_camera(cc,:);
-    plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
+    plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel.*factorSineToSqaurewave,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % camera MTF (average method).
     if strcmp(contrastCalMethod,'Sinefit')
-        factor = 4/pi;
+        
         contrastsAvg_1cpd = contrastsAvg_camera(:,1);
-        plot(cell2mat(targetCyclePerDeg(1)),contrastsAvg_1cpd(cc)*factor,...
+        plot(cell2mat(targetCyclePerDeg(1)),contrastsAvg_1cpd(cc),...
             'ko-','markeredgecolor','k','markerfacecolor','g', 'markersize',10);
         
         % Contrasts from PR670 measurements.
-        plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc)*factor,...
+        plot(cell2mat(targetCyclePerDeg(1)),contrasts_camera_PR670(cc),...
             '+','markerfacecolor','g','markeredgecolor','k','linewidth',2,'markersize',11);
     end
     
@@ -793,33 +798,15 @@ for cc = 1:nChannels_camera
             legend('camera (Avg)','location','northeast','fontsize',8);
         case 'Sinefit'
             if cc == 1
-                legend('camera (Sine)','camera (Avg)*4/pi','camera (PR670)*4/pi','location','northeast','fontsize',8);
+                legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','northeast','fontsize',8);
             else
-                legend('camera (Sine)','camera (Avg)*4/pi','camera (PR670)*4/pi','location','southeast','fontsize',8);
+                legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','southeast','fontsize',8);
             end
     end
 end
 
 %% 4) Calculate the compensated MTF (camera and SACCSFA).
 %
-% Here we choose which channel of the combi-LED to compare to each channel
-% of SACCSFA. We will choose the one with the closest peak wavelength
-% between combi-LED and SACCSFA to compare.
-for tt = 1:nChannels_test
-    % Get one channel from SACCSFA to find the corresponding channel within
-    % the combi-LED.
-    peak_spd_SACCSFA = peaks_spd_SACCSFA_test(tt);
-    
-    % Here we find the channel within the combi-LED that has the minimum
-    % difference of the above channel in the SACCSFA.
-    [~, idx] = min(abs(peaks_spd_camera - peak_spd_SACCSFA));
-    
-    % Save out the peak wavelength within the combi-LED that has the
-    % closest value to the SACCSFA channel wavelength.
-    idx_camera_test(tt) = idx;
-    peaks_spd_camera_test(tt) = peaks_spd_camera(idx);
-end
-
 % Compensate the camera MTF by dividing the 1 cpd contrasts.
 contrastsAvg_camera_1cpd = contrastsAvg_camera(:,1);
 contrastsFit_camera_1cpd = contrastsFit_camera(:,1);
@@ -861,7 +848,7 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-sf = fit([x(:), y(:)], z(:), 'lowess');
+f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess');
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
@@ -870,27 +857,24 @@ set(gcf,'position',figureSize);
 
 % Raw data.
 subplot(1, 2, 1);
-scatter3(x(:), y(:), z(:), 'b.','sizedata',120);
+scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
 title('Raw Data');
+zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
 ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
 
 % Fitted surface.
 subplot(1, 2, 2);
-f_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',120);
+f_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
 hold on;
-f_fit = plot(sf);
+f_fit = plot(f_cameraMTF);
 title('Fitted Surface');
+zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
 ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
 legend([f_raw f_fit], 'Raw Data','Fitted Surface');
-
-% Get the specific value.
-x_eval = 500;  
-y_eval = 18;  
-z_eval = feval(sf, [x_eval, y_eval]);
 
 % Plot the compensated MTF.
 figure; clf;
@@ -901,15 +885,24 @@ sgtitle(sprintf('Compensated MTF: camera vs. SACCSFA (%s)',viewingMediaSACCSFA),
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
     
+    % Get the current LED channel.
+    peakSpdTemp = peaks_spd_SACCSFA_test(cc);
+    
     % SACCSFA MTF.
     plot(cell2mat(targetCyclePerDeg),contrast_SACCSFA(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
-    % camera MTF.
+    % Camera MTF.
     %
-    % We saved the index of corresponding channel to compare within the
-    % combi-LED in 'idx_camera_test'.
-    contrastscameraOneChannel = contrast_camera(idx_camera_test(cc),:);
+    % We fit camera MTF for wavelength and spatial frequency, so here we
+    % read the camera MTF from the fitting that corresponds to the SACCSFA
+    % MTF.
+    % 
+    % Load the camera MTF from the fitting here.
+    for ss = 1:nSFs
+        sfTemp = targetCyclePerDeg{ss};
+        contrastscameraOneChannel(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
+    end 
     plot(cell2mat(targetCyclePerDeg),contrastscameraOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
@@ -927,11 +920,9 @@ for cc = 1:nChannels_test
     
     % Add legend.
     if cc == 1
-        legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
-            sprintf('camera (%d nm)',peaks_spd_camera_test(cc)),'location','northeast','fontsize',8);
+        legend('SACCSFA','Camera','location','northeast','fontsize',8);
     else
-        legend(sprintf('SACCSFA (%d nm)',peaks_spd_SACCSFA_test(cc)),...
-            sprintf('camera (%d nm)',peaks_spd_camera_test(cc)),'location','southeast','fontsize',8);
+        legend('SACCSFA','Camera','location','southeast','fontsize',8);
     end
 end
 
@@ -967,7 +958,7 @@ for cc = 1:nChannels_test
     plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel_norm,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
     
-    ylim([0 1.5]);
+    ylim([0 1.7]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -1041,24 +1032,25 @@ for ss = 1:nSFs
 end
 
 % 3) Plot the comparison of the parameter phi over the channels.
-%
-% Define the x-ticks for the plot.
-xticksPlot = linspace(1,nChannels_camera,nChannels_camera);
-
-figure; hold on;
-title('Fitted parameter phi comparison (camera)','fontsize',15);
-plot(xticksPlot,phi_camera,'o-');
-xticks(xticksPlot);
-xticklabels(peaks_spd_camera);
-xlabel('Peak wavelength (nm)','fontsize',15);
-ylabel('Fitted phi','fontsize',15);
-
-% Add legend.
-clear legendHandles;
-for ss = 1:length(targetCyclePerDeg)
-    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+if (PlotPhiParam)
+    % Define the x-ticks for the plot.
+    xticksPlot = linspace(1,nChannels_camera,nChannels_camera);
+    
+    figure; hold on;
+    title('Fitted parameter phi comparison (camera)','fontsize',15);
+    plot(xticksPlot,phi_camera,'o-');
+    xticks(xticksPlot);
+    xticklabels(peaks_spd_camera);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Fitted phi','fontsize',15);
+    
+    % Add legend.
+    clear legendHandles;
+    for ss = 1:length(targetCyclePerDeg)
+        legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+    end
+    legend(legendHandles,'fontsize',12,'location','northeastoutside');
 end
-legend(legendHandles,'fontsize',12,'location','northeastoutside');
 
 % Calculate the phase shift in pixel.
 %
@@ -1211,17 +1203,25 @@ for ss = 1:nSFs
 end
 
 % 3) Plot the comparison of the parameter phi over the channels.
-%
-% Define the x-ticks for the plot.
-xticksPlot = linspace(1,nChannels_test,nChannels_test);
-
-figure; hold on;
-title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
-plot(xticksPlot,phi_SACCSFA,'o-');
-xticks(xticksPlot);
-xticklabels(peaks_spd_SACCSFA_test);
-xlabel('Peak wavelength (nm)','fontsize',15);
-ylabel('Fitted phi','fontsize',15);
+if (PlotPhiParam)
+    % Define the x-ticks for the plot.
+    xticksPlot = linspace(1,nChannels_test,nChannels_test);
+    
+    figure; hold on;
+    title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
+    plot(xticksPlot,phi_SACCSFA,'o-');
+    xticks(xticksPlot);
+    xticklabels(peaks_spd_SACCSFA_test);
+    xlabel('Peak wavelength (nm)','fontsize',15);
+    ylabel('Fitted phi','fontsize',15);
+    
+    % Add legend.
+    clear legendHandles;
+    for ss = 1:length(targetCyclePerDeg)
+        legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
+    end
+    legend(legendHandles,'fontsize',12,'location','northeastoutside');
+end
 
 % 3) Calculate the phase shift in pixel.
 %
@@ -1256,25 +1256,7 @@ for ss = 1:nSFs
     end
 end
 
-% 3-a) Plot the comparison of the parameter phi over the channels.
-xticksPlot = linspace(1,nChannels_test,nChannels_test);
-
-figure; hold on;
-title('Fitted parameter phi comparison (SACCSFA)','fontsize',15);
-plot(xticksPlot,phi_SACCSFA,'o-');
-xticks(xticksPlot);
-xticklabels(peaks_spd_SACCSFA_test);
-xlabel('Peak wavelength (nm)','fontsize',15);
-ylabel('Fitted phi','fontsize',15);
-
-% Add legend.
-clear legendHandles;
-for ss = 1:length(targetCyclePerDeg)
-    legendHandles{ss} = append(num2str(targetCyclePerDeg{ss}),' cpd');
-end
-legend(legendHandles,'fontsize',12,'location','northeastoutside');
-
-% 3-b) Plot the period in pixel per channel.
+% 3-a) Plot the period in pixel per channel.
 figure;
 figureSize = [0 0 450 800];
 set(gcf,'position',figureSize);
@@ -1296,7 +1278,7 @@ for ss = 1:nSFs
     yticks(round([0 maxY_period/2 maxY_period]));
 end
 
-% 3-c) Plot the phase shift in pixel per spatial frequency.
+% 3-b) Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
