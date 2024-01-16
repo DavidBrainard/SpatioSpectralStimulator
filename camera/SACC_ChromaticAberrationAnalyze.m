@@ -805,7 +805,7 @@ for cc = 1:nChannels_camera
     end
 end
 
-%% 4) Calculate the compensated MTF (camera and SACCSFA).
+%% 4-a) Calculate the compensated MTF (camera and SACCSFA).
 %
 % Compensate the camera MTF by dividing the 1 cpd contrasts.
 contrastsAvg_camera_1cpd = contrastsAvg_camera(:,1);
@@ -830,7 +830,7 @@ switch contrastCalMethod
         contrast_SACCSFA = contrastsFit_SACCSFA_norm;
 end
 
-% Interpolation of the camera MTF.
+%% 4-b) Interpolation of the camera MTF.
 %
 % Here we interpolate the camera MTF to estimate the MTF for any wavelength
 % and spatial frequency combinations. We want to calculate the camera MTF
@@ -868,16 +868,16 @@ zlabel('Contrast','fontsize',15);
 InterpolatedCameraMTFPlotType = 2;
 
 subplot(1, 2, 2);
-f_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
+l_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
 hold on;
 
 switch InterpolatedCameraMTFPlotType
     case 1
-        f_fit = plot(f_cameraMTF);
+        l_fit = plot(f_cameraMTF);
     case 2
         [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
         Z = feval(f_cameraMTF, [X(:), Y(:)]);
-        f_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
+        l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
 title('Fitted Surface');
@@ -885,9 +885,53 @@ zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
 ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
-legend([f_raw f_fit], 'Raw Data','Fitted Surface');
+legend([l_raw l_fit], 'Raw Data','Fitted Surface');
 
-% Plot the compensated MTF.
+% Check how well we did the interpolation. Here we plot the measured camera
+% MTF and the interpolated results together. For the measured camera MTF,
+% it's the compensated results, which were used to interpolate it.
+figure; hold on;
+figureSize = [0 0 1200 500];
+set(gcf,'position',figureSize);
+sgtitle('Interpolated camera MTF','fontsize', 15);
+
+for cc = 1:nChannels_camera
+    peakSpdTemp = peaks_spd_camera(cc);
+    
+    subplot(2,4,cc); hold on;
+    
+    % Camera MTF - Compensated.
+    plot(cell2mat(targetCyclePerDeg),contrast_camera(cc,:),...
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
+    
+    % Camera MTF - interpolated.
+    nSmoothPoints = 100;
+    SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
+    peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
+    contrast_camera_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
+    plot(SF_smooth,contrast_camera_smooth,...
+        'b-','color',[0 0 1 0.3],'linewidth',6);
+    
+    ylim([0 1.2]);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrasts','fontsize',15);
+    xticks(cell2mat(targetCyclePerDeg));
+    title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
+    
+    % Add legend.
+    switch contrastCalMethod
+        case 'Average'
+            legend('camera (Avg)','location','northeast','fontsize',8);
+        case 'Sinefit'
+            if cc == 1
+                legend('camera (measure)','camera (intlp)','location','northeast','fontsize',8);
+            else
+                legend('camera (measure)','camera (intlp)','location','southeast','fontsize',8);
+            end
+    end
+end
+
+%% 4-c) Plot the compensated MTF.
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
