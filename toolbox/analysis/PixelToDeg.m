@@ -1,15 +1,20 @@
 function [deg pixels_SACCSFA] = PixelToDeg(pixels_camera,options)
-% Convert pixel unit to field of view (deg).
+% Convert the unit from pixel to field of view (deg).
 %
 % Syntax:
-%    [deg] = PixelToDeg(pixels)
+%    [deg pixels_SACCSFA] = PixelToDeg(pixels_camera)
 %
 % Description:
-%    dd
+%     It calculates the FOV of the corresponding pixel within the camera
+%     captured scene. The calculation is based on the experimental settings
+%     that used for the SACC project. Additionally, it calculates the
+%     pixel size on the DMD of the SACCSFA system.
+%
+%     This function was written for quantify the TCA of the SACCSFA system.
 %
 % Inputs:
-%    pixels_camera            - Target length in pixels in the camera to
-%                               convert the unit.
+%    pixels_camera            - Target length in pixels in the camera
+%                               captured scene to convert the unit.
 %
 % Outputs:
 %    deg                      - Field of view corresponding the input pixel
