@@ -854,25 +854,17 @@ f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess');
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
-figureSize = [0 0 1500 1000];
+figureSize = [0 0 700 700];
 set(gcf,'position',figureSize);
 
-% Raw data.
-subplot(1, 2, 1);
-scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
-title('Raw Data');
-zlim([0 1]);
-xlabel('Wavelength (nm)','fontsize',15);
-ylabel('Spatial frequency (cpd)','fontsize',15);
-zlabel('Contrast','fontsize',15);
-
-% Fitted surface.
+% Set the plot type of the fitted surface.
 InterpolatedCameraMTFPlotType = 2;
 
-subplot(1, 2, 2);
+% Raw data.
 l_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
 hold on;
 
+% Fitted surface.
 switch InterpolatedCameraMTFPlotType
     case 1
         l_fit = plot(f_cameraMTF);
@@ -882,7 +874,7 @@ switch InterpolatedCameraMTFPlotType
         l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
-title('Fitted Surface');
+title('Fitted surface - Camera MTF');
 zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
 ylabel('Spatial frequency (cpd)','fontsize',15);
