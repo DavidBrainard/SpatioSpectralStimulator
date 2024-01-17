@@ -75,7 +75,8 @@ deg = rad2deg(atan(targetImageInch/distanceInch));
 
 % Print out the results.
 if (options.verbose)
-    fprintf('The FOV of (%d) pixels on the camera is (%.2f) deg. \n',pixels_camera,deg);
+    fprintf('The (%s) FOV of (%d) pixels on the camera is (%.2f) deg. \n',...
+        options.dir,pixels_camera,deg);
 end
 
 %% Calculate the pixel per deg in SACCSFA.
