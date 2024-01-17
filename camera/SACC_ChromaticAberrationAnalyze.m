@@ -19,7 +19,9 @@
 %                        within this routine.
 %    12/14/23   smo    - Included 1 cpd point to all MTF measurements.
 %    01/17/23   smo    - Now we interpolate the camera MTF to estimate the
-%                        MTF for any spatial frequency and wavelength. 
+%                        MTF for any spatial frequency and wavelength.
+%                        Also, as a final result, we interpolated the
+%                        SACCSFA MTF as well.
 
 %% Initialize.
 clear; close all;
@@ -837,14 +839,14 @@ figureSize = [0 0 700 700];
 set(gcf,'position',figureSize);
 
 % Set the plot type of the fitted surface.
-InterpolatedCameraMTFPlotType = 2;
+FittedSurfacePlotType = 2;
 
 % Raw data.
-l_raw = scatter3(x(:), y(:), z(:), 'b.','sizedata',200);
+l_raw = scatter3(x(:), y(:), z(:), 'bo','sizedata',20,'markerfacecolor','b');
 hold on;
 
 % Fitted surface.
-switch InterpolatedCameraMTFPlotType
+switch FittedSurfacePlotType
     case 1
         l_fit = plot(f_cameraMTF);
     case 2
@@ -881,8 +883,8 @@ for cc = 1:nChannels_camera
     nSmoothPoints = 100;
     SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
-    contrasts_camera_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
-    plot(SF_smooth,contrasts_camera_smooth,...
+    contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
+    plot(SF_smooth,contrasts_smooth,...
         'b-','color',[0 0 1 0.3],'linewidth',6);
     
     ylim([0 1.2]);
@@ -1006,6 +1008,107 @@ for cc = 1:nChannels_test
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
     legend('SACCSFA-raw','SACCSFA-norm','location','southeast','fontsize',10);
+end
+
+%% 3-e) Interpolate the SACCSFA MTF.
+%
+% Here, we interpolate the SACCSFA MTF in the same way we did for the
+% camera MTF so that we can estimate the contrast for any spatial frequency
+% and wavelength.
+%
+% Clear the variables if they exist.
+if exist('x')
+    clear x;
+end
+if exist('y')
+    clear y;
+end
+if exist('z')
+    clear z;
+end
+
+% Set the variables for the interpolation.
+z = contrasts_SACCSFA_compensated_norm;
+[r c] = size(z);
+x = repmat(peaks_spd_SACCSFA_test',1,c);
+y = repmat(cell2mat(targetCyclePerDeg),r,1);
+
+% Check the matrix size.
+if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
+    error('Matrix sizes does not match!');
+end
+
+% Fitting happens here.
+% Create a lowess surface fit using fit
+f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess');
+
+% Create a 3D plot to compare raw data and fitted surface
+figure;
+figureSize = [0 0 700 700];
+set(gcf,'position',figureSize);
+
+% Set the plot type of the fitted surface.
+FittedSurfacePlotType = 2;
+
+% Raw data.
+l_raw = scatter3(x(:), y(:), z(:), 'ro','sizedata',20,'markerfacecolor','r');
+hold on;
+
+% Fitted surface.
+switch FittedSurfacePlotType
+    case 1
+        l_fit = plot(f_SACCSFAMTF);
+    case 2
+        [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
+        Z = feval(f_SACCSFAMTF, [X(:), Y(:)]);
+        l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
+end
+
+title('Fitted surface - SACCSFA MTF');
+zlim([0 1]);
+xlabel('Wavelength (nm)','fontsize',15);
+ylabel('Spatial frequency (cpd)','fontsize',15);
+zlabel('Contrast','fontsize',15);
+legend([l_raw l_fit], 'Raw Data','Fitted Surface');
+
+% Check how well we did the interpolation. Here we plot the measured camera
+% MTF and the interpolated results together. For the measured camera MTF,
+% it's the compensated results, which were used to interpolate it.
+figure; hold on;
+figureSize = [0 0 1200 500];
+set(gcf,'position',figureSize);
+sgtitle('Interpolated SACCSFA MTF','fontsize', 15);
+
+for cc = 1:nChannels_test
+    peakSpdTemp = peaks_spd_SACCSFA_test(cc);
+    
+    subplot(2,5,cc); hold on;
+    
+    % SACCSFA MTF - measured data.
+    plot(cell2mat(targetCyclePerDeg),z(cc,:),...
+        'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
+    
+    % SACCSFA MTF - interpolated.
+    nSmoothPoints = 100;
+    SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
+    peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
+    contrasts_smooth = feval(f_SACCSFAMTF,[peakSpd_smooth,SF_smooth'])';
+    plot(SF_smooth,contrasts_smooth,...
+        'r-','color',[1 0 0 0.3],'linewidth',6);
+    
+    ylim([0 1.2]);
+    xlabel('Spatial Frequency (cpd)','fontsize',15);
+    ylabel('Mean Contrasts','fontsize',15);
+    xticks(cell2mat(targetCyclePerDeg));
+    title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
+    
+    % Add legend.
+    switch contrastCalMethod
+        case 'Average'
+            legend('SACCSFA (Avg)','location','northeast','fontsize',8);
+        case 'Sinefit'
+            legend('SACCSFA (measure)','SACCSFA (intlp)','location','southeast','fontsize',8);
+    end
 end
 
 %% 4-a) Transverse Chromatic Aberration (TCA) - (camera).
