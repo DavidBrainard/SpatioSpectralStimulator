@@ -1218,27 +1218,39 @@ for ss = 1:nSFs
         phi_temp = mean([phi_camera_25(cc,ss) phi_camera_50(cc,ss) phi_camera_75(cc,ss)]);
         
         % Get period and phase shift in pixel here.
-        onePeriod_pixel_camera(cc,ss) = numPixels/f_temp;
-        phaseShift_pixel_camera(cc,ss) = onePeriod_pixel_camera(cc,ss) * phi_temp/(2*pi);
+        period_pixel_camera(cc,ss) = numPixels/f_temp;
+        phaseShift_pixel_camera(cc,ss) = period_pixel_camera(cc,ss) * phi_temp/(2*pi);
     end
 end
 
+% Calculate the expected period to compare.
+imageSizePixel = size(images_camera{1,1});
+imageSizeHorizontalPixel = imageSizePixel(2);
+imageSizeHorizontalDeg = PixelToDeg(imageSizeHorizontalPixel,'dir','horizontal','verbose',false);
+imageSizeHorizontalPixelOneDeg = imageSizeHorizontalPixel/imageSizeHorizontalDeg;
+period_pixel_camera_expected = imageSizeHorizontalPixelOneDeg./cell2mat(targetCyclePerDeg);
+
 % Plot the period in pixel per spatial frequency.
 figure;
-figureSize = [0 0 600 800];
+figureSize = [0 0 450 1000];
 set(gcf,'position',figureSize);
 sgtitle('Sine fitted period in pixel (camera)');
 x_data = linspace(1,nChannels_camera,nChannels_camera);
 for ss = 1:nSFs
-    subplot(nSFs,1,ss);
-    plot(x_data, onePeriod_pixel_camera(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    subplot(nSFs,1,ss); hold on;
+    
+    % Measured period.
+    plot(x_data, period_pixel_camera(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    % Expected period.
+    plot([min(x_data) max(x_data)],ones(1,2).*period_pixel_camera_expected(ss),'b-','color',[0 0 1 0.3],'linewidth',3);
+    
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
-    ylim([0 round(maxY_period)]);
-    yticks(round([0 maxY_period/2 maxY_period]));
+    ylim([0 period_pixel_camera_expected(ss)*2+1]);
+    yticks(round([0 period_pixel_camera_expected(ss) period_pixel_camera_expected(ss)*2]));
+    legend('Measure','Expected');
 end
 
 % Plot the phase shift in pixel per spatial frequency.
@@ -1251,18 +1263,24 @@ phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera_ref - phaseShift_pi
 
 % Plot the phase shift in pixel.
 figure;
-figureSize = [0 0 600 800];
+figureSize = [0 0 450 1000];
 set(gcf,'position',figureSize);
 
 sgtitle('Phase shift in pixel (camera)');
 for ss = 1:nSFs
-    subplot(nSFs,1,ss);
+    subplot(nSFs,1,ss); hold on;
+    
+    % Measured phase shift.
     plot(x_data, phaseShift_pixel_camera_diff(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    % No difference line.
+    plot([min(x_data) max(x_data)], zeros(1,2),'b-','color',[0 0 1 0.3],'linewidth',3);
+    
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticklabels(peaks_spd_camera);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
     ylim([-5 5]);
+    legend('Measure','No difference');
 end
 
 %% 4-b) Transverse Chromatic Aberration (TCA) - (SACCSFA).
@@ -1393,33 +1411,43 @@ for ss = 1:nSFs
         phi_temp = mean([phi_SACCSFA_25(cc,ss) phi_SACCSFA_50(cc,ss) phi_SACCSFA_75(cc,ss)]);
         
         % Get period and phase shift in pixel here.
-        onePeriod_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
+        period_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
         
         % Calculate the phase shift in pixel here.
-        phaseShift_pixel_SACCSFA(cc,ss) = onePeriod_pixel_SACCSFA(cc,ss) * phi_temp/(2*pi);
+        phaseShift_pixel_SACCSFA(cc,ss) = period_pixel_SACCSFA(cc,ss) * phi_temp/(2*pi);
     end
 end
 
+% Calculate the expected period to compare.
+imageSizePixel = size(images_SACCSFA{1,1});
+imageSizeHorizontalPixel = imageSizePixel(2);
+imageSizeHorizontalDeg = PixelToDeg(imageSizeHorizontalPixel,'dir','horizontal','verbose',false);
+imageSizeHorizontalPixelOneDeg = imageSizeHorizontalPixel/imageSizeHorizontalDeg;
+period_pixel_SACCSFA_expected = imageSizeHorizontalPixelOneDeg./cell2mat(targetCyclePerDeg);
+
 % Plot the period in pixel per channel.
 figure;
-figureSize = [0 0 450 800];
+figureSize = [0 0 450 1000];
 set(gcf,'position',figureSize);
-
 sgtitle(sprintf('Sine fitted period in pixel (%s)',viewingMediaSACCSFA));
 
 x_data = linspace(1,nChannels_test,nChannels_test);
 for ss = 1:nSFs
-    subplot(nSFs,1,ss);
+    subplot(nSFs,1,ss); hold on;
     
-    plot(x_data, onePeriod_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+    % Measured period.
+    plot(x_data, period_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+    % Expected period.
+    plot([min(x_data) max(x_data)], ones(1,2).*period_pixel_SACCSFA_expected(ss),'r-','color',[1 0 0 0.3],'linewidth',3);
+    
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticks(x_data);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Period (pixel)','fontsize',15);
-    maxY_period = mean(onePeriod_pixel_camera(:,ss))*2;
-    ylim([0 round(maxY_period)]);
-    yticks(round([0 maxY_period/2 maxY_period]));
+    ylim([0 period_pixel_SACCSFA_expected(ss)*2+1]);
+    yticks(round([0 period_pixel_SACCSFA_expected(ss) period_pixel_SACCSFA_expected(ss)*2]));
+    legend('Measure','Expected');
 end
 
 % 3-b) Plot the phase shift in pixel per spatial frequency.
@@ -1432,19 +1460,25 @@ phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA_ref - phaseShift_
 
 % Plot happens here.
 figure;
-figureSize = [0 0 450 800];
+figureSize = [0 0 450 1000];
 set(gcf,'position',figureSize);
 
 sgtitle(sprintf('Phase shift in pixel (%s)',viewingMediaSACCSFA));
 for ss = 1:nSFs
-    subplot(nSFs,1,ss);
+    subplot(nSFs,1,ss); hold on;
+    
+    % Measured phase shift.
     plot(x_data, phaseShift_pixel_SACCSFA_diff(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+    % No difference line.
+    plot([min(x_data) max(x_data)], zeros(1,2),'r-','color',[1 0 0 0.3],'linewidth',3);
+    
     title(sprintf('%d cpd',targetCyclePerDeg{ss}),'fontsize',15);
     xticks(x_data);
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
     ylim([-5 5]);
+    legend('Measured','No difference');
 end
 
 %% Plot the channels that we used in this study.
