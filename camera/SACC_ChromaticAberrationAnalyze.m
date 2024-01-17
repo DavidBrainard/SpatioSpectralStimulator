@@ -18,6 +18,8 @@
 %                        calculating the MTF of both camera and SACCSFA
 %                        within this routine.
 %    12/14/23   smo    - Included 1 cpd point to all MTF measurements.
+%    01/17/23   smo    - Now we interpolate the camera MTF to estimate the
+%                        MTF for any spatial frequency and wavelength. 
 
 %% Initialize.
 clear; close all;
@@ -62,7 +64,8 @@ switch tromboneSetting
 end
 fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 
-% Set additional analysis and plotting options.
+% Set additional analysis and plotting options. Set all these off will
+% speed up running this routine.
 DoFourierTransform = false;
 PlotIntensityProfile = false;
 PlotOneIntensityProfile = false;
@@ -749,7 +752,7 @@ end
 % Make an average of the contrasts.
 contrastsFit_SACCSFA = (contrastsFit_SACCSFA_25 + contrastsFit_SACCSFA_50 + contrastsFit_SACCSFA_75)/3;
 
-%% 3) Plot the raw MTF (camera).
+%% 3-a) Plot the raw MTF (camera).
 %
 % Choose which way to calculate the contrast.
 switch contrastCalMethod
@@ -808,37 +811,13 @@ for cc = 1:nChannels_camera
     end
 end
 
-%% 4-a) Calculate the compensated MTF (camera and SACCSFA).
-%
-% Compensate the camera MTF by dividing the 1 cpd contrasts.
-contrastsAvg_camera_1cpd = contrastsAvg_camera(:,1);
-contrastsFit_camera_1cpd = contrastsFit_camera(:,1);
-contrastsAvg_camera_norm = contrastsAvg_camera./contrastsAvg_camera_1cpd;
-contrastsFit_camera_norm = contrastsFit_camera./contrastsFit_camera_1cpd;
-
-% Compensate the SACCSFA MTF by multiplying the factor.
-contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
-
-% Plot the compensated MTF results (camera and SACCSFA).
-%
-% We used two different methods to calculate contrast. Choose either one to
-% plot the results. It was chosen at the very beginning of this routine.
-switch contrastCalMethod
-    case 'Average'
-        contrast_camera = contrastsAvg_camera_norm;
-        contrast_SACCSFA = contrastsAvg_SACCSFA;
-    case 'Sinefit'
-        contrast_camera = contrastsFit_camera_norm;
-        contrast_SACCSFA = contrastsFit_SACCSFA_norm;
-end
-
-%% 4-b) Interpolation of the camera MTF.
+%% 3-b) Interpolation of the camera MTF.
 %
 % Here we interpolate the camera MTF to estimate the MTF for any wavelength
 % and spatial frequency combinations. We want to calculate the camera MTF
 % at the same wavelengths that were used for measuring the SACCSFA MTF.
 % This way, we can calculate an accruate inherent SACCSFA MTF.
-z = contrastRaw_camera; 
+z = contrastRaw_camera;
 [r c] = size(z);
 x = repmat(peaks_spd_camera',1,c);
 y = repmat(cell2mat(targetCyclePerDeg),r,1);
@@ -925,7 +904,21 @@ for cc = 1:nChannels_camera
     end
 end
 
-%% 4-c) Plot the compensated MTF.
+%% 3-c) Plot the camera and SACCSFA MTF together.
+%
+% Calculate contrast of square wave from the sine fit.
+contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
+
+% We used two different methods to calculate contrast. Choose either one to
+% plot the results. It was chosen at the very beginning of this routine.
+switch contrastCalMethod
+    case 'Average'
+        contrast_SACCSFA = contrastsAvg_SACCSFA;
+    case 'Sinefit'
+        contrast_SACCSFA = contrastsFit_SACCSFA_norm;
+end
+
+% Plot it here.
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
@@ -960,7 +953,7 @@ for cc = 1:nChannels_test
     
     % Plot it.
     plot(cell2mat(targetCyclePerDeg),contrast_camera_test(cc,:),...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);   
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
@@ -975,7 +968,7 @@ for cc = 1:nChannels_test
     end
 end
 
-%% 5) Calculate the inherent compensated MTF (SACCSFA).
+%% 3-d) Calculate the inherent compensated MTF (SACCSFA).
 %
 % Here we divide the SACCSFA MTF by the camera MTF.
 contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera_test;
@@ -1015,9 +1008,9 @@ for cc = 1:nChannels_test
     legend('SACCSFA-raw','SACCSFA-norm','location','southeast','fontsize',10);
 end
 
-%% 6) Transverse Chromatic Aberration (TCA) - (camera).
+%% 4-a) Transverse Chromatic Aberration (TCA) - (camera).
 %
-% 1) Plot raw intensity profiles.
+% Plot raw intensity profiles.
 figure; hold on;
 figurePosition = [0 0 1000 1000];
 set(gcf,'position',figurePosition);
@@ -1058,7 +1051,7 @@ phi_camera_25(3:5,5) = phi_camera_25(3:5,5) + 2*pi;
 % Calculate the mean phi.
 phi_camera = (phi_camera_25 + phi_camera_50 + phi_camera_75)/3;
 
-% 2) Plot the sine fitted graphs (camera).
+% Plot the sine fitted graphs (camera).
 figure; hold on;
 set(gcf,'position',figurePosition);
 sgtitle('Fitted intensity profile over the channels (camera)');
@@ -1080,7 +1073,7 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% 3) Plot the comparison of the parameter phi over the channels.
+% Plot the comparison of the parameter phi over the channels.
 if (PlotPhiParam)
     % Define the x-ticks for the plot.
     xticksPlot = linspace(1,nChannels_camera,nChannels_camera);
@@ -1169,9 +1162,9 @@ for ss = 1:nSFs
     ylim([-5 5]);
 end
 
-%% 7) Transverse Chromatic Aberration (TCA) - (SACCSFA).
+%% 4-b) Transverse Chromatic Aberration (TCA) - (SACCSFA).
 %
-% 1) Plot raw intensity profiles.
+% Plot raw intensity profiles.
 figure; hold on;
 set(gcf,'position',figurePosition);
 sgtitle('Raw intensity profile over the channels (SACCSFA)');
@@ -1203,7 +1196,6 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-
 % Correct phi to calculate the phase shift correct. For now, we
 % manually correct it, but maybe we want to do this part more
 % elaborately later on.
@@ -1230,7 +1222,7 @@ end
 % Calculate the mean phi here.
 phi_SACCSFA = (phi_SACCSFA_25 + phi_SACCSFA_50 + phi_SACCSFA_75)/3;
 
-% 2) Plot the sine fitted graphs (SACCSFA).
+% Plot the sine fitted graphs (SACCSFA).
 figure; hold on;
 set(gcf,'position',figurePosition);
 sgtitle('Fitted intensity profile over the channels (SACCSFA)');
@@ -1251,7 +1243,7 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% 3) Plot the comparison of the parameter phi over the channels.
+% Plot the comparison of the parameter phi over the channels.
 if (PlotPhiParam)
     % Define the x-ticks for the plot.
     xticksPlot = linspace(1,nChannels_test,nChannels_test);
@@ -1272,7 +1264,7 @@ if (PlotPhiParam)
     legend(legendHandles,'fontsize',12,'location','northeastoutside');
 end
 
-% 3) Calculate the phase shift in pixel.
+% Calculate the phase shift in pixel.
 %
 % Get the number of the pixels. All signals should have the same size
 % of the frame, so we pick one from the fitted signals.
@@ -1305,7 +1297,7 @@ for ss = 1:nSFs
     end
 end
 
-% 3-a) Plot the period in pixel per channel.
+% Plot the period in pixel per channel.
 figure;
 figureSize = [0 0 450 800];
 set(gcf,'position',figureSize);
@@ -1327,7 +1319,7 @@ for ss = 1:nSFs
     yticks(round([0 maxY_period/2 maxY_period]));
 end
 
-% 3-b) Plot the phase shift in pixel per spatial frequency.
+% Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
