@@ -8,14 +8,19 @@ function [deg pixels_SACCSFA] = PixelToDeg(pixels_camera,options)
 %    dd
 %
 % Inputs:
-%    pixels                   - Target length in pixels to convert the unit.
+%    pixels_camera            - Target length in pixels in the camera to
+%                               convert the unit.
 %
 % Outputs:
 %    deg                      - Field of view corresponding the input pixel
 %                               size in degrees.
+%    pixels_SACCSFA           - Corresponding size of the DMD within the
+%                               SACCSFA system in pixels.
 %
 % Optional key/value pairs:
-%    verbose                  - Default to false. Controls plotting.
+%    dir                      - Default to horizontal. Set the direction of
+%                               the screen.
+%    verbose                  - Default to true. Controls the printing message.
 %
 % See also:
 %    GetFOVUsingCamera.
@@ -27,7 +32,7 @@ function [deg pixels_SACCSFA] = PixelToDeg(pixels_camera,options)
 arguments
     pixels_camera (1,1)
     options.dir = 'horizontal'
-    options.verbose = 'false'
+    options.verbose = 'true'
 end
 
 %% Get the reference image info.
@@ -38,29 +43,35 @@ end
 % placing the tape measure and reading it on the camera captured scene.
 % The reference scene was 113.40 inch (h) x 74.80 inch (v).
 distanceInch = 370;
-refHorizontalInch = 113.40;
-refVerticalInch = 74.80;
+cameraHorizontalInch = 113.40;
+cameraVerticalInch = 74.80;
 
 resolution_camera = [2064 3088];
 
-refVerticalPixel = resolution_camera(1);
-refHorizontalPixel = resolution_camera(2);
+cameraVerticalPixel = resolution_camera(1);
+cameraHorizontalPixel = resolution_camera(2);
 
 %% Calculate inch per pixel. We will use this to convert from pixel to inch
 % of the target media.
 switch options.dir
     case 'vertical'
-        pixelToInch = refVerticalInch/refVerticalPixel;
+        pixelToInch = cameraVerticalInch/cameraVerticalPixel;
     case 'horizontal'
-        pixelToInch = refHorizontalInch/refHorizontalPixel;
+        pixelToInch = cameraHorizontalInch/cameraHorizontalPixel;
 end
 
+%% Calculate the FOV in degrees.
+%
 % Convert the pixel to inch unit.
 targetImageInch = pixels_camera * pixelToInch;
 
-%% Calculate the FOV in degrees.
+% Calculate the FOV in degrees here.
 deg = rad2deg(atan(targetImageInch/distanceInch));
-fprintf('The FOV of (%d) pixels on the camera is (%.2f) deg. \n',pixels_camera,deg);
+
+% Print out the results.
+if (options.verbose)
+    fprintf('The FOV of (%d) pixels on the camera is (%.2f) deg. \n',pixels_camera,deg);
+end
 
 %% Calculate the pixel per deg in SACCSFA.
 %
@@ -69,23 +80,27 @@ fprintf('The FOV of (%d) pixels on the camera is (%.2f) deg. \n',pixels_camera,d
 imageSize_SACCSFA = [1378 2349];
 resolution_SACCSFA = [1080 1920];
 
+% Get the FOV of the SACCSFA DMD.
 switch options.dir
     case 'vertical'
         SACCSFAInch = imageSize_SACCSFA(1) * pixelToInch;
     case 'horizontal'
         SACCSFAInch = imageSize_SACCSFA(2) * pixelToInch;
 end
-
 deg_SACCSFA = rad2deg(atan(SACCSFAInch/distanceInch));
 
+% Calculate the corresponding size in pixel on the SACCSFA DMD.
 switch options.dir
     case 'vertical'
         pixelPerDeg_SACCSFA = resolution_SACCSFA(1)/deg_SACCSFA;
     case 'horizontal'
         pixelPerDeg_SACCSFA = resolution_SACCSFA(2)/deg_SACCSFA;
 end
-
 pixels_SACCSFA = deg * pixelPerDeg_SACCSFA;
-fprintf('On the DMD of the SACCSFA, it is (%.1f) pixels. \n',pixels_SACCSFA);
+
+% Print out the result if you want.
+if (options.verbose)
+    fprintf('On the DMD of the SACCSFA, it is (%.1f) pixels. \n',pixels_SACCSFA);
+end
 
 end
