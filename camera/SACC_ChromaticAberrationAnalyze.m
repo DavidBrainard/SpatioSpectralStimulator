@@ -759,6 +759,10 @@ switch contrastCalMethod
         contrastRaw_camera = contrastsFit_camera;
 end
 
+% Calculate the contrast of the square wave from the sine wave.
+factorSineToSqaurewave = 1/(4/pi);
+contrastRaw_camera = contrastRaw_camera.*factorSineToSqaurewave;
+
 % Plot the raw camera MTF results.
 figure; clf;
 figureSize = [0 0 1200 500];
@@ -769,9 +773,8 @@ for cc = 1:nChannels_camera
     subplot(2,4,cc); hold on;
     
     % camera MTF.
-    factorSineToSqaurewave = 1/(4/pi);
     contrastRawOneChannel = contrastRaw_camera(cc,:);
-    plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel.*factorSineToSqaurewave,...
+    plot(cell2mat(targetCyclePerDeg),contrastRawOneChannel,...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % camera MTF (average method).
@@ -814,7 +817,6 @@ contrastsAvg_camera_norm = contrastsAvg_camera./contrastsAvg_camera_1cpd;
 contrastsFit_camera_norm = contrastsFit_camera./contrastsFit_camera_1cpd;
 
 % Compensate the SACCSFA MTF by multiplying the factor.
-factorSineToSqaurewave = 1/(4/pi);
 contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
 
 % Plot the compensated MTF results (camera and SACCSFA).
@@ -836,14 +838,14 @@ end
 % and spatial frequency combinations. We want to calculate the camera MTF
 % at the same wavelengths that were used for measuring the SACCSFA MTF.
 % This way, we can calculate an accruate inherent SACCSFA MTF.
-z = contrast_camera;
+z = contrastRaw_camera; 
 [r c] = size(z);
 x = repmat(peaks_spd_camera',1,c);
 y = repmat(cell2mat(targetCyclePerDeg),r,1);
 
 % Check the matrix size.
 if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
-    error('Matrix sizes no not match!');
+    error('Matrix sizes does not match!');
 end
 
 % Fitting happens here.
@@ -900,8 +902,8 @@ for cc = 1:nChannels_camera
     
     subplot(2,4,cc); hold on;
     
-    % Camera MTF - Compensated.
-    plot(cell2mat(targetCyclePerDeg),contrast_camera(cc,:),...
+    % Camera MTF - measured data.
+    plot(cell2mat(targetCyclePerDeg),z(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
     % Camera MTF - interpolated.
@@ -950,23 +952,23 @@ for cc = 1:nChannels_test
     % Camera MTF.
     %
     % We fit camera MTF for wavelength and spatial frequency, so here we
-    % read the camera MTF from the fitting that corresponds to the SACCSFA
+    % estimate the interpolated camera MTF that corresponds to the SACCSFA
     % MTF.
     %
-    % Load the camera MTF from the fitting here.
+    % Load the camera MTF.
     for ss = 1:nSFs
         sfTemp = targetCyclePerDeg{ss};
-        contrastscameraOneChannel(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
+        contrast_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
     end
-    plot(cell2mat(targetCyclePerDeg),contrastscameraOneChannel,...
-        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     
-    % Save out camera MTF to test.
-    %
-    % We will use this to compensate the SACCSFA MTF later on.
-    contrast_camera_test(cc,:) = contrastscameraOneChannel;
+    % Compensate the camera MTF with 1 cpd contrasts so that we can unit
+    % contrast at 1 cpd at all wavelengths.
+    contrast_camera_test_temp_1cpd = contrast_camera_test_temp(1);
+    contrast_camera_test(cc,:) = contrast_camera_test_temp./contrast_camera_test_temp_1cpd;
     
-    % Plot stuffs.
+    % Plot it.
+    plot(cell2mat(targetCyclePerDeg),contrast_camera_test(cc,:),...
+        'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);   
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
@@ -1013,7 +1015,7 @@ for cc = 1:nChannels_test
     plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel_norm,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
     
-    ylim([0 1.7]);
+    ylim([0 1.9]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Mean Contrasts','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
