@@ -881,8 +881,8 @@ for cc = 1:nChannels_camera
     nSmoothPoints = 100;
     SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
-    contrast_camera_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
-    plot(SF_smooth,contrast_camera_smooth,...
+    contrasts_camera_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
+    plot(SF_smooth,contrasts_camera_smooth,...
         'b-','color',[0 0 1 0.3],'linewidth',6);
     
     ylim([0 1.2]);
@@ -913,9 +913,9 @@ contrastsFit_SACCSFA_norm = contrastsFit_SACCSFA .* factorSineToSqaurewave;
 % plot the results. It was chosen at the very beginning of this routine.
 switch contrastCalMethod
     case 'Average'
-        contrast_SACCSFA = contrastsAvg_SACCSFA;
+        contrasts_SACCSFA = contrastsAvg_SACCSFA;
     case 'Sinefit'
-        contrast_SACCSFA = contrastsFit_SACCSFA_norm;
+        contrasts_SACCSFA = contrastsFit_SACCSFA_norm;
 end
 
 % Plot it here.
@@ -931,7 +931,7 @@ for cc = 1:nChannels_test
     peakSpdTemp = peaks_spd_SACCSFA_test(cc);
     
     % SACCSFA MTF.
-    plot(cell2mat(targetCyclePerDeg),contrast_SACCSFA(cc,:),...
+    plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','r','markersize',10);
     
     % Camera MTF.
@@ -943,16 +943,16 @@ for cc = 1:nChannels_test
     % Load the camera MTF.
     for ss = 1:nSFs
         sfTemp = targetCyclePerDeg{ss};
-        contrast_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
+        contrasts_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
     end
     
     % Compensate the camera MTF with 1 cpd contrasts so that we can unit
     % contrast at 1 cpd at all wavelengths.
-    contrast_camera_test_temp_1cpd = contrast_camera_test_temp(1);
-    contrast_camera_test(cc,:) = contrast_camera_test_temp./contrast_camera_test_temp_1cpd;
+    contrasts_camera_test_temp_1cpd = contrasts_camera_test_temp(1);
+    contrasts_camera_test(cc,:) = contrasts_camera_test_temp./contrasts_camera_test_temp_1cpd;
     
     % Plot it.
-    plot(cell2mat(targetCyclePerDeg),contrast_camera_test(cc,:),...
+    plot(cell2mat(targetCyclePerDeg),contrasts_camera_test(cc,:),...
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
@@ -971,12 +971,12 @@ end
 %% 3-d) Calculate the inherent compensated MTF (SACCSFA).
 %
 % Here we divide the SACCSFA MTF by the camera MTF.
-contrast_SACCSFA_compensated = contrast_SACCSFA./contrast_camera_test;
+contrasts_SACCSFA_compensated = contrasts_SACCSFA./contrasts_camera_test;
 
 % Set the contrast within the range.
-contrast_SACCSFA_compensated_norm = contrast_SACCSFA_compensated;
+contrasts_SACCSFA_compensated_norm = contrasts_SACCSFA_compensated;
 maxContrast = 1;
-contrast_SACCSFA_compensated_norm(find(contrast_SACCSFA_compensated_norm > maxContrast)) = 1;
+contrasts_SACCSFA_compensated_norm(find(contrasts_SACCSFA_compensated_norm > maxContrast)) = 1;
 
 % Make a new figure.
 figure; hold on; clf;
@@ -987,8 +987,8 @@ sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15)
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
-    contrastsSACCSFAOneChannel = contrast_SACCSFA_compensated(cc,:);
-    contrastsSACCSFAOneChannel_norm = contrast_SACCSFA_compensated_norm(cc,:);
+    contrastsSACCSFAOneChannel = contrasts_SACCSFA_compensated(cc,:);
+    contrastsSACCSFAOneChannel_norm = contrasts_SACCSFA_compensated_norm(cc,:);
     
     % Plot it.
     %
@@ -1319,7 +1319,7 @@ for ss = 1:nSFs
     yticks(round([0 maxY_period/2 maxY_period]));
 end
 
-% Plot the phase shift in pixel per spatial frequency.
+% 3-b) Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
