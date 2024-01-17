@@ -987,17 +987,17 @@ sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15)
 % Make a loop to plot the results of each channel.
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
-    contrastsSACCSFAOneChannel = contrasts_SACCSFA_compensated(cc,:);
-    contrastsSACCSFAOneChannel_norm = contrasts_SACCSFA_compensated_norm(cc,:);
+    contrasts_SACCSFA_compensated_temp = contrasts_SACCSFA_compensated(cc,:);
+    contrasts_SACCSFA_compensated_norm_temp = contrasts_SACCSFA_compensated_norm(cc,:);
     
     % Plot it.
     %
     % Inherent SACCSFA MTF.
-    plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel,...
+    plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_temp,...
         'ko','markeredgecolor','r','markersize',13);
     
     % Inherent SACCSFA MTF (cut off the contrast over 1.0).
-    plot(cell2mat(targetCyclePerDeg),contrastsSACCSFAOneChannel_norm,...
+    plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_norm_temp,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
     
     ylim([0 1.9]);
