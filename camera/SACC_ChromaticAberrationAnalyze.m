@@ -77,7 +77,7 @@ PlotPhiParam = false;
 
 % Figure saving option temporarily. Set it to true will save the figures
 % for the report in the current directory.
-SAVEFIGURES = true;
+SAVEFIGURES = false;
 savefileDir = '~/Desktop';
 
 %% Get the peak wavelength of the Combi-LED (camera).
@@ -950,7 +950,7 @@ end
 figure; clf;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
-sgtitle(sprintf('Compensated MTF: camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
+sgtitle(sprintf('Compensated MTF: Camera vs. SACCSFA (%s)',viewingMediaSACCSFA),'fontsize', 15);
 
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
@@ -1100,7 +1100,7 @@ switch FittedSurfacePlotType
         l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
-title('Fitted surface - SACCSFA MTF');
+title(sprintf('Fitted surface - SACCSFA MTF (%s)',viewingMediaSACCSFA));
 zlim([0 1]);
 xlabel('Wavelength (nm)','fontsize',15);
 ylabel('Spatial frequency (cpd)','fontsize',15);
@@ -1118,7 +1118,7 @@ end
 figure; hold on;
 figureSize = [0 0 1200 500];
 set(gcf,'position',figureSize);
-sgtitle('Interpolated SACCSFA MTF','fontsize', 15);
+sgtitle(sprintf('Interpolated SACCSFA MTF (%s)',viewingMediaSACCSFA), 'fontsize', 15);
 
 for cc = 1:nChannels_test
     peakSpdTemp = peaks_spd_SACCSFA_test(cc);
