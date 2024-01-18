@@ -75,6 +75,11 @@ PlotSineFitting = false;
 PlotRawImage = false;
 PlotPhiParam = false;
 
+% Figure saving option temporarily. Set it to true will save the figures
+% for the report in the current directory.
+SAVEFIGURES = true;
+savefileDir = '~/Desktop';
+
 %% Get the peak wavelength of the Combi-LED (camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'camera','ChromaticAberration','Spectra');
@@ -102,6 +107,10 @@ XYZ_camera_black = spd_camera_black'*T_XYZ';
 
 % Calculate contrasts.
 contrasts_camera_PR670 = (XYZ_camera_white(:,2) - XYZ_camera_black(:,2))./(XYZ_camera_white(:,2) + XYZ_camera_black(:,2));
+
+% Delete the contrast value of channel 6 as the black was not properly
+% measured.
+contrasts_camera_PR670(6) = NaN;
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -796,7 +805,7 @@ for cc = 1:nChannels_camera
     
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
+    ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
     
@@ -807,10 +816,17 @@ for cc = 1:nChannels_camera
         case 'Sinefit'
             if cc == 1
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','northeast','fontsize',8);
+            elseif cc == 6
+                legend('camera (Sine)*pi/4','camera (Avg)','location','southeast','fontsize',8);
             else
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','southeast','fontsize',8);
             end
     end
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Raw_camera_MTF.tiff'));
 end
 
 %% 3-b) Interpolation of the camera MTF.
@@ -862,6 +878,11 @@ ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
 legend([l_raw l_fit], 'Raw Data','Fitted Surface');
 
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Camera_MTF_Interpolation.tiff'));
+end
+
 % Check how well we did the interpolation. Here we plot the measured camera
 % MTF and the interpolated results together. For the measured camera MTF,
 % it's the compensated results, which were used to interpolate it.
@@ -889,7 +910,7 @@ for cc = 1:nChannels_camera
     
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
+    ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_camera(cc)), 'fontsize', 15);
     
@@ -904,6 +925,11 @@ for cc = 1:nChannels_camera
                 legend('camera (measure)','camera (intlp)','location','southeast','fontsize',8);
             end
     end
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Camera_MTF_Interpolation_performance.tiff'));
 end
 
 %% 3-c) Plot the camera and SACCSFA MTF together.
@@ -958,7 +984,7 @@ for cc = 1:nChannels_test
         'ko-','markeredgecolor','k','markerfacecolor','b', 'markersize',10);
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
+    ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
     
@@ -968,6 +994,11 @@ for cc = 1:nChannels_test
     else
         legend('SACCSFA','Camera','location','southeast','fontsize',8);
     end
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Compesated_MTF.tiff'));
 end
 
 %% 3-d) Calculate the inherent compensated MTF (SACCSFA).
@@ -1004,10 +1035,15 @@ for cc = 1:nChannels_test
     
     ylim([0 1.9]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
+    ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
     legend('SACCSFA-raw','SACCSFA-norm','location','southeast','fontsize',10);
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'SACCSFA_MTF.tiff'));
 end
 
 %% 3-e) Interpolate the SACCSFA MTF.
@@ -1071,6 +1107,11 @@ ylabel('Spatial frequency (cpd)','fontsize',15);
 zlabel('Contrast','fontsize',15);
 legend([l_raw l_fit], 'Raw Data','Fitted Surface');
 
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'SACCSFA_MTF_Interpolation.tiff'));
+end
+
 % Check how well we did the interpolation. Here we plot the measured camera
 % MTF and the interpolated results together. For the measured camera MTF,
 % it's the compensated results, which were used to interpolate it.
@@ -1098,7 +1139,7 @@ for cc = 1:nChannels_test
     
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
-    ylabel('Mean Contrasts','fontsize',15);
+    ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
     
@@ -1109,6 +1150,11 @@ for cc = 1:nChannels_test
         case 'Sinefit'
             legend('SACCSFA (measure)','SACCSFA (intlp)','location','southeast','fontsize',8);
     end
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'SACCSFA_MTF_Interpolation_performance.tiff'));
 end
 
 %% 4-a) Transverse Chromatic Aberration (TCA) - (camera).
@@ -1253,6 +1299,11 @@ for ss = 1:nSFs
     legend('Measure','Expected');
 end
 
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Camera_period_pixel.tiff'));
+end
+
 % Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
@@ -1281,6 +1332,11 @@ for ss = 1:nSFs
     ylabel('Shift (pixel)','fontsize',15);
     ylim([-5 5]);
     legend('Measure','No difference');
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'Camera_PhaseShift_pixel.tiff'));
 end
 
 % Calculate phase shift in degrees and the phase shift in pixel on the DMD
@@ -1458,7 +1514,12 @@ for ss = 1:nSFs
     legend('Measure','Expected');
 end
 
-% 3-b) Plot the phase shift in pixel per spatial frequency.
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'SACCSFA_period_pixel.tiff'));
+end
+
+% Plot the phase shift in pixel per spatial frequency.
 %
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
@@ -1486,7 +1547,12 @@ for ss = 1:nSFs
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
     ylim([-5 5]);
-    legend('Measured','No difference');
+    legend('Measure','No difference');
+end
+
+% Save the image on the Desktop if you want.
+if (SAVEFIGURES)
+    saveas(gcf,fullfile(savefileDir,'SACCSFA_PhaseShift_pixel.tiff'));
 end
 
 % Calculate phase shift in degrees and the phase shift in pixel on the DMD
