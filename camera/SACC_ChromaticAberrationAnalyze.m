@@ -1219,7 +1219,7 @@ for ss = 1:nSFs
         
         % Get period and phase shift in pixel here.
         period_pixel_camera(cc,ss) = numPixels/f_temp;
-        phaseShift_pixel_camera(cc,ss) = period_pixel_camera(cc,ss) * phi_temp/(2*pi);
+        phase_pixel_camera(cc,ss) = period_pixel_camera(cc,ss) * phi_temp/(2*pi);
     end
 end
 
@@ -1258,8 +1258,8 @@ end
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 598;
 idxChannelFocus = find(peaks_spd_camera == channelFocus);
-phaseShift_pixel_camera_ref = phaseShift_pixel_camera(idxChannelFocus,:);
-phaseShift_pixel_camera_diff = round(phaseShift_pixel_camera_ref - phaseShift_pixel_camera,1);
+phase_pixel_camera_ref = phase_pixel_camera(idxChannelFocus,:);
+phaseShift_pixel_camera = phase_pixel_camera_ref - phase_pixel_camera;
 
 % Plot the phase shift in pixel.
 figure;
@@ -1271,7 +1271,7 @@ for ss = 1:nSFs
     subplot(nSFs,1,ss); hold on;
     
     % Measured phase shift.
-    plot(x_data, phaseShift_pixel_camera_diff(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
+    plot(x_data, phaseShift_pixel_camera(:,ss),'b-o','markerfacecolor','b','markeredgecolor','k');
     % No difference line.
     plot([min(x_data) max(x_data)], zeros(1,2),'b-','color',[0 0 1 0.3],'linewidth',3);
     
@@ -1282,6 +1282,14 @@ for ss = 1:nSFs
     ylim([-5 5]);
     legend('Measure','No difference');
 end
+
+% Calculate phase shift in degrees and the phase shift in pixel on the DMD
+% of the SACCSFA system. We use the function PixelToDeg which will
+% calculate both.
+[phaseShift_deg_camera phaseShift_pixel_camera_DMD] = PixelToDeg(phaseShift_pixel_camera,'verbose',false);
+
+% Get the fitted spatial frequency.
+fittedSF_camera = 1./PixelToDeg(period_pixel_camera,'verbose',false);
 
 %% 4-b) Transverse Chromatic Aberration (TCA) - (SACCSFA).
 %
@@ -1414,7 +1422,7 @@ for ss = 1:nSFs
         period_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
         
         % Calculate the phase shift in pixel here.
-        phaseShift_pixel_SACCSFA(cc,ss) = period_pixel_SACCSFA(cc,ss) * phi_temp/(2*pi);
+        phase_pixel_SACCSFA(cc,ss) = period_pixel_SACCSFA(cc,ss) * phi_temp/(2*pi);
     end
 end
 
@@ -1455,8 +1463,8 @@ end
 % We will compare based on the channel that we focused with the camera.
 channelFocus = 592;
 idxChannelFocus = find(peaks_spd_SACCSFA_test == channelFocus);
-phaseShift_pixel_SACCSFA_ref = phaseShift_pixel_SACCSFA(idxChannelFocus,:);
-phaseShift_pixel_SACCSFA_diff = round(phaseShift_pixel_SACCSFA_ref - phaseShift_pixel_SACCSFA,1);
+phase_pixel_SACCSFA_ref = phase_pixel_SACCSFA(idxChannelFocus,:);
+phaseShift_pixel_SACCSFA = phase_pixel_SACCSFA_ref - phase_pixel_SACCSFA;
 
 % Plot happens here.
 figure;
@@ -1468,7 +1476,7 @@ for ss = 1:nSFs
     subplot(nSFs,1,ss); hold on;
     
     % Measured phase shift.
-    plot(x_data, phaseShift_pixel_SACCSFA_diff(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot(x_data, phaseShift_pixel_SACCSFA(:,ss),'r-o','markerfacecolor','r','markeredgecolor','k');
     % No difference line.
     plot([min(x_data) max(x_data)], zeros(1,2),'r-','color',[1 0 0 0.3],'linewidth',3);
     
@@ -1480,6 +1488,14 @@ for ss = 1:nSFs
     ylim([-5 5]);
     legend('Measured','No difference');
 end
+
+% Calculate phase shift in degrees and the phase shift in pixel on the DMD
+% of the SACCSFA system. We use the function PixelToDeg which will
+% calculate both.
+[phaseShift_deg_SACCSFA phaseShift_pixel_SACCSFA_DMD] = PixelToDeg(phaseShift_pixel_SACCSFA,'verbose',false);
+
+% Get the fitted spatial frequency.
+fittedSF_SACCSFA = 1./PixelToDeg(period_pixel_SACCSFA,'verbose',false);
 
 %% Plot the channels that we used in this study.
 PLOTSPECTRUM = false;
