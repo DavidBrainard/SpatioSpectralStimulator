@@ -14,7 +14,9 @@ function [deg pixels_SACCSFA] = PixelToDeg(pixels_camera,options)
 %
 % Inputs:
 %    pixels_camera            - Target length in pixels in the camera
-%                               captured scene to convert the unit.
+%                               captured scene to convert the unit. It can
+%                               be a single number or an array of multiple
+%                               numbers.
 %
 % Outputs:
 %    deg                      - Field of view corresponding the input pixel
@@ -32,10 +34,11 @@ function [deg pixels_SACCSFA] = PixelToDeg(pixels_camera,options)
 
 % History:
 %    01/17/24  smo            - Wrote it.
+%    01/18/24  smo            - Updated to work for multiple targets.
 
 %% Set variables.
 arguments
-    pixels_camera (1,1)
+    pixels_camera
     options.dir = 'horizontal'
     options.verbose = 'true'
 end
@@ -68,16 +71,10 @@ end
 %% Calculate the FOV in degrees.
 %
 % Convert the pixel to inch unit.
-targetImageInch = pixels_camera * pixelToInch;
+targetImageInch = pixels_camera .* pixelToInch;
 
 % Calculate the FOV in degrees here.
-deg = rad2deg(atan(targetImageInch/distanceInch));
-
-% Print out the results.
-if (options.verbose)
-    fprintf('The (%s) FOV of (%d) pixels on the camera is (%.2f) deg. \n',...
-        options.dir,pixels_camera,deg);
-end
+deg = rad2deg(atan(targetImageInch./distanceInch));
 
 %% Calculate the pixel per deg in SACCSFA.
 %
@@ -102,11 +99,18 @@ switch options.dir
     case 'horizontal'
         pixelPerDeg_SACCSFA = resolution_SACCSFA(2)/deg_SACCSFA;
 end
-pixels_SACCSFA = deg * pixelPerDeg_SACCSFA;
+pixels_SACCSFA = deg .* pixelPerDeg_SACCSFA;
 
-% Print out the result if you want.
+% Print out the results.
 if (options.verbose)
-    fprintf('On the DMD of the SACCSFA, it is (%.1f) pixels. \n',pixels_SACCSFA);
+    nTargets = length(deg);
+    for tt = 1:nTargets
+        % FOV.
+        fprintf('The (%s) FOV of (%d) pixels on the camera is (%.2f) deg. \n',...
+            options.dir,pixels_camera(tt),deg(tt));
+        % Pixels on the DMD.
+        fprintf('On the DMD of the SACCSFA, it is (%.1f) pixels. \n\n',pixels_SACCSFA(tt));
+    end
 end
 
 end
