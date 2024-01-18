@@ -1339,6 +1339,9 @@ if (SAVEFIGURES)
     saveas(gcf,fullfile(savefileDir,'Camera_PhaseShift_pixel.tiff'));
 end
 
+% Calculate the period in deg.
+period_deg_camera = PixelToDeg(period_pixel_camera,'verbose',false);
+
 % Calculate phase shift in degrees and the phase shift in pixel on the DMD
 % of the SACCSFA system. We use the function PixelToDeg which will
 % calculate both.
@@ -1554,6 +1557,9 @@ end
 if (SAVEFIGURES)
     saveas(gcf,fullfile(savefileDir,'SACCSFA_PhaseShift_pixel.tiff'));
 end
+
+% Calculate the period in deg.
+period_deg_SACCSFA = PixelToDeg(period_pixel_SACCSFA,'verbose',false);
 
 % Calculate phase shift in degrees and the phase shift in pixel on the DMD
 % of the SACCSFA system. We use the function PixelToDeg which will
