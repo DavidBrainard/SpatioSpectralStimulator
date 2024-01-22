@@ -1350,6 +1350,17 @@ period_deg_camera = PixelToDeg(period_pixel_camera,'verbose',false);
 % Get the fitted spatial frequency.
 fittedSF_camera = 1./PixelToDeg(period_pixel_camera,'verbose',false);
 
+% Make a table for the report.
+table_camera = table(period_pixel_camera, period_deg_camera, fittedSF_camera,...
+ phaseShift_pixel_camera, phaseShift_pixel_camera_DMD, phaseShift_deg_camera);
+ 
+% Set variable names on the table.
+table_camera.Properties.VariableNames = {'Period (pixel)', 'Period (deg)', 'Fitted spatial frequency (cpd)',...
+    'Phase shift (pixel)', 'Phase shift (pixel) - DMD on SACCSFA', 'Phase shift (deg)'};
+
+% Set the row as wavelength.
+table_camera.Properties.RowNames = append(string(peaks_spd_camera),'nm');
+
 %% 4-b) Transverse Chromatic Aberration (TCA) - (SACCSFA).
 %
 % Plot raw intensity profiles.
@@ -1568,6 +1579,17 @@ period_deg_SACCSFA = PixelToDeg(period_pixel_SACCSFA,'verbose',false);
 
 % Get the fitted spatial frequency.
 fittedSF_SACCSFA = 1./PixelToDeg(period_pixel_SACCSFA,'verbose',false);
+
+% Make a table for the report.
+table_SACCSFA = table(period_pixel_SACCSFA, period_deg_SACCSFA, fittedSF_SACCSFA,...
+ phaseShift_pixel_SACCSFA, phaseShift_pixel_SACCSFA_DMD, phaseShift_deg_SACCSFA);
+ 
+% Set variable names on the table. We will set the same variable name as
+% the camera table.
+table_SACCSFA.Properties.VariableNames = table_camera.Properties.VariableNames;
+
+% Set the row as wavelength.
+table_SACCSFA.Properties.RowNames = append(string(peaks_spd_SACCSFA_test),'nm');
 
 %% Plot the channels that we used in this study.
 PLOTSPECTRUM = false;
