@@ -41,6 +41,7 @@ arguments
     pixels_camera
     options.dir = 'horizontal'
     options.verbose = 'true'
+    options.trombone = 'emmetropic'
 end
 
 %% Get the reference image info.
@@ -80,7 +81,20 @@ deg = rad2deg(atan(targetImageInch./distanceInch));
 %
 % The size of the DMD of the SACCSFA in the camera captured image. The
 % resolution of the DMD is [1080 1920].
-imageSize_SACCSFA = [1378 2349];
+%
+% The DMD size on the camera captured image is different across the
+% trombone positions.
+switch options.trombone
+    case 'immetropic'
+        % This is old measure.
+        %         imageSize_SACCSFA = [1378 2349];
+        % New measure as of 01/24/24.
+        imageSize_SACCSFA = [1351 2413];
+    case '170'
+        imageSize_SACCSFA = [1408 2512];
+    case '185'
+        imageSize_SACCSFA = [1446 2577];
+end
 resolution_SACCSFA = [1080 1920];
 
 % Get the FOV of the SACCSFA DMD.

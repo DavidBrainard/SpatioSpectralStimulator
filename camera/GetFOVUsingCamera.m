@@ -24,16 +24,18 @@ CALCULATIONMETHOD = 'direct';
 
 %% Load target image and get size in pixels.
 %
-% Save the current directory. We will set it back to it in the end.
-currentDir = cd;
+% % Save the current directory. We will set it back to it in the end.
+% currentDir = cd;
+% 
+% % Get the directory where the images were at.
+% testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+% testFiledir = fullfile(testFiledir, 'Camera', 'ImagesForCalculateFOV');
+% cd(testFiledir);
+% 
+% imgFileName = 'infinity_DMD.tiff';
+% img = imread(imgFileName);
 
-% Get the directory where the images were at.
-testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
-testFiledir = fullfile(testFiledir, 'Camera', 'ImagesForCalculateFOV');
-cd(testFiledir);
-
-imgFileName = 'infinity_DMD.tiff';
-img = imread(imgFileName);
+img = imread('18cpd_raw_2023-12-05_11-36-52.tiff');
 imgSize = size(img);
 imgCenter = imgSize/2;
 
@@ -56,6 +58,7 @@ targetImgVerticalRightPixel = abs(targetImgCords(2)+targetImgCords(4) - imgCente
 
 % Show the image and draw the detected rectangle on it.
 if (VERBOSE)
+    figure;
     imshow(bwImg);
     hold on;
     for i = 1:numel(imgStats)
@@ -65,6 +68,24 @@ if (VERBOSE)
     title('Target image with its shape found','fontsize',15);
 end
 
+% Find the edges of the target.
+for i = 1:numel(imgStats)
+    boundingBox_temp = imgStats(i).BoundingBox;
+    upleft (i,:) = [boundingBox_temp(1), boundingBox_temp(2)];
+    upright (i,:) = [boundingBox_temp(1)+boundingBox_temp(3), boundingBox_temp(2)];
+    bottomleft (i,:) = [boundingBox_temp(1), boundingBox_temp(2)+boundingBox_temp(4)];
+    bottomright (i,:) = [boundingBox_temp(1)+boundingBox_temp(3), boundingBox_temp(2)+boundingBox_temp(4)];
+end
+
+plot(upleft(1,1), upleft(1,2), 'ko','markersize',15,'markerfacecolor','g');
+plot(upright(end,1), upright(end,2), 'ko','markersize',15,'markerfacecolor','g');
+plot(bottomleft(1,1), bottomleft(1,2), 'ko','markersize',15,'markerfacecolor','g');
+plot(bottomright(end,1), bottomright(end,2), 'ko','markersize',15,'markerfacecolor','g');
+boundingBox_DMD = [upleft(1,1) upleft(1,2) upright(end,1)-upleft(1,1) bottomright(end,2)-upright(end,2)];
+rectangle('Position', boundingBox_DMD, ...
+            'Linewidth', 3, 'EdgeColor', 'g', 'LineStyle', '--');
+sizeDMD_pixel = [boundingBox_DMD(4) boundingBox_DMD(3)];
+        
 %% Get reference image info.
 %
 % Reference size in inch. We meausred both horizontal and vertical
