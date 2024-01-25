@@ -570,6 +570,8 @@ contrastsAvg_SACCSFA = (contrastsAvg_SACCSFA_25 + contrastsAvg_SACCSFA_50 + cont
 % Sort the contrasts in an ascending order of the channels.
 peaks_spd_SACCSFA_test = peaks_spd_SACCSFA(numChannelsSorted);
 [peaks_spd_SACCSFA_test I] = sort(peaks_spd_SACCSFA_test,'ascend');
+spd_SACCSFA_test = spd_SACCSFA(:,numChannelsSorted);
+spd_SACCSFA_test = spd_SACCSFA_test(:,I);
 contrastsAvg_SACCSFA = contrastsAvg_SACCSFA(I,:);
 IP_SACCSFA_25 = IP_SACCSFA_25(I,:);
 IP_SACCSFA_50 = IP_SACCSFA_50(I,:);
@@ -1350,8 +1352,8 @@ fittedSF_camera = 1./PixelToDeg(period_pixel_camera,'verbose',false);
 
 % Make a table for the report.
 table_TCA_camera = table(period_pixel_camera, period_deg_camera, fittedSF_camera,...
- phaseShift_pixel_camera, phaseShift_deg_camera);
- 
+    phaseShift_pixel_camera, phaseShift_deg_camera);
+
 % Set variable names on the table.
 table_TCA_camera.Properties.VariableNames = {'Period (pixel)', 'Period (deg)', 'Fitted spatial frequency (cpd)',...
     'Phase shift (pixel)', 'Phase shift (deg)'};
@@ -1573,7 +1575,7 @@ end
 % Make the trombone position in a variable which will be used in the
 % following function.
 switch viewingMediaSACCSFA
-    case 'SACCSFA' 
+    case 'SACCSFA'
         trombonePosition = 'emmetropic';
     case 'SACCSFA170'
         trombonePosition = '170';
@@ -1591,8 +1593,8 @@ fittedSF_SACCSFA = 1./PixelToDeg(period_pixel_SACCSFA,'verbose',false);
 
 % Make a table for the report.
 table_TCA_SACCSFA = table(period_pixel_SACCSFA, period_deg_SACCSFA, period_pixel_SACCSFA_DMD, fittedSF_SACCSFA,...
- phaseShift_pixel_SACCSFA, phaseShift_pixel_SACCSFA_DMD, phaseShift_deg_SACCSFA);
- 
+    phaseShift_pixel_SACCSFA, phaseShift_pixel_SACCSFA_DMD, phaseShift_deg_SACCSFA);
+
 % Set variable names on the table. We will set the same variable name as
 % the camera table.
 table_TCA_SACCSFA.Properties.VariableNames = {'Period (pixel)', 'Period (deg)', 'Period (pixel) - DMD', 'Fitted spatial frequency (cpd)',...
@@ -1609,21 +1611,19 @@ if (PLOTSPECTRUM)
     figure; hold on;
     S = recentCalData.rawData.S;
     wls = SToWls(S);
-    p1 = plot(wls,spd_SACCSFA,'k-');
-    p2 = plot(wls,spd_SACCSFA(:,idxChannels_SACCSFA),'-','linewidth',5,'color',[1 0 0 0.3]);
+    p2 = plot(wls,spd_SACCSFA_test);
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Spectral power','fontsize',15);
     ylim([0 max(spd_SACCSFA,[],'all')*1.01]);
-    legend([p1(1) p2(1)],'All channels (N=16)','Tested channel (N=10)','fontsize',12,'location','northwest');
+    legend(append(string(peaks_spd_SACCSFA_test),' nm'),'fontsize',12,'location','northeast');
     title('SACCSFA','fontsize',15);
     
-    % camera.
+    % Camera.
     figure; hold on;
-    p3 = plot(wls,spd_camera_white,'k-');
-    p4 = plot(wls,spd_camera_white,'-','linewidth',5,'color',[0 1 0 0.3]);
+    plot(wls,spd_camera_white);
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Spectral power','fontsize',15);
     ylim([0 max(spd_camera_white,[],'all')*1.01]);
-    legend([p3(1) p4(1)],'All channels (N=8)','Tested channel (N=8)','fontsize',12,'location','northeast');
+    legend(append(string(peaks_spd_camera),' nm'),'fontsize',12,'location','northeast');
     title('camera (Combi-LED)','fontsize',15);
 end
