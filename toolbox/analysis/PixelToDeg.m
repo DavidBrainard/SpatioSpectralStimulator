@@ -83,17 +83,22 @@ deg = rad2deg(atan(targetImageInch./distanceInch));
 % resolution of the DMD is [1080 1920].
 %
 % The DMD size on the camera captured image is different across the
-% trombone positions.
+% trombone positions. So, here we set the DMD size on the image differently
+% over trombone position. As the trombone position moves from emmetropic
+% to compensate near-sighted, the DMD size on the image slightly increases.
 switch options.trombone
-    case 'immetropic'
+    case 'emmetropic'
         % This is old measure.
         %         imageSize_SACCSFA = [1378 2349];
+        
         % New measure as of 01/24/24.
         imageSize_SACCSFA = [1351 2413];
     case '170'
         imageSize_SACCSFA = [1408 2512];
     case '185'
         imageSize_SACCSFA = [1446 2577];
+    otherwise
+        error('Trombone position has not been selected properly!');
 end
 resolution_SACCSFA = [1080 1920];
 

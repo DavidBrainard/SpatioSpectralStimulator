@@ -1342,21 +1342,19 @@ end
 % Calculate the period in deg.
 period_deg_camera = PixelToDeg(period_pixel_camera,'verbose',false);
 
-% Calculate phase shift in degrees and the phase shift in pixel on the DMD
-% of the SACCSFA system. We use the function PixelToDeg which will
-% calculate both.
-[phaseShift_deg_camera phaseShift_pixel_camera_DMD] = PixelToDeg(phaseShift_pixel_camera,'verbose',false);
+% Calculate phase shift in degrees.
+phaseShift_deg_camera = PixelToDeg(phaseShift_pixel_camera,'verbose',false);
 
 % Get the fitted spatial frequency.
 fittedSF_camera = 1./PixelToDeg(period_pixel_camera,'verbose',false);
 
 % Make a table for the report.
 table_TCA_camera = table(period_pixel_camera, period_deg_camera, fittedSF_camera,...
- phaseShift_pixel_camera, phaseShift_pixel_camera_DMD, phaseShift_deg_camera);
+ phaseShift_pixel_camera, phaseShift_deg_camera);
  
 % Set variable names on the table.
 table_TCA_camera.Properties.VariableNames = {'Period (pixel)', 'Period (deg)', 'Fitted spatial frequency (cpd)',...
-    'Phase shift (pixel)', 'Phase shift (pixel) - DMD on SACCSFA', 'Phase shift (deg)'};
+    'Phase shift (pixel)', 'Phase shift (deg)'};
 
 % Set the row as wavelength.
 table_TCA_camera.Properties.RowNames = append(string(peaks_spd_camera),'nm');
@@ -1570,23 +1568,35 @@ if (SAVEFIGURES)
 end
 
 % Calculate the period in deg.
-period_deg_SACCSFA = PixelToDeg(period_pixel_SACCSFA,'verbose',false);
+[period_deg_SACCSFA period_pixel_SACCSFA_DMD] = PixelToDeg(period_pixel_SACCSFA,'verbose',false);
+
+% Make the trombone position in a variable which will be used in the
+% following function.
+switch viewingMediaSACCSFA
+    case 'SACCSFA' 
+        trombonePosition = 'emmetropic';
+    case 'SACCSFA170'
+        trombonePosition = '170';
+    case 'SACCSFA185'
+        trombonePosition = '185';
+end
 
 % Calculate phase shift in degrees and the phase shift in pixel on the DMD
 % of the SACCSFA system. We use the function PixelToDeg which will
 % calculate both.
-[phaseShift_deg_SACCSFA phaseShift_pixel_SACCSFA_DMD] = PixelToDeg(phaseShift_pixel_SACCSFA,'verbose',false);
+[phaseShift_deg_SACCSFA phaseShift_pixel_SACCSFA_DMD] = PixelToDeg(phaseShift_pixel_SACCSFA,'verbose',false,'trombone',trombonePosition);
 
 % Get the fitted spatial frequency.
 fittedSF_SACCSFA = 1./PixelToDeg(period_pixel_SACCSFA,'verbose',false);
 
 % Make a table for the report.
-table_TCA_SACCSFA = table(period_pixel_SACCSFA, period_deg_SACCSFA, fittedSF_SACCSFA,...
+table_TCA_SACCSFA = table(period_pixel_SACCSFA, period_deg_SACCSFA, period_pixel_SACCSFA_DMD, fittedSF_SACCSFA,...
  phaseShift_pixel_SACCSFA, phaseShift_pixel_SACCSFA_DMD, phaseShift_deg_SACCSFA);
  
 % Set variable names on the table. We will set the same variable name as
 % the camera table.
-table_TCA_SACCSFA.Properties.VariableNames = table_TCA_camera.Properties.VariableNames;
+table_TCA_SACCSFA.Properties.VariableNames = {'Period (pixel)', 'Period (deg)', 'Period (pixel) - DMD', 'Fitted spatial frequency (cpd)',...
+    'Phase shift (pixel)', 'Phase shift (pixel) - DMD', 'Phase shift (deg)'};
 
 % Set the row as wavelength.
 table_TCA_SACCSFA.Properties.RowNames = append(string(peaks_spd_SACCSFA_test),'nm');
