@@ -1627,3 +1627,27 @@ if (PLOTSPECTRUM)
     legend(append(string(peaks_spd_camera),' nm'),'fontsize',12,'location','northeast');
     title('camera (Combi-LED)','fontsize',15);
 end
+
+%% Camera exposure time settings for the MTF measurements.
+%
+% Camera exposure time for the camera MTF measurement. We normalize it.
+PLOTCAMERAEXPOSURETIMESETTINGS = false;
+if (PLOTCAMERAEXPOSURETIMESETTINGS)
+    exposureTimeSettings_camera = [27000 45000 40000 58000 21000 210000 47000 47000];
+    exposureTimeSettings_camera_norm = exposureTimeSettings_camera./exposureTimeSettings_camera(6);
+    
+    % Plot it.
+    figure;
+    plot(peaks_spd_camera,exposureTimeSettings_camera_norm,'ko','markerfacecolor','b','markersize',8);
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Relative camera exposure time','fontsize',15);
+    ylim([0 1]);
+    title('Relative camera exposure time settings for measuring camera MTF','fontsize',13);
+    subtitle('The data was normalized to 598 nm');
+    
+    % Add a text of wavelength to each point.
+    for tt = 1:length(exposureTimeSettings_camera_norm)
+        text(peaks_spd_camera(tt),exposureTimeSettings_camera_norm(tt),append(string(peaks_spd_camera(tt)),' nm'),...
+            'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', 'fontsize', 11);
+    end
+end
