@@ -20,17 +20,19 @@ vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWid
 %% Capture image and calculate contrast (SACCSFA).
 %
 % Set which channel and spatial frequency to test.
-numChannel = 16;
-cyclesPerDegOptions = [3 6 9 12 18];
-nSFs = length(cyclesPerDegOptions);
+% numChannel = 16;
+% cyclesPerDegOptions = [3 6 9 12 18];
+% nSFs = length(cyclesPerDegOptions);
 
+% Set the channels to measure.
 testingChannels = [1 3 5 6 7 8 10 12 13 15];
 nTestingChannels = length(testingChannels);
 
 numViewingMedia = 1;
 
 % Set the target spatial frequency.
-    cyclesPerDeg = 18;
+cyclesPerDeg = 18;
+
 % Make a loop to measure for all spatial frequencies.
 for ss = 1:nTestingChannels
     % Get a key stroke before starting each meausrement.
@@ -161,7 +163,11 @@ for ss = 1:nChannels
         case 'Print'
 %             exposureTimePerChannel = [340000 45000 40000 58000 21000 210000 47000 47000]; 
 %             exposureTimePerChannel = [400000 700000 370000 660000 130000 990000 500000 350000];
-              exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
+% With neutral density filter.
+exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
+
+% Without neutral density filter (as of 01/29/24).
+exposureTimePerChannel = [100000 210000 200000 290000 90000 990000 260000 180000];
     end
     exposureTime = exposureTimePerChannel(numChannel);
     
@@ -212,18 +218,18 @@ if (CAPTUREONEIMAGE)
     channelSettings = [0,0,0,0,0,0,0,0];
     
     % Turn on the target channel.
-    numChannel = 16;
+    numChannel = 4;
     channelSettings(numChannel) = 1;
     
     % Send the settings
-%     obj.setPrimaries(channelSettings);
+    obj.setPrimaries(channelSettings);
 
     % Set variables.
-%     exposureTimePerChannel = [185000 380000 280000 420000 122000 990000 350000 250000];
-      exposureTimePerChannel = [230000 180000 92000 140000 182000,...
-          990000 210000 115000 160000 190000,...
-          210000 140000 130000 340000 140000 170000];
-        
+    exposureTimePerChannel = [100000 210000 200000 290000 90000 990000 260000 180000];
+%       exposureTimePerChannel = [230000 180000 92000 140000 182000,...
+%           990000 210000 115000 160000 190000,...
+%           210000 140000 130000 340000 140000 170000];
+%         
     exposureTime = exposureTimePerChannel(numChannel);
     minPeakDistancePixel = 5;
     
