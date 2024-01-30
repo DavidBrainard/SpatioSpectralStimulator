@@ -1197,7 +1197,12 @@ for ss = 1:nSFs
 end
 
 % Match up the period scale.
-phi_camera_25(3:5,5) = phi_camera_25(3:5,5) + 2*pi;
+idx_25 = find(phi_camera_25(:,6)<0);
+idx_50 = find(phi_camera_50(:,6)<0);
+idx_75 = find(phi_camera_75(:,6)<0);
+phi_camera_25(idx_25,6) = phi_camera_25(idx_25,6) +2*pi;
+phi_camera_50(idx_50,6) = phi_camera_50(idx_50,6) +2*pi;
+phi_camera_75(idx_75,6) = phi_camera_75(idx_75,6) +2*pi;
 
 % Calculate the mean phi.
 phi_camera = (phi_camera_25 + phi_camera_50 + phi_camera_75)/3;
@@ -1262,8 +1267,8 @@ for ss = 1:nSFs
         % Make an average.
         f_temp = mean([f_temp_25 f_temp_50 f_temp_75]);
         
-        % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        phi_temp = mean([phi_camera_25(cc,ss) phi_camera_50(cc,ss) phi_camera_75(cc,ss)]);
+        % Get phi parameter.
+        phi_temp = phi_camera(cc,ss);
         
         % Get period and phase shift in pixel here.
         period_pixel_camera(cc,ss) = numPixels/f_temp;
@@ -1486,7 +1491,7 @@ for ss = 1:nSFs
         f_temp = mean([f_temp_25 f_temp_50 f_temp_75]);
         
         % Get phi parameter. If it's negative, set it to positive by adding one period (2 pi).
-        phi_temp = mean([phi_SACCSFA_25(cc,ss) phi_SACCSFA_50(cc,ss) phi_SACCSFA_75(cc,ss)]);
+        phi_temp = phi_SACCSFA(cc,ss);
         
         % Get period and phase shift in pixel here.
         period_pixel_SACCSFA(cc,ss) = numPixels/f_temp;
