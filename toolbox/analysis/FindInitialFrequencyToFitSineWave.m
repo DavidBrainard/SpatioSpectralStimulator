@@ -30,7 +30,7 @@ function [f0] = FindInitialFrequencyToFitSineWave(waveform,options)
 arguments
     waveform
     options.SF (1,1) = 3
-    options.f0_searchInterval (1,1) = 0.02
+    options.f0_searchInterval (1,1) = 0.0025
     options.verbose (1,1) = true
 end
 
@@ -73,22 +73,23 @@ while 1
     % curves.
     switch options.SF
         case 1
-            targetCorrSignals = 0.90;
+            targetCorrSignals = 0.89;
         case 3
-%             targetCorrSignals = 0.915;
+            targetCorrSignals = 0.915;
             % For SACCSFA185.
-            targetCorrSignals = 0.941; 
+%             targetCorrSignals = 0.941; 
         case 6
-            targetCorrSignals = 0.937;
+            targetCorrSignals = 0.935;
+%             targetCorrSignals = 0.937;
         case 9
-            targetCorrSignals = 0.97;
+%             targetCorrSignals = 0.97;
             
             % For Camera MTF.
-%             targetCorrSignals = 0.945;
+            targetCorrSignals = 0.945;
         case 12
-            targetCorrSignals = 0.96;
+            targetCorrSignals = 0.955;
         case 18
-            targetCorrSignals = 0.96;
+            targetCorrSignals = 0.975;
         otherwise
             targetCorrSignals = 0.97;
     end

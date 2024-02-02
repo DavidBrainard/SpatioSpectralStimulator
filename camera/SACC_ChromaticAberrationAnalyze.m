@@ -77,7 +77,7 @@ PlotPhiParam = false;
 
 % Figure saving option temporarily. Set it to true will save the figures
 % for the report in the current directory.
-SAVEFIGURES = false;
+SAVEFIGURES = true;
 savefileDir = '~/Desktop';
 
 %% Get the peak wavelength of the Combi-LED (camera).
@@ -1035,7 +1035,7 @@ for cc = 1:nChannels_test
     plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_norm_temp,...
         'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
     
-    ylim([0 1.9]);
+    ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
@@ -1405,8 +1405,18 @@ end
 % elaborately later on.
 switch viewingMediaSACCSFA
     case 'SACCSFA'
-        phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
+        % For the data of 12-05-23.
+        %         phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
+        
+        % For the data of 02-02-24.
+        phi_SACCSFA_25(1,5) = phi_SACCSFA_25(1,5) + 2*pi;
+        
+        phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) + 2*pi;
+        
+        phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
+        
     case 'SACCSFA170'
+        % For the data of 12-05-23.
         phi_SACCSFA_25(1,4) = phi_SACCSFA_25(1,4) - 2*pi;
         phi_SACCSFA_50(1,4) = phi_SACCSFA_50(1,4) - 2*pi;
         phi_SACCSFA_75(1,4) = phi_SACCSFA_75(1,4) - 2*pi;
@@ -1417,6 +1427,7 @@ switch viewingMediaSACCSFA
         
         phi_SACCSFA_75(9,4) = phi_SACCSFA_75(9,4) - 2*pi;
     case 'SACCSFA185'
+        % For the data of 12-05-23.
         phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) - 2*pi;
         phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) - 2*pi;
         
@@ -1655,4 +1666,28 @@ if (PLOTCAMERAEXPOSURETIMESETTINGS)
         text(peaks_spd_camera(tt),exposureTimeSettings_camera_norm(tt),append(string(peaks_spd_camera(tt)),' nm'),...
             'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', 'fontsize', 11);
     end
+end
+
+%% Camera focus settings that maximizes the contrast per each wavelength.
+PLOTCAMERAFOCUSSETTINGS = false;
+if (PLOTCAMERAFOCUSSETTINGS)
+    
+    % Unit in (cm) on the scale attached to the camera. The SACCSFA
+    % settings are based on the trombone positioned at 151 nm (emmetropic).
+    cameraFocusSettings_camera = [9.7 9.8 10 10 10 10 10 10];
+    cameraFocusSettings_SACCSFA = [10.8 10.95 10.95 10.55 10.95 10.95 10.95 10.95 10.95 10.95];
+    cameraFocusSettings_SACCSFA_sorted = cameraFocusSettings_SACCSFA(I);
+    cameraFocusSetting_infinity = 10;
+    
+    % Plot it.
+    figure; hold on;
+    plot(peaks_spd_camera, cameraFocusSettings_camera,'b-o','markerfacecolor','b','markeredgecolor','k');
+    plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot([380 780], ones(1,2)*cameraFocusSetting_infinity, 'k-', 'color', [0 0 0 0.2], 'linewidth', 6);
+    title('Camera focus point that maximizes the image contrast over wavelength');
+    xlabel('Wavelength (nm)','fontsize',15);
+    ylabel('Focus point (cm)','fontsize',15);
+    xlim([380 680]);
+    ylim([8 12]);
+    legend('Camera (print)','SACCSFA','Nominal infinity','location','southeast','fontsize',15);
 end

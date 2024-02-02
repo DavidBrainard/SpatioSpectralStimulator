@@ -53,12 +53,16 @@ minValleyHeight = min(-IP) * 0.2 + max(-IP);
 % Set valley values to the right domain.
 valleys = -valleys;
 
-% Calculate contrast here.
+% Get the number of peaks and vallyes in the given range..
 nPeaks = length(peaks);
 nValleys = length(valleys);
 
+% Based on the number of peak and valley, we set the number of contrasts to
+% calculate. We follow whichever a smaller number between peak and valley.
 nContrasts = min(nPeaks,nValleys);
-for pp = 1:nContrasts-1
+
+% Calculate contrast here.
+for pp = 1:nContrasts
     
     % Get contrast per each cycle.
     white = peaks(pp);
