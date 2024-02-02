@@ -13,7 +13,7 @@
 clear; close all;
 
 %% Open camera.
-rectRatioWidth = 0.1;
+rectRatioWidth = 0.08;
 rectRatioHeight = 0.08;
 vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWidth);
 
@@ -24,14 +24,16 @@ vid = OpenCamera('rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWid
 % cyclesPerDegOptions = [3 6 9 12 18];
 % nSFs = length(cyclesPerDegOptions);
 
+% Set the target spatial frequency.
+cyclesPerDeg = 18;
+
 % Set the channels to measure.
-testingChannels = [1 3 5 6 7 8 10 12 13 15];
+% testingChannels = [1 3 5 6 7 8 10 12 13 15];
+% testingChannels = [3 5 7 8 10 12 13 15];
+testingChannels = 6;
 nTestingChannels = length(testingChannels);
 
 numViewingMedia = 1;
-
-% Set the target spatial frequency.
-cyclesPerDeg = 18;
 
 % Make a loop to measure for all spatial frequencies.
 for ss = 1:nTestingChannels
@@ -60,9 +62,14 @@ for ss = 1:nTestingChannels
     switch viewingMedia
         case 'SACCSFA'
 %             exposureTimePerChannel = [215000 0 80000 0 160000 990000 180000 100000 0 170000 0 120000 115000 0 120000 0];
-              exposureTimePerChannel = [230000 180000 92000 140000 182000,...
-          990000 210000 115000 160000 190000,...
-          210000 140000 130000 340000 140000 170000];
+%               exposureTimePerChannel = [230000 180000 92000 140000 182000,...
+%           990000 210000 115000 160000 190000,...
+%           210000 140000 130000 340000 140000 170000];
+       
+      % Updated exposure time (as of 02/02/24).
+      exposureTimePerChannel = [47 18 18 14 35,...
+          99 43 23 16 40,...
+          21 28 28 35 28 17].*10000;
 
         case 'Print'
             exposureTimePerChannel = [27000 45000 40000 58000 21000 210000 47000 47000];
@@ -95,7 +102,7 @@ for ss = 1:nTestingChannels
     saveImageDir = fullfile(saveImageDir,'Camera','ChromaticAberration',viewingMedia,date,channel);
     
     % Capture an image here and do analysis of it.
-    CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
+    CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWidth,...
         'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
         'saveImagedir',saveImageDir,'saveImageFilename',SF);
     
@@ -199,7 +206,7 @@ exposureTimePerChannel = [100000 210000 200000 290000 90000 990000 260000 180000
     saveImageDir = fullfile(saveImageDir,'Camera','ChromaticAberration',viewingMedia,date,channel);
     
     % Capture an image here and do analysis of it.
-    CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioHeight,...
+    CaptureCamera(vid,'rectRatioHeight',rectRatioHeight,'rectRatioWidth',rectRatioWidth,...
         'exposureTime',exposureTime,'minPeakDistancePixel',minPeakDistancePixel,...
         'saveImagedir',saveImageDir,'saveImageFilename',SF);
     
@@ -217,18 +224,18 @@ if (CAPTUREONEIMAGE)
     
     channelSettings = [0,0,0,0,0,0,0,0];
     
-    % Turn on the target channel.
-    numChannel = 4;
+    % Tun on the target channel.
+    numChannel = 6;
     channelSettings(numChannel) = 1;
     
     % Send the settings
-    obj.setPrimaries(channelSettings);
+%     obj.setPrimaries(channelSettings);
 
     % Set variables.
-    exposureTimePerChannel = [100000 210000 200000 290000 90000 990000 260000 180000];
-%       exposureTimePerChannel = [230000 180000 92000 140000 182000,...
-%           990000 210000 115000 160000 190000,...
-%           210000 140000 130000 340000 140000 170000];
+%     exposureTimePerChannel = [100000 210000 200000 290000 90000 990000 260000 180000];
+      exposureTimePerChannel = [47 18 18 14 35,...
+          99 43 23 16 40,...
+          21 28 28 35 28 17].*10000;
 %         
     exposureTime = exposureTimePerChannel(numChannel);
     minPeakDistancePixel = 5;
