@@ -23,13 +23,17 @@ screenYpixels = windowRect(4);
 nPrimaries = 3;
 nChannels = 16;
 
-sineFreqCyclesPerDeg = 1;
+targetCyclesPerDeg = 1;
+% testingChannels = [1,3,5,6,7,8,10,12,13,15];
+testingChannels = [6]; 
+
+% testingChannels = [3,5,7,8,10,12,13,15];
+
 % Make a loop here so that we can display all spatial frequencies one by
 % one.
 sineFreqCyclesPerDegOptions = [3, 6, 9, 12, 18];
 nSFs = length(sineFreqCyclesPerDegOptions);
 
-testingChannels = [1,3,5,6,7,8,10,12,13,15];
 nTestingChannels = length(testingChannels);
 for ss = 1:nTestingChannels
 % Set which channel to use per each primary. We will use only two
@@ -90,110 +94,158 @@ GetChannelSettings;
             Screen('Flip', window);
             
         case 'Contrast'
-            [xCenter, yCenter] = RectCenter(windowRect);
-            rectColor = [0 0 0];
-            
-            % Set the barwidth and directions.
-            cyclesPerDeg = sineFreqCyclesPerDeg;
-            projectorOption = 'SACCSFA';
-            
-            if strcmp(projectorOption,'Raw')
-                measurementposition = 3;
-            end
-            
-            % On the optical system (SACCSFA, new projector).
-            if strcmp(projectorOption,'SACCSFA')
-                switch cyclesPerDeg
-                    case 1
-                        barWidthPixel = 68;
-                    case 3
-                        barWidthPixel = 23;
-                    case 6
-                        barWidthPixel = 11;
-                    case 9
-                        barWidthPixel = 8;
-                    case 12
-                        barWidthPixel = 6;
-                    case 18
-                        barWidthPixel = 4;
+            makingImageType = 'original';
+            if strcmp(makingImageType,'original')
+                [xCenter, yCenter] = RectCenter(windowRect);
+                rectColor = [0 0 0];
+                
+                % Set the barwidth and directions.
+                projectorOption = 'SACCSFA';
+                
+                if strcmp(projectorOption,'Raw')
+                    measurementposition = 3;
                 end
                 
-                % Raw (without SACCSFA, old projector).
-            elseif strcmp(projectorOption,'Raw')
-                switch cyclesPerDeg
-                    case 3
-                        barWidthPixel = 80;
-                    case 6
-                        barWidthPixel = 42;
-                    case 9
-                        barWidthPixel = 28;
-                    case 12
-                        barWidthPixel = 21;
-                    case 18
-                        switch measurementposition
-                            case 1
-                                barWidthPixel = 12;
-                            case 2
-                                barWidthPixel = 13;
-                                % Nominal
-                            case 3
-                                barWidthPixel = 14;
-                            case 4
-                                barWidthPixel = 16;
-                            case 5
-                                barWidthPixel = 18;
-                                % 1.66 d (as of 0814).
-                            case 11
-                                barWidthPixel = 21;
-                                % 2.0 d (as of 0814).
-                            case 12
-                                barWidthPixel = 26;
-                            otherwise
-                                barWidthPixel = 14;
-                        end
-                end
-            end
-            
-            % Calculate the cycles/pixel.
-            CalCyclesPerPixel = true;
-            if (CalCyclesPerPixel)
-                % Resoultion of DLP and camera.
-                DLPResolution = [1920 1024];
-                CameraResolution = [3088 2064];
-                
-                % Get the number of cycles on the DLP.
-                pixelDLPHorizontal = DLPResolution(1);
-                pixelOneCycleOnDLP = barWidthPixel*2;
-                numCyclesOnDLP = pixelDLPHorizontal/pixelOneCycleOnDLP;
-                
-                % Calculate the cycles per pixel on DLP.
-                numCyclesOnDLPPerPixel = round(numCyclesOnDLP/pixelDLPHorizontal,3);
-            end
-            
-            whichSideBar = 'vertical';
-            
-            % Set stripe pattern.
-            switch whichSideBar
-                case 'horizontal'
-                    baseRect = [0 0 screenXpixels barWidthPixel];
-                    for i=1:1000
-                        centeredRect_R = CenterRectOnPointd(baseRect, xCenter, yCenter+barWidthPixel*2*i);
-                        centeredRect_L = CenterRectOnPointd(baseRect, xCenter, yCenter-barWidthPixel*2*(i-1));
-                        Screen('FillRect', window, rectColor, centeredRect_R);
-                        Screen('FillRect', window, rectColor, centeredRect_L);
+                % On the optical system (SACCSFA, new projector).
+                if strcmp(projectorOption,'SACCSFA')
+                    switch targetCyclesPerDeg
+                        case 1
+                            barWidthPixel = 68;
+                        case 3
+                            barWidthPixel = 23;
+                        case 6
+                            barWidthPixel = 11;
+                        case 9
+                            barWidthPixel = 8;
+                        case 12
+                            barWidthPixel = 6;
+                        case 18
+                            barWidthPixel = 4;
                     end
                     
-                case 'vertical'
-                    baseRect = [0 0 barWidthPixel screenYpixels];
-                    for i=1:1000
-                        centeredRect_R = CenterRectOnPointd(baseRect, xCenter+barWidthPixel*2*i, yCenter);
-                        centeredRect_L = CenterRectOnPointd(baseRect, xCenter-barWidthPixel*2*(i-1), yCenter);
-                        Screen('FillRect', window, rectColor, centeredRect_R);
-                        Screen('FillRect', window, rectColor, centeredRect_L);
+                    % Raw (without SACCSFA, old projector).
+                elseif strcmp(projectorOption,'Raw')
+                    switch targetCyclesPerDeg
+                        case 3
+                            barWidthPixel = 80;
+                        case 6
+                            barWidthPixel = 42;
+                        case 9
+                            barWidthPixel = 28;
+                        case 12
+                            barWidthPixel = 21;
+                        case 18
+                            switch measurementposition
+                                case 1
+                                    barWidthPixel = 12;
+                                case 2
+                                    barWidthPixel = 13;
+                                    % Nominal
+                                case 3
+                                    barWidthPixel = 14;
+                                case 4
+                                    barWidthPixel = 16;
+                                case 5
+                                    barWidthPixel = 18;
+                                    % 1.66 d (as of 0814).
+                                case 11
+                                    barWidthPixel = 21;
+                                    % 2.0 d (as of 0814).
+                                case 12
+                                    barWidthPixel = 26;
+                                otherwise
+                                    barWidthPixel = 14;
+                            end
                     end
+                end
+                
+                % Calculate the cycles/pixel.
+                CalCyclesPerPixel = true;
+                if (CalCyclesPerPixel)
+                    % Resoultion of DLP and camera.
+                    DLPResolution = [1920 1024];
+                    CameraResolution = [3088 2064];
+                    
+                    % Get the number of cycles on the DLP.
+                    pixelDLPHorizontal = DLPResolution(1);
+                    pixelOneCycleOnDLP = barWidthPixel*2;
+                    numCyclesOnDLP = pixelDLPHorizontal/pixelOneCycleOnDLP;
+                    
+                    % Calculate the cycles per pixel on DLP.
+                    numCyclesOnDLPPerPixel = round(numCyclesOnDLP/pixelDLPHorizontal,3);
+                end
+                
+                whichSideBar = 'vertical';
+                
+                % Set stripe pattern.
+                switch whichSideBar
+                    case 'horizontal'
+                        baseRect = [0 0 screenXpixels barWidthPixel];
+                        for i=1:1000
+                            centeredRect_R = CenterRectOnPointd(baseRect, xCenter, yCenter+barWidthPixel*2*i);
+                            centeredRect_L = CenterRectOnPointd(baseRect, xCenter, yCenter-barWidthPixel*2*(i-1));
+                            Screen('FillRect', window, rectColor, centeredRect_R);
+                            Screen('FillRect', window, rectColor, centeredRect_L);
+                        end
+                        
+                    case 'vertical'
+                        baseRect = [0 0 barWidthPixel screenYpixels];
+                        for i=1:1000
+                            centeredRect_R = CenterRectOnPointd(baseRect, xCenter+barWidthPixel*2*i, yCenter);
+                            centeredRect_L = CenterRectOnPointd(baseRect, xCenter-barWidthPixel*2*(i-1), yCenter);
+                            Screen('FillRect', window, rectColor, centeredRect_R);
+                            Screen('FillRect', window, rectColor, centeredRect_L);
+                        end
+                end
+                
+                Screen('Flip', window);
+                
+            elseif strcmp(makingImageType,'new')
+                %% New way to generate the contrast pattern (as of 02/02/24).
+                %
+                % This is the method that we used to generate the gratings on
+                % the wall.
+                imageWidth = 1920;
+                imageHeight = 1080;
+                image = ones(imageHeight, imageWidth);
+                
+                % Define the number of stripes
+                switch targetCyclesPerDeg
+                    case 1
+                        numStripes = 68;
+                    case 3
+                        numStripes = 23;
+                    case 6
+                        numStripes = 11;
+                    case 9
+                        numStripes = 8;
+                    case 12
+                        numStripes = 6;
+                    case 18
+                        numStripes = 90;
+                end
+                
+                % Define the total stripe width
+                totalStripeWidth = imageWidth / numStripes;
+                
+                % Generate the alternating black and white stripes
+                for i = 1:numStripes
+                    startColumn = round((i - 1) * totalStripeWidth) + 1;
+                    endColumn = round(i * totalStripeWidth);
+                    
+                    % Set the pixels within the black stripe to black
+                    if mod(i, 2) == 1
+                        image(:, startColumn:endColumn) = 0;
+                    end
+                end
+                
+                % Flip the screen.
+                % the image.
+                [imageTexture imageWindowRect] = MakeImageTexture(image, window, windowRect,'verbose', false);
+                
+                %% Flip the PTB texture to display the image on the projector.
+                FlipImageTexture(imageTexture, window, imageWindowRect,'verbose',false);
             end
-            
-            Screen('Flip', window);
             
         case 'SingleLine'
             % Set the barwidth and directions.
@@ -223,11 +275,16 @@ GetChannelSettings;
     end
     
     % Print out which image is displaying now.
-    fprintf('\t Now displaying - (Ch %d) / (%d cpd) \n',whichChannelPrimary1,sineFreqCyclesPerDeg);
+    fprintf('\t Now displaying - (Ch %d) / (%d cpd) \n',whichChannelPrimary1,targetCyclesPerDeg);
     
-    % Get a key press to start to display image.
-    fprintf('Press any key to display image \n',whichChannelPrimary1,sineFreqCyclesPerDeg);
-    pause;
+    % Get a key press to start to display image if showing multiple.
+    if and(nTestingChannels > 1, ~(ss == nTestingChannels))
+        fprintf('Press any key to display image \n',whichChannelPrimary1,targetCyclesPerDeg);
+        pause;
+    end
+    if ss == nTestingChannels
+        disp('This is the last image to display');
+    end
 end
 
 %% Activate the following commands if you want to quit the screen with key stroke
