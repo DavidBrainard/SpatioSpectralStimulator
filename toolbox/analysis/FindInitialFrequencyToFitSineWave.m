@@ -89,7 +89,7 @@ while 1
         case 12
             targetCorrSignals = 0.955;
         case 18
-            targetCorrSignals = 0.975;
+            targetCorrSignals = 0.97;
         otherwise
             targetCorrSignals = 0.97;
     end

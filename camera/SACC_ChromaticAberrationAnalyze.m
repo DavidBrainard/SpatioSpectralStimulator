@@ -83,7 +83,8 @@ savefileDir = '~/Desktop';
 %% Get the peak wavelength of the Combi-LED (camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'camera','ChromaticAberration','Spectra');
-testFilename = 'CombiLED_Spectra.mat';
+% testFilename = 'CombiLED_Spectra.mat';
+testFilename = 'CombiLED_Spectra_fancy_paper.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
 % Extract black and white measurements per each channel.
@@ -1675,8 +1676,15 @@ if (PLOTCAMERAFOCUSSETTINGS)
     % Unit in (cm) on the scale attached to the camera. The SACCSFA
     % settings are based on the trombone positioned at 151 nm (emmetropic).
     cameraFocusSettings_camera = [9.7 9.8 10 10 10 10 10 10];
+    cameraFocusSettings_camera_fancy_paper = [9.65 9.8 10 10 10 10 10 10];
+    
     cameraFocusSettings_SACCSFA = [10.8 10.95 10.95 10.55 10.95 10.95 10.95 10.95 10.95 10.95];
     cameraFocusSettings_SACCSFA_sorted = cameraFocusSettings_SACCSFA(I);
+    
+%     cameraFocusSettings_SACCSFA170
+%     
+%     cameraFocusSettings_SACCSFA185
+    
     cameraFocusSetting_infinity = 10;
     
     % Plot it.
