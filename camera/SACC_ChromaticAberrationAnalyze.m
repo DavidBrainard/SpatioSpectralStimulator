@@ -109,10 +109,6 @@ XYZ_camera_black = spd_camera_black'*T_XYZ';
 % Calculate contrasts.
 contrasts_camera_PR670 = (XYZ_camera_white(:,2) - XYZ_camera_black(:,2))./(XYZ_camera_white(:,2) + XYZ_camera_black(:,2));
 
-% Delete the contrast value of channel 6 as the black was not properly
-% measured.
-contrasts_camera_PR670(6) = NaN;
-
 %% Get the peak wavelengths (SACCSFA).
 %
 % Load the calibration data. We will load the most recent calibration
@@ -170,10 +166,15 @@ if ~(numel(folders) == numel(dates))
     
 end
 
+
+% Choose if you want to load the older data.
+olderDate = 0;
+
 % Get the most recent date folder directory.
 dateNumbers = datenum(dates, 'yyyy-mm-dd');
 [recentDateNumber, idxRecentDate] = max(dateNumbers);
-recentFolderName = folders(idxRecentDate).name;
+idxDate = idxRecentDate - olderDate;
+recentFolderName = folders(idxDate).name;
 recentTestFiledir = fullfile(testFiledir,recentFolderName);
 
 % Print out which data will be loaded.
@@ -819,8 +820,6 @@ for cc = 1:nChannels_camera
         case 'Sinefit'
             if cc == 1
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','northeast','fontsize',8);
-            elseif cc == 6
-                legend('camera (Sine)*pi/4','camera (Avg)','location','southeast','fontsize',8);
             else
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','southeast','fontsize',8);
             end
@@ -1405,11 +1404,13 @@ switch viewingMediaSACCSFA
         %         phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
         
         % For the data of 02-02-24.
+        if strcmp(recentFolderName,'2024-02-02')
         phi_SACCSFA_25(1,5) = phi_SACCSFA_25(1,5) + 2*pi;
         
         phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) + 2*pi;
         
         phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
+        end
         
     case 'SACCSFA170'
         % For the data of 12-05-23.
