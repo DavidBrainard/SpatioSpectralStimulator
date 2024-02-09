@@ -50,18 +50,20 @@ fprintf('\t Contrast calculation will be based on this method - (%s) \n',contras
 
 % Get the SACCSFA trombone setting.
 while 1
-    tromboneSetting = input('Which Trombone setting to use? [1:Emmetropic, 2:170 nm, 3:185 nm] \n');
-    if ismember(tromboneSetting,[1 2 3])
+    tromboneSetting = input('Which Trombone setting to use? [1:Emmetropic, 2: 156nm, 3:170 nm, 4:185 nm] \n');
+    if ismember(tromboneSetting,[1 2 3 4])
         break
     end
-    disp('Choose one among 1 (Emmentropic), 2 (170 nm), 3 (185 nm)!');
+    disp('Choose one among 1 (Emmentropic), 2 (156 nm), 3 (170 nm), 4 (185 nm)!');
 end
 switch tromboneSetting
     case 1
         viewingMediaSACCSFA = 'SACCSFA';
     case 2
-        viewingMediaSACCSFA = 'SACCSFA170';
+        viewingMediaSACCSFA = 'SACCSFA156';
     case 3
+        viewingMediaSACCSFA = 'SACCSFA170';
+    case 4
         viewingMediaSACCSFA = 'SACCSFA185';
 end
 fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
@@ -1618,6 +1620,8 @@ end
 switch viewingMediaSACCSFA
     case 'SACCSFA'
         trombonePosition = 'emmetropic';
+    case 'SACCSFA156'
+        trombonePosition = '156';
     case 'SACCSFA170'
         trombonePosition = '170';
     case 'SACCSFA185'

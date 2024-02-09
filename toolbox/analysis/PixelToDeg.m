@@ -93,6 +93,8 @@ switch options.trombone
         
         % New measure as of 01/24/24.
         imageSize_SACCSFA = [1351 2413];
+    case '156'
+        imageSize_SACCSFA = [1366 2437];
     case '170'
         imageSize_SACCSFA = [1408 2512];
     case '185'
