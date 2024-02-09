@@ -1055,7 +1055,7 @@ if exist('z')
 end
 
 % Set the variables for the interpolation.
-z = contrasts_SACCSFA_compensated_norm;
+z = contrasts_SACCSFA_compensated;
 [r c] = size(z);
 x = repmat(peaks_spd_SACCSFA_test',1,c);
 y = repmat(cell2mat(targetCyclePerDeg),r,1);
