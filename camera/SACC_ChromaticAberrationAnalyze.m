@@ -1019,7 +1019,6 @@ sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15)
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
     contrasts_SACCSFA_compensated_temp = contrasts_SACCSFA_compensated(cc,:);
-    contrasts_SACCSFA_compensated_norm_temp = contrasts_SACCSFA_compensated_norm(cc,:);
     
     % Plot it.
     plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_temp,...
