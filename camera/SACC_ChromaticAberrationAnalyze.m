@@ -1705,9 +1705,11 @@ if (PLOTCAMERAFOCUSSETTINGS)
     cameraFocusSettings_SACCSFA = [10.8 10.95 10.95 10.55 10.95 10.95 10.95 10.95 10.95 10.95];
     cameraFocusSettings_SACCSFA_sorted = cameraFocusSettings_SACCSFA(I);
     
-    %     cameraFocusSettings_SACCSFA170
-    %
-    %     cameraFocusSettings_SACCSFA185
+    cameraFocusSettings_SACCSFA170 = [6.95 7.2 7.2 6.7 7.2 7.2 7.2 7.2 7.2 7.2];
+    cameraFocusSettings_SACCSFA170_sorted = cameraFocusSettings_SACCSFA170(I);
+    
+    cameraFocusSettings_SACCSFA185 = [3.8 3.9 3.9 3.55 3.9 3.9 3.9 3.9 3.9 3.9];
+    cameraFocusSettings_SACCSFA185_sorted = cameraFocusSettings_SACCSFA185(I);
     
     cameraFocusSetting_infinity = 10;
     
@@ -1715,11 +1717,14 @@ if (PLOTCAMERAFOCUSSETTINGS)
     figure; hold on;
     plot(peaks_spd_camera, cameraFocusSettings_camera,'b-o','markerfacecolor','b','markeredgecolor','k');
     plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA170_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA185_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    
     plot([380 780], ones(1,2)*cameraFocusSetting_infinity, 'k-', 'color', [0 0 0 0.2], 'linewidth', 6);
     title('Camera focus point that maximizes the image contrast over wavelength');
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Focus point (cm)','fontsize',15);
     xlim([380 680]);
-    ylim([8 12]);
-    legend('Camera (print)','SACCSFA','Nominal infinity','location','southeast','fontsize',15);
+    ylim([0 12]);
+    legend('Camera (print)','SACCSFA','SACCSFA170','SACCSFA185','Nominal infinity','location','southeast','fontsize',13);
 end
