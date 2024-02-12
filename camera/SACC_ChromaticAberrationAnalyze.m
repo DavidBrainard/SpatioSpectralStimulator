@@ -851,7 +851,8 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess');
+smoothingParam_camera = 0.4;
+f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam_camera);
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
@@ -1068,7 +1069,8 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess');
+smoothingParam_SACCSFA = 0.3;
+f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess', 'span', smoothingParam_SACCSFA);
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
