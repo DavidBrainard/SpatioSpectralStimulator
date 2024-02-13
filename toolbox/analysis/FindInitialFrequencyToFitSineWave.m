@@ -73,21 +73,21 @@ while 1
     % curves.
     switch options.SF
         case 1
-            targetCorrSignals = 0.89;
+            targetCorrSignals = 0.92;
         case 3
-            targetCorrSignals = 0.915;
+            targetCorrSignals = 0.94;
             % For SACCSFA185.
 %             targetCorrSignals = 0.941; 
         case 6
-            targetCorrSignals = 0.935;
+            targetCorrSignals = 0.94;
 %             targetCorrSignals = 0.937;
         case 9
-%             targetCorrSignals = 0.97;
+            targetCorrSignals = 0.965;
             
             % For Camera MTF.
-            targetCorrSignals = 0.945;
+%             targetCorrSignals = 0.945;
         case 12
-            targetCorrSignals = 0.955;
+            targetCorrSignals = 0.98;
         case 18
             targetCorrSignals = 0.97;
         otherwise
