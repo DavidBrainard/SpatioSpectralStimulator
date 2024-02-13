@@ -73,13 +73,13 @@ fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 DoFourierTransform = false;
 PlotIntensityProfile = false;
 PlotOneIntensityProfile = false;
-PlotSineFitting = false;
+PlotSineFitting = true;
 PlotRawImage = false;
 PlotPhiParam = false;
 
 % Figure saving option temporarily. Set it to true will save the figures
 % for the report in the current directory.
-SAVEFIGURES = true;
+SAVEFIGURES = false;
 savefileDir = '~/Desktop';
 
 %% Get the peak wavelength of the Combi-LED (camera).
@@ -1069,7 +1069,7 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-smoothingParam_SACCSFA = 0.3;
+smoothingParam_SACCSFA = 0.32;
 f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess', 'span', smoothingParam_SACCSFA);
 
 % Create a 3D plot to compare raw data and fitted surface
@@ -1415,6 +1415,23 @@ switch viewingMediaSACCSFA
         
         phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
         end
+    case 'SACCSFA156'
+        
+        idx_SF = 3;
+        idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
+        idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
+        idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
+        phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
+        phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
+        phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
+        
+        idx_SF = 5;
+        idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+        idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+        idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+        phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+        phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+        phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
         
     case 'SACCSFA170'
         % For the data of 12-05-23.
@@ -1451,6 +1468,31 @@ switch viewingMediaSACCSFA
             phi_SACCSFA_25(idx_25,6) = phi_SACCSFA_25(idx_25,6) + 2*pi;
             phi_SACCSFA_50(idx_50,6) = phi_SACCSFA_50(idx_50,6) + 2*pi;
             phi_SACCSFA_75(idx_75,6) = phi_SACCSFA_75(idx_75,6) + 2*pi;
+            
+        elseif strcmp(recentFolderName,'2024-02-09')
+            idx_SF = 3;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            
+            idx_SF = 4;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
+            
+            idx_SF = 6;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi; 
         end
         
     case 'SACCSFA185'
@@ -1460,6 +1502,17 @@ switch viewingMediaSACCSFA
             phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) - 2*pi;
             
             phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
+        elseif strcmp(recentFolderName,'2024-02-09')
+            target_idx_SF = [4 5];
+            for xx = 1:length(target_idx_SF)
+                idx_SF = target_idx_SF(xx);
+                idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+                idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+                idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+                phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+                phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+                phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            end
         end
 end
 
@@ -1605,7 +1658,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([-5 5]);
+    ylim([-5.5 5.5]);
     legend('Measure','No difference');
 end
 
