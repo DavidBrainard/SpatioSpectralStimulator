@@ -50,18 +50,20 @@ fprintf('\t Contrast calculation will be based on this method - (%s) \n',contras
 
 % Get the SACCSFA trombone setting.
 while 1
-    tromboneSetting = input('Which Trombone setting to use? [1:Emmetropic, 2:170 nm, 3:185 nm] \n');
-    if ismember(tromboneSetting,[1 2 3])
+    tromboneSetting = input('Which Trombone setting to use? [1:Emmetropic, 2: 156nm, 3:170 nm, 4:185 nm] \n');
+    if ismember(tromboneSetting,[1 2 3 4])
         break
     end
-    disp('Choose one among 1 (Emmentropic), 2 (170 nm), 3 (185 nm)!');
+    disp('Choose one among 1 (Emmentropic), 2 (156 nm), 3 (170 nm), 4 (185 nm)!');
 end
 switch tromboneSetting
     case 1
         viewingMediaSACCSFA = 'SACCSFA';
     case 2
-        viewingMediaSACCSFA = 'SACCSFA170';
+        viewingMediaSACCSFA = 'SACCSFA156';
     case 3
+        viewingMediaSACCSFA = 'SACCSFA170';
+    case 4
         viewingMediaSACCSFA = 'SACCSFA185';
 end
 fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
@@ -71,19 +73,20 @@ fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 DoFourierTransform = false;
 PlotIntensityProfile = false;
 PlotOneIntensityProfile = false;
-PlotSineFitting = false;
+PlotSineFitting = true;
 PlotRawImage = false;
 PlotPhiParam = false;
 
 % Figure saving option temporarily. Set it to true will save the figures
 % for the report in the current directory.
-SAVEFIGURES = true;
+SAVEFIGURES = false;
 savefileDir = '~/Desktop';
 
 %% Get the peak wavelength of the Combi-LED (camera).
 testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
 testFiledir = fullfile(testFiledir,'camera','ChromaticAberration','Spectra');
-testFilename = 'CombiLED_Spectra.mat';
+% testFilename = 'CombiLED_Spectra.mat';
+testFilename = 'CombiLED_Spectra_fancy_paper.mat';
 spdData = load(fullfile(testFiledir,testFilename));
 
 % Extract black and white measurements per each channel.
@@ -107,10 +110,6 @@ XYZ_camera_black = spd_camera_black'*T_XYZ';
 
 % Calculate contrasts.
 contrasts_camera_PR670 = (XYZ_camera_white(:,2) - XYZ_camera_black(:,2))./(XYZ_camera_white(:,2) + XYZ_camera_black(:,2));
-
-% Delete the contrast value of channel 6 as the black was not properly
-% measured.
-contrasts_camera_PR670(6) = NaN;
 
 %% Get the peak wavelengths (SACCSFA).
 %
@@ -169,10 +168,15 @@ if ~(numel(folders) == numel(dates))
     
 end
 
+
+% Choose if you want to load the older data.
+olderDate = 0;
+
 % Get the most recent date folder directory.
 dateNumbers = datenum(dates, 'yyyy-mm-dd');
 [recentDateNumber, idxRecentDate] = max(dateNumbers);
-recentFolderName = folders(idxRecentDate).name;
+idxDate = idxRecentDate - olderDate;
+recentFolderName = folders(idxDate).name;
 recentTestFiledir = fullfile(testFiledir,recentFolderName);
 
 % Print out which data will be loaded.
@@ -818,8 +822,6 @@ for cc = 1:nChannels_camera
         case 'Sinefit'
             if cc == 1
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','northeast','fontsize',8);
-            elseif cc == 6
-                legend('camera (Sine)*pi/4','camera (Avg)','location','southeast','fontsize',8);
             else
                 legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','southeast','fontsize',8);
             end
@@ -849,7 +851,8 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess');
+smoothingParam_camera = 0.4;
+f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam_camera);
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
@@ -1008,11 +1011,6 @@ end
 % Here we divide the SACCSFA MTF by the camera MTF.
 contrasts_SACCSFA_compensated = contrasts_SACCSFA./contrasts_camera_test;
 
-% Set the contrast within the range.
-contrasts_SACCSFA_compensated_norm = contrasts_SACCSFA_compensated;
-maxContrast = 1;
-contrasts_SACCSFA_compensated_norm(find(contrasts_SACCSFA_compensated_norm > maxContrast)) = 1;
-
 % Make a new figure.
 figure; hold on; clf;
 figureSize = [0 0 1200 500];
@@ -1023,24 +1021,17 @@ sgtitle(sprintf('Inherent SACCSFA MTF (%s)',viewingMediaSACCSFA),'fontsize', 15)
 for cc = 1:nChannels_test
     subplot(2,round(nChannels_test)/2,cc); hold on;
     contrasts_SACCSFA_compensated_temp = contrasts_SACCSFA_compensated(cc,:);
-    contrasts_SACCSFA_compensated_norm_temp = contrasts_SACCSFA_compensated_norm(cc,:);
     
     % Plot it.
-    %
-    % Inherent SACCSFA MTF.
     plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_temp,...
-        'ko','markeredgecolor','r','markersize',13);
-    
-    % Inherent SACCSFA MTF (cut off the contrast over 1.0).
-    plot(cell2mat(targetCyclePerDeg),contrasts_SACCSFA_compensated_norm_temp,...
-        'ko-','markeredgecolor','k','markerfacecolor','r', 'markersize',10);
+        'ko-','markerfacecolor','r','markersize',10);
     
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast','fontsize',15);
     xticks(cell2mat(targetCyclePerDeg));
     title(sprintf('%d nm', peaks_spd_SACCSFA_test(cc)), 'fontsize', 15);
-    legend('SACCSFA-raw','SACCSFA-norm','location','southeast','fontsize',10);
+    legend('SACCSFA','location','southeast','fontsize',10);
 end
 
 % Save the image on the Desktop if you want.
@@ -1066,7 +1057,7 @@ if exist('z')
 end
 
 % Set the variables for the interpolation.
-z = contrasts_SACCSFA_compensated_norm;
+z = contrasts_SACCSFA_compensated;
 [r c] = size(z);
 x = repmat(peaks_spd_SACCSFA_test',1,c);
 y = repmat(cell2mat(targetCyclePerDeg),r,1);
@@ -1078,7 +1069,8 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess');
+smoothingParam_SACCSFA = 0.32;
+f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess', 'span', smoothingParam_SACCSFA);
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
@@ -1196,13 +1188,20 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% Match up the period scale.
+% Match up the phase scale.
 idx_25 = find(phi_camera_25(:,6)<0);
 idx_50 = find(phi_camera_50(:,6)<0);
 idx_75 = find(phi_camera_75(:,6)<0);
 phi_camera_25(idx_25,6) = phi_camera_25(idx_25,6) +2*pi;
 phi_camera_50(idx_50,6) = phi_camera_50(idx_50,6) +2*pi;
 phi_camera_75(idx_75,6) = phi_camera_75(idx_75,6) +2*pi;
+
+idx_25 = find(phi_camera_25(:,3)>0);
+idx_50 = find(phi_camera_50(:,3)>0);
+idx_75 = find(phi_camera_75(:,3)>0);
+phi_camera_25(idx_25,3) = phi_camera_25(idx_25,3) -2*pi;
+phi_camera_50(idx_50,3) = phi_camera_50(idx_50,3) -2*pi;
+phi_camera_75(idx_75,3) = phi_camera_75(idx_75,3) -2*pi;
 
 % Calculate the mean phi.
 phi_camera = (phi_camera_25 + phi_camera_50 + phi_camera_75)/3;
@@ -1409,29 +1408,112 @@ switch viewingMediaSACCSFA
         %         phi_SACCSFA_25(10,3) = phi_SACCSFA_25(10,3) - 2*pi;
         
         % For the data of 02-02-24.
+        if strcmp(recentFolderName,'2024-02-02')
         phi_SACCSFA_25(1,5) = phi_SACCSFA_25(1,5) + 2*pi;
         
         phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) + 2*pi;
         
         phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
+        end
+    case 'SACCSFA156'
+        
+        idx_SF = 3;
+        idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
+        idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
+        idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
+        phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
+        phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
+        phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
+        
+        idx_SF = 5;
+        idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+        idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+        idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+        phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+        phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+        phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
         
     case 'SACCSFA170'
         % For the data of 12-05-23.
-        phi_SACCSFA_25(1,4) = phi_SACCSFA_25(1,4) - 2*pi;
-        phi_SACCSFA_50(1,4) = phi_SACCSFA_50(1,4) - 2*pi;
-        phi_SACCSFA_75(1,4) = phi_SACCSFA_75(1,4) - 2*pi;
+        if strcmp(recentFolderName,'2023-12-05')
+            phi_SACCSFA_25(1,4) = phi_SACCSFA_25(1,4) - 2*pi;
+            phi_SACCSFA_50(1,4) = phi_SACCSFA_50(1,4) - 2*pi;
+            phi_SACCSFA_75(1,4) = phi_SACCSFA_75(1,4) - 2*pi;
+            
+            phi_SACCSFA_25(2,4) = phi_SACCSFA_25(2,4) - 2*pi;
+            phi_SACCSFA_50(2,4) = phi_SACCSFA_50(2,4) - 2*pi;
+            phi_SACCSFA_75(2,4) = phi_SACCSFA_75(2,4) - 2*pi;
+            
+            phi_SACCSFA_75(9,4) = phi_SACCSFA_75(9,4) - 2*pi;
+            
+            % For the data of 02-07-24.
+        elseif strcmp(recentFolderName,'2024-02-07')
+            idx_25 = find(phi_SACCSFA_25(:,1)>0);
+            idx_50 = find(phi_SACCSFA_50(:,1)>0);
+            idx_75 = find(phi_SACCSFA_75(:,1)>0);
+            phi_SACCSFA_25(idx_25,1) = phi_SACCSFA_25(idx_25,1) - 2*pi;
+            phi_SACCSFA_50(idx_50,1) = phi_SACCSFA_50(idx_50,1) - 2*pi;
+            phi_SACCSFA_75(idx_75,1) = phi_SACCSFA_75(idx_75,1) - 2*pi;
+            
+            idx_25 = find(phi_SACCSFA_25(:,3)>0);
+            idx_50 = find(phi_SACCSFA_50(:,3)>0);
+            idx_75 = find(phi_SACCSFA_75(:,3)>0);
+            phi_SACCSFA_25(idx_25,3) = phi_SACCSFA_25(idx_25,3) - 2*pi;
+            phi_SACCSFA_50(idx_50,3) = phi_SACCSFA_50(idx_50,3) - 2*pi;
+            phi_SACCSFA_75(idx_75,3) = phi_SACCSFA_75(idx_75,3) - 2*pi;
+            
+            idx_25 = find(phi_SACCSFA_25(:,6)<0);
+            idx_50 = find(phi_SACCSFA_50(:,6)<0);
+            idx_75 = find(phi_SACCSFA_75(:,6)<0);
+            phi_SACCSFA_25(idx_25,6) = phi_SACCSFA_25(idx_25,6) + 2*pi;
+            phi_SACCSFA_50(idx_50,6) = phi_SACCSFA_50(idx_50,6) + 2*pi;
+            phi_SACCSFA_75(idx_75,6) = phi_SACCSFA_75(idx_75,6) + 2*pi;
+            
+        elseif strcmp(recentFolderName,'2024-02-09')
+            idx_SF = 3;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            
+            idx_SF = 4;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
+            
+            idx_SF = 6;
+            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi; 
+        end
         
-        phi_SACCSFA_25(2,4) = phi_SACCSFA_25(2,4) - 2*pi;
-        phi_SACCSFA_50(2,4) = phi_SACCSFA_50(2,4) - 2*pi;
-        phi_SACCSFA_75(2,4) = phi_SACCSFA_75(2,4) - 2*pi;
-        
-        phi_SACCSFA_75(9,4) = phi_SACCSFA_75(9,4) - 2*pi;
     case 'SACCSFA185'
         % For the data of 12-05-23.
-        phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) - 2*pi;
-        phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) - 2*pi;
-        
-        phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
+        if strcmp(recentFolderName,'2023-12-05')
+            phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) - 2*pi;
+            phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) - 2*pi;
+            
+            phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
+        elseif strcmp(recentFolderName,'2024-02-09')
+            target_idx_SF = [4 5];
+            for xx = 1:length(target_idx_SF)
+                idx_SF = target_idx_SF(xx);
+                idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+                idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+                idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+                phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+                phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+                phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            end
+        end
 end
 
 % Calculate the mean phi here.
@@ -1576,7 +1658,7 @@ for ss = 1:nSFs
     xticklabels(peaks_spd_SACCSFA_test);
     xlabel('Peak wavelength (nm)','fontsize',15);
     ylabel('Shift (pixel)','fontsize',15);
-    ylim([-5 5]);
+    ylim([-5.5 5.5]);
     legend('Measure','No difference');
 end
 
@@ -1593,6 +1675,8 @@ end
 switch viewingMediaSACCSFA
     case 'SACCSFA'
         trombonePosition = 'emmetropic';
+    case 'SACCSFA156'
+        trombonePosition = '156';
     case 'SACCSFA170'
         trombonePosition = '170';
     case 'SACCSFA185'
@@ -1675,19 +1759,31 @@ if (PLOTCAMERAFOCUSSETTINGS)
     % Unit in (cm) on the scale attached to the camera. The SACCSFA
     % settings are based on the trombone positioned at 151 nm (emmetropic).
     cameraFocusSettings_camera = [9.7 9.8 10 10 10 10 10 10];
+    cameraFocusSettings_camera_fancy_paper = [9.65 9.8 10 10 10 10 10 10];
+    
     cameraFocusSettings_SACCSFA = [10.8 10.95 10.95 10.55 10.95 10.95 10.95 10.95 10.95 10.95];
     cameraFocusSettings_SACCSFA_sorted = cameraFocusSettings_SACCSFA(I);
+    
+    cameraFocusSettings_SACCSFA170 = [6.95 7.2 7.2 6.7 7.2 7.2 7.2 7.2 7.2 7.2];
+    cameraFocusSettings_SACCSFA170_sorted = cameraFocusSettings_SACCSFA170(I);
+    
+    cameraFocusSettings_SACCSFA185 = [3.8 3.9 3.9 3.55 3.9 3.9 3.9 3.9 3.9 3.9];
+    cameraFocusSettings_SACCSFA185_sorted = cameraFocusSettings_SACCSFA185(I);
+    
     cameraFocusSetting_infinity = 10;
     
     % Plot it.
     figure; hold on;
     plot(peaks_spd_camera, cameraFocusSettings_camera,'b-o','markerfacecolor','b','markeredgecolor','k');
     plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA170_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA185_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
+    
     plot([380 780], ones(1,2)*cameraFocusSetting_infinity, 'k-', 'color', [0 0 0 0.2], 'linewidth', 6);
     title('Camera focus point that maximizes the image contrast over wavelength');
     xlabel('Wavelength (nm)','fontsize',15);
     ylabel('Focus point (cm)','fontsize',15);
     xlim([380 680]);
-    ylim([8 12]);
-    legend('Camera (print)','SACCSFA','Nominal infinity','location','southeast','fontsize',15);
+    ylim([0 12]);
+    legend('Camera (print)','SACCSFA','SACCSFA170','SACCSFA185','Nominal infinity','location','southeast','fontsize',13);
 end

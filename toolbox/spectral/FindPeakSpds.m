@@ -51,7 +51,9 @@ for ss = 1:nSpds
     % results are available in peakWavelegnths.
     spdSingle = spds(:,ss);
     peakWavelength = max(spdSingle);
-    idxPeakWavelength(ss) = find(spdSingle(:) == peakWavelength);
+    
+    % If we found more than one wavelengths that have the peak, we take the first one.
+    idxPeakWavelength(ss) = min(find(spdSingle(:) == peakWavelength));
     peakWavelengths(ss) = spdStart + spdInterval * (idxPeakWavelength(ss) - 1);
     
     % Print out the results if you want.
