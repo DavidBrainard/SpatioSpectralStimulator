@@ -1013,10 +1013,12 @@ for cc = 1:nChannels_test
         contrasts_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
     end
     
-    % Compensate the camera MTF with 1 cpd contrasts so that we can unit
-    % contrast at 1 cpd at all wavelengths.
-    contrasts_camera_test_temp_1cpd = contrasts_camera_test_temp(1);
-    contrasts_camera_test(cc,:) = contrasts_camera_test_temp./contrasts_camera_test_temp_1cpd;
+    % Compensate the camera MTF with 0 cpd contrast so that we can unit
+    % contrast at 0 cpd at all wavelengths. We used to normalize at 1 cpd,
+    % but now we calculate it to have a unit contrast at 0 cpd (as of
+    % 02/14/24).
+    contrasts_camera_test_temp_0cpd = feval(f_cameraMTF,[peakSpdTemp,0]);
+    contrasts_camera_test(cc,:) = contrasts_camera_test_temp./contrasts_camera_test_temp_0cpd;
     
     % Plot it.
     plot(cell2mat(targetCyclePerDeg),contrasts_camera_test(cc,:),...
