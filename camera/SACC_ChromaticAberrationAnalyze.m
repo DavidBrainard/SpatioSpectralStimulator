@@ -885,7 +885,8 @@ end
 
 % Fitting happens here.
 % Create a lowess surface fit using fit
-smoothingParam_camera = 0.4;
+smoothingParam_camera = 0.1;
+% f_cameraMTF = fit([x(:)./max(x(:)), y(:)./max(y(:))], z(:), 'lowess', 'Span', smoothingParam_camera,'weights',ones(length(x(:)),1));
 f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam_camera);
 
 % Create a 3D plot to compare raw data and fitted surface
@@ -907,6 +908,7 @@ switch FittedSurfacePlotType
     case 2
         [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
         Z = feval(f_cameraMTF, [X(:), Y(:)]);
+        %         Z = feval(f_cameraMTF, [X(:)./max(x(:)), Y(:)./max(y(:))]);
         l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
@@ -943,6 +945,7 @@ for cc = 1:nChannels_camera
     nSmoothPoints = 100;
     SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
+    %     contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth./max(x(:)),SF_smooth'./max(y(:))])';
     contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
     plot(SF_smooth,contrasts_smooth,...
         'b-','color',[0 0 1 0.3],'linewidth',6);
