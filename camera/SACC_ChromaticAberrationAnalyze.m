@@ -524,14 +524,48 @@ for cc = 1:nChannels_SACCSFA
     
     % Get the images of all spatial frequency.
     for ss = 1:nSFs
-        testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
-            append(num2str(targetCyclePerDeg{ss}),'cpd_crop'));
+        
+        % Load the image. We will load the pre-saved cropped image at the
+        % center, but we will load the raw one (uncropped) for the trombone
+        % position at 185 nm. The reason is that the 1 cpd image at 185 nm
+        % position has the fitted SF lower than 1, which means there is no
+        % single full cycle availalbe, which leads to not quite right sine
+        % fitting when we calculate the contrast of it.
+        if strcmp(viewingMediaSACCSFA,'SACCSFA185')
+            testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
+                append(num2str(targetCyclePerDeg{ss}),'cpd_raw'));
+        else
+            testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
+                append(num2str(targetCyclePerDeg{ss}),'cpd_crop'));
+        end
         
         % We save all images here.
         images_SACCSFA{cc,ss} = imread(testFilenameTemp);
         
         % Get intensity profile of the image.
         image_temp = images_SACCSFA{cc,ss};
+        
+        % Crop image if you want. We can load the raw image (uncropped at
+        % the center), then customize the cropping area if we want. For
+        % now, we will do this only for the trombone position at 185 nm.
+        if strcmp(viewingMediaSACCSFA,'SACCSFA185')
+            CROPIMAGE = true;
+            if (CROPIMAGE)
+                % Get the size of the loaded image.
+                [Ypixel Xpixel] = size(image_temp);
+                rectRatioHeight = 0.08;
+                rectRatioWidth = 0.12;
+                a = round((0.5-rectRatioHeight/2)*Ypixel);
+                b = round((0.5+rectRatioHeight/2)*Ypixel);
+                c = round((0.5-rectRatioWidth/2)*Xpixel);
+                d = round((0.5+rectRatioWidth/2)*Xpixel);
+                
+                % Get the cropped image here.
+                image_temp = image_temp(a:b,c:d);
+            end
+        end
+        
+        % Get the size of the cropped image.
         [Ypixel Xpixel] = size(image_temp);
         
         % We will use the average of the 25% / 50% / 75% positions of the cropped image.
@@ -1409,11 +1443,11 @@ switch viewingMediaSACCSFA
         
         % For the data of 02-02-24.
         if strcmp(recentFolderName,'2024-02-02')
-        phi_SACCSFA_25(1,5) = phi_SACCSFA_25(1,5) + 2*pi;
-        
-        phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) + 2*pi;
-        
-        phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
+            phi_SACCSFA_25(1,5) = phi_SACCSFA_25(1,5) + 2*pi;
+            
+            phi_SACCSFA_50(1,5) = phi_SACCSFA_50(1,5) + 2*pi;
+            
+            phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
         end
     case 'SACCSFA156'
         
@@ -1492,7 +1526,7 @@ switch viewingMediaSACCSFA
             idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
             phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
             phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
-            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi; 
+            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
         end
         
     case 'SACCSFA185'
