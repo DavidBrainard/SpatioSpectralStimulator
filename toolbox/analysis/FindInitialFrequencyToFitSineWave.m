@@ -45,6 +45,8 @@ end
 % always start from 0, but setting this value differently (higher value)
 % will speed up the searching process.
 switch options.SF
+    case 1 
+        f0_lb = 0;
     case 3
         f0_lb = 0;
     case 6
