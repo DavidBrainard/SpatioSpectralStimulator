@@ -70,7 +70,8 @@ fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 
 % Set additional analysis and plotting options. Set all these off will
 % speed up running this routine.
-CUSTOMCROPIMAGE = true;
+CUSTOMCROPIMAGECAMERA = true;
+CUSTOMCROPIMAGESACCSFA = true;
 DoFourierTransform = false;
 PlotIntensityProfile = false;
 PlotOneIntensityProfile = false;
@@ -78,7 +79,7 @@ PlotSineFitting = false;
 PlotRawImage = false;
 PlotPhiParam = false;
 
-if (CUSTOMCROPIMAGE)
+if or(CUSTOMCROPIMAGECAMERA, CUSTOMCROPIMAGESACCSFA)
     rectRatioHeight = 0.08;
     rectRatioWidth = 0.12;
 end
@@ -230,7 +231,7 @@ for cc = 1:nChannels_camera
     
     % Get the images of all spatial frequency.
     for ss = 1:nSFs
-        if (CUSTOMCROPIMAGE)
+        if (CUSTOMCROPIMAGECAMERA)
             testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
                 append(num2str(targetCyclePerDeg{ss}),'cpd_raw'));
         else
@@ -244,7 +245,7 @@ for cc = 1:nChannels_camera
         % Get intensity profile of the image.
         image_temp = images_camera{cc,ss};
         
-        if (CUSTOMCROPIMAGE)
+        if (CUSTOMCROPIMAGECAMERA)
             % Get the size of the loaded image.
             [Ypixel Xpixel] = size(image_temp);
             a = round((0.5-rectRatioHeight/2)*Ypixel);
@@ -555,7 +556,7 @@ for cc = 1:nChannels_SACCSFA
         % position has the fitted SF lower than 1, which means there is no
         % single full cycle availalbe, which leads to not quite right sine
         % fitting when we calculate the contrast of it.
-        if (CUSTOMCROPIMAGE)
+        if (CUSTOMCROPIMAGESACCSFA)
             testFilenameTemp = GetMostRecentFileName(oneChannelFileDir,...
                 append(num2str(targetCyclePerDeg{ss}),'cpd_raw'));
         else
@@ -572,7 +573,7 @@ for cc = 1:nChannels_SACCSFA
         % Crop image if you want. We can load the raw image (uncropped at
         % the center), then customize the cropping area if we want. For
         % now, we will do this only for the trombone position at 185 nm.
-        if (CUSTOMCROPIMAGE)
+        if (CUSTOMCROPIMAGESACCSFA)
             % Get the size of the loaded image.
             [Ypixel Xpixel] = size(image_temp);
             a = round((0.5-rectRatioHeight/2)*Ypixel);
@@ -915,7 +916,7 @@ if (NORMALIZEFIT)
 end
 
 % Set parameter for fit.
-smoothingParam = 0.2;
+smoothingParam = 0.3;
 
 % Fitting happens here.
 if (NORMALIZEFIT)
@@ -1061,14 +1062,24 @@ for cc = 1:nChannels_test
     % Load the camera MTF.
     for ss = 1:nSFs
         sfTemp = targetCyclePerDeg{ss};
-        contrasts_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
+        
+        if (NORMALIZEFIT)
+            peakSpdTemp_normalized = (peakSpdTemp - x_mean)./x_std;
+            sfTemp_normalized = (sfTemp - y_mean)./y_std;
+            sfZero_normalized = (0 - y_mean)/y_std;
+            
+            contrasts_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp_normalized,sfTemp_normalized]);
+            contrasts_camera_test_temp_0cpd = feval(f_cameraMTF,[peakSpdTemp_normalized,sfZero_normalized]);
+        else
+            contrasts_camera_test_temp(ss) = feval(f_cameraMTF,[peakSpdTemp,sfTemp]);
+            contrasts_camera_test_temp_0cpd = feval(f_cameraMTF,[peakSpdTemp,0]);
+        end
     end
     
     % Compensate the camera MTF with 0 cpd contrast so that we can unit
     % contrast at 0 cpd at all wavelengths. We used to normalize at 1 cpd,
     % but now we calculate it to have a unit contrast at 0 cpd (as of
     % 02/14/24).
-    contrasts_camera_test_temp_0cpd = feval(f_cameraMTF,[peakSpdTemp,0]);
     contrasts_camera_test(cc,:) = contrasts_camera_test_temp./contrasts_camera_test_temp_0cpd;
     
     % Plot it.
@@ -1307,21 +1318,6 @@ for ss = 1:nSFs
     ylim([minY maxY]);
 end
 
-% Match up the phase scale.
-idx_25 = find(phi_camera_25(:,6)<0);
-idx_50 = find(phi_camera_50(:,6)<0);
-idx_75 = find(phi_camera_75(:,6)<0);
-phi_camera_25(idx_25,6) = phi_camera_25(idx_25,6) +2*pi;
-phi_camera_50(idx_50,6) = phi_camera_50(idx_50,6) +2*pi;
-phi_camera_75(idx_75,6) = phi_camera_75(idx_75,6) +2*pi;
-
-idx_25 = find(phi_camera_25(:,3)>0);
-idx_50 = find(phi_camera_50(:,3)>0);
-idx_75 = find(phi_camera_75(:,3)>0);
-phi_camera_25(idx_25,3) = phi_camera_25(idx_25,3) -2*pi;
-phi_camera_50(idx_50,3) = phi_camera_50(idx_50,3) -2*pi;
-phi_camera_75(idx_75,3) = phi_camera_75(idx_75,3) -2*pi;
-
 % Calculate the mean phi.
 phi_camera = (phi_camera_25 + phi_camera_50 + phi_camera_75)/3;
 
@@ -1534,6 +1530,18 @@ switch viewingMediaSACCSFA
             
             phi_SACCSFA_75(1,5) = phi_SACCSFA_75(1,5) + 2*pi;
         end
+        if strcmp(recentFolderName,'2024-02-09')
+            target_idx_SF = [2];
+            for xx = 1:length(target_idx_SF)
+                idx_SF = target_idx_SF(xx);
+                idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
+                idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
+                idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
+                phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
+                phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
+                phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
+            end
+        end
     case 'SACCSFA156'
         
         idx_SF = 3;
@@ -1589,29 +1597,16 @@ switch viewingMediaSACCSFA
             phi_SACCSFA_75(idx_75,6) = phi_SACCSFA_75(idx_75,6) + 2*pi;
             
         elseif strcmp(recentFolderName,'2024-02-09')
-            idx_SF = 3;
-            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
-            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
-            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
-            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
-            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
-            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
-            
-            idx_SF = 4;
-            idx_25 = find(phi_SACCSFA_25(:,idx_SF)>0);
-            idx_50 = find(phi_SACCSFA_50(:,idx_SF)>0);
-            idx_75 = find(phi_SACCSFA_75(:,idx_SF)>0);
-            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) - 2*pi;
-            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) - 2*pi;
-            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) - 2*pi;
-            
-            idx_SF = 6;
-            idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
-            idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
-            idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
-            phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
-            phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
-            phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            target_idx_SF = [1 3 5 6];
+            for xx = 1:length(target_idx_SF)
+                idx_SF = target_idx_SF(xx);
+                idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
+                idx_50 = find(phi_SACCSFA_50(:,idx_SF)<0);
+                idx_75 = find(phi_SACCSFA_75(:,idx_SF)<0);
+                phi_SACCSFA_25(idx_25,idx_SF) = phi_SACCSFA_25(idx_25,idx_SF) + 2*pi;
+                phi_SACCSFA_50(idx_50,idx_SF) = phi_SACCSFA_50(idx_50,idx_SF) + 2*pi;
+                phi_SACCSFA_75(idx_75,idx_SF) = phi_SACCSFA_75(idx_75,idx_SF) + 2*pi;
+            end
         end
         
     case 'SACCSFA185'
@@ -1622,7 +1617,7 @@ switch viewingMediaSACCSFA
             
             phi_SACCSFA_50(2,5) = phi_SACCSFA_50(2,5) - 2*pi;
         elseif strcmp(recentFolderName,'2024-02-09')
-            target_idx_SF = [4 5];
+            target_idx_SF = [4 6];
             for xx = 1:length(target_idx_SF)
                 idx_SF = target_idx_SF(xx);
                 idx_25 = find(phi_SACCSFA_25(:,idx_SF)<0);
