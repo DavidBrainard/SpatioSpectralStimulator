@@ -73,7 +73,7 @@ fprintf('\t Following mode will be run - (%s) \n',viewingMediaSACCSFA);
 DoFourierTransform = false;
 PlotIntensityProfile = false;
 PlotOneIntensityProfile = false;
-PlotSineFitting = true;
+PlotSineFitting = false;
 PlotRawImage = false;
 PlotPhiParam = false;
 
@@ -883,32 +883,54 @@ if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
     error('Matrix sizes does not match!');
 end
 
+% Match the scale between x and y.
+NORMALIZEFIT = true;
+if (NORMALIZEFIT)
+    x_mean = mean(x,'all');
+    x_std = std(x,[],'all');
+    y_mean = mean(y,'all');
+    y_std = std(y,[],'all');
+    
+    x_normalized = (x - x_mean)./ x_std;
+    y_normalized = (y - y_mean)./ y_std;
+end
+
+% Set parameter for fit.
+smoothingParam = 0.2;
+
 % Fitting happens here.
-% Create a lowess surface fit using fit
-smoothingParam_camera = 0.1;
-% f_cameraMTF = fit([x(:)./max(x(:)), y(:)./max(y(:))], z(:), 'lowess', 'Span', smoothingParam_camera,'weights',ones(length(x(:)),1));
-f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam_camera);
+if (NORMALIZEFIT)
+    f_cameraMTF = fit([x_normalized(:), y_normalized(:)], z(:), 'lowess', 'Span', smoothingParam);
+else
+    f_cameraMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam);
+end
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
 figureSize = [0 0 700 700];
 set(gcf,'position',figureSize);
 
-% Set the plot type of the fitted surface.
-FittedSurfacePlotType = 2;
-
-% Raw data.
+% Plot the raw data.
 l_raw = scatter3(x(:), y(:), z(:), 'bo','sizedata',20,'markerfacecolor','b');
 hold on;
 
 % Fitted surface.
+nPointsMeshGrid = 100;
+FittedSurfacePlotType = 2;
 switch FittedSurfacePlotType
     case 1
         l_fit = plot(f_cameraMTF);
     case 2
-        [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
-        Z = feval(f_cameraMTF, [X(:), Y(:)]);
-        %         Z = feval(f_cameraMTF, [X(:)./max(x(:)), Y(:)./max(y(:))]);
+        if (NORMALIZEFIT)
+            [X, Y] = meshgrid(linspace(min(x(:)),max(x(:)),nPointsMeshGrid), linspace(min(y(:)), max(y(:)), nPointsMeshGrid));
+            [X_normalized, Y_normalized] = meshgrid(linspace(min(x_normalized(:)), max(x_normalized(:)), nPointsMeshGrid), linspace(min(y_normalized(:)),max(y_normalized(:)),nPointsMeshGrid));
+            Z = feval(f_cameraMTF, [X_normalized(:), Y_normalized(:)]);
+        else
+            [X, Y] = meshgrid(min(x(:)):0.1:max(x(:)), min(y(:)):0.1:max(y(:)));
+            Z = feval(f_cameraMTF, [X(:), Y(:)]);
+        end
+        
+        % Plot the fitted surface of the interpolation.
         l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
@@ -945,8 +967,15 @@ for cc = 1:nChannels_camera
     nSmoothPoints = 100;
     SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
-    %     contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth./max(x(:)),SF_smooth'./max(y(:))])';
-    contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
+    
+    if (NORMALIZEFIT)
+        SF_smooth_normalized = (SF_smooth - y_mean)./y_std;
+        peakSpd_smooth_normalized = (peakSpd_smooth - x_mean)./x_std;
+        contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth_normalized,SF_smooth_normalized'])';
+    else
+        contrasts_smooth = feval(f_cameraMTF,[peakSpd_smooth,SF_smooth'])';
+    end
+    
     plot(SF_smooth,contrasts_smooth,...
         'b-','color',[0 0 1 0.3],'linewidth',6);
     
@@ -1106,30 +1135,54 @@ if any(size(z) ~= size(x)) || any(size(z) ~= size(y))
     error('Matrix sizes does not match!');
 end
 
+% Match the scale between x and y.
+NORMALIZEFIT = true;
+if (NORMALIZEFIT)
+    x_mean = mean(x,'all');
+    x_std = std(x,[],'all');
+    y_mean = mean(y,'all');
+    y_std = std(y,[],'all');
+    
+    x_normalized = (x - x_mean)./ x_std;
+    y_normalized = (y - y_mean)./ y_std;
+end
+
+% Set parameter for fit.
+smoothingParam = 0.2;
+
 % Fitting happens here.
-% Create a lowess surface fit using fit
-smoothingParam_SACCSFA = 0.32;
-f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess', 'span', smoothingParam_SACCSFA);
+if (NORMALIZEFIT)
+    f_SACCSFAMTF = fit([x_normalized(:), y_normalized(:)], z(:), 'lowess', 'Span', smoothingParam);
+else
+    f_SACCSFAMTF = fit([x(:), y(:)], z(:), 'lowess', 'Span', smoothingParam);
+end
 
 % Create a 3D plot to compare raw data and fitted surface
 figure;
 figureSize = [0 0 700 700];
 set(gcf,'position',figureSize);
 
-% Set the plot type of the fitted surface.
-FittedSurfacePlotType = 2;
-
-% Raw data.
-l_raw = scatter3(x(:), y(:), z(:), 'ro','sizedata',20,'markerfacecolor','r');
+% Plot the raw data.
+l_raw = scatter3(x(:), y(:), z(:), 'ko','sizedata',20,'markerfacecolor','r');
 hold on;
 
 % Fitted surface.
+nPointsMeshGrid = 100;
+FittedSurfacePlotType = 2;
 switch FittedSurfacePlotType
     case 1
-        l_fit = plot(f_SACCSFAMTF);
+        l_fit = plot(f_cameraMTF);
     case 2
-        [X, Y] = meshgrid(min(x(:)):1:max(x(:)), min(y(:)):1:max(y(:)));
-        Z = feval(f_SACCSFAMTF, [X(:), Y(:)]);
+        if (NORMALIZEFIT)
+            [X, Y] = meshgrid(linspace(min(x(:)),max(x(:)),nPointsMeshGrid), linspace(min(y(:)), max(y(:)), nPointsMeshGrid));
+            [X_normalized, Y_normalized] = meshgrid(linspace(min(x_normalized(:)), max(x_normalized(:)), nPointsMeshGrid), linspace(min(y_normalized(:)),max(y_normalized(:)),nPointsMeshGrid));
+            Z = feval(f_SACCSFAMTF, [X_normalized(:), Y_normalized(:)]);
+        else
+            [X, Y] = meshgrid(min(x(:)):0.1:max(x(:)), min(y(:)):0.1:max(y(:)));
+            Z = feval(f_SACCSFAMTF, [X(:), Y(:)]);
+        end
+        
+        % Plot the fitted surface of the interpolation.
         l_fit = mesh(X, Y, reshape(Z, size(X)), 'FaceAlpha', 0.5, 'EdgeColor', 'none', 'FaceColor', 'interp');
 end
 
@@ -1166,7 +1219,15 @@ for cc = 1:nChannels_test
     nSmoothPoints = 100;
     SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
-    contrasts_smooth = feval(f_SACCSFAMTF,[peakSpd_smooth,SF_smooth'])';
+    
+    if (NORMALIZEFIT)
+        SF_smooth_normalized = (SF_smooth - y_mean)./y_std;
+        peakSpd_smooth_normalized = (peakSpd_smooth - x_mean)./x_std;
+        contrasts_smooth = feval(f_SACCSFAMTF,[peakSpd_smooth_normalized,SF_smooth_normalized'])';
+    else
+        contrasts_smooth = feval(f_SACCSFAMTF,[peakSpd_smooth,SF_smooth'])';
+    end
+    
     plot(SF_smooth,contrasts_smooth,...
         'r-','color',[1 0 0 0.3],'linewidth',6);
     
