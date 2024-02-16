@@ -872,12 +872,12 @@ for cc = 1:nChannels_camera
     % Add legend.
     switch contrastCalMethod
         case 'Average'
-            legend('camera (Avg)','location','northeast','fontsize',8);
+            legend('camera (Square)','location','northeast','fontsize',8);
         case 'Sinefit'
             if cc == 1
-                legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','northeast','fontsize',8);
+                legend('camera (Sine)*pi/4','camera (Square)','PR670','location','northeast','fontsize',8);
             else
-                legend('camera (Sine)*pi/4','camera (Avg)','camera (PR670)','location','southeast','fontsize',8);
+                legend('camera (Sine)*pi/4','camera (Square)','PR670','location','southeast','fontsize',8);
             end
     end
 end
@@ -985,7 +985,7 @@ for cc = 1:nChannels_camera
     
     % Camera MTF - interpolated.
     nSmoothPoints = 100;
-    SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
+    SF_smooth = linspace(0,max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
     
     if (NORMALIZEFIT)
@@ -998,7 +998,6 @@ for cc = 1:nChannels_camera
     
     plot(SF_smooth,contrasts_smooth,...
         'b-','color',[0 0 1 0.3],'linewidth',6);
-    
     ylim([0 1.2]);
     xlabel('Spatial Frequency (cpd)','fontsize',15);
     ylabel('Contrast','fontsize',15);
@@ -1008,7 +1007,7 @@ for cc = 1:nChannels_camera
     % Add legend.
     switch contrastCalMethod
         case 'Average'
-            legend('camera (Avg)','location','northeast','fontsize',8);
+            legend('camera (Square)','location','northeast','fontsize',8);
         case 'Sinefit'
             if cc == 1
                 legend('camera (measure)','camera (intlp)','location','northeast','fontsize',8);
@@ -1247,7 +1246,7 @@ for cc = 1:nChannels_test
     
     % SACCSFA MTF - interpolated.
     nSmoothPoints = 100;
-    SF_smooth = linspace(min(cell2mat(targetCyclePerDeg)),max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
+    SF_smooth = linspace(0,max(cell2mat(targetCyclePerDeg)),nSmoothPoints);
     peakSpd_smooth = ones(length(SF_smooth),1).*peakSpdTemp;
     
     if (NORMALIZEFIT)
