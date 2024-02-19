@@ -177,9 +177,10 @@ elseif (strcmp(ansMethodofAdjustment,'N'))
     METHODOFADJUSTMENT = false;
     
     % Load the contrast range if we skip the method of adjustment,
-    if (ispref('SpatioSpectralStimulator','SACCData'))
+    if (ispref('SpatioSpectralStimulator','SACCMaterials'))
         % Load the file.
-        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+        testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+        testFiledir = fullfile(testFiledir,'ExpData');
         testFilenameContrast = GetMostRecentFileName(fullfile(testFiledir,subjectName,append(num2str(sineFreqCyclesPerDeg),'_cpd')),...
             sprintf('ContrastRange_%s_%d_cpd',subjectName,sineFreqCyclesPerDeg));
         
@@ -305,8 +306,9 @@ if (METHODOFADJUSTMENT)
         'higherLimThresholdEstLog',higherLimThresholdEstLog,'lowerLimThresholdEstLog',lowerLimThresholdEstLog);
     
     % Save the results.
-    if (ispref('SpatioSpectralStimulator','SACCData'))
-        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+    if (ispref('SpatioSpectralStimulator','SACCMaterials'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+        testFiledir = fullfile(testFiledir,'ExpData');
         
         % Make folder with subject name if it does not exist.
         if ~exist(fullfile(testFiledir,subjectName), 'dir')
@@ -659,8 +661,9 @@ describe.testFileNameImages = filenameImage;
 
 %% Save the results.
 if (SAVETHERESULTS)
-    if (ispref('SpatioSpectralStimulator','SACCData'))
-        testFiledir = getpref('SpatioSpectralStimulator','SACCData');
+    if (ispref('SpatioSpectralStimulator','SACCMaterials'))
+        testFiledir = getpref('SpatioSpectralStimulator','SACCMaterials');
+        testFiledir = fullfile(testFiledir,'ExpData');
         
         % Make folder with subject name if it does not exist.
         if ~exist(fullfile(testFiledir,subjectName,sprintf('%d_cpd',sineFreqCyclesPerDeg)), 'dir')
