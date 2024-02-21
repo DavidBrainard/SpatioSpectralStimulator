@@ -255,6 +255,9 @@ for cc = 1:nChannels_camera
             
             % Get the cropped image here.
             image_temp = image_temp(a:b,c:d);
+            
+            % Update the image with the cropped one.
+            images_camera{cc,ss} = image_temp;
         end
         
         % Get the size of the cropped image.
@@ -583,6 +586,9 @@ for cc = 1:nChannels_SACCSFA
             
             % Get the cropped image here.
             image_temp = image_temp(a:b,c:d);
+            
+            % Update the image with the cropped one.
+            images_SACCSFA{cc,ss} = image_temp;
         end
         
         % Get the size of the cropped image.
