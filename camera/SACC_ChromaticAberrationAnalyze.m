@@ -1896,7 +1896,7 @@ if (PLOTCAMERAFOCUSSETTINGS)
     
     % Plot it.
     figure; hold on;
-    plot(peaks_spd_camera, cameraFocusSettings_camera,'b-o','markerfacecolor','b','markeredgecolor','k');
+    plot(peaks_spd_camera, cameraFocusSettings_camera,'b-o','markerfacecolor','b','markeredgecolor','k','markersize',9);
     plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA_sorted,'r-o','markerfacecolor','r','markeredgecolor','k');
     plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA156_sorted,'r-d','markerfacecolor','r','markeredgecolor','k');
     plot(peaks_spd_SACCSFA_test, cameraFocusSettings_SACCSFA170_sorted,'r-^','markerfacecolor','r','markeredgecolor','k');
