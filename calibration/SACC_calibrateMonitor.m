@@ -119,7 +119,7 @@ end
 % Configuration function for the SACC display (LED/DLP optical system)
 function [displaySettings, calibratorOptions] = generateConfigurationForSACC()
     % Specify where to send the 'Calibration Done' notification email
-    emailAddressForNotification = 'seminoh@sas.upenn.edu';
+    emailAddressForNotification = 'fh862@sas.upenn.edu';
     
     % Specify the @Calibrator's initialization params. 
     % Users should tailor these according to their hardware specs. 
@@ -166,7 +166,7 @@ end
 % Configuration function for the SACC display (LED/DLP optical system)
 function [displaySettings, calibratorOptions] = generateConfigurationForSACCPrimary1()
     % Specify where to send the 'Calibration Done' notification email
-    emailAddressForNotification = 'seminoh@sas.upenn.edu';
+    emailAddressForNotification = 'fh862@sas.upenn.edu';
     
     % Specify the @Calibrator's initialization params. 
     % Users should tailor these according to their hardware specs. 
